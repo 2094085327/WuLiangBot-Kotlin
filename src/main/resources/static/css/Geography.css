@@ -1,0 +1,165 @@
+* {
+    margin: 0;
+    padding: 0
+}
+
+@font-face {
+    font-family: 'YaHei';
+    src: url('static/ttf/微软雅黑.otf') format('opentype')
+}
+
+body {
+    font-family: "YaHei", sans-serif
+}
+
+.background {
+    background-color: #2d2e32;
+    display: flex;
+    padding: 40px;
+    flex-direction: column
+}
+
+.head {
+    display: flex;
+    width: 100%
+}
+
+.city {
+    background-color: #95b359;
+    color: #eee;
+    width: 30%;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    font-size: 40px
+}
+
+.time {
+    color: #c0c0c0;
+    display: flex;
+    margin-left: auto;
+    font-size: 40px
+}
+
+.temperature {
+    color: #eeeeee;
+    font-size: 80px;
+    display: flex;
+    justify-content: center;
+    margin: 20px
+}
+
+.weatherInfo {
+    color: #eeeeee;
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    font-size: 40px
+}
+
+.carInfo {
+    color: #eeeeee;
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    font-size: 40px
+}
+
+.sportInfo {
+    color: #eeeeee;
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    font-size: 40px
+}
+
+.weatherDetail {
+    display: flex;
+    background-color: #7e8088;
+    border-radius: 20px;
+    margin: 15px 10px;
+    flex-direction: column
+}
+
+.weatherInside {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 15px;
+    margin-bottom: 15px
+}
+
+.info {
+    display: flex;
+    font-size: 35px;
+    color: #cbc3c3;
+    flex-direction: column;
+    flex-grow: 1
+}
+
+.info.left {
+    text-align: left;
+    justify-content: center;
+    width: 50%
+}
+
+.info.right {
+    text-align: right;
+    width: 50%
+}
+
+.infoText {
+    display: flex;
+    justify-content: center;
+    font-size: 45px;
+    color: #eeeeee
+}
+
+.infoZh {
+    display: flex;
+    justify-content: center
+}
+
+.divisionLine {
+    display: flex;
+    font-size: 45px;
+    color: #eeeeee;
+    justify-content: center
+}
+
+.nextInfo {
+    display: flex;
+    font-size: 35px;
+    color: #cbc3c3;
+    justify-content: center;
+    margin: 20px
+}
+
+.left {
+    display: flex;
+    width: 33%;
+    justify-content: center;
+    flex-direction: column
+}
+
+.mid {
+    display: flex;
+    width: 33%;
+    justify-content: center;
+    flex-direction: column
+}
+
+.right {
+    display: flex;
+    width: 33%;
+    justify-content: center;
+    flex-direction: column
+}
+
+.cityId {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    color: #eeeeee;
+}

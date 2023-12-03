@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <title>地理信息</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Geography.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Geography.css">
+    </head>
+    <body>
+        <div class="background">
+            <div class="head">
+                <div class="city" th:text="${country}">
+                    兰州
+                </div>
+                <div class="time" th:text="${time}">
+                    2023-06-08 10:46
+                </div>
+            </div>
+
+            <div class="temperature" th:text="${city}">
+                兰州
+            </div>
+            <div class="cityId">
+                    <span class="label"> 城市ID:</span>
+                    <span class="label" th:text="${cityId}">10001</span>
+            </div>
+            <div class="weatherDetail">
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${feelsLike}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            体感温度
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${tempNow}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            外界温度
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${humidity}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            相对湿度
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${text}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            天气情况
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${pressure}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            大气压强
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${vis}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            能见度
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${windDir}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            风向
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${windInfo}">
+                            55°C
+                        </div>
+                        <div class="infoZh">
+                            风速
+                        </div>
+                    </div>
+                </div>
+                <div class="divisionLine">
+                    <div class="lineLift">
+                        -------------
+                    </div>
+                    <div class="nextDay" th:text="${fxDate}">
+                        2023-06-09
+                    </div>
+                    <div class="lineRight">
+                        -------------
+                    </div>
+                </div>
+                <div class="nextInfo">
+                    <div class="left">
+                        <div class="infoText" th:text="${sunrise}">
+                            5:41
+                        </div>
+                        <div class="infoZh">
+                            日出时间
+                        </div>
+                    </div>
+                    <div class="mid">
+                        <div class="infoText" th:text="${sunset}">
+                            20:29
+                        </div>
+                        <div class="infoZh">
+                            日落时间
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="infoText" th:text="${textDay}">
+                            多云
+                        </div>
+                        <div class="infoZh">
+                            日间天气
+                        </div>
+                    </div>
+                </div>
+                <div class="nextInfo">
+                    <div class="left">
+                        <div class="infoText" th:text="${tempMax}">
+                            32°C
+                        </div>
+                        <div class="infoZh">
+                            最高气温
+                        </div>
+                    </div>
+                    <div class="mid">
+                        <div class="infoText" th:text="${tempMin}">
+                            15°C
+                        </div>
+                        <div class="infoZh">
+                            最低气温
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="infoText" th:text="${textNight}">
+                            多云
+                        </div>
+                        <div class="infoZh">
+                            夜间天气
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
