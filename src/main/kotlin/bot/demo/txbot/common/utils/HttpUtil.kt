@@ -46,17 +46,6 @@ open class HttpBase {
 
     protected open val client = OkHttpClient()
 
-//    @Throws(IOException::class)
-//    fun doGetStr(
-//        url: String,
-//        header: MutableMap<String, Any>? = null,
-//        params: Map<String, Any>? = null,
-//        isDefault: Boolean = false
-//    ): String {
-//        val httpGet = HttpGet(getUri(url, params))
-//        header?.map { (key, value) -> httpGet.setHeader(key, value.toString()) }
-//        return doHttpRequestStr(httpGet, isDefault)
-//    }
 
     @Throws(IOException::class)
     fun doGetBytes(
@@ -69,39 +58,6 @@ open class HttpBase {
         httpGet.setHeaders(header)
         return doHttpRequestBytes(httpGet, isDefault)
     }
-
-//    @Throws(IOException::class)
-//    fun doPostStr(
-//        url: String,
-//        entity: HttpEntity? = null,
-//        header: MutableMap<String, Any>? = null,
-//        isDefault: Boolean = false
-//    ): String {
-//        val httpPost = HttpPost(url)
-//        header?.map { (key, value) -> httpPost.setHeader(key, value.toString()) }
-//        entity?.let { httpPost.entity = it }
-//        return doHttpRequestStr(httpPost, isDefault)
-//    }
-
-//    @Throws(IOException::class)
-//    fun doGetJson(
-//        url: String,
-//        header: MutableMap<String, Any>? = null,
-//        params: Map<String, Any>? = null,
-//        isDefault: Boolean = false
-//    ): JsonNode {
-//        return JacksonUtil.readTree(doGetStr(url, header, params, isDefault))
-//    }
-
-//    @Throws(IOException::class)
-//    fun doPostJson(
-//        url: String,
-//        entity: HttpEntity? = null,
-//        header: MutableMap<String, Any>? = null,
-//        isDefault: Boolean = false
-//    ): JsonNode {
-//        return JacksonUtil.readTree(doPostStr(url, entity, header, isDefault))
-//    }
 
     private fun doHttpRequestStr(httpRequestBase: HttpUriRequestBase, isDefault: Boolean = false): String {
         val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClientBuilder.create().build()
@@ -241,7 +197,7 @@ open class HttpBase {
     }
 
     // 自定义异常类，表示HTTP请求异常
-    class HttpException(val statusCode: Int, val responseBody: String) :
+    class HttpException(private val statusCode: Int, private val responseBody: String) :
         Exception("HTTP Request Failed: $statusCode, Response: $responseBody")
 
 //    /**
@@ -256,36 +212,6 @@ open class HttpBase {
 //    }
 }
 
-@Suppress("unused", "MemberVisibilityCanBePrivate")
-object HttpProxy : HttpBase() {
-
-
-    override lateinit var httpClient: CloseableHttpClient
-
-    val port: String? = SpringUtil.getProperty("zsck.proxy.port")
-
-    val proxyAddress: String? = SpringUtil.getProperty("zsck.proxy.addr")
-
-    init {
-
-        if (port == null || proxyAddress == null) {
-            logInfo("HttpProxy init failed, port or proxyAddress is null")
-            httpClient = HttpClients.createDefault()
-        } else {
-            logInfo("HttpProxy init proxyAddress: {}, port: {}", proxyAddress, port)
-
-
-            // 使用代理
-            val httpHost = HttpHost(proxyAddress, port.toInt())
-
-            httpClient = HttpClients.custom().setProxy(httpHost).build()
-
-            logInfo("HttpProxy init success")
-        }
-
-    }
-
-}
 
 @Suppress("unused")
 object UrlUtil {
