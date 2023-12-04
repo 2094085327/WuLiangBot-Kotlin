@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
-import net.bytebuddy.asm.Advice.Unused
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -23,7 +22,7 @@ import java.util.*
  */
 @Component
 @Configuration
-open class WebImgUtil {
+class WebImgUtil {
     companion object {
         var usePort: String = ""
         var key: String = ""
@@ -51,6 +50,11 @@ open class WebImgUtil {
         val bytes = Files.readAllBytes(Paths.get(imagePath))
         return Base64.getEncoder().encodeToString(bytes)
     }
+
+    fun outputStreamToBase64(outputStream: ByteArray): String {
+        return "base64://${Base64.getEncoder().encodeToString(outputStream)}"
+    }
+
 
     fun loadImg(imgPath: String): JsonNode? {
         val files: Map<String, File> = mapOf("smfile" to File(imgPath))

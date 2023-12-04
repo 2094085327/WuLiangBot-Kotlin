@@ -1,12 +1,12 @@
 package bot.demo.txbot.common.utils
 
-import cn.hutool.extra.spring.SpringUtil
 import com.fasterxml.jackson.databind.JsonNode
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
@@ -17,7 +17,6 @@ import org.apache.hc.core5.http.*
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
 import pers.wuliang.robot.common.utils.JacksonUtil
-import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -189,6 +188,41 @@ open class HttpBase {
     @Throws(IOException::class, HttpException::class)
     fun doPostJson(
         url: String,
+        jsonBody: String? = null,
+        headers: MutableMap<String, Any>? = null
+    ): JsonNode {
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+
+        val requestBuilder = Request.Builder()
+            .url(url)
+
+        jsonBody?.let {
+            val requestBody = it.toRequestBody(mediaType)
+            requestBuilder.post(requestBody)
+        }
+
+        headers?.forEach { (key, value) ->
+            requestBuilder.addHeader(key, value.toString())
+        }
+
+        val request = requestBuilder.build()
+
+        val response = client.newCall(request).execute()
+
+        return response.use {
+            if (it.isSuccessful) {
+                JacksonUtil.readTree(it.body.string())
+            } else {
+                val errorResponse = it.body.string()
+                println("Post请求失败: ${it.code}")
+                throw HttpException(it.code, errorResponse)
+            }
+        }
+    }
+
+    @Throws(IOException::class, HttpException::class)
+    fun doPostJson(
+        url: String,
         files: Map<String, File>? = null,
         params: Map<String, String>? = null,
         headers: MutableMap<String, Any>? = null
@@ -197,7 +231,7 @@ open class HttpBase {
     }
 
     // 自定义异常类，表示HTTP请求异常
-    class HttpException(private val statusCode: Int, private val responseBody: String) :
+    class HttpException(statusCode: Int, responseBody: String) :
         Exception("HTTP Request Failed: $statusCode, Response: $responseBody")
 
 //    /**
