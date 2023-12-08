@@ -24,6 +24,7 @@ class GeoMain {
     @MessageHandlerFilter(cmd = "(.*)天气")
     fun getWeatherImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         if (event != null) {
+            bot.sendMsg(event, "正在查询信息，请耐心等待", false)
             val geoApi = GetGeoApi()
             if (!geoApi.checkCode(geoApi.getWeatherData(matcher?.group(1) ?: ""))) {
                 bot.sendMsg(event, "没有找到'${matcher?.group(1)}'的信息，请检查是否输入错误", false)
@@ -39,6 +40,7 @@ class GeoMain {
             // val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
             // bot.sendMsg(event, sendMsg, false)
             // imgData?.get("delete")?.let { GetGeoImg().removeImg(it.textValue()) }
+//            TODO 缓存5分钟的图片 开机自动判断并清除缓存
             System.gc()
         }
     }
@@ -47,6 +49,7 @@ class GeoMain {
     @MessageHandlerFilter(cmd = "(.*)地理")
     fun getGeoImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         if (event != null) {
+            bot.sendMsg(event, "正在查询信息，请耐心等待", false)
             val geoApi = GetGeoApi()
             if (!geoApi.checkCode(geoApi.getCityData(matcher?.group(1) ?: ""))) {
                 bot.sendMsg(event, "没有找到'${matcher?.group(1)}'的信息，请检查是否输入错误", false)

@@ -12,6 +12,7 @@
                 <div class="city" th:text="${city}">
                     兰州
                 </div>
+                <div class="timeText">更新时间:</div>
                 <div class="time" th:text="${time}">
                     2023-06-08 10:46
                 </div>
@@ -23,10 +24,10 @@
             <div class="weatherInfo" th:text="${perInfo}">
                 今天白天晴，夜晚多云
             </div>
-            <div class="carInfo" th:text="${carText}">
+            <div class="carInfo" th:text="${carText?:'无量姬也不知道该怎么洗车哦'}">
                 较适宜洗车，未来一天无雨，风力较小，擦洗一新的汽车至少能保持一天
             </div>
-            <div class="sportInfo" th:text="${sportText}">
+            <div class="sportInfo" th:text="${sportText?:'今天没有什么运动推荐呢，请随意'}">
                 天气较好，户外运动请注意防晒，推荐您在室内进行低强度运动
             </div>
             <div class="weatherDetail">

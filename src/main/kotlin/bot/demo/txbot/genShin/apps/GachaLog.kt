@@ -12,6 +12,7 @@ import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -191,9 +192,10 @@ class GachaLog {
         gaChaService.selectByUid(uid)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "抽卡记录")
-    fun getGachaLog(bot: Bot, event: AnyMessageEvent?) {
+    suspend fun getGachaLog(bot: Bot, event: AnyMessageEvent?) {
         getInfoList()
         val (outputStream, ticket) = qrLogin.makeQrCode()
         bot.sendMsg(
@@ -205,6 +207,13 @@ class GachaLog {
         val sendMsg: String = MsgUtils.builder().img(WebImgUtil().outputStreamToBase64(outputStream)).build()
         bot.sendMsg(event, sendMsg, false)
 
+        event?.let { println("it.messageId：${it.messageId}") }
+
+        GlobalScope.launch(Dispatchers.IO) {
+            delay(30000)
+            println("等待完毕")
+            event?.let { bot.deleteMsg(it.messageId) }
+        }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
             bot.sendMsg(event, "二维码过期，请重新获取", false)

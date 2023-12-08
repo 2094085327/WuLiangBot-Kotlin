@@ -14,6 +14,15 @@ import java.time.format.DateTimeFormatter
  */
 @Controller
 class GeoWeb {
+
+    fun formatLatAndLongitude(lon: Float, lat: Float): Pair<String, String> {
+        val cityLon = if (lon < 0) -lon else lon
+        val cityLat = if (lat < 0) -lat else lat
+        val cityLonChange = "${cityLon}°${if (lon < 0) "W" else "E"}"
+        val cityLatChange = "${cityLat}°${if (lat < 0) "S" else "N"}"
+        return Pair(cityLonChange, cityLatChange)
+    }
+
     @RequestMapping("/weather")
     fun addWeatherInfo(model: Model): String {
         val geoData = GetGeoApi().getGeoData()
@@ -27,8 +36,6 @@ class GeoWeb {
         val temp = weatherJson["now"]["temp"].textValue()
         val text = weatherJson["now"]["text"].textValue()
         val feelsLike = weatherJson["now"]["feelsLike"].textValue()
-        val carText = dailyJson["daily"][1]["text"].textValue()
-        val sportText = dailyJson["daily"][0]["text"].textValue()
         val humidity = weatherJson["now"]["humidity"].textValue()
         val pressure = weatherJson["now"]["pressure"].textValue()
         val vis = weatherJson["now"]["vis"].textValue()
@@ -44,12 +51,21 @@ class GeoWeb {
         val tempMax = preJson["daily"][0]["tempMax"].textValue()
         val tempMin = preJson["daily"][0]["tempMin"].textValue()
 
+        val names = listOf("sportText", "carText")
+        dailyJson["daily"].forEachIndexed { index, node ->
+            val textNode = node["text"]
+            if (textNode != null) {
+                val textValue = textNode.textValue()
+                if (index < names.size) {
+                    model.addAttribute(names[index], textValue)
+                }
+            }
+        }
+
         model.addAttribute("city", city)
         model.addAttribute("time", time)
         model.addAttribute("temp", "${temp}°C $text")
         model.addAttribute("tempNow", "${temp}°C")
-        model.addAttribute("carText", carText)
-        model.addAttribute("sportText", sportText)
         model.addAttribute("feelsLike", "${feelsLike}°C")
         model.addAttribute("humidity", "${humidity}%")
         model.addAttribute("text", text)
@@ -78,24 +94,18 @@ class GeoWeb {
 
         val city = cityJson["location"][0]["name"].textValue()
         val cityId = cityJson["location"][0]["id"].textValue()
-        var cityLon = cityJson["location"][0]["lon"].textValue().toFloat()
-        var cityLat = cityJson["location"][0]["lat"].textValue().toFloat()
-        var country = cityJson["location"][0]["country"].textValue()
-        val cityLonChange: String?
-        var cityLatChange: String? = null
+        val cityLon = cityJson["location"][0]["lon"].textValue().toFloat()
+        val cityLat = cityJson["location"][0]["lat"].textValue().toFloat()
+        val country = cityJson["location"][0]["country"].textValue()
+        val adm2 = cityJson["location"][0]["adm2"].textValue()
+        val adm1 = cityJson["location"][0]["adm1"].textValue()
+        val tz = cityJson["location"][0]["tz"].textValue()
+        val utcOffset = cityJson["location"][0]["utcOffset"].textValue()
+        val isDst = cityJson["location"][0]["isDst"].asInt()
         // 将获得的经纬度调整为统一格式
-        if (cityLon < 0) {
-            cityLon = -cityLon
-            cityLonChange = "$cityLon°W"
-        } else {
-            cityLonChange = "$cityLon°E"
-        }
-        if (cityLat < 0) {
-            cityLat = -cityLat
-            cityLatChange = "$cityLat°S"
-        } else {
-            cityLatChange = "$cityLat°N"
-        }
+        val (cityLonChange, cityLatChange) = formatLatAndLongitude(cityLon, cityLat)
+
+        val isDstText: String = if (isDst == 0) "否" else "是"
 
         model.addAttribute("city", city)
         model.addAttribute("time", formattedTime)
@@ -103,6 +113,30 @@ class GeoWeb {
         model.addAttribute("lon", cityLonChange)
         model.addAttribute("lat", cityLatChange)
         model.addAttribute("country", country)
+        model.addAttribute("adm2", adm2)
+        model.addAttribute("adm1", adm1)
+        model.addAttribute("tz", tz)
+        model.addAttribute("utcOffset", utcOffset)
+        model.addAttribute("isDst", isDstText)
+
+        if (cityJson["location"][1] != null) {
+
+            val nextCity = cityJson["location"][1]["name"].textValue()
+            val nextCityId = cityJson["location"][1]["id"].textValue()
+            val nextCityLon = cityJson["location"][1]["lon"].textValue().toFloat()
+            val nextCityLat = cityJson["location"][1]["lat"].textValue().toFloat()
+            val nextCountry = cityJson["location"][1]["country"].textValue()
+            val nextTz = cityJson["location"][1]["tz"].textValue()
+
+            val (nextCityLonChange, nextCityLatChange) = formatLatAndLongitude(nextCityLon, nextCityLat)
+
+            model.addAttribute("nextCity", nextCity)
+            model.addAttribute("nextCityId", nextCityId)
+            model.addAttribute("nextCityLonChange", nextCityLonChange)
+            model.addAttribute("nextCityLatChange", nextCityLatChange)
+            model.addAttribute("nextCountry", nextCountry)
+            model.addAttribute("nextTz", nextTz)
+        }
         return "Geography/Geography"
     }
 }

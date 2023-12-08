@@ -47,6 +47,8 @@ class ExamplePlugin {
             println(event.message)
             val sendMsg: String = "你好！这里是无量姬！你刚刚发送了：${matcher?.group(1)}"
             bot.sendMsg(event, sendMsg, false)
+            val replayMsg =  MsgUtils.builder().reply(event.messageId).text("收到！").build()
+            bot.sendMsg(event,replayMsg,false)
         }
     }
 
