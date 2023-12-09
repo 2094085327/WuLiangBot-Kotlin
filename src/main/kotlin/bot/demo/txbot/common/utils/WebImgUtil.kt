@@ -77,10 +77,54 @@ class WebImgUtil {
         println("已经删除图片：$imgUrl")
     }
 
+    /**
+     * 缓存图片
+     * @param imgName 图片名
+     * @param imgType 图片类型
+     * @param imgPath 图片存储路径
+     * @param imgBuffer 图片流
+     *
+     * @return 本地文件路径
+     */
+    fun cacheImg(imgName: String, imgType: String, imgPath: String? = null, imgBuffer: ByteArray): String {
+        val folderPath = "resources/imageCache"
+        val screenshotFilePath =
+            if (imgPath != null) File("$imgPath/$imgName.$imgType") else File("$folderPath/$imgName.$imgType")
+        val folder = File(folderPath)
+
+        deleteImgCache()
+
+        if (!folder.exists()) folder.mkdirs()
+        FileOutputStream(screenshotFilePath).use { fos ->
+            fos.write(imgBuffer)
+        }
+        return screenshotFilePath.absolutePath
+    }
+
+    /**
+     *删除超过缓存时间的图片
+     **/
+    fun deleteImgCache() {
+        val folderPath = "resources/imageCache"
+        val folder = File(folderPath)
+        if (folder.exists() && folder.isDirectory) {
+            val currentDate = Date()
+            val fiveMinutesAgo = Date(currentDate.time - 5 * 60 * 1000)
+            folder.listFiles()?.forEach { file ->
+                if (file.lastModified() < fiveMinutesAgo.time) {
+                    println("删除缓存：${file.name}")
+                    file.delete()
+                }
+            }
+        }
+    }
+
 
     fun getImgFromWeb(
         url: String,
         channel: Boolean,
+        imgName: String? = null,
+        imgPath: String? = null,
         width: Int? = null,
         height: Int? = null,
         sleepTime: Long = 0
@@ -88,28 +132,19 @@ class WebImgUtil {
         Playwright.create().use { playwright ->
             val browser: Browser = playwright.chromium().launch()
             val page: Page = browser.newPage()
+            val realImgName = imgName ?: System.currentTimeMillis().toString()
             page.navigate(url)
-
-            // 截图保存的文件名，可以根据需要修改
-            val screenshotFileName = "screenshot.png"
-
-            // 截图保存的文件路径
-            val screenshotFilePath = File(screenshotFileName)
 
             val buffer = page.screenshot(
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
 
-            // 将截图保存到本地文件
-            FileOutputStream(screenshotFilePath).use { fos ->
-                fos.write(buffer)
-            }
-            val imgPath = screenshotFilePath.absolutePath
+            val realImgPath = cacheImg(imgName = realImgName, imgType = "png", imgPath = imgPath, imgBuffer = buffer)
 
-            if (channel) return "base64://${convertImageToBase64(imgPath)}"
+            if (channel) return "base64://${convertImageToBase64(realImgPath)}"
             else {
-                val imgData = loadImg(imgPath)
+                val imgData = loadImg(realImgPath)
 
                 return imgData?.get("url")?.textValue()
             }
