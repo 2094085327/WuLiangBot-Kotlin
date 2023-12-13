@@ -4,7 +4,7 @@ import bot.demo.txbot.common.utils.HttpUtil
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 
-import pers.wuliang.robot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.JacksonUtil
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*

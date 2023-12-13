@@ -1,4 +1,4 @@
-package pers.wuliang.robot.common.utils
+package bot.demo.txbot.common.utils
 
 import cn.hutool.extra.spring.SpringUtil
 import com.fasterxml.jackson.databind.*

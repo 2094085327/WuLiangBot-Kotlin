@@ -1,9 +1,9 @@
 package bot.demo.txbot.geography
 
+import bot.demo.txbot.common.utils.HttpUtil
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.HttpUtil
 
 /**
  *@Description: 天气功能接口请求与数据获取
@@ -12,16 +12,10 @@ import bot.demo.txbot.common.utils.HttpUtil
  *@User 86188
  */
 @Component
-//@PropertySource("classpath:config.properties")
-class GetGeoApi{
-    companion object {
-        var key: String = ""
-    }
-
+class GetGeoApi {
     @Value("\${weather.key}")
-    fun getKey(weatherKey: String) {
-        key = weatherKey
-    }
+    lateinit var key: String
+
     object GeoData {
         var cityJson: JsonNode? = null
         var weatherJson: JsonNode? = null

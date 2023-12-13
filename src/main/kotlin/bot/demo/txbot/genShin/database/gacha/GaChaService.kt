@@ -13,7 +13,7 @@ interface GaChaService : IService<GaChaEntity?> {
     /**
      * 根据uid查询数据
      */
-    fun selectByUid(uid: String)
+    fun selectByUid(uid: String):Int?
 
     /**
      * 根据uid插入数据

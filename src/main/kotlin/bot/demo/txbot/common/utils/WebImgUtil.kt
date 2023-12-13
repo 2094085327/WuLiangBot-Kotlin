@@ -4,14 +4,21 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
+import com.mikuac.shiro.common.utils.MsgUtils
+import com.mikuac.shiro.core.Bot
+import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import javax.imageio.ImageIO
 
 
 /**
@@ -101,6 +108,16 @@ class WebImgUtil {
         return screenshotFilePath.absolutePath
     }
 
+    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, imgName: String, file: File) {
+        val sendCacheImg: String = MsgUtils
+            .builder()
+            .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")
+            .build()
+        bot.sendMsg(event, sendCacheImg, false)
+        println("使用缓存文件:${file.name}")
+    }
+
+
     /**
      *删除超过缓存时间的图片
      **/
@@ -119,6 +136,27 @@ class WebImgUtil {
         }
     }
 
+    fun bufferedImageToByteArray(image: BufferedImage, formatName: String): ByteArray {
+        val byteArrayOutputStream = ByteArrayOutputStream()
+
+        try {
+            // 将 BufferedImage 写入 ByteArrayOutputStream
+            ImageIO.write(image, formatName, byteArrayOutputStream)
+
+            // 获取 ByteArrayOutputStream 中的字节数组
+            val byteArray = byteArrayOutputStream.toByteArray()
+
+            // 关闭 ByteArrayOutputStream
+            byteArrayOutputStream.close()
+
+            return byteArray
+        } catch (e: Exception) {
+            // 处理异常，比如 IOException
+            e.printStackTrace()
+            return byteArrayOf() // 返回空数组或其他默认值
+        }
+    }
+
 
     fun getImgFromWeb(
         url: String,
@@ -127,6 +165,7 @@ class WebImgUtil {
         imgPath: String? = null,
         width: Int? = null,
         height: Int? = null,
+        scale: Double? = null,
         sleepTime: Long = 0
     ): String? {
         Playwright.create().use { playwright ->
@@ -135,10 +174,14 @@ class WebImgUtil {
             val realImgName = imgName ?: System.currentTimeMillis().toString()
             page.navigate(url)
 
-            val buffer = page.screenshot(
+            var buffer = page.screenshot(
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
+            if (scale != null) {
+                val thumbnailBuilder = Thumbnails.of(buffer.inputStream()).scale(scale).asBufferedImage()
+                buffer = bufferedImageToByteArray(thumbnailBuilder, "png")
+            }
 
             val realImgPath = cacheImg(imgName = realImgName, imgType = "png", imgPath = imgPath, imgBuffer = buffer)
 

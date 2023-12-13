@@ -1,5 +1,6 @@
 package bot.demo.txbot.genShin.database.gacha
 
+import bot.demo.txbot.genShin.util.MysDataUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -31,23 +32,30 @@ class GaChaServiceImpl : ServiceImpl<GaChaMapper?, GaChaEntity?>(), GaChaService
         ),
     )
 
-    override fun selectByUid(uid: String) {
+    override fun selectByUid(uid: String): Int? {
+        val judgeWrapper = QueryWrapper<GaChaEntity>().eq("uid", uid)
+        val dataSize = gaChaMapper.selectList(judgeWrapper).size
+        if (dataSize == 0) return null
+
+
         val types = listOf(200, 301, 302)
         val gachaLogMap = mutableMapOf<String, List<GaChaEntity?>>()
         for (type in types) {
-            val queryWrapper = QueryWrapper<GaChaEntity>().eq("uid", uid).eq("type", type).orderByDesc("item_name")
+            val queryWrapper = QueryWrapper<GaChaEntity>().eq("uid", uid).eq("type", type).orderByDesc("get_time")
             val gachaBefore = gaChaMapper.selectList(queryWrapper) ?: mutableListOf()
             gachaLogMap[type.toString()] = gachaBefore
         }
+        println("数据查询完毕")
         gachaDataMap["gachaLog"] = gachaLogMap
         gachaDataMap["uid"] = uid
         val json = objectMapper.writeValueAsString(gachaDataMap)
-        val folderPath = "resources/gachaCache"
+        val folderPath = MysDataUtil.CACHE_PATH
         val folder = File(folderPath)
         if (!folder.exists()) folder.mkdirs()
         val fileName = "$folderPath/gachaLog-$uid.json"
         val file = File(fileName)
         file.writeText(json)
+        return dataSize
     }
 
 //    override fun selectByUid(uid: String): Boolean {

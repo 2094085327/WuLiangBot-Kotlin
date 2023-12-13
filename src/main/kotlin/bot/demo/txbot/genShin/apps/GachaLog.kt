@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gacha.GaChaService
 import bot.demo.txbot.genShin.database.genshin.GenShinService
 import bot.demo.txbot.genShin.util.MysApi
+import bot.demo.txbot.genShin.util.MysDataUtil
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -38,6 +39,9 @@ class GachaLog {
 
     @Autowired
     lateinit var genShinService: GenShinService
+
+    @Autowired
+    val webImgUtil = WebImgUtil()
 
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
@@ -176,21 +180,93 @@ class GachaLog {
         val idList = listOf(301, 302, 200)
         for (id in idList) {
             gachaThread(authKeyB, id)
-            println("卡池：$idList 分析完毕")
+            println("卡池：$id 分析完毕")
         }
         System.gc()
+    }
+
+    private fun sendNewImage(
+        bot: Bot,
+        event: AnyMessageEvent?,
+        imgName: String,
+        webUrl: String,
+        scale: Double? = null
+    ) {
+        val imgUrl = webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, channel = true, scale = scale)
+        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+        bot.sendMsg(event, sendMsg, false)
+        bot.sendMsg(event, "发送完毕", false)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "插入角色(.*)")
+    fun updateNewItem(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        val newItem = matcher?.group(1) ?: ""
+        val newItemName = newItem.split(" ")[0]
+        val newItemType = newItem.split(" ")[1]
+        when (val code = MysDataUtil().insertAttribute(newItemName, newItemType)) {
+            "200" -> bot.sendMsg(event, "角色更新成功", false)
+            "404" -> bot.sendMsg(event, "属性中没有 $newItemType 类型的属性哦", false)
+            else -> bot.sendMsg(event, "未知错误: $code，请联系管理员查看", false)
+        }
     }
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "记录查询(.*)")
     fun recordQuery(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        val uid = genShinService.selectByUid(matcher?.group(1) ?: "")
-        if (uid == "Null") {
-            bot.sendMsg(event, "Uid为空或还没有绑定，请发送 #抽卡记录 进行绑定", false)
+        val gameUid = matcher?.group(1) ?: ""
+
+        if (gameUid.isEmpty()) {
+            bot.sendMsg(event, "请使用 记录查询<你的Uid> 进行查询", false)
             return
         }
-        gaChaService.selectByUid(uid)
+
+        bot.sendMsg(event, "正在查询历史数据，请稍等", false)
+
+        MysDataUtil().deleteDataCache()
+        val imgName = "gachaLog-${gameUid}"
+        val folder = File(MysDataUtil.CACHE_PATH)
+        val cacheImg = File("resources/imageCache")
+
+        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchCache = cacheImg.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+
+        if (matchingFile != null) {
+            if (matchCache != null) {
+                webImgUtil.sendCachedImage(bot, event, imgName, matchCache)
+
+            } else {
+                val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+                val pools = arrayOf("200", "301", "302")
+                pools.forEach { type ->
+                    MysDataUtil().getEachData(gachaData, type)
+                }
+
+                sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gacha")
+            }
+
+
+        } else {
+            val result = gaChaService.selectByUid(gameUid)
+
+            if (result == null) {
+                bot.sendMsg(event, "Uid为空或还没有绑定，请发送 #抽卡记录 进行绑定", false)
+                return
+            }
+
+            val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+            val pools = arrayOf("200", "301", "302")
+            pools.forEach { type ->
+                MysDataUtil().getEachData(gachaData, type)
+            }
+
+            sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gacha")
+
+        }
+
+        System.gc()
     }
+
 
     @OptIn(DelicateCoroutinesApi::class)
     @AnyMessageHandler
@@ -204,7 +280,7 @@ class GachaLog {
             false
         )
 
-        val sendMsg: String = MsgUtils.builder().img(WebImgUtil().outputStreamToBase64(outputStream)).build()
+        val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         bot.sendMsg(event, sendMsg, false)
 
         event?.let { println("it.messageId：${it.messageId}") }
@@ -231,6 +307,6 @@ class GachaLog {
 
         val authKeyB = mysApi.getData("authKeyB")
         getData(authKeyB)
-        genShinService.insertByUid(uid = gameUid, nickName = nickName)
+        gaChaService.selectByUid(gameUid)
     }
 }

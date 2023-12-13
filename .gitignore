@@ -34,3 +34,4 @@ build/
 /src/main/resources/application-dev.yml
 /src/main/resources/application-prod.yml
 /resources/imageCache/
+/resources/gachaCache/

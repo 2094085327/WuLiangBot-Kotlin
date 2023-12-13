@@ -7,6 +7,7 @@ import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
 import java.util.regex.Matcher
@@ -21,22 +22,17 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class GeoMain {
-    private fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, imgName: String, file: File) {
-        val sendCacheImg: String = MsgUtils
-            .builder()
-            .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")
-            .build()
-        bot.sendMsg(event, sendCacheImg, false)
-        println("使用缓存文件:${file.name}")
-    }
-
+    @Autowired
+    val geoApi = GetGeoApi()
+    @Autowired
+    val webImgUtil = WebImgUtil()
     private fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgName: String, city: String, webUrl: String) {
-        val geoApi = GetGeoApi()
+
         if (!geoApi.checkCode(geoApi.getWeatherData(city))) {
             bot.sendMsg(event, "没有找到'$city'的信息，请检查是否输入错误", false)
             return
         }
-        val imgUrl = WebImgUtil().getImgFromWeb(url = webUrl, imgName = imgName, channel = true)
+        val imgUrl = webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, channel = true)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
         // 群聊模式下通过图床发送图片
@@ -54,25 +50,19 @@ class GeoMain {
         if (event == null) return
 
         bot.sendMsg(event, "正在查询信息，请耐心等待", false)
-        WebImgUtil().deleteImgCache()
+        webImgUtil.deleteImgCache()
 
         val city = matcher?.group(1)
         val imgName = "${city}天气"
         val folderPath = "resources/imageCache"
         val folder = File(folderPath)
+        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
 
-        if (folder.exists() && folder.isDirectory) {
-            val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
-
-            if (matchingFile != null) {
-                sendCachedImage(bot, event, imgName, matchingFile)
-            } else {
-                sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/weather")
-            }
+        if (matchingFile != null) {
+            webImgUtil.sendCachedImage(bot, event, imgName, matchingFile)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/weather")
         }
-
         System.gc()
     }
 
@@ -83,25 +73,20 @@ class GeoMain {
         if (event == null) return
 
         bot.sendMsg(event, "正在查询信息，请耐心等待", false)
-        WebImgUtil().deleteImgCache()
+        webImgUtil.deleteImgCache()
 
         val city = matcher?.group(1)
         val imgName = "${city}地理"
         val folderPath = "resources/imageCache"
         val folder = File(folderPath)
 
-        if (folder.exists() && folder.isDirectory) {
-            val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
 
-            if (matchingFile != null) {
-                sendCachedImage(bot, event, imgName, matchingFile)
-            } else {
-                sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/geo")
-            }
+        if (matchingFile != null) {
+            webImgUtil.sendCachedImage(bot, event, imgName, matchingFile)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/geo")
         }
-
         System.gc()
     }
 

@@ -16,7 +16,6 @@ import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.core5.http.*
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
-import pers.wuliang.robot.common.utils.JacksonUtil
 import java.io.File
 import java.io.IOException
 import java.net.URI
