@@ -1,0 +1,119 @@
+body {
+    display: flex;
+    flex-direction: column;
+    background-color: #a3a3a3;
+    margin: 0;
+}
+
+.gachaAll {
+    display: flex;
+    flex-direction: column
+}
+
+.gachaTypeText {
+    display: flex;
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.background {
+    display: flex;
+    background-color: rgba(218, 212, 212, 0.8);
+    border-radius: 10px;
+    margin: 15px 30px 15px 30px;
+    flex-direction: column;
+}
+
+.eachCard {
+    display: flex;
+    margin: 10px;
+}
+
+.eachData {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.eachOne {
+    display: flex;
+    flex-direction: column;
+    width: 15.59%;
+    margin: 5px 5px 5px auto;
+}
+
+/* 新增的占位元素样式 */
+.empty-placeholder {
+    flex: 0 0 15.59%;
+    margin: 5px;
+    /*visibility: hidden;*/
+}
+
+.itemContainer {
+    position: relative;
+}
+
+.itemImg {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.progress-container {
+    position: absolute;
+    bottom: 1px;
+    left: 1px;
+    width: 100%;
+    /*height: 174px;*/
+    height: 20%;
+    display: flex;
+    background-color: rgba(189, 188, 188, 0.5);
+    border-radius: 10px;
+}
+
+.progress {
+    height: 25px;
+    border-radius: 10px;
+}
+
+.getTimes {
+    position: absolute;
+    color: white;
+    height: 100%;
+    align-items: center;
+    display: flex;
+    font-size: 25px;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    font-size: 25px;
+}
+
+.container {
+    position: relative; /* 设置容器为相对定位 */
+    width: 130px; /* 设置容器宽度为第一张图片的宽度 */
+    height: 174px; /* 设置容器高度为第一张图片的高度 */
+}
+
+.overlay-image {
+    position: absolute; /* 设置图片为绝对定位 */
+    top: 0;
+    left: 0;
+    width: 100%; /* 设置图片宽度为容器宽度 */
+    height: 100%; /* 设置图片高度为容器高度 */
+}
+
+.firstImg {
+    width: 100%;
+    height: 97%;
+    object-fit: cover;
+    position: absolute;
+}
+
+.backImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+}

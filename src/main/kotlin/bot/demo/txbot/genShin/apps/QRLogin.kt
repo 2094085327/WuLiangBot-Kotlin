@@ -11,6 +11,7 @@ import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 import java.util.regex.Matcher
@@ -24,6 +25,9 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class QRLogin {
+    @Autowired
+    val webImgUtil = WebImgUtil()
+
     private val mysApi = MysApi("144853327", "")
 
     private fun getQrCodeStatus(ticket: String): JsonNode {
@@ -122,7 +126,7 @@ class QRLogin {
         )
 
         val (outputStream, ticket) = makeQrCode()
-        val sendMsg: String = MsgUtils.builder().img(WebImgUtil().outputStreamToBase64(outputStream)).build()
+        val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         bot.sendMsg(event, sendMsg, false)
 
         val (qrCodeStatus, checkQrCode) = checkQrCode(ticket)

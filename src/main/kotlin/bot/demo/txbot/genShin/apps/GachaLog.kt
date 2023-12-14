@@ -6,7 +6,6 @@ import bot.demo.txbot.genShin.database.genshin.GenShinService
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -17,10 +16,7 @@ import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
-import java.io.FileOutputStream
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.regex.Matcher
 
 
@@ -45,103 +41,6 @@ class GachaLog {
 
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
-    private val objectMapper = ObjectMapper()
-
-    fun test2(gachaId: String, type: String): MutableList<MutableMap<String, Any>> {
-        val typeString = if (type == "up") {
-            "r5_up_items"
-        } else {
-            "r5_prob_list"
-        }
-        val jsonData = mysApi.getData("gacha_Info", mutableMapOf("gachaId" to gachaId))
-        val jsonArray = jsonData[typeString]
-        val data: MutableList<MutableMap<String, Any>> = mutableListOf()
-        jsonArray.forEach { item ->
-            data.add(
-                mutableMapOf(
-                    "item_name" to item["item_name"],
-                    "item_type" to item["item_type"]
-                )
-            )
-        }
-        return data
-    }
-
-    fun test() {
-        val currentDir = File(".").absoluteFile
-//        val resourcesDir = File(currentDir, "resources")
-        val jsonFile = File(currentDir, "resources/gacha_up.json")
-
-        val gachaUp = mysApi.getData("gacha_Id")["data"]["list"]
-
-        val gachaUpMap: MutableMap<String, Map<String, Any>> = mutableMapOf(
-            "常驻" to mutableMapOf(
-                "begin_time" to gachaUp[0]["begin_time"].textValue(),
-                "end_time" to gachaUp[0]["end_time"].textValue(),
-                "gacha_id" to gachaUp[0]["gacha_id"].textValue(),
-                "r5_prob_list" to test2(gachaUp[0]["gacha_id"].textValue(), "prob")
-            ),
-            "角色活动" to mutableMapOf(
-                "begin_time" to gachaUp[1]["begin_time"].textValue(),
-                "end_time" to gachaUp[1]["end_time"].textValue(),
-                "gacha_id" to gachaUp[1]["gacha_id"].textValue(),
-                "r5_up_items" to test2(gachaUp[1]["gacha_id"].textValue(), "up")
-            ),
-            "角色活动-2" to mutableMapOf(
-                "begin_time" to gachaUp[2]["begin_time"].textValue(),
-                "end_time" to gachaUp[2]["end_time"].textValue(),
-                "gacha_id" to gachaUp[2]["gacha_id"].textValue(),
-                "r5_up_items" to test2(gachaUp[2]["gacha_id"].textValue(), "up")
-            ),
-            "武器活动" to mutableMapOf(
-                "begin_time" to gachaUp[3]["begin_time"].textValue(),
-                "end_time" to gachaUp[3]["end_time"].textValue(),
-                "gacha_id" to gachaUp[3]["gacha_id"].textValue(),
-                "r5_up_items" to test2(gachaUp[3]["gacha_id"].textValue(), "up")
-            ),
-        )
-
-
-        val objectMapper = ObjectMapper()
-        val jsonString = objectMapper.writeValueAsString(gachaUpMap)
-
-        val outputStream = FileOutputStream(jsonFile, false)
-        outputStream.write(jsonString.toByteArray())
-        outputStream.close()
-    }
-
-    /**
-     * 获取当期卡池数据
-     */
-    private fun getInfoList(): JsonNode {
-        val currentDir = File(".").absoluteFile
-//        val resourcesDir = File(currentDir, "resources")
-        val jsonFile = File(currentDir, "resources/genshinConfig/gacha_up.json")
-
-        if (jsonFile.exists()) {
-            val gachaUp = objectMapper.readTree(jsonFile)
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            val lastModified = Date(jsonFile.lastModified())
-            val formattedDate = dateFormat.format(lastModified)
-            val endDate = dateFormat.parse(gachaUp["角色活动"]["end_time"].textValue())
-
-            if (lastModified.after(endDate)) {
-                println("Last modified date is after target date.")
-            } else if (lastModified.before(endDate)) {
-                println("Last modified date is before target date.")
-            } else {
-                println("Last modified date is equal to target date.")
-            }
-
-
-        } else {
-            println("1.json file does not exist in resources directory.")
-            test()
-        }
-
-        val data = mysApi.getData("gacha_Id")
-        return data["data"]["list"]
-    }
 
     fun gachaThread(authKeyB: JsonNode, gachaId: Int) {
         // 本页最后一条数据的id
@@ -212,6 +111,14 @@ class GachaLog {
     }
 
     @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "清除缓存")
+    fun deleteCache(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        MysDataUtil().forceDeleteCache("resources/gachaCache")
+        MysDataUtil().forceDeleteCache("resources/imageCache")
+        bot.sendMsg(event, "已完成缓存清理", false)
+    }
+
+    @AnyMessageHandler
     @MessageHandlerFilter(cmd = "记录查询(.*)")
     fun recordQuery(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         val gameUid = matcher?.group(1) ?: ""
@@ -272,7 +179,6 @@ class GachaLog {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "抽卡记录")
     suspend fun getGachaLog(bot: Bot, event: AnyMessageEvent?) {
-        getInfoList()
         val (outputStream, ticket) = qrLogin.makeQrCode()
         bot.sendMsg(
             event,
@@ -298,7 +204,7 @@ class GachaLog {
         val stoken = qrLogin.getStoken(qrCodeStatus)
         val accountInfo = qrLogin.getAccountInfo(stoken)["data"]["list"][0]
         val gameUid = accountInfo["game_uid"].textValue()
-        val nickName = accountInfo["nickname"].textValue()
+//        val nickName = accountInfo["nickname"].textValue()
 
         mysApi = MysApi(
             gameUid,
