@@ -2,6 +2,7 @@ package bot.demo.txbot.common.utils
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.microsoft.playwright.Browser
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
@@ -94,12 +95,12 @@ class WebImgUtil {
      * @return 本地文件路径
      */
     fun cacheImg(imgName: String, imgType: String, imgPath: String? = null, imgBuffer: ByteArray): String {
+        deleteImgCache()
+
         val folderPath = "resources/imageCache"
         val screenshotFilePath =
             if (imgPath != null) File("$imgPath/$imgName.$imgType") else File("$folderPath/$imgName.$imgType")
         val folder = File(folderPath)
-
-        deleteImgCache()
 
         if (!folder.exists()) folder.mkdirs()
         FileOutputStream(screenshotFilePath).use { fos ->
@@ -124,14 +125,12 @@ class WebImgUtil {
     fun deleteImgCache() {
         val folderPath = "resources/imageCache"
         val folder = File(folderPath)
-        if (folder.exists() && folder.isDirectory) {
-            val currentDate = Date()
-            val fiveMinutesAgo = Date(currentDate.time - 5 * 60 * 1000)
-            folder.listFiles()?.forEach { file ->
-                if (file.lastModified() < fiveMinutesAgo.time) {
-                    println("删除缓存：${file.name}")
-                    file.delete()
-                }
+        val currentDate = Date()
+        val fiveMinutesAgo = Date(currentDate.time - 5 * 60 * 1000)
+        folder.listFiles()?.forEach { file ->
+            if (file.lastModified() < fiveMinutesAgo.time) {
+                println("删除缓存：${file.name}")
+                file.delete()
             }
         }
     }
