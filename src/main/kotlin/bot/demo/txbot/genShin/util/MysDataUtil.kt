@@ -1,21 +1,27 @@
 package bot.demo.txbot.genShin.util
 
+import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.genShin.database.gacha.HtmlEntity
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
-import java.nio.file.*
-import java.nio.file.attribute.BasicFileAttributes
+import java.io.InputStreamReader
+import kotlin.io.path.Path
 
 
 class MysDataUtil {
+
+
     companion object {
         const val CACHE_PATH = "resources/gachaCache"
+        val poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
     }
 
     object GachaData {
@@ -54,29 +60,105 @@ class MysDataUtil {
         }
     }
 
-    fun checkFolder(folderPath: String): List<String> {
-        val folder = object {}.javaClass.classLoader.getResource(folderPath)
+//    fun checkFolder(folderPath: String): List<String> {
+//        val folder = object {}.javaClass.classLoader.getResource(folderPath)
+//
+//        if (folder == null) {
+//            println("文件未找到: $folderPath")
+//            return emptyList()
+//        }
+//
+//        val folderPathInFileSystem = Paths.get(folder.toURI())
+//        val fileNames = mutableListOf<String>()
+//
+//        try {
+//            Files.walkFileTree(folderPathInFileSystem, setOf(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+//                object : SimpleFileVisitor<Path>() {
+//                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+//                        fileNames.add(file.fileName.toString())
+//                        return FileVisitResult.CONTINUE
+//                    }
+//
+//                    override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
+//                        return FileVisitResult.CONTINUE
+//                    }
+//                })
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//            println("读取错误: $folderPath")
+//        }
+//
+//        println(fileNames)
+//        return fileNames
+//    }
 
-        if (folder == null) {
-            println("文件未找到: $folderPath")
+
+//    fun checkFolder(folderPath: String): List<String> {
+//        val inputStream = object {}.javaClass.classLoader.getResourceAsStream(folderPath)
+//
+//        if (inputStream == null) {
+//            println("文件未找到: $folderPath")
+//            return emptyList()
+//        }
+//
+//        val fileNames = mutableListOf<String>()
+//
+//        try {
+//            // Read the contents of the resource directly
+//            BufferedReader(InputStreamReader(inputStream)).use { reader ->
+//                reader.lines().forEach { fileNames.add(it) }
+//            }
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//            println("读取错误: $folderPath")
+//        }
+//
+//        println(fileNames)
+//        return fileNames
+//    }
+
+
+//    fun checkFolder(folderPath: String): List<String> {
+//        val inputStream = object {}.javaClass.classLoader.getResourceAsStream(folderPath)
+//
+//        if (inputStream == null) {
+//            println("文件未找到: $folderPath")
+//            return emptyList()
+//        }
+//
+//        val fileNames = mutableListOf<String>()
+//
+//        try {
+//            // Use InputStreamReader and BufferedReader to read lines
+//            InputStreamReader(inputStream).use { inputStreamReader ->
+//                BufferedReader(inputStreamReader).use { reader ->
+//                    reader.lines().forEach { fileNames.add(it) }
+//                }
+//            }
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//            println("读取错误: $folderPath")
+//        }
+//
+//        println(fileNames)
+//        return fileNames
+//    }
+
+    fun checkFolder(folderPath: String): List<String> {
+        val folder = File(folderPath)
+
+        if (!folder.exists() || !folder.isDirectory) {
+            println("文件夹不存在或不是一个有效的文件夹: $folderPath")
             return emptyList()
         }
 
-        val folderPathInFileSystem = Paths.get(folder.toURI())
         val fileNames = mutableListOf<String>()
 
         try {
-            Files.walkFileTree(folderPathInFileSystem, setOf(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-                object : SimpleFileVisitor<Path>() {
-                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                        fileNames.add(file.fileName.toString())
-                        return FileVisitResult.CONTINUE
-                    }
-
-                    override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
-                        return FileVisitResult.CONTINUE
-                    }
-                })
+            // 使用 File 对象构造 BufferedReader
+            folder.listFiles()?.forEach { file ->
+                fileNames.add(file.name)
+            }
         } catch (e: IOException) {
             e.printStackTrace()
             println("读取错误: $folderPath")
@@ -85,6 +167,7 @@ class MysDataUtil {
         println(fileNames)
         return fileNames
     }
+
 
     // 检查文件是否存在
     private fun checkFile(fileName: String): Pair<Boolean, String?> {
@@ -146,9 +229,9 @@ class MysDataUtil {
     // 获取每个卡池的数据
     fun getEachData(data: JsonNode, gachaType: String) {
         val folderPath = when (gachaType) {
-            "200" -> "static/img/GenShinImg/permanents/"
-            "301" -> "static/img/GenShinImg/role/"
-            "302" -> "static/img/GenShinImg/weapons/"
+            "200" -> "resources/genShin/GenShinImg/permanents/"
+            "301" -> "resources/genShin/GenShinImg/role/"
+            "302" -> "resources/genShin/GenShinImg/weapons/"
             else -> return
         }
 
@@ -203,14 +286,12 @@ class MysDataUtil {
     }
 
     fun findEachPoolName(): List<String> {
-        val poolData = getGachaData("resources/genShin/defSet/gacha/pool.json")
-        return poolData.fields().asSequence().map { it.key }.toList()
+        return getGachaData("resources/genShin/defSet/gacha/pool.json").fields().asSequence()
+            .map<MutableMap.MutableEntry<String, JsonNode>?, String> { it!!.key }.toList()
     }
 
     fun findPoolData(name: String, id: String): Pair<String, JsonNode>? {
-        val poolData = getGachaData("resources/genShin/defSet/gacha/pool.json")
-
-        val iterator = poolData.fields()
+        val iterator = getGachaData("resources/genShin/defSet/gacha/pool.json").fields()
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val key = entry.key
@@ -229,8 +310,6 @@ class MysDataUtil {
 
     fun changePoolOpen(poolInfo: Pair<String, JsonNode>, poolFormat: String) {
         val (name, _) = poolInfo
-        val poolData = getGachaData("resources/genShin/defSet/gacha/gacha.json")
-
         val objRoot = poolData as ObjectNode
         objRoot.put("openPool", name)
         objRoot.put("poolName", poolFormat)
@@ -271,14 +350,41 @@ class MysDataUtil {
         }
     }
 
+    fun mergeRole(poolData: JsonNode, version: String): Pair<ArrayNode, ArrayNode> {
+        val newAd = getGachaData("resources/genShin/defSet/gacha/newAdd.json")
+        val role4 = newAd[version]["role4"]
+        val role5 = newAd[version]["role5"]
+        val role4Base = poolData["role4_base"]
+        val role5Base = poolData["role5_base"]
+        val addRole4 = role4Base as ArrayNode
+        val addRole5 = role5Base as ArrayNode
+        role4.forEach {
+            addRole4.add(it)
+        }
+        role5.forEach {
+            addRole5.add(it)
+        }
+
+        return Pair(addRole4, addRole5)
+    }
+
+    fun probability() {
+
+    }
+
     fun getGachaPool() {
-        val poolData = getGachaData("resources/genShin/defSet/gacha/gacha.json")
         val openPool = poolData["openPool"].textValue()
         val poolName = poolData["poolName"].textValue()
         val detailPoolInfo = getGachaData("resources/genShin/defSet/gacha/pool.json")
         val poolInfo = detailPoolInfo[openPool]
 
         val up5 = getDetailUp5(openPool, poolName, poolInfo)
+
+//        TODO 将当前卡池的新增4星合并到常驻中
+
+        println(
+            mergeRole(poolData, poolName.split("-")[1])
+        )
 
         val poolDataList = PoolData(
             poolName = poolName,
@@ -293,6 +399,13 @@ class MysDataUtil {
         )
 
         println(poolDataList)
+    }
+
+    fun lottery() {
+        for (i in 1..10) {
+            val random = (1..100).random()
+            println(random)
+        }
     }
 
 

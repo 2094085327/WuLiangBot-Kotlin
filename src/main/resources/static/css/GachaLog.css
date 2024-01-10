@@ -1,12 +1,25 @@
+@font-face {
+    font-family: 'YaHei';
+    /*src: url('../ttf/微软雅黑.otf') format('opentype');*/
+    src: url('../ttf/HYQianGuang.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    font-family: "YaHei", serif
+}
 
 body {
     display: flex;
     flex-direction: column;
     background-color: #a3a3a3;
     margin: 0;
+    font-family: "YaHei", sans-serif
 }
 
-.header{
+.header {
     width: 700px;
 }
 

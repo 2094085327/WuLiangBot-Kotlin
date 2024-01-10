@@ -1,12 +1,17 @@
+@font-face {
+    font-family: 'YaHei';
+    src: url('static/ttf/微软雅黑.otf') format('opentype')
+}
 
 body {
     display: flex;
     flex-direction: column;
     background-color: #a3a3a3;
     margin: 0;
+    font-family: "YaHei", sans-serif
 }
 
-.header{
+.header {
     width: 700px;
 }
 

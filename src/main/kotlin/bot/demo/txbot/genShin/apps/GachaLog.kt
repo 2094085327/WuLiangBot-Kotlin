@@ -98,7 +98,7 @@ class GachaLog {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "插入角色(.*)")
+    @MessageHandlerFilter(cmd = "新增角色(.*)")
     fun updateNewItem(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         val newItem = matcher?.group(1) ?: ""
         val newItemName = newItem.split(" ")[0]

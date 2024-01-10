@@ -1,6 +1,12 @@
 {
-  "openPool": "渊海界令|赤团开时-4.1",
-  "poolName": "渊海界令|赤团开时-4.1",
+  "openPool": "鬼门斗宴-2.7",
+  "poolName": "鬼门斗宴-2.7",
+  "poolType": "role",
+  "chance5": 60,
+  "chance4": 510,
+  "wai": 50,
+  "chanceWeapon5": 70,
+  "chanceWeapon4": 600,
   "role5_base": [
     "刻晴",
     "莫娜",

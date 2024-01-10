@@ -25,9 +25,6 @@ import java.util.regex.Pattern
 @Shiro
 @Component
 class ExamplePlugin {
-    @Autowired
-    val webImgUtil = WebImgUtil()
-
     // 更多用法详见 @MessageHandlerFilter 注解源码
     // 当机器人收到的私聊消息消息符合 cmd 值 "hi" 时，这个方法会被调用。
     @PrivateMessageHandler

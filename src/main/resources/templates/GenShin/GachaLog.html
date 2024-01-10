@@ -5,7 +5,7 @@
     <title>Title</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" type="text/css" th:href="@{/css/GachaLog.css}">
-    <link rel="stylesheet" type="text/css" href="GachaLog.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/GachaLog.css">
 </head>
 <body>
 
@@ -20,12 +20,12 @@
                         <div class="itemContainer" th:if="${role.itemName != null}"
                              th:style="${role.itemName != null} ? 'visibility: visible;' : 'visibility: hidden;'">
                             <div class="container">
-                                <img class="backImg" th:src="'img/GenShinImg/sources/'+${role.itemAttribute}+'.png'"
+                                <img class="backImg" th:src="@{'/images/sources/'+${role.itemAttribute}+'.png'}"
                                      alt="First Image">
                                 <img class="firstImg"
-                                     th:src="${role.isEmpty() ? 'img/GenShinImg/role/' + role.itemName  : 'img/GenShinImg/role/default.png' }"
+                                     th:src="@{${role.isEmpty() ? '/images/role/' + role.itemName  : '/images/role/default.png' }}"
                                      th:alt="${role.itemName}">
-                                <img class="overlay-image" th:src="'img/GenShinImg/sources/角色框.png'"
+                                <img class="overlay-image" th:src="@{'/images/sources/角色框.png'}"
                                      alt="Second Image">
                             </div>
                             <div th:with="percentage=${(role.times / 90.0) * 100}" class="progress-container">
@@ -51,7 +51,7 @@
                     <div class="itemContainer" th:if="${weapon.itemName != null}"
                          th:style="${weapon.itemName != null} ? 'visibility: visible;' : 'visibility: hidden;'">
 
-                        <img th:src="${weapon.isEmpty() ? 'img/GenShinImg/weapons/' + weapon.itemName  : 'img/GenShinImg/role/default.png' }"
+                        <img th:src="@{${weapon.isEmpty() ? 'images/weapons/' + weapon.itemName  : '/images/role/default.png' }}"
                              alt="" class="itemImg">
 
                         <div th:with="percentage=${(weapon.times / 90.0) * 100}" class="progress-container">
@@ -76,7 +76,7 @@
                     <div class="itemContainer" th:if="${permanent.itemName != null}"
                          th:style="${permanent.itemName != null} ? 'visibility: visible;' : 'visibility: hidden;'">
 
-                        <img th:src="${permanent.isEmpty() ? 'img/GenShinImg/permanents/' + permanent.itemName  : 'img/GenShinImg/role/default.png' }"
+                        <img th:src="${permanent.isEmpty() ? '/images/permanents/' + permanent.itemName  : '/images/role/default.png' }"
                              alt="" class="itemImg">
 
                         <div th:with="percentage=${(permanent.times / 90.0) * 100}" class="progress-container">

@@ -1,8 +1,9 @@
 package bot.demo.txbot.common.utils
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.idrsolutions.image.png.PngCompressor
+import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.Browser
-import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
@@ -11,15 +12,22 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.util.*
+import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageWriteParam
+import javax.imageio.stream.FileImageOutputStream
 
 
 /**
@@ -184,7 +192,8 @@ class WebImgUtil {
 
             val realImgPath = cacheImg(imgName = realImgName, imgType = "png", imgPath = imgPath, imgBuffer = buffer)
 
-            if (channel) return "base64://${convertImageToBase64(realImgPath)}"
+
+            if (channel) return "base64://${convertImageToBase64("${realImgPath.split(".")[0]}.png")}"
             else {
                 val imgData = loadImg(realImgPath)
 
@@ -192,4 +201,33 @@ class WebImgUtil {
             }
         }
     }
+
+    @Suppress("unused")
+    private fun turnPngToWebp(imagePath: String, scale: Float = 0.8f) {
+        try {
+            val imageFile = File(imagePath)
+            val image = ImageIO.read(imageFile)
+            val writer = ImageIO.getImageWritersByMIMEType("image/webp").next()
+            val writeParam = WebPWriteParam(writer.locale)
+            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
+            // 设置有损压缩
+            writeParam.compressionType = writeParam.getCompressionTypes()[WebPWriteParam.LOSSY_COMPRESSION]
+            //设置 80% 的质量. 设置范围 0-1
+            writeParam.compressionQuality = scale
+
+            writer.setOutput(FileImageOutputStream(File("${imagePath.split(".")[0]}.webp")))
+            writer.write(null, IIOImage(image, null, null), writeParam)
+            imageFile.delete()
+        } catch (e: IOException) {
+            throw RuntimeException(e)
+        }
+    }
+
+
+    fun compressImage(imagePath: String) {
+        val file = File(imagePath)
+        val outfile = File(imagePath)
+        PngCompressor.compress(file, outfile)
+    }
+
 }

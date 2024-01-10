@@ -1,22 +1,24 @@
-* {
-    margin: 0;
-    padding: 0
-}
-
 @font-face {
     font-family: 'YaHei';
-    src: url('static/ttf/微软雅黑.otf') format('opentype')
+    /*src: url('../ttf/微软雅黑.otf') format('opentype');*/
+    src: url('../ttf/HYQianGuang.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
 }
 
-body {
-    font-family: "YaHei", sans-serif
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "YaHei", serif;
 }
+
 
 .background {
     background-color: #2d2e32;
     display: flex;
     padding: 40px;
-    flex-direction: column
+    flex-direction: column;
 }
 
 .head {
@@ -40,6 +42,7 @@ body {
     margin-left: auto;
     font-size: 40px
 }
+
 .time {
     color: #c0c0c0;
     display: flex;

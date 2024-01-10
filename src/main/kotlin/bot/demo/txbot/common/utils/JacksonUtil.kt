@@ -1,9 +1,12 @@
 package bot.demo.txbot.common.utils
 
 import cn.hutool.extra.spring.SpringUtil
-import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.type.CollectionType
-import java.util.*
+import java.io.File
 import java.util.function.Function
 
 /**
@@ -82,6 +85,12 @@ object JacksonUtil {
 
     private fun getListOf(elementClasses: Class<*>?): CollectionType {
         return objectMapper.typeFactory.constructCollectionType(MutableList::class.java, elementClasses)
+    }
+
+    fun getJsonNode(jsonPath: String): JsonNode {
+        val file = File(jsonPath)
+        val objectMapper = ObjectMapper()
+        return objectMapper.readTree(file)
     }
 }
 
