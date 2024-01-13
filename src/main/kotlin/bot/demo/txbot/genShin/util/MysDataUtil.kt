@@ -1,19 +1,19 @@
 package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.JacksonUtil
-import bot.demo.txbot.genShin.database.gacha.HtmlEntity
+import bot.demo.txbot.common.utils.JacksonUtil.objectMapper
+import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
-import java.io.InputStreamReader
-import kotlin.io.path.Path
+import java.util.*
 
 
 class MysDataUtil {
@@ -21,7 +21,16 @@ class MysDataUtil {
 
     companion object {
         const val CACHE_PATH = "resources/gachaCache"
-        val poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
+        var poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
+        var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
+        var poolType = poolData["poolType"].textValue()
+        var nowPoolData: PoolData = PoolData()
+
+        var num5 = 0
+        var num4 = 0
+        var isUp5 = 0
+        var lifeNum = 0
+        var isBing = false
     }
 
     object GachaData {
@@ -59,90 +68,6 @@ class MysDataUtil {
             file.delete()
         }
     }
-
-//    fun checkFolder(folderPath: String): List<String> {
-//        val folder = object {}.javaClass.classLoader.getResource(folderPath)
-//
-//        if (folder == null) {
-//            println("文件未找到: $folderPath")
-//            return emptyList()
-//        }
-//
-//        val folderPathInFileSystem = Paths.get(folder.toURI())
-//        val fileNames = mutableListOf<String>()
-//
-//        try {
-//            Files.walkFileTree(folderPathInFileSystem, setOf(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-//                object : SimpleFileVisitor<Path>() {
-//                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-//                        fileNames.add(file.fileName.toString())
-//                        return FileVisitResult.CONTINUE
-//                    }
-//
-//                    override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult {
-//                        return FileVisitResult.CONTINUE
-//                    }
-//                })
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//            println("读取错误: $folderPath")
-//        }
-//
-//        println(fileNames)
-//        return fileNames
-//    }
-
-
-//    fun checkFolder(folderPath: String): List<String> {
-//        val inputStream = object {}.javaClass.classLoader.getResourceAsStream(folderPath)
-//
-//        if (inputStream == null) {
-//            println("文件未找到: $folderPath")
-//            return emptyList()
-//        }
-//
-//        val fileNames = mutableListOf<String>()
-//
-//        try {
-//            // Read the contents of the resource directly
-//            BufferedReader(InputStreamReader(inputStream)).use { reader ->
-//                reader.lines().forEach { fileNames.add(it) }
-//            }
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//            println("读取错误: $folderPath")
-//        }
-//
-//        println(fileNames)
-//        return fileNames
-//    }
-
-
-//    fun checkFolder(folderPath: String): List<String> {
-//        val inputStream = object {}.javaClass.classLoader.getResourceAsStream(folderPath)
-//
-//        if (inputStream == null) {
-//            println("文件未找到: $folderPath")
-//            return emptyList()
-//        }
-//
-//        val fileNames = mutableListOf<String>()
-//
-//        try {
-//            // Use InputStreamReader and BufferedReader to read lines
-//            InputStreamReader(inputStream).use { inputStreamReader ->
-//                BufferedReader(inputStreamReader).use { reader ->
-//                    reader.lines().forEach { fileNames.add(it) }
-//                }
-//            }
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//            println("读取错误: $folderPath")
-//        }
-//
-//        println(fileNames)
-//        return fileNames
-//    }
 
     fun checkFolder(folderPath: String): List<String> {
         val folder = File(folderPath)
@@ -185,6 +110,11 @@ class MysDataUtil {
             val characterMap: LinkedHashMap<String, String> =
                 objectMapper.readValue(file, object : TypeReference<LinkedHashMap<String, String>>() {})
 
+            // 检查配置文件中是否已经存在角色
+            if (characterMap.containsKey(itemName)) {
+                return "201"
+            }
+
             val lastEntryWithValueOne = characterMap.entries.lastOrNull { it.value == attribute }
 
             return if (lastEntryWithValueOne != null) {
@@ -223,6 +153,23 @@ class MysDataUtil {
             e.printStackTrace()
         }
         return null
+    }
+
+
+    fun runGacha() {
+        initGacha()
+        lottery()
+    }
+
+    private fun initGacha() {
+        poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
+        upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
+        poolType = poolData["poolType"].textValue()
+
+        num5 = 0
+        num4 = 0
+        isUp5 = 0
+        lifeNum = 0
     }
 
 
@@ -286,12 +233,12 @@ class MysDataUtil {
     }
 
     fun findEachPoolName(): List<String> {
-        return getGachaData("resources/genShin/defSet/gacha/pool.json").fields().asSequence()
-            .map<MutableMap.MutableEntry<String, JsonNode>?, String> { it!!.key }.toList()
+        return upPoolData.fields().asSequence().map<MutableMap.MutableEntry<String, JsonNode>?, String> { it!!.key }
+            .toList()
     }
 
     fun findPoolData(name: String, id: String): Pair<String, JsonNode>? {
-        val iterator = getGachaData("resources/genShin/defSet/gacha/pool.json").fields()
+        val iterator = upPoolData.fields()
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val key = entry.key
@@ -308,104 +255,248 @@ class MysDataUtil {
     }
 
 
-    fun changePoolOpen(poolInfo: Pair<String, JsonNode>, poolFormat: String) {
+    fun changePoolOpen(poolInfo: Pair<String, JsonNode>, poolFormat: String, poolType: String) {
         val (name, _) = poolInfo
-        val objRoot = poolData as ObjectNode
+        val gachaJsonPath = "resources/genShin/defSet/gacha/gacha.json"
+        val poolDataChange = JacksonUtil.getJsonNode(gachaJsonPath)
+        val objRoot = poolDataChange as ObjectNode
         objRoot.put("openPool", name)
         objRoot.put("poolName", poolFormat)
-        val objectMapper = ObjectMapper()
-        objectMapper.writeValue(File("resources/genShin/defSet/gacha/gacha.json"), poolData)
+        objRoot.put("poolType", poolType)
+        objectMapper.writeValue(File(gachaJsonPath), poolDataChange)
     }
 
     data class PoolData(
-        // 卡池名称
-        val poolName: String,
-        // 4星up角色
-        val up4Role: JsonNode,
-        // 4星up武器
-        val up4Weapon: JsonNode,
-        // 3星常驻武器
-        val weapon3: JsonNode,
-        // 4星常驻角色
-        val role4: JsonNode,
-        // 4星常驻武器
-        val weapon4: JsonNode,
-        // 5星up角色
-        val up5: JsonNode,
-        // 5星常驻武器武器
-        val weapon5: JsonNode,
-        // 5星常驻角色
-        val role5: JsonNode,
+        // 当前卡池up的四星
+        val up4: JsonNode? = null,
+        // 当前卡池4星
+        val role4: JsonNode? = null,
+        // 当前卡池4星武器
+        val weapon4: JsonNode? = null,
+        // 当前卡池up的5星
+        val up5: JsonNode? = null,
+        // 当前卡池常驻5星
+        val five: JsonNode? = null,
+        // 当前卡池常驻5星武器
+        val fiveW: JsonNode? = null,
     )
 
-    private fun getDetailUp5(openPool: String, poolName: String, detailPoolInfo: JsonNode): JsonNode {
+    private fun getDetailUp5(openPool: String, poolName: String, detailPoolInfo: JsonNode): String {
         return if ('|' in openPool) {
             if (openPool.startsWith(poolName)) {
-                detailPoolInfo["up5"]
+                detailPoolInfo["up5"].textValue()
             } else {
-                detailPoolInfo["up5_2"]
+                detailPoolInfo["up5_2"].textValue()
             }
         } else {
-            detailPoolInfo["up5"]
+            detailPoolInfo["up5"].textValue()
         }
     }
 
-    fun mergeRole(poolData: JsonNode, version: String): Pair<ArrayNode, ArrayNode> {
-        val newAd = getGachaData("resources/genShin/defSet/gacha/newAdd.json")
-        val role4 = newAd[version]["role4"]
-        val role5 = newAd[version]["role5"]
+    fun mergeRole(version: String): Pair<ArrayNode, ArrayNode> {
+        val newAdd = getGachaData("resources/genShin/defSet/gacha/newAdd.json")
+        // 获取版本列表
+        val versions = newAdd.fieldNames().asSequence().toList()
+        // 获取当前版本的索引
+        val currentIndex = versions.indexOf(version)
+        // 获取前一个版本的索引
+        val previousIndex = if (currentIndex > 0) currentIndex - 1 else currentIndex
+        val previousVersion = versions.getOrNull(previousIndex)
+
         val role4Base = poolData["role4_base"]
         val role5Base = poolData["role5_base"]
         val addRole4 = role4Base as ArrayNode
         val addRole5 = role5Base as ArrayNode
-        role4.forEach {
+
+        val preRole4 = newAdd[previousVersion]["role4"]
+        preRole4.forEach {
             addRole4.add(it)
         }
-        role5.forEach {
+        val preRole5 = newAdd[previousVersion]["role5"]
+        preRole5.forEach {
             addRole5.add(it)
         }
 
         return Pair(addRole4, addRole5)
     }
 
-    fun probability() {
 
-    }
-
-    fun getGachaPool() {
+    fun getGachaPool(): PoolData {
         val openPool = poolData["openPool"].textValue()
         val poolName = poolData["poolName"].textValue()
-        val detailPoolInfo = getGachaData("resources/genShin/defSet/gacha/pool.json")
-        val poolInfo = detailPoolInfo[openPool]
+        val poolInfo = upPoolData[openPool]
 
+        // 获取到启用的卡池的up5
         val up5 = getDetailUp5(openPool, poolName, poolInfo)
+        // 将角色池的up5转换为jsonNode
+        val up5Node: JsonNode = TextNode.valueOf(up5)
+        val up5Array = mutableListOf(up5Node)
+        val up5ArrayNode: ArrayNode = objectMapper.valueToTree(up5Array)
 
-//        TODO 将当前卡池的新增4星合并到常驻中
 
-        println(
-            mergeRole(poolData, poolName.split("-")[1])
-        )
+        val mergeData = mergeRole(poolName.split("-")[1])
+        // 截止到前一个版本的4星角色作为常驻角色
+        val role4 = mergeData.first
+        val role5 = mergeData.second
 
-        val poolDataList = PoolData(
-            poolName = poolName,
-            up4Role = poolInfo["up4"],
-            up4Weapon = poolInfo["weapon4"],
-            weapon3 = poolData["weapon3"],
-            role4 = poolData["role4_base"],
-            weapon4 = poolData["weapon4"],
-            up5 = up5,
-            weapon5 = poolData["weapon5"],
-            role5 = poolData["role5_base"],
-        )
+        val openPoolName = poolData["openPool"].textValue()
 
+        var poolDataList = PoolData()
+        if (poolType == "weapon") {
+            poolDataList = PoolData(
+                up4 = upPoolData[openPoolName]["weapon4"],
+                up5 = upPoolData[openPoolName]["weapon5"],
+                role4 = role4,
+                weapon4 = upPoolData[openPoolName]["weapon4"],
+                five = poolData["weapon5"],
+            )
+        }
+        if (poolType == "role") {
+            poolDataList = PoolData(
+                up4 = upPoolData[openPoolName]["up4"],
+                up5 = up5ArrayNode,
+                role4 = role4,
+                weapon4 = poolData["weapon4"],
+                five = role5,
+            )
+        }
         println(poolDataList)
+        return poolDataList
+    }
+
+    fun probability(): Int {
+        var tmpChance5 = poolData["chance5"].asInt()
+        if (poolType == "role" || poolType == "permanent") {
+            if (num5 >= 90) {
+                tmpChance5 = 10000
+            } else if (num5 >= 74) {
+                tmpChance5 = 590 + (num5 - 74) * 530
+            } else {
+                if (num5 >= 60) {
+                    tmpChance5 = poolData["chance5"].asInt() + (num5 - 50) * 40
+                }
+            }
+        }
+
+        if (poolType == "weapon") {
+            if (num5 in 10..20) {
+                tmpChance5 += (num5 - 10) * 30
+            } else if (num5 >= 62) {
+                tmpChance5 += (num5 - 61) * 700
+            } else if (num5 >= 45) {
+                tmpChance5 += (num5 - 45) * 60
+            }
+        }
+
+        return tmpChance5
     }
 
     fun lottery() {
-        for (i in 1..10) {
-            val random = (1..100).random()
-            println(random)
+        nowPoolData = getGachaPool()
+        var num = 0
+        for (i in 1..1000) {
+            lottery5()
+            num += 1
+//            println(num)
         }
+    }
+
+    data class UserGacha(
+        // 抽中物品名称
+        val name: String? = null,
+        // 物品为等级
+        val star: Int? = null,
+        // 物品类型
+        val type: String? = null,
+        // 次数
+        val num: Int? = null,
+        // 是否为大保底
+        val isBigUp: Boolean? = null,
+        // 是否为定轨
+        val isBing: Boolean? = null,
+        // 是否已拥有
+        val have: Boolean? = null,
+    )
+
+    fun getBingWeapon(): String {
+        if (poolType != "weapon") return ""
+        val name = "薙草之稻光"
+        return name
+    }
+
+
+    fun lottery5(): Boolean {
+        var isBigUp = false
+        val tmpChance5 = probability()
+        var type = poolType
+        val random = (1..10000).random()
+
+        if (random > tmpChance5) {
+            num5 += 1
+            return false
+        }
+
+        val nowCardNum = num5 + 1
+        num5 = 0
+        num4 += 1
+        var tmpUp = poolData["wai"].asInt()
+
+        if (isUp5 == 1) {
+            tmpUp = 101
+        }
+
+        if (poolType == "permanent") tmpUp = 0
+
+        val tmpName: String
+        if (poolType == "weapon" && lifeNum >= 2) {
+            tmpName = getBingWeapon()
+            println("定轨了")
+            lifeNum = 0
+            isBing = true
+        } else if ((1..100).random() <= tmpUp) {
+            if (isUp5 == 1) isBigUp = true
+            isUp5 = 0
+            // 通过 Random 类生成一个随机索引
+            val randomIndex = Random().nextInt(nowPoolData.up5!!.size())
+
+            // 获取随机选择的武器
+            tmpName = nowPoolData.up5!![randomIndex].asText()
+            println("抽中up：$tmpName")
+
+            if (tmpName == getBingWeapon()) lifeNum = 0
+        } else {
+            if (poolType == "permanent") {
+                if ((1..100).random() <= 50) {
+                    tmpName = nowPoolData.five!![(0 until nowPoolData.five!!.size()).random()].asText()
+                    type = "role"
+                    println("抽中常驻up角色：$tmpName")
+                } else {
+                    tmpName = nowPoolData.fiveW!![(0 until nowPoolData.fiveW!!.size()).random()].asText()
+                    type = "weapon"
+                    println("抽中常驻up武器：$tmpName")
+                }
+            } else {
+                // 歪了大保底+1
+                println("nowPoolData.five:${nowPoolData.five}")
+                isUp5 = 1
+                tmpName = nowPoolData.five!![(0 until nowPoolData.five!!.size()).random()].asText()
+            }
+        }
+
+        if (tmpName != "薙草之稻光") lifeNum += 1
+        val userGacha = UserGacha(
+            name = tmpName,
+            type = type,
+            isBigUp = isBigUp,
+            num = nowCardNum,
+            star = 5,
+            isBing = isBing,
+            have = false
+        )
+
+        println(userGacha)
+
+        return true
     }
 
 

@@ -1,7 +1,7 @@
 package bot.demo.txbot.genShin.apps
 
 import bot.demo.txbot.common.utils.WebImgUtil
-import bot.demo.txbot.genShin.database.gacha.GaChaService
+import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.database.genshin.GenShinService
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -31,7 +31,7 @@ import java.util.regex.Matcher
 class GachaLog {
 
     @Autowired
-    lateinit var gaChaService: GaChaService
+    lateinit var gaChaLogService: GaChaLogService
 
     @Autowired
     lateinit var genShinService: GenShinService
@@ -67,7 +67,7 @@ class GachaLog {
                 val rankType = item["rank_type"].textValue()
                 val itemId = item["id"].textValue()
                 val getTime = item["time"].textValue()
-                gaChaService.insertByUid(uid, type, itemName, 0, itemType, rankType.toInt(), itemId, getTime)
+                gaChaLogService.insertByUid(uid, type, itemName, 0, itemType, rankType.toInt(), itemId, getTime)
             }
 
             Thread.sleep(500)
@@ -105,6 +105,7 @@ class GachaLog {
         val newItemType = newItem.split(" ")[1]
         when (val code = MysDataUtil().insertAttribute(newItemName, newItemType)) {
             "200" -> bot.sendMsg(event, "角色更新成功", false)
+            "201" -> bot.sendMsg(event, "这个角色已经存在了哦", false)
             "404" -> bot.sendMsg(event, "属性中没有 $newItemType 类型的属性哦", false)
             else -> bot.sendMsg(event, "未知错误: $code，请联系管理员查看", false)
         }
@@ -149,12 +150,12 @@ class GachaLog {
                     MysDataUtil().getEachData(gachaData, type)
                 }
 
-                sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gacha")
+                sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
             }
 
 
         } else {
-            val result = gaChaService.selectByUid(gameUid)
+            val result = gaChaLogService.selectByUid(gameUid)
 
             if (result == null) {
                 bot.sendMsg(event, "Uid为空或还没有绑定，请发送 #抽卡记录 进行绑定", false)
@@ -167,7 +168,7 @@ class GachaLog {
                 MysDataUtil().getEachData(gachaData, type)
             }
 
-            sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gacha")
+            sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
 
         }
 
@@ -213,6 +214,6 @@ class GachaLog {
 
         val authKeyB = mysApi.getData("authKeyB")
         getData(authKeyB)
-        gaChaService.selectByUid(gameUid)
+        gaChaLogService.selectByUid(gameUid)
     }
 }
