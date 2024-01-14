@@ -14,6 +14,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.io.IOException
 import java.util.*
+import kotlin.math.pow
 
 
 class MysDataUtil {
@@ -28,6 +29,7 @@ class MysDataUtil {
 
         var num5 = 0
         var num4 = 0
+        var isUp4 = 0
         var isUp5 = 0
         var lifeNum = 0
         var isBing = false
@@ -39,7 +41,7 @@ class MysDataUtil {
         var weapons: MutableList<HtmlEntity> = mutableListOf()
     }
 
-    val fileList: ArrayList<String> = arrayListOf()
+    private val fileList: ArrayList<String> = arrayListOf()
 
     // 获取历史抽卡数据
     fun getGachaData(filePath: String): JsonNode {
@@ -169,6 +171,7 @@ class MysDataUtil {
         num5 = 0
         num4 = 0
         isUp5 = 0
+        isUp4 = 0
         lifeNum = 0
     }
 
@@ -279,6 +282,8 @@ class MysDataUtil {
         val five: JsonNode? = null,
         // 当前卡池常驻5星武器
         val fiveW: JsonNode? = null,
+        // 3星常驻
+        var weapon3: JsonNode? = null,
     )
 
     private fun getDetailUp5(openPool: String, poolName: String, detailPoolInfo: JsonNode): String {
@@ -293,7 +298,7 @@ class MysDataUtil {
         }
     }
 
-    fun mergeRole(version: String): Pair<ArrayNode, ArrayNode> {
+    private fun mergeRole(version: String): Pair<ArrayNode, ArrayNode> {
         val newAdd = getGachaData("resources/genShin/defSet/gacha/newAdd.json")
         // 获取版本列表
         val versions = newAdd.fieldNames().asSequence().toList()
@@ -321,7 +326,7 @@ class MysDataUtil {
     }
 
 
-    fun getGachaPool(): PoolData {
+    private fun getGachaPool(): PoolData {
         val openPool = poolData["openPool"].textValue()
         val poolName = poolData["poolName"].textValue()
         val poolInfo = upPoolData[openPool]
@@ -360,11 +365,25 @@ class MysDataUtil {
                 five = role5,
             )
         }
+
+        if (poolType == "permanent") {
+            poolDataList = PoolData(
+                up4 = null,
+                up5 = null,
+                role4 = role4,
+                weapon4 = poolData["weapon4"],
+                five = role5,
+                fiveW = poolData["weapon5"],
+            )
+        }
+
+        poolDataList.weapon3 = poolData["weapon3"]
+
         println(poolDataList)
         return poolDataList
     }
 
-    fun probability(): Int {
+    private fun probability(): Int {
         var tmpChance5 = poolData["chance5"].asInt()
         if (poolType == "role" || poolType == "permanent") {
             if (num5 >= 90) {
@@ -394,10 +413,12 @@ class MysDataUtil {
     fun lottery() {
         nowPoolData = getGachaPool()
         var num = 0
-        for (i in 1..1000) {
-            lottery5()
+        for (i in 0..9) {
+            if (lottery5()) continue
+            if (lottery4()) continue
+            lottery3()
             num += 1
-//            println(num)
+
         }
     }
 
@@ -425,7 +446,7 @@ class MysDataUtil {
     }
 
 
-    fun lottery5(): Boolean {
+    private fun lottery5(): Boolean {
         var isBigUp = false
         val tmpChance5 = probability()
         var type = poolType
@@ -483,7 +504,7 @@ class MysDataUtil {
             }
         }
 
-        if (tmpName != "薙草之稻光") lifeNum += 1
+        if (tmpName != getBingWeapon()) lifeNum += 1
         val userGacha = UserGacha(
             name = tmpName,
             type = type,
@@ -497,6 +518,70 @@ class MysDataUtil {
         println(userGacha)
 
         return true
+    }
+
+    private fun lottery4(): Boolean {
+        var tmpChance4 = poolData["chance4"].asInt()
+        if (num4 >= 9) {
+            tmpChance4 += 10000
+        } else if (num4 >= 5) {
+            tmpChance4 += ((num4.toDouble() - 4).pow(2) * 500).toInt()
+        }
+
+        if ((1..10000).random() > tmpChance4) {
+            num4 += 1
+            return false
+        }
+
+        num4 = 0
+        var tmpUp = 50
+        if (poolType == "weapon") tmpUp = 75
+        if (isUp4 == 1) {
+            isUp4 = 0
+            tmpUp = 100
+        }
+
+        if (poolType == "permanent") tmpUp = 0
+        val type: String
+        val tmpName: String
+        if ((1..100).random() <= tmpUp) {
+            val randomIndex = Random().nextInt(nowPoolData.up4!!.size())
+
+            // 获取随机选择的武器
+            tmpName = nowPoolData.up4!![randomIndex].asText()
+            type = poolType
+        } else {
+            isUp4 = 1
+            if ((1..100).random() <= 50) {
+                tmpName = nowPoolData.role4!![(0 until nowPoolData.role4!!.size()).random()].asText()
+                type = "role"
+            } else {
+                tmpName = nowPoolData.weapon4!![(0 until nowPoolData.weapon4!!.size()).random()].asText()
+                type = "weapon"
+            }
+        }
+
+        val userGacha = UserGacha(
+            name = tmpName,
+            type = type,
+            star = 4,
+            have = false
+        )
+
+        println(userGacha)
+        return true
+    }
+
+    private fun lottery3() {
+        val tmpName = nowPoolData.weapon3!![(0 until nowPoolData.weapon3!!.size()).random()].asText()
+        val userGacha = UserGacha(
+            name = tmpName,
+            type = "weapon",
+            star = 3,
+            have = false
+        )
+
+        println(userGacha)
     }
 
 
