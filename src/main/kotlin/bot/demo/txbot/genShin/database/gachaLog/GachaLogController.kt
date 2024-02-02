@@ -20,6 +20,15 @@ class GachaLogController {
         val roles = gachaData.roles
         val weapons = gachaData.weapons
 
+        val data = listOf(permanents, roles, weapons)
+
+        data.forEach { itemList ->
+            val remainingItems = if (itemList.size % 6 != 0) 6 - itemList.size % 6 else 0
+            repeat(remainingItems) {
+                itemList.add(HtmlEntity(null, null, null, null, null, null, null))
+            }
+        }
+
         model.addAttribute("permanents", permanents)
         model.addAttribute("roles", roles)
         model.addAttribute("weapons", weapons)

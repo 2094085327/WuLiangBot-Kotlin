@@ -46,6 +46,7 @@ class GachaLog {
         // 本页最后一条数据的id
         var endId = "0"
         for (i in 1..10000) {
+
             val gachaData = mysApi.getData(
                 "gachaLog",
                 mutableMapOf(
@@ -57,6 +58,7 @@ class GachaLog {
                 )
             )
             val length = gachaData["data"]["list"].size()
+            if (length == 0) break
             endId = gachaData["data"]["list"][length - 1]["id"].textValue()
 
             for (item in gachaData["data"]["list"]) {
@@ -67,11 +69,10 @@ class GachaLog {
                 val rankType = item["rank_type"].textValue()
                 val itemId = item["id"].textValue()
                 val getTime = item["time"].textValue()
-                gaChaLogService.insertByUid(uid, type, itemName, 0, itemType, rankType.toInt(), itemId, getTime)
+                gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
             }
 
             Thread.sleep(500)
-            if (length < 20) break
         }
     }
 
@@ -95,6 +96,17 @@ class GachaLog {
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
         bot.sendMsg(event, "发送完毕", false)
+    }
+
+    fun getGachaLog(bot: Bot, event: AnyMessageEvent?, gameUid: String, imgName: String) {
+        val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+//        val pools = arrayOf("200", "301", "302","400")
+        val pools = arrayOf("200", "301", "302")
+        pools.forEach { type ->
+            MysDataUtil().getEachData(gachaData, type)
+        }
+
+        sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
     }
 
     @AnyMessageHandler
@@ -122,7 +134,7 @@ class GachaLog {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "记录查询(.*)")
     fun recordQuery(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        val gameUid = matcher?.group(1) ?: ""
+        val gameUid = matcher?.group(1)?.replace(" ", "") ?: ""
 
         if (gameUid.isEmpty()) {
             bot.sendMsg(event, "请使用 记录查询<你的Uid> 进行查询", false)
@@ -145,6 +157,7 @@ class GachaLog {
 
             } else {
                 val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+//                val pools = arrayOf("200", "301", "302","400")
                 val pools = arrayOf("200", "301", "302")
                 pools.forEach { type ->
                     MysDataUtil().getEachData(gachaData, type)
@@ -152,7 +165,7 @@ class GachaLog {
 
                 sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
             }
-
+            getGachaLog(bot, event, gameUid, imgName)
 
         } else {
             val result = gaChaLogService.selectByUid(gameUid)
@@ -163,6 +176,7 @@ class GachaLog {
             }
 
             val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+//            val pools = arrayOf("200", "301", "302","400")
             val pools = arrayOf("200", "301", "302")
             pools.forEach { type ->
                 MysDataUtil().getEachData(gachaData, type)
@@ -190,8 +204,6 @@ class GachaLog {
         val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         bot.sendMsg(event, sendMsg, false)
 
-        event?.let { println("it.messageId：${it.messageId}") }
-
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
             println("等待完毕")
@@ -201,12 +213,17 @@ class GachaLog {
         if (!checkQrCode) {
             bot.sendMsg(event, "二维码过期，请重新获取", false)
             return
+        } else {
+            bot.sendMsg(event, "登录成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待", false)
         }
+        // 删除缓存
+        MysDataUtil().deleteDataCache()
+        // 获取临时stoken
         val stoken = qrLogin.getStoken(qrCodeStatus)
         val accountInfo = qrLogin.getAccountInfo(stoken)["data"]["list"][0]
         val gameUid = accountInfo["game_uid"].textValue()
-//        val nickName = accountInfo["nickname"].textValue()
 
+        // 发起抽卡数据请求
         mysApi = MysApi(
             gameUid,
             "mid=${stoken["data"]["user_info"]["mid"].textValue()};stoken=${stoken["data"]["token"]["token"].textValue()}"
@@ -215,5 +232,6 @@ class GachaLog {
         val authKeyB = mysApi.getData("authKeyB")
         getData(authKeyB)
         gaChaLogService.selectByUid(gameUid)
+        getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
     }
 }

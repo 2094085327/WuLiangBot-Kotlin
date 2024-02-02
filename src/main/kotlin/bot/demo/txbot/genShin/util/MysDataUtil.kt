@@ -38,12 +38,19 @@ class MysDataUtil {
     object GachaData {
         var permanents: MutableList<HtmlEntity> = mutableListOf()
         var roles: MutableList<HtmlEntity> = mutableListOf()
+
+        //        var roles2: MutableList<HtmlEntity> = mutableListOf()
         var weapons: MutableList<HtmlEntity> = mutableListOf()
     }
 
     private val fileList: ArrayList<String> = arrayListOf()
 
-    // 获取历史抽卡数据
+    /**
+     * 获取历史抽卡数据
+     *
+     * @param filePath 文件路径
+     * @return 读取到的json数据
+     */
     fun getGachaData(filePath: String): JsonNode {
         val file = File(filePath)
         val objectMapper = ObjectMapper()
@@ -71,7 +78,7 @@ class MysDataUtil {
         }
     }
 
-    fun checkFolder(folderPath: String): List<String> {
+    private fun checkFolder(folderPath: String): List<String> {
         val folder = File(folderPath)
 
         if (!folder.exists() || !folder.isDirectory) {
@@ -96,14 +103,25 @@ class MysDataUtil {
     }
 
 
-    // 检查文件是否存在
+    /**
+     * 检查文件是否存在
+     *
+     * @param fileName 文件名称
+     * @return 文件状态与文件内容
+     */
     private fun checkFile(fileName: String): Pair<Boolean, String?> {
         val matchingFiles = fileList.filter { it.startsWith(fileName) }
         return if (matchingFiles.isNotEmpty()) Pair(true, matchingFiles[0]) else Pair(false, fileName)
     }
 
 
-    // 插入属性
+    /**
+     * 新角色添加属性
+     *
+     * @param itemName 角色名
+     * @param attribute 角色属性
+     * @return 返回添加状态
+     */
     fun insertAttribute(itemName: String, attribute: String): String {
         val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
         val file = File("resources/genShin/defSet/element/role.yaml")
@@ -138,7 +156,12 @@ class MysDataUtil {
         }
     }
 
-    // 获取角色属性
+    /**
+     * 读取角色属性
+     *
+     * @param roleName 角色名字
+     * @return null 或 角色属性
+     */
     private fun getRoleAttribute(roleName: String): String? {
         val objectMapper = ObjectMapper(YAMLFactory())
         val file = File("resources/genShin/defSet/element/role.yaml")
@@ -157,12 +180,20 @@ class MysDataUtil {
         return null
     }
 
-
-    fun runGacha() {
+    /**
+     * 抽卡主程序
+     *
+     * @return
+     */
+    fun runGacha(): MutableList<UserGacha?> {
         initGacha()
-        lottery()
+        return lottery()
     }
 
+    /**
+     * 初始化抽卡数据
+     *
+     */
     private fun initGacha() {
         poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
         upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
@@ -175,8 +206,42 @@ class MysDataUtil {
         lifeNum = 0
     }
 
+    /**
+     * 将卡池301和卡池400数据合并
+     *
+     * @param array1 卡池1
+     * @param array2 卡池2
+     * @return 返回合并后的数据
+     */
+    private fun mergeJsonArrays(array1: JsonNode, array2: JsonNode): JsonNode {
+        val resultArray = mutableListOf<JsonNode>()
+        resultArray.addAll(array1)
+        resultArray.addAll(array2)
+        return ObjectMapper().valueToTree(resultArray)
+    }
 
-    // 获取每个卡池的数据
+    /**
+     * 将合并后的Json数据按照时间进行排序
+     *
+     * @param jsonArray 传入的待排序的数据
+     * @return 返回排序后的数据
+     */
+    private fun sortJsonArrayByTime(jsonArray: JsonNode): JsonNode {
+        if (jsonArray.isArray) {
+            val array = jsonArray as ArrayNode
+            val sortedArray = array.sortedByDescending { it["getTime"].asText() }.reversed()
+            return ObjectMapper().valueToTree(sortedArray)
+        }
+        return jsonArray
+    }
+
+
+    /**
+     * 获取每个卡池的数据
+     *
+     * @param data 获取到的数据
+     * @param gachaType 需要处理的卡池类型
+     */
     fun getEachData(data: JsonNode, gachaType: String) {
         val folderPath = when (gachaType) {
             "200" -> "resources/genShin/GenShinImg/permanents/"
@@ -195,18 +260,16 @@ class MysDataUtil {
         itemList.clear()
         fileList.addAll(checkFolder(folderPath))
 
-        val gachaEmpty = HtmlEntity(
-            itemId = null,
-            itemName = null,
-            itemType = null,
-            itemAttribute = null,
-            getTime = null,
-            times = 0,
-            isEmpty = false,
-        )
+        var getData = data["gachaLog"][gachaType]
 
-        val getData = data["gachaLog"][gachaType]
+        if (gachaType == "301") {
+            val mergedArray = mergeJsonArrays(data["gachaLog"]["301"], data["gachaLog"]["400"])
+            getData = sortJsonArrayByTime(mergedArray)
+        }
 
+
+        var unFiveStarTimes = 0
+        // TODO 在最后一次抽卡后，如果不是五星，将unFiveStarTimes的次数作为已抽卡但为出金的次数
         getData.forEach { array ->
             if (array["rankType"].asInt() == 5) {
                 val itemType = array["itemType"].textValue()
@@ -221,18 +284,17 @@ class MysDataUtil {
                     itemType = itemType,
                     itemAttribute = roleAttribute,
                     getTime = array["getTime"].textValue(),
-                    times = array["times"].asInt(),
+                    times = unFiveStarTimes + 1,
                     isEmpty = isEmpty
                 )
 
                 itemList.add(gachaEntity)
+                unFiveStarTimes = 0
+            } else {
+                unFiveStarTimes += 1
             }
         }
-
-        val remainingItems = if (itemList.size % 6 != 0) 6 - itemList.size % 6 else 0
-        repeat(remainingItems) {
-            itemList.add(gachaEmpty)
-        }
+        itemList.reverse()
     }
 
     fun findEachPoolName(): List<String> {
@@ -286,6 +348,14 @@ class MysDataUtil {
         var weapon3: JsonNode? = null,
     )
 
+    /**
+     * 获取到当前卡池的具体5星
+     *
+     * @param openPool 当前开放的卡池
+     * @param poolName 卡池名称
+     * @param detailPoolInfo 具体的卡池数据
+     * @return 返回获取到的5星
+     */
     private fun getDetailUp5(openPool: String, poolName: String, detailPoolInfo: JsonNode): String {
         return if ('|' in openPool) {
             if (openPool.startsWith(poolName)) {
@@ -410,17 +480,27 @@ class MysDataUtil {
         return tmpChance5
     }
 
-    fun lottery() {
+    private fun lottery(): MutableList<UserGacha?> {
+        val itemList: MutableList<UserGacha?> = mutableListOf()
         nowPoolData = getGachaPool()
-        var num = 0
-        for (i in 0..9) {
-            if (lottery5()) continue
-            if (lottery4()) continue
-            lottery3()
-            num += 1
 
+        for (i in 1..10) {
+            val lottery5 = lottery5()
+            if (lottery5.first) {
+                itemList.add(lottery5.second)
+                continue
+            }
+            val lottery4 = lottery4()
+            if (lottery4.first) {
+                itemList.add(lottery4.second)
+                continue
+            }
+            itemList.add(lottery3())
         }
+        println(itemList)
+        return itemList
     }
+
 
     data class UserGacha(
         // 抽中物品名称
@@ -446,7 +526,7 @@ class MysDataUtil {
     }
 
 
-    private fun lottery5(): Boolean {
+    private fun lottery5(): Pair<Boolean, UserGacha?> {
         var isBigUp = false
         val tmpChance5 = probability()
         var type = poolType
@@ -454,7 +534,7 @@ class MysDataUtil {
 
         if (random > tmpChance5) {
             num5 += 1
-            return false
+            return Pair(false, null)
         }
 
         val nowCardNum = num5 + 1
@@ -515,12 +595,10 @@ class MysDataUtil {
             have = false
         )
 
-        println(userGacha)
-
-        return true
+        return Pair(true, userGacha)
     }
 
-    private fun lottery4(): Boolean {
+    private fun lottery4(): Pair<Boolean, UserGacha?> {
         var tmpChance4 = poolData["chance4"].asInt()
         if (num4 >= 9) {
             tmpChance4 += 10000
@@ -530,7 +608,7 @@ class MysDataUtil {
 
         if ((1..10000).random() > tmpChance4) {
             num4 += 1
-            return false
+            return Pair(false, null)
         }
 
         num4 = 0
@@ -568,20 +646,22 @@ class MysDataUtil {
             have = false
         )
 
-        println(userGacha)
-        return true
+        return Pair(true, userGacha)
     }
 
-    private fun lottery3() {
+    /**
+     * 抽取3星
+     *
+     * @return UserGacha 抽取到的3星的数据
+     */
+    private fun lottery3(): UserGacha {
         val tmpName = nowPoolData.weapon3!![(0 until nowPoolData.weapon3!!.size()).random()].asText()
-        val userGacha = UserGacha(
+        return UserGacha(
             name = tmpName,
             type = "weapon",
             star = 3,
             have = false
         )
-
-        println(userGacha)
     }
 
 

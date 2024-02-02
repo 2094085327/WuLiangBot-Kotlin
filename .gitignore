@@ -35,3 +35,4 @@ build/
 /src/main/resources/application-prod.yml
 /resources/imageCache/
 /resources/gachaCache/
+/src/main/kotlin/bot/demo/txbot/genShin/database/gachaLog2/

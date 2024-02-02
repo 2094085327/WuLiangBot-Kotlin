@@ -28,6 +28,7 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
             "100" to "新手祈愿",
             "200" to "常驻祈愿",
             "301" to "角色活动祈愿",
+            "400" to "角色活动祈愿2",
             "302" to "武器活动祈愿"
         ),
     )
@@ -38,10 +39,10 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         if (dataSize == 0) return null
 
 
-        val types = listOf(200, 301, 302)
+        val types = listOf(200, 301, 302, 400)
         val gachaLogMap = mutableMapOf<String, List<GaChaLogEntity?>>()
         for (type in types) {
-            val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid).eq("type", type).orderByDesc("get_time")
+            val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid).eq("type", type).orderByAsc("get_time")
             val gachaBefore = gaChaLogMapper.selectList(queryWrapper) ?: mutableListOf()
             gachaLogMap[type.toString()] = gachaBefore
         }
@@ -69,7 +70,6 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         uid: String,
         type: String,
         itemName: String,
-        times: Int,
         itemType: String,
         rankType: Int,
         itemId: String,
@@ -79,8 +79,6 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
             uid = uid,
             gachaType = type,
             itemName = itemName,
-            times = times,
-            updateTime = System.currentTimeMillis().toString(),
             itemType = itemType,
             rankType = rankType,
             itemId = itemId,

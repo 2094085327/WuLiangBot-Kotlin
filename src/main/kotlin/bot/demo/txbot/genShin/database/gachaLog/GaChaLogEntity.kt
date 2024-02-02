@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.annotation.*
  *@Date 2023/10/3 21:51
  *@User 86188
  */
-@TableName("gachaloginfo")
+@TableName("gachaloginfo2")
 data class GaChaLogEntity(
     @TableId(value = "id", type = IdType.AUTO)
     private val id: Int? = null,
@@ -34,13 +34,13 @@ data class GaChaLogEntity(
     /**
      * 所抽次数
      */
-    @TableField(value = "times") val times: Int? = null,
+//    @TableField(value = "times") val times: Int? = null,
 
     /**
      * 更新时间
      */
-    @TableField(value = "update_time")
-    val updateTime: String? = null,
+//    @TableField(value = "update_time")
+//    val updateTime: String? = null,
 
     /**
      * 物品类型

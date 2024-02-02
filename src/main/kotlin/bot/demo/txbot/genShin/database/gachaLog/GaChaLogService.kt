@@ -22,7 +22,6 @@ interface GaChaLogService : IService<GaChaLogEntity?> {
         uid: String,
         type: String,
         itemName: String,
-        times: Int = 0,
         itemType: String,
         rankType: Int,
         itemId: String,

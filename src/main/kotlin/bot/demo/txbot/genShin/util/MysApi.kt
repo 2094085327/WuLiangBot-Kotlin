@@ -1,10 +1,9 @@
 package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.HttpUtil
+import bot.demo.txbot.common.utils.JacksonUtil
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-
-import bot.demo.txbot.common.utils.JacksonUtil
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*
@@ -199,7 +198,7 @@ class MysApi(
 
     private fun getServerMys(): String {
         return when (uid[0]) {
-            '1', '2' -> "cn_gf01" // 官服
+            '1', '2', '3' -> "cn_gf01" // 官服
             '5' -> "cn_qd01" // B服
             '6' -> "os_usa" // 美服
             '7' -> "os_euro" // 欧服
