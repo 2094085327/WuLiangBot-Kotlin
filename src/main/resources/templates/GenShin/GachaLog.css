@@ -1,6 +1,14 @@
 @font-face {
     font-family: 'YaHei';
-    src: url('static/ttf/微软雅黑.otf') format('opentype')
+    /*src: url('../ttf/微软雅黑.otf') format('opentype');*/
+    src: url('../ttf/HYQianGuang.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    font-family: "YaHei", serif
 }
 
 body {
@@ -8,7 +16,9 @@ body {
     flex-direction: column;
     background-color: #a3a3a3;
     margin: 0;
-    font-family: "YaHei", sans-serif
+    font-family: "YaHei", sans-serif;
+    align-items: center;
+    transform: scale(0.5)
 }
 
 .header {
@@ -127,3 +137,47 @@ body {
     object-fit: cover;
     position: absolute;
 }
+
+/*.weaponContainer {*/
+/*    position: relative; !* 设置容器为相对定位 *!*/
+/*    !*width: 130px; !* 设置容器宽度为第一张图片的宽度 *!*!*/
+/*    height: 260px; !* 设置容器高度为第一张图片的高度 *!*/
+/*    background: #ffffff;*/
+/*    border-radius: 10px;*/
+/*}*/
+/*.backImgWeapon{*/
+/*    height: 68%;*/
+/*    margin: 10px;*/
+/*    border-radius: 10px;*/
+/*}*/
+
+.weaponContainer {
+    display: flex;
+    /*align-items: center;*/
+    justify-content: center;
+    position: relative;
+    height: 260px;
+    width: 195px;
+    background: #ffffff;
+    border-radius: 10px;
+}
+
+.backImgWeapon {
+    height: 68%;
+    margin: 10px;
+    border-radius: 10px;
+    max-width: 100%; /* 如果需要限制宽度，可以设置 max-width */
+}
+
+.weaponImg {
+    position: absolute;
+    height: auto; /* 设置高度为自适应 */
+    max-width: 83%; /* 限制宽度不超过父容器宽度 */
+    max-height: 63%; /* 限制高度不超过父容器高度 */
+    left: 50%; /* 设置左边距为容器宽度的一半 */
+    top: 40%; /* 设置顶边距为容器高度的一半 */
+    transform: translate(-50%, -50%); /* 使用transform来调整位置，保持在容器的正中心 */
+    margin: 0;
+    object-fit: contain; /* 控制图片如何适应容器 */
+}
+

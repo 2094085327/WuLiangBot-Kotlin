@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.Browser
+import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
@@ -12,7 +13,6 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -20,9 +20,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import java.util.*
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
@@ -165,9 +163,24 @@ class WebImgUtil {
     }
 
 
+    /**
+     * 从网页获取截图
+     *
+     * @param url 网址链接
+     * @param channel 是否为频道信息
+     * @param element 指定截图元素
+     * @param imgName 图片名称
+     * @param imgPath 图片存储路径
+     * @param width 图片宽度
+     * @param height 图片高度
+     * @param scale 缩放等级
+     * @param sleepTime 等待时间
+     * @return Base64链接
+     */
     fun getImgFromWeb(
         url: String,
         channel: Boolean,
+        element: String? = null,
         imgName: String? = null,
         imgPath: String? = null,
         width: Int? = null,
@@ -180,11 +193,21 @@ class WebImgUtil {
             val page: Page = browser.newPage()
             val realImgName = imgName ?: System.currentTimeMillis().toString()
             page.navigate(url)
-
             var buffer = page.screenshot(
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
+            if(element != null){
+                page.waitForSelector(element)
+                val body: ElementHandle = page.querySelector(element)!!
+
+                // 截图
+                buffer = body.screenshot(
+                    ElementHandle.ScreenshotOptions()
+                )
+            }
+
+
             if (scale != null) {
                 val thumbnailBuilder = Thumbnails.of(buffer.inputStream()).scale(scale).asBufferedImage()
                 buffer = bufferedImageToByteArray(thumbnailBuilder, "png")

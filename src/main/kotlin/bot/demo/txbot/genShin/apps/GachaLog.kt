@@ -85,6 +85,15 @@ class GachaLog {
         System.gc()
     }
 
+    /**
+     * 发送非缓存截图
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param imgName 图片名
+     * @param webUrl 待截图地址
+     * @param scale 缩放等级
+     */
     private fun sendNewImage(
         bot: Bot,
         event: AnyMessageEvent?,
@@ -92,15 +101,23 @@ class GachaLog {
         webUrl: String,
         scale: Double? = null
     ) {
-        val imgUrl = webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, channel = true, scale = scale)
+        val imgUrl =
+            webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
         bot.sendMsg(event, "发送完毕", false)
     }
 
+    /**
+     * 获取抽卡记录
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param gameUid 游戏Uid
+     * @param imgName 图片名称
+     */
     fun getGachaLog(bot: Bot, event: AnyMessageEvent?, gameUid: String, imgName: String) {
         val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
-//        val pools = arrayOf("200", "301", "302","400")
         val pools = arrayOf("200", "301", "302")
         pools.forEach { type ->
             MysDataUtil().getEachData(gachaData, type)
@@ -156,16 +173,9 @@ class GachaLog {
                 webImgUtil.sendCachedImage(bot, event, imgName, matchCache)
 
             } else {
-                val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
-//                val pools = arrayOf("200", "301", "302","400")
-                val pools = arrayOf("200", "301", "302")
-                pools.forEach { type ->
-                    MysDataUtil().getEachData(gachaData, type)
-                }
-
-                sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+                getGachaLog(bot, event, gameUid, imgName)
             }
-            getGachaLog(bot, event, gameUid, imgName)
+
 
         } else {
             val result = gaChaLogService.selectByUid(gameUid)
@@ -174,15 +184,7 @@ class GachaLog {
                 bot.sendMsg(event, "Uid为空或还没有绑定，请发送 #抽卡记录 进行绑定", false)
                 return
             }
-
-            val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
-//            val pools = arrayOf("200", "301", "302","400")
-            val pools = arrayOf("200", "301", "302")
-            pools.forEach { type ->
-                MysDataUtil().getEachData(gachaData, type)
-            }
-
-            sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+            getGachaLog(bot, event, gameUid, imgName)
 
         }
 

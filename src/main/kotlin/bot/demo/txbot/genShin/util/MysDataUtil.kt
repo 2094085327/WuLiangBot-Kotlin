@@ -24,7 +24,7 @@ class MysDataUtil {
         const val CACHE_PATH = "resources/gachaCache"
         var poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
         var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
-        var poolType = poolData["poolType"].textValue()
+        var poolType: String = poolData["poolType"].textValue()
         var nowPoolData: PoolData = PoolData()
 
         var num5 = 0
@@ -38,8 +38,6 @@ class MysDataUtil {
     object GachaData {
         var permanents: MutableList<HtmlEntity> = mutableListOf()
         var roles: MutableList<HtmlEntity> = mutableListOf()
-
-        //        var roles2: MutableList<HtmlEntity> = mutableListOf()
         var weapons: MutableList<HtmlEntity> = mutableListOf()
     }
 
@@ -89,7 +87,6 @@ class MysDataUtil {
         val fileNames = mutableListOf<String>()
 
         try {
-            // 使用 File 对象构造 BufferedReader
             folder.listFiles()?.forEach { file ->
                 fileNames.add(file.name)
             }
@@ -243,22 +240,24 @@ class MysDataUtil {
      * @param gachaType 需要处理的卡池类型
      */
     fun getEachData(data: JsonNode, gachaType: String) {
-        val folderPath = when (gachaType) {
-            "200" -> "resources/genShin/GenShinImg/permanents/"
-            "301" -> "resources/genShin/GenShinImg/role/"
-            "302" -> "resources/genShin/GenShinImg/weapons/"
+        val folderPaths = when (gachaType) {
+            "200" -> listOf("resources/genShin/GenShinImg/role/", "resources/genShin/GenShinImg/weapons/")
+            "301" -> listOf("resources/genShin/GenShinImg/role/")
+            "302" -> listOf("resources/genShin/GenShinImg/weapons/")
             else -> return
         }
-
         val itemList = when (gachaType) {
             "200" -> GachaData.permanents
             "301" -> GachaData.roles
             "302" -> GachaData.weapons
             else -> return
         }
-
         itemList.clear()
-        fileList.addAll(checkFolder(folderPath))
+        folderPaths.forEach { folderPath ->
+            val items = checkFolder(folderPath)
+            fileList.addAll(items)
+        }
+//        fileList.addAll(checkFolder(folderPath))
 
         var getData = data["gachaLog"][gachaType]
 
