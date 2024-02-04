@@ -39,7 +39,16 @@ class MysDataUtil {
         var permanents: MutableList<HtmlEntity> = mutableListOf()
         var roles: MutableList<HtmlEntity> = mutableListOf()
         var weapons: MutableList<HtmlEntity> = mutableListOf()
+        var roleCount: MutableList<CountDetail> = mutableListOf()
+        var weaponCount: MutableList<CountDetail> = mutableListOf()
+        var permanentCount: MutableList<CountDetail> = mutableListOf()
     }
+
+    data class CountDetail(
+        val alreadyCount: Int,
+        val ave: String,
+        val allCount: Int
+    )
 
     private val fileList: ArrayList<String> = arrayListOf()
 
@@ -252,12 +261,19 @@ class MysDataUtil {
             "302" -> GachaData.weapons
             else -> return
         }
+
+        val countList = when (gachaType) {
+            "200" -> GachaData.permanentCount
+            "301" -> GachaData.roleCount
+            "302" -> GachaData.weaponCount
+            else -> return
+        }
+
         itemList.clear()
         folderPaths.forEach { folderPath ->
             val items = checkFolder(folderPath)
             fileList.addAll(items)
         }
-//        fileList.addAll(checkFolder(folderPath))
 
         var getData = data["gachaLog"][gachaType]
 
@@ -268,7 +284,7 @@ class MysDataUtil {
 
 
         var unFiveStarTimes = 0
-        // TODO 在最后一次抽卡后，如果不是五星，将unFiveStarTimes的次数作为已抽卡但为出金的次数
+        val timesList = mutableListOf<Int>()
         getData.forEach { array ->
             if (array["rankType"].asInt() == 5) {
                 val itemType = array["itemType"].textValue()
@@ -288,11 +304,19 @@ class MysDataUtil {
                 )
 
                 itemList.add(gachaEntity)
+                timesList.add(unFiveStarTimes)
                 unFiveStarTimes = 0
             } else {
                 unFiveStarTimes += 1
             }
         }
+        countList.add(
+            CountDetail(
+                alreadyCount = unFiveStarTimes,
+                ave = String.format("%.1f", timesList.average()),
+                allCount = getData.size()
+            )
+        )
         itemList.reverse()
     }
 

@@ -6,11 +6,33 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <link rel="stylesheet" type="text/css" th:href="@{/css/GachaLog.css}">
         <link rel="stylesheet" type="text/css" href="/static/css/GachaLog.css">
+        <link rel="stylesheet" type="text/css" href="GachaLog.css">
     </head>
     <body>
         <div class="gachaAll">
             <div class="background">
-                <span class="gachaTypeText">角色UP祈愿</span>
+                <div class="gachaCount">
+                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
+                    <div class="countText" th:each="count: ${roleCount}">
+                        <span class="gachaTitle">角色UP祈愿</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <div class="countDetail">
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.ave}">65</span>
+                                <span class="countText">平均出金</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.allCount}">65</span>
+                                <span class="countText">总抽卡数</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum">65</span>
+                                <span class="countText">限定/五星</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
                 <div class="eachCard">
                     <div class="eachData">
                         <div th:each="role: ${roles}" class="eachOne">
@@ -42,7 +64,28 @@
             </div>
 
             <div class="background">
-                <span class="gachaTypeText">武器UP祈愿</span>
+                <div class="gachaCount">
+                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
+                    <div class="countText"  th:each="count: ${weaponCount}">
+                        <span class="gachaTitle">武器UP祈愿</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <div class="countDetail">
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.ave}">65</span>
+                                <span class="countText">平均出金</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.allCount}">65</span>
+                                <span class="countText">总抽卡数</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum">65</span>
+                                <span class="countText">限定/五星</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
                 <div class="eachCard">
                     <div class="eachData">
                         <div th:each="weapon : ${weapons}" class="eachOne">
@@ -69,7 +112,28 @@
             </div>
 
             <div class="background">
-                <span class="gachaTypeText">常驻祈愿</span>
+                <div class="gachaCount">
+                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
+                    <div class="countText"  th:each="count: ${permanentCount}">
+                        <span class="gachaTitle">常驻祈愿</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <div class="countDetail">
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.ave}">65</span>
+                                <span class="countText">平均出金</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.allCount}">65</span>
+                                <span class="countText">总抽卡数</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum">65</span>
+                                <span class="countText">限定/五星</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
                 <div class="eachCard">
                     <div class="eachData">
                         <div th:each="permanent : ${permanents}" class="eachOne">

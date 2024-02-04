@@ -42,6 +42,21 @@ class GachaLog {
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
 
+    fun getData(authKeyB: JsonNode) {
+        val idList = listOf(301, 302, 200)
+        for (id in idList) {
+            gachaThread(authKeyB, id)
+            println("卡池：$id 分析完毕")
+        }
+        System.gc()
+    }
+
+    /**
+     * 获取抽卡数据进程
+     *
+     * @param authKeyB 用户凭证
+     * @param gachaId 卡池类型
+     */
     fun gachaThread(authKeyB: JsonNode, gachaId: Int) {
         // 本页最后一条数据的id
         var endId = "0"
@@ -74,15 +89,6 @@ class GachaLog {
 
             Thread.sleep(500)
         }
-    }
-
-    fun getData(authKeyB: JsonNode) {
-        val idList = listOf(301, 302, 200)
-        for (id in idList) {
-            gachaThread(authKeyB, id)
-            println("卡池：$id 分析完毕")
-        }
-        System.gc()
     }
 
     /**
