@@ -11,11 +11,12 @@
     <body>
         <div class="gachaAll">
             <div class="background">
-                <div class="gachaCount">
-                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
-                    <div class="countText" th:each="count: ${roleCount}">
+                <div class="gachaCount" th:each="count: ${roleCount}">
+                    <img class="luckImg" th:src="@{'/images/sources/'+${count.luckImg}+'.webp'}" alt="">
+                    <div class="countText">
                         <span class="gachaTitle">角色UP祈愿</span>
-                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes"
+                                                                  th:text="${count.alreadyCount}"> 45 </span> 次</span>
                         <div class="countDetail">
                             <div class="eachCount">
                                 <span class="countNum" th:text="${count.ave}">65</span>
@@ -26,7 +27,7 @@
                                 <span class="countText">总抽卡数</span>
                             </div>
                             <div class="eachCount">
-                                <span class="countNum">65</span>
+                                <span class="countNum" th:text="${count.fiveUpCount}">65</span>
                                 <span class="countText">限定/五星</span>
                             </div>
                         </div>
@@ -47,6 +48,8 @@
                                              th:alt="${role.itemName}">
                                         <img class="overlay-image" th:src="@{'/images/sources/角色框.png'}"
                                              alt="Second Image">
+                                        <img class="waiImg" th:if="${!role.isUp}" th:src="@{'/images/sources/歪.webp'}"
+                                             alt="Second Image">
                                     </div>
                                     <div th:with="percentage=${(role.times / 90.0) * 100}" class="progress-container">
                                         <div th:text="${role.times} + '抽'" class="getTimes"></div>
@@ -64,11 +67,12 @@
             </div>
 
             <div class="background">
-                <div class="gachaCount">
-                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
-                    <div class="countText"  th:each="count: ${weaponCount}">
+                <div class="gachaCount" th:each="count: ${weaponCount}">
+                    <img class="luckImg" th:src="@{'/images/sources/'+${count.luckImg}+'.webp'}" alt="">
+                    <div class="countText">
                         <span class="gachaTitle">武器UP祈愿</span>
-                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes"
+                                                                  th:text="${count.alreadyCount}"> 45 </span> 次</span>
                         <div class="countDetail">
                             <div class="eachCount">
                                 <span class="countNum" th:text="${count.ave}">65</span>
@@ -79,7 +83,7 @@
                                 <span class="countText">总抽卡数</span>
                             </div>
                             <div class="eachCount">
-                                <span class="countNum">65</span>
+                                <span class="countNum" th:text="${count.fiveUpCount}">65</span>
                                 <span class="countText">限定/五星</span>
                             </div>
                         </div>
@@ -96,6 +100,8 @@
                                     <img class="weaponImg"
                                          th:src="@{${weapon.isEmpty() ? 'images/weapons/' + weapon.itemName  : '/images/role/default.png' }}"
                                          alt="">
+                                    <img class="waiImg" th:if="${!weapon.isUp}" th:src="@{'/images/sources/歪.webp'}"
+                                         alt="Second Image">
                                     <div th:with="percentage=${(weapon.times / 90.0) * 100}" class="progress-container">
                                         <div th:text="${weapon.times} + '抽'" class="getTimes"></div>
                                         <div th:style="'width: ' + ${percentage} + '%; background-color: ' + (${percentage} < 25 ? 'rgba(0,128,0, 0.5);' : (${percentage} < 50 ? 'rgba(255, 255, 0, 0.5);' : (${percentage} < 75 ? 'rgba(255,165,0,0.5);' : 'rgba(255, 0, 0, 0.5);')))"
@@ -112,11 +118,12 @@
             </div>
 
             <div class="background">
-                <div class="gachaCount">
-                    <img class="luckImg" th:src="@{'/images/sources/吉.png'}" alt="">
-                    <div class="countText"  th:each="count: ${permanentCount}">
+                <div class="gachaCount" th:each="count: ${permanentCount}">
+                    <img class="luckImg" th:src="@{'/images/sources/'+${count.luckImg}+'.webp'}" alt="">
+                    <div class="countText">
                         <span class="gachaTitle">常驻祈愿</span>
-                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes" th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes"
+                                                                  th:text="${count.alreadyCount}"> 45 </span> 次</span>
                         <div class="countDetail">
                             <div class="eachCount">
                                 <span class="countNum" th:text="${count.ave}">65</span>
@@ -127,8 +134,8 @@
                                 <span class="countText">总抽卡数</span>
                             </div>
                             <div class="eachCount">
-                                <span class="countNum">65</span>
-                                <span class="countText">限定/五星</span>
+                                <span class="countNum" th:text="${count.fiveUpCount}">65</span>
+                                <span class="countText">五星</span>
                             </div>
                         </div>
 

@@ -7,5 +7,6 @@ data class HtmlEntity(
     val itemAttribute: String?,
     val getTime: String?,
     val times: Int?,
-    val isEmpty: Boolean?
+    val isEmpty: Boolean?,
+    var isUp:Boolean?
 )

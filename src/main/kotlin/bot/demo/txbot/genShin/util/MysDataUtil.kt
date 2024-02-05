@@ -13,6 +13,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.pow
 
@@ -47,7 +48,9 @@ class MysDataUtil {
     data class CountDetail(
         val alreadyCount: Int,
         val ave: String,
-        val allCount: Int
+        val allCount: Int,
+        val fiveUpCount: String,
+        val luckImg: String
     )
 
     private val fileList: ArrayList<String> = arrayListOf()
@@ -104,7 +107,6 @@ class MysDataUtil {
             println("读取错误: $folderPath")
         }
 
-        println(fileNames)
         return fileNames
     }
 
@@ -270,6 +272,7 @@ class MysDataUtil {
         }
 
         itemList.clear()
+        countList.clear()
         folderPaths.forEach { folderPath ->
             val items = checkFolder(folderPath)
             fileList.addAll(items)
@@ -284,6 +287,7 @@ class MysDataUtil {
 
 
         var unFiveStarTimes = 0
+        var fiveCount = 0
         val timesList = mutableListOf<Int>()
         getData.forEach { array ->
             if (array["rankType"].asInt() == 5) {
@@ -300,8 +304,31 @@ class MysDataUtil {
                     itemAttribute = roleAttribute,
                     getTime = array["getTime"].textValue(),
                     times = unFiveStarTimes + 1,
-                    isEmpty = isEmpty
+                    isEmpty = isEmpty,
+                    isUp = false
                 )
+
+                val upPoolName = findPoolName(array["getTime"].textValue())
+                val upData = upPoolData[upPoolName]
+                if (gachaType == "301") {
+                    if (upData["up5"].asText() == itemName) {
+                        gachaEntity.isUp = true
+                        fiveCount += 1
+                    } else {
+                        if (upData.has("up5_2") && upData["up5_2"].asText() == itemName) {
+                            gachaEntity.isUp = true
+                            fiveCount += 1
+                        }
+                    }
+                } else {
+                    for (weapon5 in upData["weapon5"]) {
+                        if (weapon5.asText() == itemName) {
+                            gachaEntity.isUp = true
+                            fiveCount += 1
+                            break
+                        }
+                    }
+                }
 
                 itemList.add(gachaEntity)
                 timesList.add(unFiveStarTimes)
@@ -310,14 +337,61 @@ class MysDataUtil {
                 unFiveStarTimes += 1
             }
         }
+        val luckImg = getLuckImg(itemList.size.toDouble(), fiveCount.toDouble(), timesList.average(), gachaType)
+
         countList.add(
             CountDetail(
                 alreadyCount = unFiveStarTimes,
                 ave = String.format("%.1f", timesList.average()),
-                allCount = getData.size()
+                allCount = getData.size(),
+                fiveUpCount = if (gachaType == "200") itemList.size.toString() else "${fiveCount}/${itemList.size}",
+                luckImg = luckImg
             )
         )
         itemList.reverse()
+    }
+
+    /**
+     * 查找当前时间所在的卡池
+     *
+     * @param targetTimeString 目标时间
+     * @return 返回找到的卡池名称
+     */
+    private fun findPoolName(targetTimeString: String): String? {
+        val targetTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(targetTimeString)
+
+        for ((key, value) in upPoolData.fields()) {
+            val endTimeString = value["endTime"].asText()
+            val endTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(endTimeString)
+
+            if (!targetTime.after(endTime)) return key
+        }
+        return null
+    }
+
+    /**
+     * 获取抽卡运气图片
+     *
+     * @param allFiveCount 所有五星数量
+     * @param upCount up五星数量
+     * @param ave 5星平均抽数
+     * @param gachaType 卡池类型
+     * @return 返回抽卡运气图片
+     */
+    private fun getLuckImg(allFiveCount: Double, upCount: Double, ave: Double, gachaType: String): String {
+        val probability: Double = when (gachaType) {
+            "200" -> 1.0 - (ave / 90.0)
+            "301" -> (1.0 - (ave / 90.0)) * 0.3 + (upCount / allFiveCount) * 0.7
+            "302" -> (1.0 - (ave / 80.0)) * 0.3 + (upCount / allFiveCount) * 0.7
+            else -> 0.0
+        }
+        return when {
+            probability <= 0.2 -> "寄"
+            probability <= 0.4 -> "惨"
+            probability <= 0.6 -> "平"
+            probability <= 0.8 -> "吉"
+            else -> "欧"
+        }
     }
 
     fun findEachPoolName(): List<String> {

@@ -43,7 +43,7 @@ body {
 
 .background {
     display: flex;
-    background-color: rgba(218, 212, 212, 0.8);
+    background-color: rgb(222, 220, 220);
     border-radius: 10px;
     margin: 15px 30px 15px 30px;
     flex-direction: column;
@@ -219,7 +219,8 @@ body {
     margin: 0 10px;
     font-size: 28px;
 }
-.alreadyGachaText{
+
+.alreadyGachaText {
     color: #7e8088;
     font-size: 28px;
 }
@@ -229,4 +230,12 @@ body {
     display: flex;
     font-weight: bold;
     font-size: 40px;
+}
+
+.waiImg {
+    position: absolute;
+    top: -10px;
+    width: 30px;
+    height: 30px;
+    left: 108px;
 }
