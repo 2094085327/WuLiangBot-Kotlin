@@ -3,6 +3,7 @@ package bot.demo.txbot.genShin.apps
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.database.genshin.GenShinService
+import bot.demo.txbot.genShin.util.GachaLogUtil
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
 import com.fasterxml.jackson.databind.JsonNode
@@ -32,9 +33,6 @@ class GachaLog {
 
     @Autowired
     lateinit var gaChaLogService: GaChaLogService
-
-    @Autowired
-    lateinit var genShinService: GenShinService
 
     @Autowired
     val webImgUtil = WebImgUtil()
@@ -126,7 +124,7 @@ class GachaLog {
         val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
         val pools = arrayOf("200", "301", "302")
         pools.forEach { type ->
-            MysDataUtil().getEachData(gachaData, type)
+            GachaLogUtil().getEachData(gachaData, type)
         }
 
         sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")

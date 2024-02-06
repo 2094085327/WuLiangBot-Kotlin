@@ -1,13 +1,11 @@
 package bot.demo.txbot.genShin.apps
 
-import bot.demo.txbot.genShin.database.gachaLog2.GaChaLog2Service
 import bot.demo.txbot.genShin.util.MysDataUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.regex.Matcher
 

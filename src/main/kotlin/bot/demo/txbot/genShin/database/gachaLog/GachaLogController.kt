@@ -1,6 +1,6 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
-import bot.demo.txbot.genShin.util.MysDataUtil
+import bot.demo.txbot.genShin.util.GachaLogUtil
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 class GachaLogController {
     @RequestMapping("/gachaLog")
     fun gacha(model: Model): String {
-        val gachaData = MysDataUtil().getGachaData()
+        val gachaData = GachaLogUtil().getGachaData()
         val permanents = gachaData.permanents
         val roles = gachaData.roles
         val weapons = gachaData.weapons
