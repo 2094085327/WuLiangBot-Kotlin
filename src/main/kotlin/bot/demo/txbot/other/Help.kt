@@ -16,7 +16,7 @@ class Help {
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         bot.sendMsg(
             event,
-            "帮助菜单\n1.天气查询 [*]天气\n2.地理查询 [*]地理\n3.全部卡池\n4.启用卡池 [*]\n5.十连\n6.新增角色[*]\n7.清除缓存\n8.记录查询 [*]\n9.抽卡记录",
+            "帮助菜单\n1.天气查询 [*]天气\n2.地理查询 [*]地理\n3.全部卡池\n4.启用卡池 [*]\n5.十连\n6.新增角色[*]\n7.清除缓存\n8.记录查询 [*]\n9.抽卡记录\n10.抽卡链接",
             false
         )
     }

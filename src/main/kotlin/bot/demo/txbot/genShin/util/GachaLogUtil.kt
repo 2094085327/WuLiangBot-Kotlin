@@ -1,16 +1,20 @@
 package bot.demo.txbot.genShin.util
 
+import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.ArrayList
+import java.util.regex.Pattern
 
 
 /**
@@ -18,7 +22,11 @@ import java.util.ArrayList
  * @author Nature Zero
  * @date 2024/2/5 20:04
  */
+@Component
 class GachaLogUtil {
+    @Autowired
+    lateinit var gaChaLogService: GaChaLogService
+
     companion object {
         var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
     }
@@ -126,6 +134,7 @@ class GachaLogUtil {
         }
         return jsonArray
     }
+
     /**
      * 读取角色属性
      *
@@ -149,7 +158,7 @@ class GachaLogUtil {
         }
         return null
     }
-    
+
 
     /**
      * 查找当前时间所在的卡池
@@ -301,6 +310,63 @@ class GachaLogUtil {
         itemList.reverse()
     }
 
+    /**
+     * 获取解析后的真实URL并加入参数
+     *
+     * @param url 输入的未经过解析的URL
+     * @return 返回解析后的URL
+     */
+    fun toUrl(url: String): String {
+        // 中文正则，去除链接中的中文
+        val regexChinese = "[\u4e00-\u9fa5]"
+        // 获取无中文的链接
+        val noChineseUrl = url.replace(regexChinese.toRegex(), "")
+        // 从"#"处分割链接去除链接中的[#/log]并获取分割后的链接
+        val splitUrl1 = noChineseUrl.split("#".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+        // 从[?]处分割链接以拼接到接口链接上
+        val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+        // 含参链接
+        return "https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog?$splitUrl2"
+    }
+
+    /**
+     * 对关键参数进行拼接
+     *
+     * @param gachaType 抽卡类型
+     * @param url       未拼接的链接
+     * @param times     页数
+     * @return 返回拼接后的URL
+     */
+    fun getUrl(url: String, gachaType: String = "301", times: Int, endId: String = "0", size: Int? = 20): String {
+        return toUrl(url) + "&gacha_type=${gachaType}&page=${times}&size=${size}&end_id=${endId}"
+    }
+
+    /**
+     * 对URL进行检查以判断过期或错误等情况
+     *
+     * @param url 需要检查的URL
+     * @return 返回检查后的状态
+     */
+    fun checkApi(url: String): Pair<String, String?> {
+        return try {
+            val urls: String = toUrl(url)
+            val dealUrl = getUrl(url = urls, gachaType = "301", times = 1, endId = "0", size = 1)
+            val jsonObject = HttpUtil.doGetJson(dealUrl)
+            val retcode = jsonObject["retcode"].asInt()
+            var uid: String? = null
+
+            if (retcode == 0) uid = jsonObject["data"]["list"][0]["uid"].asText()
+            Pair(retcode.toString(), uid)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Pair("500", null)
+        }
+    }
+
+    fun getDataByUrl(url: String): JsonNode {
+        val urls: String = toUrl(url)
+        return HttpUtil.doGetJson(urls)
+    }
 
 
     fun getGachaData(): GachaData {

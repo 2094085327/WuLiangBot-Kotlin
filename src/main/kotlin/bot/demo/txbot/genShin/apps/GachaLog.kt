@@ -2,7 +2,6 @@ package bot.demo.txbot.genShin.apps
 
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
-import bot.demo.txbot.genShin.database.genshin.GenShinService
 import bot.demo.txbot.genShin.util.GachaLogUtil
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -13,6 +12,7 @@ import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import com.mikuac.shiro.dto.event.message.GroupMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -44,6 +44,15 @@ class GachaLog {
         val idList = listOf(301, 302, 200)
         for (id in idList) {
             gachaThread(authKeyB, id)
+            println("卡池：$id 分析完毕")
+        }
+        System.gc()
+    }
+
+    fun getData(url: String) {
+        val idList = listOf(301, 302, 200)
+        for (id in idList) {
+            gachaThread(url, id)
             println("卡池：$id 分析完毕")
         }
         System.gc()
@@ -88,6 +97,39 @@ class GachaLog {
             Thread.sleep(500)
         }
     }
+
+    /**
+     * 获取抽卡数据进程
+     *
+     * @param gachaUrl 抽卡链接
+     * @param gachaId 卡池类型
+     */
+    fun gachaThread(gachaUrl: String, gachaId: Int) {
+        // 本页最后一条数据的id
+        var endId = "0"
+        for (i in 1..10000) {
+            val nowGachaUrl =
+                GachaLogUtil().getUrl(url = gachaUrl, gachaType = gachaId.toString(), times = i, endId = endId)
+            val gachaData = GachaLogUtil().getDataByUrl(nowGachaUrl)
+            val length = gachaData["data"]["list"].size()
+            if (length == 0) break
+            endId = gachaData["data"]["list"][length - 1]["id"].textValue()
+
+            for (item in gachaData["data"]["list"]) {
+                val uid = item["uid"].textValue()
+                val type = item["gacha_type"].textValue()
+                val itemName = item["name"].textValue()
+                val itemType = item["item_type"].textValue()
+                val rankType = item["rank_type"].textValue()
+                val itemId = item["id"].textValue()
+                val getTime = item["time"].textValue()
+                gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
+            }
+
+            Thread.sleep(500)
+        }
+    }
+
 
     /**
      * 发送非缓存截图
@@ -239,5 +281,55 @@ class GachaLog {
         getData(authKeyB)
         gaChaLogService.selectByUid(gameUid)
         getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "抽卡记录(.*)")
+    suspend fun getGachaLogByUrl(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        // 获取到的链接会被自动将&转义为&amp;，需要替换回来
+        val gachaUrl = matcher?.group(1)?.replace(" ", "")?.replace("&amp;", "&") ?: ""
+
+        bot.sendMsg(event, "请通过私聊无量姬发送链接，避免信息泄露，请及时撤回消息", false)
+        bot.sendMsg(event, "收到链接，正在处理中，请耐心等待", false)
+        val gachaLogUtil = GachaLogUtil()
+        val processingUrl = gachaLogUtil.toUrl(gachaUrl)
+        val checkUrl = gachaLogUtil.checkApi(processingUrl)
+        when (checkUrl.first) {
+            "-100" -> {
+                bot.sendMsg(
+                    event,
+                    "链接不完整，请复制全部内容（可能输入法复制限制），或者复制的不是历史记录页面链接",
+                    false
+                )
+                return
+            }
+
+            "-101" -> {
+                bot.sendMsg(event, "链接已过期，请重新获取", false)
+                return
+            }
+
+            "0" -> {
+                bot.sendMsg(event, "链接验证成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待", false)
+                getData(processingUrl)
+                val gameUid = checkUrl.second!!
+                gaChaLogService.selectByUid(gameUid)
+                getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
+            }
+
+            else -> {
+                bot.sendMsg(event, "未知错误，请联系管理员进行检查", false)
+            }
+        }
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "抽卡链接")
+    suspend fun getGachaLogUrl(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        bot.sendMsg(
+            event,
+            "pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m",
+            false
+        )
     }
 }
