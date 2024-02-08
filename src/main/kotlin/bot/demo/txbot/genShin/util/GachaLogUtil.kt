@@ -2,6 +2,7 @@ package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import com.fasterxml.jackson.core.type.TypeReference
@@ -9,12 +10,15 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.mikuac.shiro.common.utils.MsgUtils
+import com.mikuac.shiro.core.Bot
+import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.regex.Pattern
 
 
 /**
@@ -26,6 +30,9 @@ import java.util.regex.Pattern
 class GachaLogUtil {
     @Autowired
     lateinit var gaChaLogService: GaChaLogService
+
+    @Autowired
+    val webImgUtil = WebImgUtil()
 
     companion object {
         var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
@@ -317,16 +324,20 @@ class GachaLogUtil {
      * @return 返回解析后的URL
      */
     fun toUrl(url: String): String {
-        // 中文正则，去除链接中的中文
-        val regexChinese = "[\u4e00-\u9fa5]"
-        // 获取无中文的链接
-        val noChineseUrl = url.replace(regexChinese.toRegex(), "")
-        // 从"#"处分割链接去除链接中的[#/log]并获取分割后的链接
-        val splitUrl1 = noChineseUrl.split("#".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
-        // 从[?]处分割链接以拼接到接口链接上
-        val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
-        // 含参链接
-        return "https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog?$splitUrl2"
+        return try {
+            // 中文正则，去除链接中的中文
+            val regexChinese = "[\u4e00-\u9fa5]"
+            // 获取无中文的链接
+            val noChineseUrl = url.replace(regexChinese.toRegex(), "")
+            // 从"#"处分割链接去除链接中的[#/log]并获取分割后的链接
+            val splitUrl1 = noChineseUrl.split("#".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+            // 从[?]处分割链接以拼接到接口链接上
+            val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+            // 含参链接
+            "https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog?$splitUrl2"
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     /**
@@ -363,9 +374,91 @@ class GachaLogUtil {
         }
     }
 
+    /**
+     * 通过链接获取抽卡记录
+     *
+     * @param url 获取的链接
+     * @return 返回获取到的数据
+     */
     fun getDataByUrl(url: String): JsonNode {
         val urls: String = toUrl(url)
         return HttpUtil.doGetJson(urls)
+    }
+
+    /**
+     * 获取抽卡记录并发送图片
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param gameUid 游戏Uid
+     * @param imgName 图片名称
+     */
+    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
+        val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+        val pools = arrayOf("200", "301", "302")
+        pools.forEach { type ->
+            GachaLogUtil().getEachData(gachaData, type)
+        }
+
+        sendNewImage(bot, privateMessageEvent, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+    }
+
+    fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgName: String) {
+        val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+        val pools = arrayOf("200", "301", "302")
+        pools.forEach { type ->
+            GachaLogUtil().getEachData(gachaData, type)
+        }
+
+        sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+    }
+
+    /**
+     * 发送非缓存截图
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param imgName 图片名
+     * @param webUrl 待截图地址
+     * @param scale 缩放等级
+     */
+    private fun sendNewImage(
+        bot: Bot,
+        event: PrivateMessageEvent,
+        imgName: String,
+        webUrl: String,
+        scale: Double? = null
+    ) {
+        val imgUrl =
+            webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
+        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+        bot.sendPrivateMsg(event.userId, sendMsg, false)
+        bot.sendPrivateMsg(event.userId, "发送完毕", false)
+    }
+
+    private fun sendNewImage(
+        bot: Bot,
+        event: AnyMessageEvent?,
+        imgName: String,
+        webUrl: String,
+        scale: Double? = null
+    ) {
+        val imgUrl =
+            webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
+        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+        bot.sendMsg(event, sendMsg, false)
+        bot.sendMsg(event, "发送完毕", false)
+    }
+
+    fun checkCache(imgName: String,gameUid: String): Pair<File?, File?> {
+        MysDataUtil().deleteDataCache()
+        val folder = File(MysDataUtil.CACHE_PATH)
+        val cacheImg = File("resources/imageCache")
+
+        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchCache = cacheImg.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+
+        return Pair(matchingFile,matchCache)
     }
 
 

@@ -45,7 +45,10 @@ class MysDataUtil {
         return objectMapper.readTree(file)
     }
 
-    // 删除数据缓存
+    /**
+     * 删除数据缓存
+     *
+     */
     fun deleteDataCache() {
         val folder = File(CACHE_PATH)
         val fiveMinutesAgo = System.currentTimeMillis() - 10 * 60 * 1000
