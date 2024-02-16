@@ -10,12 +10,12 @@ data class EventDataVO (
     /**
      * id
      */
-    val id: String? = null,
+    var id: String? = null,
 
     /**
      * 事件
      */
-    val event: String? = null,
+    var event: String? = null,
 
     /**
      * 稀有度
