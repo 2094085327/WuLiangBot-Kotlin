@@ -1,5 +1,7 @@
 package bot.demo.txbot.game.lifeRestart
 
+import java.util.regex.Matcher
+
 
 /**
  * @description: 人生重开用到的方法
@@ -9,7 +11,7 @@ package bot.demo.txbot.game.lifeRestart
 class LifeRestartUtil {
     data class UserInfo(
         val userId: String,
-        var attributes: Map<String, Int>? = null,
+        var attributes: Map<*, *>? = null,
         val age: Int,
         val events: List<EventDataVO>? = null,
     )
@@ -47,8 +49,26 @@ class LifeRestartUtil {
      * 分配属性
      *
      */
-    fun assignAttributes() {
+    fun assignAttributes(match: Matcher): Any {
+        val attributesMap = mutableMapOf<String, Int>()
+        val matchStr = match.group(1).split(" ")
+        val attributeNames = listOf("颜值", "智力", "体质", "家境", "快乐")
 
+        val chr = matchStr[0].toInt()
+        val int = matchStr[1].toInt()
+        val str = matchStr[2].toInt()
+        val mny = matchStr[3].toInt()
+        val spr = matchStr[4].toInt()
+
+        if (chr + int + str + mny + spr > 10) {
+            return "sizeOut"
+        }
+        attributesMap["颜值"] = chr
+        attributesMap["智力"] = int
+        attributesMap["体质"] = str
+        attributesMap["家境"] = mny
+        attributesMap["快乐"] = spr
+        return attributesMap
     }
 
     /**
