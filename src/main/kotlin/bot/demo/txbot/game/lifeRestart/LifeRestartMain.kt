@@ -42,15 +42,9 @@ class LifeRestartMain {
         val currentTime = System.currentTimeMillis()
         // 如果超过5分钟或者没有获取过数据，重新获取
         if (currentTime - lastFetchTime > 5 * 60 * 1000 || eventList == EventDataVO() || ageList == AgeDataVO()) {
-            val readEvent = ExcelReader().readExcel(
-                "E:\\Learning\\bots\\Tencent-Bot-Kotlin\\resources\\lifeRestart\\events.xlsx",
-                "event"
-            )
+            val readEvent = ExcelReader().readExcel("resources/lifeRestart/events.xlsx", "event")
 
-            val readAge = ExcelReader().readExcel(
-                "E:\\Learning\\bots\\Tencent-Bot-Kotlin\\resources\\lifeRestart\\age.xlsx",
-                "age"
-            )
+            val readAge = ExcelReader().readExcel("resources/lifeRestart/age.xlsx", "age")
 
             if (readEvent != null) {
                 eventList = readEvent
@@ -64,9 +58,6 @@ class LifeRestartMain {
         }
 
         val realId = OtherUtil().getRealId(event)
-
-
-
 
         for (userInfo in userList) {
             if (userInfo.userId == realId) {
@@ -83,6 +74,7 @@ class LifeRestartMain {
             "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境 快乐」或者「随机分配」来获取随机属性",
             false
         )
+        bot.sendMsg(event, "请在5分钟内开始游戏", false)
 
     }
 
@@ -139,7 +131,10 @@ class LifeRestartMain {
             bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
             return
         }
+    }
 
-
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "继续")
+    fun nextStep(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
     }
 }
