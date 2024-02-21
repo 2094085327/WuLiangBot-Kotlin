@@ -12,23 +12,32 @@ class LifeRestartUtil {
     data class UserInfo(
         val userId: String,
         var attributes: Map<*, *>? = null,
-        val age: Int,
-        val events: List<EventDataVO>? = null,
+        var age: Int,
+        var events: MutableList<Any> = mutableListOf(),
+        var property: Map<String, Any>? = null
     )
+
+    var eventList: MutableList<Any> = mutableListOf()
+    var ageList: MutableList<Any> = mutableListOf()
 
 
     /**
      * 随机生成属性
      *
      */
-    fun randomAttributes(): Map<String, Int> {
-        val attributesMap = mutableMapOf<String, Int>()
+    fun randomAttributes(userInfo: UserInfo): Map<String, Any> {
+        // 如果property为null，初始化为一个新的MutableMap
+        if (userInfo.property == null) {
+            userInfo.property = mutableMapOf()
+        }
+
+        val mutableProperty = userInfo.property as MutableMap<String, Any>
 
         // 随机选择第一个字段，给定0-10之间的随机值
-        val attributeNames = listOf("颜值", "智力", "体质", "家境", "快乐")
+        val attributeNames = listOf("CHR", "INT", "STR", "MNY", "SPR")
         val firstAttributeName = attributeNames.shuffled().first()
         val firstValue = (0..10).random()
-        attributesMap[firstAttributeName] = firstValue
+        mutableProperty[firstAttributeName] = firstValue
 
         // 随机选择剩下的字段，给定0到（10-第一个值）之间的随机值
         val remainingAttributes = attributeNames - firstAttributeName
@@ -38,39 +47,37 @@ class LifeRestartUtil {
             val value = if (remainingAttributes.last() == attributeName) remainingSum
             else (0..remainingSum).random()
 
-            attributesMap[attributeName] = value
+            mutableProperty[attributeName] = value
             remainingSum -= value
         }
 
-        return attributesMap
+        return mutableProperty
     }
 
-    data class Attributes(
-        val charisma: Int,
-        val intelligence: Int,
-        val strength: Int,
-        val money: Int,
-        val happiness: Int
-    )
-
-    fun assignAttributes(match: Matcher): Any {
+    /**
+     * 手动分配属性
+     *
+     * @param match 匹配
+     * @return 属性
+     */
+    fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
         val attributeValues = match.group(1).split(" ").map { it.toInt() }
-        val attributes = Attributes(
-            charisma = attributeValues[0],
-            intelligence = attributeValues[1],
-            strength = attributeValues[2],
-            money = attributeValues[3],
-            happiness = attributeValues[4]
-        )
+        val total = attributeValues.sum()
+        if (total > 10) return "sizeOut"
 
-        val total =
-            attributes.charisma + attributes.intelligence + attributes.strength + attributes.money + attributes.happiness
-        if (total > 10) {
-            return "sizeOut"
+        // 如果property为null，初始化为一个新的MutableMap
+        if (userInfo.property == null) {
+            userInfo.property = mutableMapOf()
         }
 
-        val attributeNames = listOf("颜值", "智力", "体质", "家境", "快乐")
-        return attributeNames.zip(attributeValues).toMap()
+        val mutableProperty = userInfo.property as MutableMap<String, Any>
+        val attributeNames = listOf("CHR", "INT", "STR", "MNY", "SPR")
+
+        for (attributeName in attributeNames) {
+            mutableProperty[attributeName] = attributeValues[attributeNames.indexOf(attributeName)]
+        }
+
+        return true
     }
 
     /**
@@ -205,11 +212,97 @@ class LifeRestartUtil {
         return ret
     }
 
-
+    /**
+     * 检查条件
+     *
+     * @param property 所有物
+     * @param condition 条件
+     * @return
+     */
     fun checkCondition(property: Map<String, Any>, condition: String): Boolean {
         val parsedCondition = parseCondition(condition)
         println("parsedCondition: $parsedCondition")
         return checkParsedConditions(property, parsedCondition)
+    }
 
+    /**
+     * 事件初始化
+     *
+     * @param userInfo 用户信息
+     * @param age 年龄
+     */
+    fun eventInitial(userInfo: UserInfo, age: Int) {
+        ageList.find {
+            it as AgeDataVO
+            it.age == 0
+        }.let { ageList ->
+            ageList as AgeDataVO
+            val event = generateValidEvent(userInfo, ageList)
+            println(event)
+            eventList.find {
+                it as EventDataVO
+                it.id == event
+            }.let {
+                println(it)
+                userInfo.events.add(it!!)
+            }
+        }
+    }
+
+    /**
+     * 递归判断事件是否符合条件
+     *
+     * @param userInfo 用户信息
+     * @param ageList 年龄列表
+     * @return 获取的事件ID
+     */
+    private fun generateValidEvent(userInfo: UserInfo, ageList: AgeDataVO): String? {
+        val event = ageList.eventList?.random()?.split("*")?.get(0)
+        return if (event != null && eventCheck(userInfo = userInfo, eventId = event)) {
+            event
+        } else {
+            generateValidEvent(userInfo, ageList)
+        }
+    }
+
+    /**
+     * 判断游戏是否结束（年龄小于1）
+     *
+     * @param userInfo 用户信息
+     * @return 是否结束
+     */
+    fun isEnd(userInfo: UserInfo): Boolean {
+        return userInfo.age < 1
+    }
+
+    /**
+     * 下一岁年龄
+     *
+     * @param userInfo 用户信息
+     */
+    fun ageNext(userInfo: UserInfo) {
+        userInfo.age += 1
+    }
+
+    /**
+     * 事件检查
+     *
+     * @param userInfo 用户信息
+     * @param eventId 事件ID
+     * @return 是否满足条件
+     */
+    fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
+        println(eventList)
+        println(ageList)
+        eventList.find {
+            it as EventDataVO
+            it.id == eventId
+        }.let {
+            it as EventDataVO
+            if (it.noRandom != null) return false
+            if (it.exclude != null && checkCondition(userInfo.property!!, it.exclude.toString())) return false
+            if (it.include != null) return checkCondition(userInfo.property!!, it.include.toString())
+        }
+        return true
     }
 }

@@ -47,7 +47,7 @@ class ExcelReader {
      * @param fileName 要读取的Excel文件所在路径
      * @return 读取结果列表，读取失败时返回null
      */
-    fun readExcel(fileName: String, type: String): Any? {
+    fun readExcel(fileName: String, type: String): MutableList<Any>? {
         val workbook: Workbook?
         val inputStream: FileInputStream?
 
@@ -65,7 +65,7 @@ class ExcelReader {
         workbook = getWorkbook(inputStream, fileType)
 
         // 读取excel中的数据
-       return  when (type) {
+        return when (type) {
             "event" -> parseExcel(workbook) { convertRowToData(it) }
             "age" -> parseExcel(workbook) { convertRowToAgeData(it) }
             else -> null
@@ -80,7 +80,7 @@ class ExcelReader {
      * @param convertRowFunction 转换函数
      * @return 解析结果
      */
-    private fun <T> parseExcel(workbook: Workbook?, convertRowFunction: (Row) -> T): MutableList<T> {
+    private fun <T> parseExcel(workbook: Workbook?, convertRowFunction: (Row) -> T?): MutableList<T> {
         val resultDataList = ArrayList<T>()
 
         // 解析sheet
@@ -101,7 +101,7 @@ class ExcelReader {
             val rowEnd = sheet.physicalNumberOfRows
             for (rowNum in rowStart until rowEnd) {
                 val row = sheet.getRow(rowNum) ?: continue
-                val resultData: T = convertRowFunction(row)
+                val resultData: T? = convertRowFunction(row)
                 if (resultData == null) break
                 else resultDataList.add(resultData)
             }
@@ -150,39 +150,29 @@ class ExcelReader {
      * @param row 行数据
      * @return 解析后的行数据对象，行数据错误时返回null
      */
-    private fun convertRowToData(row: Row): EventDataVO {
-        val resultData = EventDataVO()
-        var cellNum = 0
+    private fun convertRowToData(row: Row): EventDataVO? {
+        var cellNum = row.firstCellNum.toInt()
+        return if (convertCellValueToString(row.getCell(cellNum)) != null) {
+            EventDataVO().apply {
+                id = convertCellValueToString(row.getCell(cellNum++))
+                event = convertCellValueToString(row.getCell(cellNum++))
+                grade = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                postEvent = convertCellValueToString(row.getCell(cellNum++))
+                effectChr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectInt = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectStr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectMny = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectSpr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectLif = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                effectAge = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                noRandom = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
+                include = convertCellValueToString(row.getCell(cellNum++))
+                exclude = convertCellValueToString(row.getCell(cellNum++))
+                branch = (14 until 17).map { convertCellValueToString(row.getCell(it)) }.toMutableList()
 
-        fun convert(cell: Cell?): String? = convertCellValueToString(cell).also { cellNum++ }
-
-        // 使用 toIntOrNull 替代 ?.toInt()，避免转换失败时返回 null
-        fun convertToInt(cell: Cell?): Int? = convertCellValueToString(cell)?.toIntOrNull()
-
-        // id
-        resultData.id = convert(row.getCell(cellNum++))
-
-        resultData.grade = convertToInt(row.getCell(cellNum++))
-
-        // 其他字段的转换
-        resultData.event = convert(row.getCell(cellNum++))
-        resultData.postEvent = convert(row.getCell(cellNum++))
-        resultData.effectChr = convertToInt(row.getCell(cellNum++))
-        resultData.effectInt = convertToInt(row.getCell(cellNum++))
-        resultData.effectStr = convertToInt(row.getCell(cellNum++))
-        resultData.effectMny = convertToInt(row.getCell(cellNum++))
-        resultData.effectSpr = convertToInt(row.getCell(cellNum++))
-        resultData.effectLif = convertToInt(row.getCell(cellNum++))
-        resultData.effectAge = convertToInt(row.getCell(cellNum++))
-        resultData.noRandom = convertToInt(row.getCell(cellNum++))
-        resultData.include = convert(row.getCell(cellNum++))
-        resultData.exclude = convert(row.getCell(cellNum++))
-
-        resultData.branch = (0 until 3).map { convert(row.getCell(cellNum++)) }.toMutableList()
-
-        return resultData
+            }
+        } else null
     }
-
 
 
     /**
@@ -197,14 +187,14 @@ class ExcelReader {
         val resultData = AgeDataVO()
         if (row.firstCellNum >= 0) {
 
-        resultData.age = convertCellValueToString(row.getCell(row.firstCellNum.toInt()))?.toInt()
+            resultData.age = convertCellValueToString(row.getCell(row.firstCellNum.toInt()))?.toInt()
             val eventList = mutableListOf<String?>()
             for (cellNum in row.firstCellNum until row.lastCellNum) {
                 if (row.getCell(cellNum) != null && cellNum >= 0) {
                     eventList.add(convertCellValueToString(row.getCell(cellNum)))
                 }
             }
-            resultData.eventList=eventList
+            resultData.eventList = eventList
 
         }
         return resultData
