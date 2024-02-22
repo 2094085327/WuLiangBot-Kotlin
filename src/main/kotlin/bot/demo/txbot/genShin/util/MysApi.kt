@@ -131,7 +131,6 @@ class MysApi(
             returnMap["x-rpc-app_id"] = "bll8iq97cem8"
             returnMap["DS"] = getDsSign()
 
-//            println("map:$returnMap")
             return returnMap
         } else {
             returnMap["x-rpc-app_version"] = client["app_version"] as Any

@@ -111,25 +111,5 @@ class ExamplePlugin {
         bot.sendMsg(event, "[CQ:at,qq=${event!!.userId}]", false)
         bot.sendMsg(event,sendMsg, false)
     }
-
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "重开")
-    fun fun6(bot: Bot, event: AnyMessageEvent?, matcher: Matcher) {
-        val workbook = WorkbookFactory.create(File("E:\\Learning\\bots\\Tencent-Bot-Kotlin\\resources\\lifeRestart\\events.xlsx"))
-
-        val workSheet = workbook.getSheetAt(0)
-//        assertThat(workSheet.getRow(0).getCell(0).stringCellValue).isEqualTo("TEST VALUE")
-        println(workbook)
-        println(workSheet.sheetName)
-        println(workSheet.toString())
-        println(workSheet.getRow(0).getCell(0).stringCellValue)
-
-
-    }
-
-
-
-
 }
 

@@ -1,6 +1,7 @@
 package bot.demo.txbot.game.lifeRestart
 
 import java.util.regex.Matcher
+import kotlin.random.Random
 
 
 /**
@@ -50,6 +51,7 @@ class LifeRestartUtil {
             mutableProperty[attributeName] = value
             remainingSum -= value
         }
+        mutableProperty["EVT"] = mutableListOf<String>()
 
         return mutableProperty
     }
@@ -76,6 +78,7 @@ class LifeRestartUtil {
         for (attributeName in attributeNames) {
             mutableProperty[attributeName] = attributeValues[attributeNames.indexOf(attributeName)]
         }
+        mutableProperty["EVT"] = mutableListOf<String>()
 
         return true
     }
@@ -84,6 +87,7 @@ class LifeRestartUtil {
      * 使用游戏购买额外属性
      * TODO
      */
+    @Suppress("unused")
     fun getAddAttributes() {
 
     }
@@ -221,7 +225,6 @@ class LifeRestartUtil {
      */
     fun checkCondition(property: Map<String, Any>, condition: String): Boolean {
         val parsedCondition = parseCondition(condition)
-        println("parsedCondition: $parsedCondition")
         return checkParsedConditions(property, parsedCondition)
     }
 
@@ -229,48 +232,67 @@ class LifeRestartUtil {
      * 事件初始化
      *
      * @param userInfo 用户信息
-     * @param age 年龄
      */
-    fun eventInitial(userInfo: UserInfo, age: Int) {
-        ageList.find {
+    @Suppress("UNCHECKED_CAST")
+    fun eventInitial(userInfo: UserInfo): String {
+        val ageList = ageList.find {
             it as AgeDataVO
-            it.age == 0
-        }.let { ageList ->
-            ageList as AgeDataVO
-            val event = generateValidEvent(userInfo, ageList)
-            println(event)
-            eventList.find {
-                it as EventDataVO
-                it.id == event
-            }.let {
-                println(it)
-                userInfo.events.add(it!!)
-            }
-        }
+            it.age == userInfo.age
+        } as AgeDataVO
+
+        val eventListCheck = generateValidEvent(userInfo, ageList)
+        val eventId = weightRandom(eventListCheck)
+
+        (userInfo.property!!["EVT"] as MutableList<String>).add(eventId)
+        return eventId
     }
 
     /**
-     * 递归判断事件是否符合条件
+     * 找出当前年龄下所有符合条件的事件
      *
      * @param userInfo 用户信息
      * @param ageList 年龄列表
-     * @return 获取的事件ID
+     * @return 符合条件的事件列表
      */
-    private fun generateValidEvent(userInfo: UserInfo, ageList: AgeDataVO): String? {
-        val event = ageList.eventList?.random()?.split("*")?.get(0)
-        return if (event != null && eventCheck(userInfo = userInfo, eventId = event)) {
-            event
-        } else {
-            generateValidEvent(userInfo, ageList)
-        }
+    private fun generateValidEvent(userInfo: UserInfo, ageList: AgeDataVO): List<Map<String, Double>> {
+        return ageList.eventList?.mapNotNull { event ->
+            event?.let {
+                val splitEvent = it.split("*").map(String::toDouble)
+                val eventId = splitEvent[0].toInt().toString()
+                val weight = if (splitEvent.size == 1) 1.0 else splitEvent[1]
+                if (eventCheck(userInfo = userInfo, eventId = eventId)) {
+                    mapOf(eventId to weight)
+                } else null
+            }
+        } ?: emptyList()
     }
 
     /**
-     * 判断游戏是否结束（年龄小于1）
+     * 加权随机
+     *
+     * @param list 待随机的事件列表
+     * @return 随机的事件ID
+     */
+    private fun weightRandom(list: List<Map<String, Double>>): String {
+        val totalWeights = list.sumOf { it.values.first() }
+        var random = Random.nextDouble() * totalWeights
+        for (item in list) {
+            val weight = item.values.first()
+            random -= weight
+            if ((random) < 0) {
+                return item.keys.first()
+            }
+        }
+        return list.last().keys.first()
+    }
+
+    /**
+     * 判断游戏是否结束（生命值小于1）
      *
      * @param userInfo 用户信息
      * @return 是否结束
      */
+    @Suppress("unused")
     fun isEnd(userInfo: UserInfo): Boolean {
         return userInfo.age < 1
     }
@@ -291,9 +313,7 @@ class LifeRestartUtil {
      * @param eventId 事件ID
      * @return 是否满足条件
      */
-    fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
-        println(eventList)
-        println(ageList)
+    private fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
         eventList.find {
             it as EventDataVO
             it.id == eventId

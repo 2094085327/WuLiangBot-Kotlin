@@ -63,7 +63,7 @@ class LifeRestartMain {
                 userList.remove(it)
             }
         }
-        userList.add(LifeRestartUtil.UserInfo(realId, null, 0, mutableListOf(),null))
+        userList.add(LifeRestartUtil.UserInfo(realId, null, 0, mutableListOf(), null))
         bot.sendMsg(
             event,
             "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境 快乐」或者「随机分配」来获取随机属性",
@@ -77,26 +77,26 @@ class LifeRestartMain {
     @MessageHandlerFilter(cmd = "随机分配")
     fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
-        userList.find { it.userId == realId }.let {
-            if (it == null) {
+        userList.find { it.userId == realId }.let { userInfo ->
+            if (userInfo == null) {
                 bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
                 return
             }
-            if (it.attributes != null) {
+            if (userInfo.attributes != null) {
                 bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
                 return
             }
-            restartUtil.randomAttributes(it)
-            restartUtil.eventInitial(userInfo = it, 0)
-            bot.sendMsg(event, "你的初始属性为：${it.property}", false)
+            restartUtil.randomAttributes(userInfo)
+            bot.sendMsg(event, "你的初始属性为：${userInfo.property}", false)
             bot.sendMsg(event, "请发送「继续」来进行游戏", false)
-            println(it.events)
-            val sendStr = it.events.find { events ->
-                events as EventDataVO
-                it.age == 0
-            }.let { events ->
-                events as EventDataVO
-                events.event
+            val eventId = restartUtil.eventInitial(userInfo = userInfo)
+
+            val sendStr = restartUtil.eventList.find { eventList ->
+                eventList as EventDataVO
+                eventList.id == eventId
+            }.let {
+                it as EventDataVO
+                it.event
             }
             bot.sendMsg(event, "0岁: $sendStr", false)
         }
@@ -132,17 +132,25 @@ class LifeRestartMain {
     @MessageHandlerFilter(cmd = "继续")
     fun nextStep(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
-        userList.find { it.userId == realId }.let {
-            if (it == null) {
+        userList.find { it.userId == realId }.let { userInfo ->
+            if (userInfo == null) {
                 bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
                 return
             }
-            if (it.property == null) {
+            if (userInfo.property == null) {
                 bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
                 return
             }
-            restartUtil.eventInitial(userInfo = it, 0)
-
+            restartUtil.ageNext(userInfo)
+            val eventId = restartUtil.eventInitial(userInfo = userInfo)
+            val sendStr = restartUtil.eventList.find { eventList ->
+                eventList as EventDataVO
+                eventList.id == eventId
+            }.let {
+                it as EventDataVO
+                it.event
+            }
+            bot.sendMsg(event, "${userInfo.age}岁: $sendStr", false)
         }
     }
 }
