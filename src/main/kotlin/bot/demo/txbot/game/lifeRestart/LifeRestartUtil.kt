@@ -15,7 +15,8 @@ class LifeRestartUtil {
         var attributes: Map<*, *>? = null,
         var age: Int,
         var events: MutableList<Any> = mutableListOf(),
-        var property: Map<String, Any>? = null
+        var property: Map<String, Any>? = null,
+        var isEnd: Boolean? = false
     )
 
     var eventList: MutableList<Any> = mutableListOf()
@@ -52,6 +53,7 @@ class LifeRestartUtil {
             remainingSum -= value
         }
         mutableProperty["EVT"] = mutableListOf<String>()
+        mutableProperty["LIF"] = 1
 
         return mutableProperty
     }
@@ -79,6 +81,7 @@ class LifeRestartUtil {
             mutableProperty[attributeName] = attributeValues[attributeNames.indexOf(attributeName)]
         }
         mutableProperty["EVT"] = mutableListOf<String>()
+        mutableProperty["LIF"] = 1
 
         return true
     }
@@ -235,13 +238,7 @@ class LifeRestartUtil {
      */
     @Suppress("UNCHECKED_CAST")
     fun eventInitial(userInfo: UserInfo): String {
-        val ageList = ageList.find {
-            it as AgeDataVO
-            it.age == userInfo.age
-        } as AgeDataVO
-
-        val eventListCheck = generateValidEvent(userInfo, ageList)
-        val eventId = weightRandom(eventListCheck)
+        val eventId = getRandom(userInfo)
 
         (userInfo.property!!["EVT"] as MutableList<String>).add(eventId)
         return eventId
@@ -287,14 +284,30 @@ class LifeRestartUtil {
     }
 
     /**
+     * 获取随机事件
+     *
+     * @param userInfo 用户信息
+     * @return 随机事件ID
+     */
+    private fun getRandom(userInfo: UserInfo): String {
+        val ageList = ageList.find {
+            it as AgeDataVO
+            it.age == userInfo.age
+        } as AgeDataVO
+
+        val eventListCheck = generateValidEvent(userInfo, ageList)
+        return weightRandom(eventListCheck)
+    }
+
+    /**
      * 判断游戏是否结束（生命值小于1）
      *
      * @param userInfo 用户信息
      * @return 是否结束
      */
-    @Suppress("unused")
-    fun isEnd(userInfo: UserInfo): Boolean {
-        return userInfo.age < 1
+    private fun isEnd(userInfo: UserInfo) {
+        val lif = userInfo.property?.get("LIF") as Int
+        if (lif < 1) userInfo.isEnd = true
     }
 
     /**
@@ -307,6 +320,100 @@ class LifeRestartUtil {
     }
 
     /**
+     * 获取事件
+     *
+     * @param userInfo 用户信息
+     * @param eventId 事件ID
+     * @return 事件
+     */
+    private fun getDo(userInfo: UserInfo, eventId: String): List<Any?> {
+        val eventData = eventList.firstOrNull { it is EventDataVO && it.id == eventId } as? EventDataVO
+        val branchItem = eventData?.branch?.filterNotNull()?.firstOrNull { branchItem ->
+            val cond = branchItem.split(":").getOrNull(0)
+            cond?.let { checkCondition(userInfo.property ?: emptyMap(), it) } == true
+        }
+        return if (branchItem != null) {
+//            listOf(eventData) + doEvent(userInfo, branchItem.split(":")[1])
+            listOf(eventData) + branchItem.split(":")[1]
+
+        } else {
+            listOf(eventData)
+        }
+    }
+
+    /**
+     * 执行事件
+     *
+     * @param userInfo
+     * @param eventId
+     */
+    private fun doEvent(userInfo: UserInfo, eventId: String): List<Any?> {
+        val eventData = getDo(userInfo, eventId)
+        val eventSize = eventData.size
+        val event = eventData[0] as EventDataVO
+        val property = userInfo.property as MutableMap<String, Any>
+        var effectStr = ""
+
+        val effects = mapOf(
+            "CHR" to event.effectChr,
+            "INT" to event.effectInt,
+            "STR" to event.effectStr,
+            "MNY" to event.effectMny,
+            "SPR" to event.effectSpr
+        )
+        println("property: $property")
+        println("effects: $effects")
+        effects.forEach { (key, value) ->
+            value?.let {
+                effectStr += "$key:$value "
+                property[key] = (property[key] as Int) + value
+            }
+        }
+
+        event.effectLif?.let { property["LIF"] = (property["LIF"] as Int) + it }
+        event.effectAge?.let { userInfo.age += it }
+        property["EVT"] = (property["EVT"] as MutableList<String>) + event.id
+
+        val contentMap = mapOf("event" to event, "effect" to effectStr)
+
+
+        return if (eventSize == 1) {
+            println("contentMap1: $contentMap")
+
+            mutableListOf(contentMap)
+        } else {
+            println("contentMap2: $contentMap")
+            println("eventData: $eventData")
+
+            val getEventId = eventData[1] as String
+            mutableListOf(contentMap) + doEvent(userInfo, getEventId)
+        }
+    }
+
+    /**
+     * 下一步
+     *
+     * @param userInfo 用户信息
+     */
+    fun next(userInfo: UserInfo): MutableMap<String, Any> {
+        ageNext(userInfo)
+        val eventContent = doEvent(userInfo, getRandom(userInfo))
+        isEnd(userInfo)
+        return mutableMapOf("eventContent" to eventContent)
+    }
+
+    fun trajectory(userInfo: UserInfo): String {
+        val trajectory = next(userInfo)
+        val eventContent = trajectory["eventContent"] as List<Map<String, Any?>>
+        return "${userInfo.age}岁: ${
+            eventContent.joinToString("\n\t") { eventContentMap ->
+                val event = eventContentMap["event"] as EventDataVO
+                event.event + (event.postEvent?.let { "\n\t$it" } ?: "")
+            }
+        }${eventContent.mapNotNull { if (it["effect"] != "") "\n\t${it["effect"]}" else null }.joinToString()}"
+    }
+
+    /**
      * 事件检查
      *
      * @param userInfo 用户信息
@@ -314,6 +421,8 @@ class LifeRestartUtil {
      * @return 是否满足条件
      */
     private fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
+
+
         eventList.find {
             it as EventDataVO
             it.id == eventId
@@ -322,6 +431,9 @@ class LifeRestartUtil {
             if (it.noRandom != null) return false
             if (it.exclude != null && checkCondition(userInfo.property!!, it.exclude.toString())) return false
             if (it.include != null) return checkCondition(userInfo.property!!, it.include.toString())
+
+            println("eventPrp: ${userInfo.property}")
+            println("eventIt: $it")
         }
         return true
     }

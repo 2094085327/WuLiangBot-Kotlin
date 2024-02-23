@@ -32,6 +32,7 @@ class LifeRestartMain {
             restartUtil.eventList.clear()
             restartUtil.ageList.clear()
             System.gc()
+            // TODO 清除超时的用户数据
         }
     }
 
@@ -141,16 +142,42 @@ class LifeRestartMain {
                 bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
                 return
             }
-            restartUtil.ageNext(userInfo)
-            val eventId = restartUtil.eventInitial(userInfo = userInfo)
-            val sendStr = restartUtil.eventList.find { eventList ->
-                eventList as EventDataVO
-                eventList.id == eventId
-            }.let {
-                it as EventDataVO
-                it.event
+
+            if (userInfo.isEnd == true) {
+                userList.remove(userInfo)
+                bot.sendMsg(event, "游戏结束", false)
+                return
             }
-            bot.sendMsg(event, "${userInfo.age}岁: $sendStr", false)
+            val sendStr = restartUtil.trajectory(userInfo)
+            bot.sendMsg(event, sendStr, false)
+        }
+    }
+
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "继续 (.*)")
+    fun nextTenStep(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val realId = OtherUtil().getRealId(event)
+        val stepNext = matcher.group(1).toInt()
+        userList.find { it.userId == realId }.let { userInfo ->
+            if (userInfo == null) {
+                bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
+                return
+            }
+            if (userInfo.property == null) {
+                bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
+                return
+            }
+            for (i in 1..stepNext) {
+                println("userInfo.isEnd: ${userInfo.isEnd}")
+                if (userInfo.isEnd == true) {
+                    userList.remove(userInfo)
+                    bot.sendMsg(event, "游戏结束", false)
+                    return
+                }
+                val sendStr = restartUtil.trajectory(userInfo)
+                bot.sendMsg(event, sendStr, false)
+            }
         }
     }
 }
