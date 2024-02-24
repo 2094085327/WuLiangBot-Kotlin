@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+        <style>
+            body {
+                background: #2d2e32;
+                display: flex;
+                flex-direction: column;
+                width: 490px;
+            }
+
+            .properties {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                /*background: #ffffff;*/
+                margin-bottom: 10px;
+            }
+
+            .property {
+                width: 18%;
+                height: 90%;
+                /* display: flex; */
+                /* justify-content: center; */
+                /* align-items: center; */
+                display: grid;
+                background: #ffffff;
+                margin: 10px;
+                justify-items: center;
+                align-content: center;
+                border: 2px solid #ffffff;
+                border-radius: 10px;
+            }
+
+            .propertyText {
+                /* font-size: 20px; */
+                /* font-weight: bold; */
+                /* color: #000000; */
+                display: grid;
+                width: 100%;
+                justify-content: center;
+                background: #696969;
+                border-radius: 10px 10px 0 0;
+                color: #ffffff;
+            }
+
+            .main {
+                width: 99%;
+                height: 100%;
+                display: grid;
+                justify-content: start;
+                align-items: center;
+                background: #7e8088;
+                border-radius: 10px;
+                border: 2px solid #ffffff;
+                /* flex-direction: column; */
+                justify-items: center;
+                grid-template-columns: repeat(1, 100%);
+                grid-row-gap: 10px;
+                padding: 10px 0;
+            }
+
+            .each {
+                /*margin: 5px 0;*/
+                background: #5b5c64;
+                border: 1px solid #ffffff;
+                width: 100%;
+                color: white;
+                display: grid;
+                grid-template-columns:9% 71% 20%;
+            }
+
+            .eachText {
+                margin: 5px 5px;
+                display: flex;
+            }
+
+            .propertyChange {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 0 0 10px 10px;
+            }
+
+            .textBox {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .eachText {
+                flex-direction: column;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="properties">
+            <div class="property CHR">
+                <div class="propertyText">颜值</div>
+                <div class="propertyValue" th:text="${property['CHR']}">1</div>
+            </div>
+            <div class="property INT">
+                <div class="propertyText">智力</div>
+                <div class="propertyValue" th:text="${property['INT']}">2</div>
+            </div>
+            <div class="property STR">
+                <div class="propertyText">体质</div>
+                <div class="propertyValue" th:text="${property['STR']}">3</div>
+            </div>
+            <div class="property MNY">
+                <div class="propertyText">家境</div>
+                <div class="propertyValue" th:text="${property['MNY']}">4</div>
+            </div>
+            <div class="property SPR">
+                <div class="propertyText">快乐</div>
+                <div class="propertyValue" th:text="${property['SPR']}">5</div>
+            </div>
+
+        </div>
+        <div class="main">
+            <div class="each" th:each="sendArray:${sendStr}">
+                <span th:text="${sendArray[0]['age']}+'岁:'"></span>
+                <div class="textBox">
+                    <th:block th:each="sendMap, iterStat : ${sendArray}">
+                        <div class="eachText">
+                            <span th:text="${sendMap['event'].event}"></span>
+                            <span th:if="${sendMap['event'].postEvent != null && sendArray.size()==1}"
+                                  th:text="${sendMap['event'].postEvent}">
+                        </span>
+                        </div>
+                    </th:block>
+                </div>
+                <div class="propertyChange">颜值+1</div>
+            </div>
+        </div>
+    </body>
+</html>

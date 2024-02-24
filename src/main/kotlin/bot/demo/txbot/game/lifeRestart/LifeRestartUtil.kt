@@ -315,7 +315,7 @@ class LifeRestartUtil {
      *
      * @param userInfo 用户信息
      */
-    fun ageNext(userInfo: UserInfo) {
+    private fun ageNext(userInfo: UserInfo) {
         userInfo.age += 1
     }
 
@@ -346,6 +346,7 @@ class LifeRestartUtil {
      *
      * @param userInfo
      * @param eventId
+     * @return 事件内容
      */
     private fun doEvent(userInfo: UserInfo, eventId: String): List<Any?> {
         val eventData = getDo(userInfo, eventId)
@@ -374,7 +375,7 @@ class LifeRestartUtil {
         event.effectAge?.let { userInfo.age += it }
         property["EVT"] = (property["EVT"] as MutableList<String>) + event.id
 
-        val contentMap = mapOf("event" to event, "effect" to effectStr)
+        val contentMap = mapOf("event" to event, "effect" to effectStr, "age" to userInfo.age)
 
 
         return if (eventSize == 1) {
@@ -402,15 +403,17 @@ class LifeRestartUtil {
         return mutableMapOf("eventContent" to eventContent)
     }
 
-    fun trajectory(userInfo: UserInfo): String {
+    fun trajectory(userInfo: UserInfo): Any? {
         val trajectory = next(userInfo)
-        val eventContent = trajectory["eventContent"] as List<Map<String, Any?>>
-        return "${userInfo.age}岁: ${
-            eventContent.joinToString("\n\t") { eventContentMap ->
-                val event = eventContentMap["event"] as EventDataVO
-                event.event + (event.postEvent?.let { "\n\t$it" } ?: "")
-            }
-        }${eventContent.mapNotNull { if (it["effect"] != "") "\n\t${it["effect"]}" else null }.joinToString()}"
+//        val eventContent = trajectory["eventContent"] as List<Map<String, Any?>>
+        val eventContent = trajectory["eventContent"]
+        return eventContent
+//        return "${userInfo.age}岁: ${
+//            eventContent.joinToString("\n\t") { eventContentMap ->
+//                val event = eventContentMap["event"] as EventDataVO
+//                event.event + (event.postEvent?.let { "\n\t$it" } ?: "")
+//            }
+//        }${eventContent.mapNotNull { if (it["effect"] != "") "\n\t${it["effect"]}" else null }.joinToString()}"
     }
 
     /**
