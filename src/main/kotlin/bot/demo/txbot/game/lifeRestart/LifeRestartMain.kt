@@ -80,6 +80,8 @@ class LifeRestartMain {
 
         val realId = OtherUtil().getRealId(event)
 
+        println("realId: $realId")
+
         userList.find { it.userId == realId }.let {
             if (it != null) {
                 userList.remove(it)

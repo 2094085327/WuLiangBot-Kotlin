@@ -36,24 +36,26 @@ class LifeRestartUtil {
         val mutableProperty = userInfo.property as MutableMap<String, Any>
 
         // 随机选择第一个字段，给定0-10之间的随机值
-        val attributeNames = listOf("CHR", "INT", "STR", "MNY", "SPR")
+        val attributeNames = listOf("CHR", "INT", "STR", "MNY")
         val firstAttributeName = attributeNames.shuffled().first()
         val firstValue = (0..10).random()
         mutableProperty[firstAttributeName] = firstValue
 
         // 随机选择剩下的字段，给定0到（10-第一个值）之间的随机值
         val remainingAttributes = attributeNames - firstAttributeName
-        var remainingSum = 10 - firstValue
+        var remainingSum = 20 - firstValue
 
         for (attributeName in remainingAttributes.shuffled()) {
-            val value = if (remainingAttributes.last() == attributeName) remainingSum
-            else (0..remainingSum).random()
+            val maxPossibleValue = minOf(remainingSum, 10) // 确保属性最大值为10
+            val value = if (remainingAttributes.last() == attributeName) maxPossibleValue
+            else (0..maxPossibleValue).random()
 
             mutableProperty[attributeName] = value
             remainingSum -= value
         }
         mutableProperty["EVT"] = mutableListOf<String>()
         mutableProperty["LIF"] = 1
+        mutableProperty["SPR"] = 5
 
         return mutableProperty
     }
@@ -67,7 +69,7 @@ class LifeRestartUtil {
     fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
         val attributeValues = match.group(1).split(" ").map { it.toInt() }
         val total = attributeValues.sum()
-        if (total > 10) return "sizeOut"
+        if (total > 20) return "sizeOut"
 
         // 如果property为null，初始化为一个新的MutableMap
         if (userInfo.property == null) {
@@ -75,13 +77,14 @@ class LifeRestartUtil {
         }
 
         val mutableProperty = userInfo.property as MutableMap<String, Any>
-        val attributeNames = listOf("CHR", "INT", "STR", "MNY", "SPR")
+        val attributeNames = listOf("CHR", "INT", "STR", "MNY")
 
         for (attributeName in attributeNames) {
             mutableProperty[attributeName] = attributeValues[attributeNames.indexOf(attributeName)]
         }
         mutableProperty["EVT"] = mutableListOf<String>()
         mutableProperty["LIF"] = 1
+        mutableProperty["SPR"] = 5
 
         return true
     }
@@ -366,8 +369,15 @@ class LifeRestartUtil {
         println("effects: $effects")
         effects.forEach { (key, value) ->
             value?.let {
-                effectStr += "$key:$value "
+//                effectStr += "$key:$value "
                 property[key] = (property[key] as Int) + value
+                when (key) {
+                    "CHR" -> effectStr += "颜值:$value\n"
+                    "INT" -> effectStr += "智力:$value\n"
+                    "STR" -> effectStr += "体质:$value\n"
+                    "MNY" -> effectStr += "家境:$value\n"
+                    "SPR" -> effectStr += "快乐:$value\n"
+                }
             }
         }
 
