@@ -17,16 +17,12 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                /*background: #ffffff;*/
                 margin-bottom: 10px;
             }
 
             .property {
                 width: 18%;
                 height: 90%;
-                /* display: flex; */
-                /* justify-content: center; */
-                /* align-items: center; */
                 display: grid;
                 background: #ffffff;
                 margin: 10px;
@@ -37,9 +33,6 @@
             }
 
             .propertyText {
-                /* font-size: 20px; */
-                /* font-weight: bold; */
-                /* color: #000000; */
                 display: grid;
                 width: 100%;
                 justify-content: center;
@@ -57,7 +50,6 @@
                 background: #7e8088;
                 border-radius: 10px;
                 border: 2px solid #ffffff;
-                /* flex-direction: column; */
                 justify-items: center;
                 grid-template-columns: repeat(1, 100%);
                 grid-row-gap: 10px;
@@ -65,7 +57,6 @@
             }
 
             .each {
-                /*margin: 5px 0;*/
                 background: #5b5c64;
                 border: 1px solid #ffffff;
                 width: 100%;
@@ -127,32 +118,16 @@
 
         </div>
         <div class="main">
-            <!--            <div class="each" th:each="sendArray:${sendStr}" th:style="">-->
-            <!--                <span class="ageText" th:text="${sendArray[0]['age']}+'岁:'"></span>-->
-            <!--                <div class="textBox">-->
-            <!--                    <th:block th:each="sendMap, iterStat : ${sendArray}">-->
-            <!--                        <div class="eachText">-->
-            <!--                            <span th:text="${sendMap['event'].event}"></span>-->
-            <!--                            <span th:if="${sendMap['event'].postEvent != null && sendArray.size()==1}"-->
-            <!--                                  th:text="${sendMap['event'].postEvent}">-->
-            <!--                        </span>-->
-            <!--                        </div>-->
-            <!--                    </th:block>-->
-            <!--                </div>-->
-            <!--                <div class="propertyChange" th:each="sendMap:${sendArray}">-->
-            <!--                    <span th:text="${sendMap['effect']}">颜值+1</span>-->
-            <!--                </div>-->
-            <!--            </div>-->
             <div class="each" th:each="sendArray:${sendStr}"
-                 th:style="'background-color:' + (${sendArray[0]['grade']} == null ? '#5b5c64' : (${sendArray[0]['grade']} == 1 ? 'blue' : (${sendArray[0]['grade']} == 2 ? 'purple' : 'yellow')))">
-                <span class="ageText" th:text="${sendArray[0]['age']}+'岁:'+'grade:'+${sendArray[0]['grade']}"></span>
+                 th:style="'background-color:' + (${sendArray[0]['event'].grade} == null ? '#5b5c64' : (${sendArray[0]['event'].grade} == 1 ? '#6767f2' : (${sendArray[0]['event'].grade} == 2 ? '#d96ed9' : '#dcc056')))">
+                <span class="ageText" th:text="${sendArray[0]['age']}+'岁:'"></span>
                 <div class="textBox">
                     <th:block th:each="sendMap, iterStat : ${sendArray}">
                         <div class="eachText">
                             <span th:text="${sendMap['event'].event}"></span>
                             <span th:if="${sendMap['event'].postEvent != null && sendArray.size()==1}"
                                   th:text="${sendMap['event'].postEvent}">
-            </span>
+                            </span>
                         </div>
                     </th:block>
                 </div>

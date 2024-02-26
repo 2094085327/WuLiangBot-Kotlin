@@ -67,20 +67,18 @@ class LifeRestartUtil {
      * @return 属性
      */
     fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
-        val attributeValues = match.group(1).split(" ").map { it.toInt() }
+        val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
         if (total > 20) return "sizeOut"
 
         // 如果property为null，初始化为一个新的MutableMap
-        if (userInfo.property == null) {
-            userInfo.property = mutableMapOf()
-        }
+        userInfo.property = userInfo.property ?: mutableMapOf()
 
         val mutableProperty = userInfo.property as MutableMap<String, Any>
         val attributeNames = listOf("CHR", "INT", "STR", "MNY")
 
-        for (attributeName in attributeNames) {
-            mutableProperty[attributeName] = attributeValues[attributeNames.indexOf(attributeName)]
+        attributeNames.forEachIndexed { index, attributeName ->
+            mutableProperty[attributeName] = attributeValues[index]
         }
         mutableProperty["EVT"] = mutableListOf<String>()
         mutableProperty["LIF"] = 1
@@ -229,22 +227,9 @@ class LifeRestartUtil {
      * @param condition 条件
      * @return
      */
-    fun checkCondition(property: Map<String, Any>, condition: String): Boolean {
+    private fun checkCondition(property: Map<String, Any>, condition: String): Boolean {
         val parsedCondition = parseCondition(condition)
         return checkParsedConditions(property, parsedCondition)
-    }
-
-    /**
-     * 事件初始化
-     *
-     * @param userInfo 用户信息
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun eventInitial(userInfo: UserInfo): String {
-        val eventId = getRandom(userInfo)
-
-        (userInfo.property!!["EVT"] as MutableList<String>).add(eventId)
-        return eventId
     }
 
     /**
@@ -336,9 +321,7 @@ class LifeRestartUtil {
             cond?.let { checkCondition(userInfo.property ?: emptyMap(), it) } == true
         }
         return if (branchItem != null) {
-//            listOf(eventData) + doEvent(userInfo, branchItem.split(":")[1])
             listOf(eventData) + branchItem.split(":")[1]
-
         } else {
             listOf(eventData)
         }
@@ -351,51 +334,44 @@ class LifeRestartUtil {
      * @param eventId
      * @return 事件内容
      */
+    @Suppress("UNCHECKED_CAST")
     private fun doEvent(userInfo: UserInfo, eventId: String): List<Any?> {
         val eventData = getDo(userInfo, eventId)
         val eventSize = eventData.size
         val event = eventData[0] as EventDataVO
         val property = userInfo.property as MutableMap<String, Any>
-        var effectStr = ""
+        val effectStr = StringBuilder()
 
-        val effects = mapOf(
-            "CHR" to event.effectChr,
-            "INT" to event.effectInt,
-            "STR" to event.effectStr,
-            "MNY" to event.effectMny,
-            "SPR" to event.effectSpr
-        )
-        println("property: $property")
-        println("effects: $effects")
-        effects.forEach { (key, value) ->
+        listOf("CHR", "INT", "STR", "MNY", "SPR").forEach { key ->
+            val value = when (key) {
+                "CHR" -> event.effectChr
+                "INT" -> event.effectInt
+                "STR" -> event.effectStr
+                "MNY" -> event.effectMny
+                "SPR" -> event.effectSpr
+                else -> null
+            }
             value?.let {
-//                effectStr += "$key:$value "
-                property[key] = (property[key] as Int) + value
+                property[key] = (property[key] as Int?)?.plus(it) ?: it
                 when (key) {
-                    "CHR" -> effectStr += "颜值:$value\n"
-                    "INT" -> effectStr += "智力:$value\n"
-                    "STR" -> effectStr += "体质:$value\n"
-                    "MNY" -> effectStr += "家境:$value\n"
-                    "SPR" -> effectStr += "快乐:$value\n"
+                    "CHR" -> effectStr.append("颜值:$value\n")
+                    "INT" -> effectStr.append("智力:$value\n")
+                    "STR" -> effectStr.append("体质:$value\n")
+                    "MNY" -> effectStr.append("家境:$value\n")
+                    "SPR" -> effectStr.append("快乐:$value\n")
                 }
             }
         }
 
-        event.effectLif?.let { property["LIF"] = (property["LIF"] as Int) + it }
+        event.effectLif?.let { property["LIF"] = (property["LIF"] as Int?)?.plus(it) ?: it }
         event.effectAge?.let { userInfo.age += it }
         property["EVT"] = (property["EVT"] as MutableList<String>) + event.id
 
-        val contentMap = mapOf("event" to event, "effect" to effectStr, "age" to userInfo.age)
-
+        val contentMap = mapOf("event" to event, "effect" to effectStr.toString(), "age" to userInfo.age)
 
         return if (eventSize == 1) {
-            println("contentMap1: $contentMap")
-
             mutableListOf(contentMap)
         } else {
-            println("contentMap2: $contentMap")
-            println("eventData: $eventData")
-
             val getEventId = eventData[1] as String
             mutableListOf(contentMap) + doEvent(userInfo, getEventId)
         }
@@ -415,15 +391,7 @@ class LifeRestartUtil {
 
     fun trajectory(userInfo: UserInfo): Any? {
         val trajectory = next(userInfo)
-//        val eventContent = trajectory["eventContent"] as List<Map<String, Any?>>
-        val eventContent = trajectory["eventContent"]
-        return eventContent
-//        return "${userInfo.age}岁: ${
-//            eventContent.joinToString("\n\t") { eventContentMap ->
-//                val event = eventContentMap["event"] as EventDataVO
-//                event.event + (event.postEvent?.let { "\n\t$it" } ?: "")
-//            }
-//        }${eventContent.mapNotNull { if (it["effect"] != "") "\n\t${it["effect"]}" else null }.joinToString()}"
+        return trajectory["eventContent"]
     }
 
     /**
@@ -434,8 +402,6 @@ class LifeRestartUtil {
      * @return 是否满足条件
      */
     private fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
-
-
         eventList.find {
             it as EventDataVO
             it.id == eventId
@@ -444,9 +410,6 @@ class LifeRestartUtil {
             if (it.noRandom != null) return false
             if (it.exclude != null && checkCondition(userInfo.property!!, it.exclude.toString())) return false
             if (it.include != null) return checkCondition(userInfo.property!!, it.include.toString())
-
-            println("eventPrp: ${userInfo.property}")
-            println("eventIt: $it")
         }
         return true
     }

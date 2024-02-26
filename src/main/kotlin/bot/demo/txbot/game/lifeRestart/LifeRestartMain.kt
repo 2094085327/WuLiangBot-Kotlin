@@ -80,8 +80,6 @@ class LifeRestartMain {
 
         val realId = OtherUtil().getRealId(event)
 
-        println("realId: $realId")
-
         userList.find { it.userId == realId }.let {
             if (it != null) {
                 userList.remove(it)
@@ -224,17 +222,14 @@ class LifeRestartMain {
             lastFetchTime = System.currentTimeMillis()
             val strList = mutableListOf<Any?>()
             for (i in 1..stepNext) {
-                println("userInfo.isEnd: ${userInfo.isEnd}")
 
                 val sendStr = restartUtil.trajectory(userInfo)
 
-                println("sendStr: $sendStr")
                 strList.add(sendStr)
 
                 sendStrList.find { sendMap ->
                     sendMap["userId"] == realId
                 }.let { sendMap ->
-                    println(sendMap?.get("sendStr"))
                     sendMap?.set("sendStr", strList)
                 }
 
