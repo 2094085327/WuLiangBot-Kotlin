@@ -28,7 +28,6 @@ class LifeRestartMain {
         var userList = mutableListOf<LifeRestartUtil.UserInfo>()
         var lastFetchTime: Long = 0
         var sendStrList: MutableList<MutableMap<String, Any>> = mutableListOf()
-        var thisEventList = mutableListOf<MutableMap<String, EventDataVO>>()
     }
 
 
@@ -94,7 +93,7 @@ class LifeRestartMain {
         userList.add(LifeRestartUtil.UserInfo(realId, null, -1, mutableListOf(), null))
         bot.sendMsg(
             event,
-            "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境 快乐」或者「随机分配」来获取随机属性",
+            "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境」或者「随机分配」来获取随机属性",
             false
         )
         bot.sendMsg(event, "请在5分钟内开始游戏", false)
@@ -103,6 +102,7 @@ class LifeRestartMain {
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "随机分配")
+    @Suppress("UNCHECKED_CAST")
     fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
         userList.find { it.userId == realId }.let { userInfo ->
@@ -148,7 +148,12 @@ class LifeRestartMain {
             }
             when (restartUtil.assignAttributes(userInfo, matcher)) {
                 "sizeOut" -> {
-                    bot.sendMsg(event, "注意分配的5个属性值的和不能超过10哦", false)
+                    bot.sendMsg(event, "注意分配的5个属性值的和不能超过20哦", false)
+                    return
+                }
+
+                "valueOut" -> {
+                    bot.sendMsg(event, "单项属性值不能大于10", false)
                     return
                 }
             }
@@ -254,4 +259,20 @@ class LifeRestartMain {
             )
         }
     }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "测试")
+    fun test(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val realId = OtherUtil().getRealId(event)
+
+        userList.find { it.userId == realId }.let { userInfo ->
+            if (userInfo != null) {
+                println("realId: $realId")
+
+                restartUtil.getRandomJson(userInfo)
+                return
+            }
+        }
+    }
+
 }

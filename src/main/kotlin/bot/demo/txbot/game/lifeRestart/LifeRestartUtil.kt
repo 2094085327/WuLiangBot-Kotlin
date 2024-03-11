@@ -1,5 +1,7 @@
 package bot.demo.txbot.game.lifeRestart
 
+import bot.demo.txbot.common.utils.JacksonUtil
+import com.fasterxml.jackson.databind.JsonNode
 import java.util.regex.Matcher
 import kotlin.random.Random
 
@@ -21,6 +23,7 @@ class LifeRestartUtil {
 
     var eventList: MutableList<Any> = mutableListOf()
     var ageList: MutableList<Any> = mutableListOf()
+    var ageJson: JsonNode? = null
 
 
     /**
@@ -70,6 +73,9 @@ class LifeRestartUtil {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
         if (total > 20) return "sizeOut"
+        for (value in attributeValues) {
+            if (value > 10) return "valueOut"
+        }
 
         // 如果property为null，初始化为一个新的MutableMap
         userInfo.property = userInfo.property ?: mutableMapOf()
@@ -242,7 +248,7 @@ class LifeRestartUtil {
     private fun generateValidEvent(userInfo: UserInfo, ageList: AgeDataVO): List<Map<String, Double>> {
         return ageList.eventList?.mapNotNull { event ->
             event?.let {
-                val splitEvent = it.split("*").map(String::toDouble)
+                val splitEvent = it.toString().split("*").map(String::toDouble)
                 val eventId = splitEvent[0].toInt().toString()
                 val weight = if (splitEvent.size == 1) 1.0 else splitEvent[1]
                 if (eventCheck(userInfo = userInfo, eventId = eventId)) {
@@ -413,4 +419,34 @@ class LifeRestartUtil {
         }
         return true
     }
+
+    data class AgeJson(
+        val age: AgeDataVO? = null
+    )
+
+    fun getJsonData() {
+        ageJson = JacksonUtil.getJsonNode("resources/lifeRestart/age.json")
+    }
+
+    /**
+     * 从Json中
+     * 获取随机事件
+     *
+     * @param userInfo 用户信息
+     * @return 随机事件ID
+     */
+    fun getRandomJson(userInfo: UserInfo): String {
+        getJsonData()
+
+        val ageList = ageJson!!.get(userInfo.age.toString())
+        val age: Int = userInfo.age
+        val eventList: MutableList<Any?> = mutableListOf()
+        for (element in ageList["event"]) eventList.add(element.textValue())
+
+        val ageDataVO = AgeDataVO(age = age, eventList = eventList)
+
+        val eventListCheck = generateValidEvent(userInfo, ageDataVO)
+        return weightRandom(eventListCheck)
+    }
+
 }

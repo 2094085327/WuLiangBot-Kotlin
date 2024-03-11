@@ -9,5 +9,5 @@ data class AgeDataVO(
     /**
      * 对应的事件池
      */
-    var eventList: MutableList<String?>? = null
+    var eventList: MutableList<Any?>? = null
 )

@@ -188,7 +188,7 @@ class ExcelReader {
         if (row.firstCellNum >= 0) {
 
             resultData.age = convertCellValueToString(row.getCell(row.firstCellNum.toInt()))?.toInt()
-            val eventList = mutableListOf<String?>()
+            val eventList = mutableListOf<Any?>()
             for (cellNum in row.firstCellNum+1 until row.lastCellNum) {
                 if (row.getCell(cellNum) != null && cellNum >= 0) {
                     eventList.add(convertCellValueToString(row.getCell(cellNum)))
