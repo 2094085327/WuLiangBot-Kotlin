@@ -6,9 +6,13 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 import java.net.URL
 import java.net.URLConnection
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
 import java.util.logging.Logger
@@ -70,10 +74,10 @@ class OtherUtil {
         folderPath: String,
         targetFolderPath: String,
         accessToken: String? = null
-    ) {
+    ): Boolean {
         try {
             val apiUrl =
-                String.format("https://api.github.com/repos/%s/%s/contents/%s", repoOwner, repoName, folderPath)
+                "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
             val url = URL(apiUrl)
             val connection: URLConnection = url.openConnection()
             if (!accessToken.isNullOrEmpty()) {
@@ -86,22 +90,33 @@ class OtherUtil {
 
                     for (file in jsonNode) {
                         val fileName = file["name"].textValue()
-                        // 使用国内镜像下载
-                        val fileDownloadUrl =
-                            file["download_url"].textValue().replace("raw.githubusercontent", "raw.gitmirror")
+                        var fileDownloadUrl = file["download_url"]?.textValue()
 
-                        val targetFilePath = Paths.get(targetFolderPath, fileName).toString()
+                        if (fileDownloadUrl == null) {
+                            // 这是一个文件夹，递归下载内容
+                            val subFolderPath = "${folderPath}${File.separator}$fileName"
+                            downloadFolderFromGitHub(repoOwner, repoName, subFolderPath, folderPath, accessToken)
+                        } else {
+                            // 文件
+                            // 使用国内镜像下载
+                            fileDownloadUrl = fileDownloadUrl.replace("raw.githubusercontent", "raw.gitmirror")
 
-                        if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue()))
-                            downloadFile(fileDownloadUrl, targetFilePath, accessToken)
+                            val targetFilePath = Paths.get(folderPath, fileName).toString()
+
+                            if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue()))
+                                downloadFile(fileDownloadUrl, targetFilePath, accessToken)
+                        }
                     }
-                    logger.info("文件夹下载成功！")
+                    logger.info("文件夹更新成功")
+                    return true
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
+                return false
             }
         } catch (e: IOException) {
             e.printStackTrace()
+            return false
         }
     }
 
@@ -137,8 +152,15 @@ class OtherUtil {
             if (!accessToken.isNullOrEmpty()) {
                 connection.setRequestProperty("Authorization", "token $accessToken")
             }
+
             try {
                 connection.getInputStream().use { `in` ->
+                    // Create parent directories if they do not exist
+                    val targetPath = Paths.get(targetFilePath)
+                    if (!Files.exists(targetPath.parent)) {
+                        Files.createDirectories(targetPath.parent)
+                    }
+
                     FileOutputStream(targetFilePath).use { out ->
                         val buffer = ByteArray(1024)
                         var bytesRead: Int
@@ -190,5 +212,33 @@ class OtherUtil {
         return sb.toString()
     }
 
+    /**
+     * 获取所有文件夹路径
+     *
+     * @param rootFolder 根文件夹
+     * @param currentFolder 当前文件夹
+     * @param excludedFolders 要排除的文件夹名称列表
+     * @return 所有文件夹路径
+     */
+    fun getAllRelativePaths(
+        rootFolder: File,
+        currentFolder: File,
+        excludedFolders: List<String> = emptyList()
+    ): List<String> {
+        val relativePaths = mutableListOf<String>()
 
+        currentFolder.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                val folderName = file.name
+                if (folderName !in excludedFolders) {
+                    val relativePath =
+                        "${rootFolder.name}${File.separator}${file.relativeTo(rootFolder).invariantSeparatorsPath}"
+                    relativePaths.add(relativePath)
+                    relativePaths.addAll(getAllRelativePaths(rootFolder, file, excludedFolders))
+                }
+            }
+        }
+
+        return relativePaths
+    }
 }
