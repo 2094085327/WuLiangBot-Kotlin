@@ -1,6 +1,5 @@
 package bot.demo.txbot.game.lifeRestart
 
-import bot.demo.txbot.common.utils.ExcelReader
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -48,9 +47,9 @@ class LifeRestartMain {
     @Scheduled(fixedDelay = 1 * 60 * 1000) // 每隔1分钟执行一次检查
     fun clearCacheIfExpired() {
         val currentTime = System.currentTimeMillis()
-        if (currentTime - lastFetchTime > 5 * 60 * 1000 && (restartUtil.eventList.isNotEmpty() || restartUtil.ageList.isNotEmpty())) {
-            restartUtil.eventList.clear()
-            restartUtil.ageList.clear()
+        if (currentTime - lastFetchTime > 5 * 60 * 1000 && (restartUtil.eventData != null || restartUtil.ageData != null)) {
+            restartUtil.eventData = null
+            restartUtil.ageData = null
             System.gc()
             // TODO 清除超时的用户数据
         }
@@ -61,16 +60,20 @@ class LifeRestartMain {
     fun startRestart(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val currentTime = System.currentTimeMillis()
         // 如果超过5分钟或者没有获取过数据，重新获取
-        if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventList.isEmpty() || restartUtil.ageList.isEmpty()) {
-            val readEvent = ExcelReader().readExcel("resources/lifeRestart/events.xlsx", "event")
-
-            val readAge = ExcelReader().readExcel("resources/lifeRestart/age.xlsx", "age")
-
-            if (readEvent != null) {
-                restartUtil.eventList = readEvent
-            }
-            if (readAge != null) {
-                restartUtil.ageList = readAge
+        if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventData == null || restartUtil.ageData == null) {
+//            val readEvent = ExcelReader().readExcel("resources/lifeRestart/events.xlsx", "event")
+//
+//            val readAge = ExcelReader().readExcel("resources/lifeRestart/age.xlsx", "age")
+//
+//            if (readEvent != null) {
+//                restartUtil.eventList = readEvent
+//            }
+//            if (readAge != null) {
+//                restartUtil.ageList = readAge
+//            }
+            if (!restartUtil.fetchDataAndUpdateLists()) {
+                bot.sendMsg(event, "人生重开数据缺失，请使用「更新资源」指令来下载缺失数据", false)
+                return
             }
 
             // 更新时间戳
@@ -269,7 +272,7 @@ class LifeRestartMain {
             if (userInfo != null) {
                 println("realId: $realId")
 
-                restartUtil.getRandomJson(userInfo)
+//                restartUtil.getRandomJson(userInfo)
                 return
             }
         }
