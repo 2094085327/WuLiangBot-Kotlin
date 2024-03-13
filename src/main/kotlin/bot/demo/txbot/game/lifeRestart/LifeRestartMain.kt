@@ -262,20 +262,4 @@ class LifeRestartMain {
             )
         }
     }
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "测试")
-    fun test(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val realId = OtherUtil().getRealId(event)
-
-        userList.find { it.userId == realId }.let { userInfo ->
-            if (userInfo != null) {
-                println("realId: $realId")
-
-//                restartUtil.getRandomJson(userInfo)
-                return
-            }
-        }
-    }
-
 }

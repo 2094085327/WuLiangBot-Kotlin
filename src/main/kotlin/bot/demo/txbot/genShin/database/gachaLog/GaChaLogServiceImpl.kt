@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
+import java.util.logging.Logger
 
 /**
  *@Description:
@@ -20,6 +21,8 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
     lateinit var gaChaLogMapper: GaChaLogMapper
 
     private val objectMapper = ObjectMapper()
+    private val logger: Logger = Logger.getLogger(GaChaLogServiceImpl::class.java.getName())
+
 
     val gachaDataMap = mutableMapOf(
         "gachaLog" to mutableMapOf<String, Any>(),
@@ -29,7 +32,8 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
             "200" to "常驻祈愿",
             "301" to "角色活动祈愿",
             "400" to "角色活动祈愿2",
-            "302" to "武器活动祈愿"
+            "302" to "武器活动祈愿",
+            "500" to "集录祈愿"
         ),
     )
 
@@ -39,14 +43,14 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         if (dataSize == 0) return null
 
 
-        val types = listOf(200, 301, 302, 400)
+        val types = listOf(200, 301, 302, 400, 500)
         val gachaLogMap = mutableMapOf<String, List<GaChaLogEntity?>>()
         for (type in types) {
             val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid).eq("type", type).orderByAsc("get_time")
             val gachaBefore = gaChaLogMapper.selectList(queryWrapper) ?: mutableListOf()
             gachaLogMap[type.toString()] = gachaBefore
         }
-        println("数据查询完毕")
+        logger.info("数据查询完毕")
         gachaDataMap["gachaLog"] = gachaLogMap
         gachaDataMap["uid"] = uid
         val json = objectMapper.writeValueAsString(gachaDataMap)
@@ -58,13 +62,6 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         file.writeText(json)
         return dataSize
     }
-
-//    override fun selectByUid(uid: String): Boolean {
-////        val queryWrapper = QueryWrapper<GaChaEntity>().eq("uid", uid)
-////        val gachaInfo = gaChaMapper.selectList(queryWrapper)
-////        return gachaInfo.size != 0
-//        return false
-//    }
 
     override fun insertByUid(
         uid: String,

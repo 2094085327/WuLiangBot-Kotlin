@@ -12,11 +12,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.util.*
+import java.util.logging.Logger
 import kotlin.math.pow
 
 
 class MysDataUtil {
-
+    private val logger: Logger = Logger.getLogger(MysDataUtil::class.java.getName())
 
     companion object {
         const val CACHE_PATH = "resources/gachaCache"
@@ -54,7 +55,7 @@ class MysDataUtil {
         val fiveMinutesAgo = System.currentTimeMillis() - 10 * 60 * 1000
         folder.listFiles()?.forEach { file ->
             if (file.lastModified() < fiveMinutesAgo) {
-                println("删除缓存：${file.name}")
+                logger.info("删除缓存：${file.name}")
                 file.delete()
             }
         }
@@ -64,7 +65,7 @@ class MysDataUtil {
     fun forceDeleteCache(cachePath: String) {
         val folder = File(cachePath)
         folder.listFiles()?.forEach { file ->
-            println("删除缓存：${file.name}")
+            logger.info("删除缓存：${file.name}")
             file.delete()
         }
     }

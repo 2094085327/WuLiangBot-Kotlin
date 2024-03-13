@@ -3,7 +3,6 @@ package bot.demo.txbot.genShin.util
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
-import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
@@ -16,9 +15,11 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
+import java.util.logging.Logger
 
 
 /**
@@ -29,14 +30,14 @@ import java.text.SimpleDateFormat
 @Component
 class GachaLogUtil {
     @Autowired
-    lateinit var gaChaLogService: GaChaLogService
-
-    @Autowired
     val webImgUtil = WebImgUtil()
 
     companion object {
         var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
     }
+
+    private val logger: Logger = Logger.getLogger(GachaLogUtil::class.java.getName())
+
 
     /**
      * 抽卡数据
@@ -45,9 +46,11 @@ class GachaLogUtil {
         var permanents: MutableList<HtmlEntity> = mutableListOf()
         var roles: MutableList<HtmlEntity> = mutableListOf()
         var weapons: MutableList<HtmlEntity> = mutableListOf()
+        var mixPool: MutableList<HtmlEntity> = mutableListOf()
         var roleCount: MutableList<CountDetail> = mutableListOf()
         var weaponCount: MutableList<CountDetail> = mutableListOf()
         var permanentCount: MutableList<CountDetail> = mutableListOf()
+        var mixCount: MutableList<CountDetail> = mutableListOf()
     }
 
     /**
@@ -83,7 +86,7 @@ class GachaLogUtil {
         val folder = File(folderPath)
 
         if (!folder.exists() || !folder.isDirectory) {
-            println("文件夹不存在或不是一个有效的文件夹: $folderPath")
+            logger.warning("文件夹不存在或不是一个有效的文件夹: $folderPath")
             return emptyList()
         }
 
@@ -95,7 +98,7 @@ class GachaLogUtil {
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            println("读取错误: $folderPath")
+            logger.logError("读取错误: $folderPath")
         }
 
         return fileNames
@@ -218,7 +221,7 @@ class GachaLogUtil {
      */
     fun getEachData(data: JsonNode, gachaType: String) {
         val folderPaths = when (gachaType) {
-            "200" -> listOf("resources/genShin/GenShinImg/role/", "resources/genShin/GenShinImg/weapons/")
+            "200", "500" -> listOf("resources/genShin/GenShinImg/role/", "resources/genShin/GenShinImg/weapons/")
             "301" -> listOf("resources/genShin/GenShinImg/role/")
             "302" -> listOf("resources/genShin/GenShinImg/weapons/")
             else -> return
@@ -227,6 +230,7 @@ class GachaLogUtil {
             "200" -> GachaData.permanents
             "301" -> GachaData.roles
             "302" -> GachaData.weapons
+            "500" -> GachaData.mixPool
             else -> return
         }
 
@@ -234,6 +238,7 @@ class GachaLogUtil {
             "200" -> GachaData.permanentCount
             "301" -> GachaData.roleCount
             "302" -> GachaData.weaponCount
+            "500" -> GachaData.mixCount
             else -> return
         }
 
@@ -286,6 +291,9 @@ class GachaLogUtil {
                             fiveCount += 1
                         }
                     }
+                } else if (gachaType == "500") {
+                    gachaEntity.isUp = true
+                    fiveCount += 1
                 } else {
                     for (weapon5 in upData["weapon5"]) {
                         if (weapon5.asText() == itemName) {
@@ -389,13 +397,13 @@ class GachaLogUtil {
      * 获取抽卡记录并发送图片
      *
      * @param bot 机器人
-     * @param event 事件
+     * @param privateMessageEvent 私聊事件
      * @param gameUid 游戏Uid
      * @param imgName 图片名称
      */
     fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
         val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
-        val pools = arrayOf("200", "301", "302")
+        val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
             GachaLogUtil().getEachData(gachaData, type)
         }
@@ -405,7 +413,7 @@ class GachaLogUtil {
 
     fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgName: String) {
         val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
-        val pools = arrayOf("200", "301", "302")
+        val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
             GachaLogUtil().getEachData(gachaData, type)
         }
@@ -450,7 +458,7 @@ class GachaLogUtil {
         bot.sendMsg(event, "发送完毕", false)
     }
 
-    fun checkCache(imgName: String,gameUid: String): Pair<File?, File?> {
+    fun checkCache(imgName: String, gameUid: String): Pair<File?, File?> {
         MysDataUtil().deleteDataCache()
         val folder = File(MysDataUtil.CACHE_PATH)
         val cacheImg = File("resources/imageCache")
@@ -458,7 +466,7 @@ class GachaLogUtil {
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
         val matchCache = cacheImg.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
 
-        return Pair(matchingFile,matchCache)
+        return Pair(matchingFile, matchCache)
     }
 
 

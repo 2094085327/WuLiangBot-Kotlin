@@ -184,6 +184,74 @@
                     </div>
                 </div>
             </div>
+
+            <div class="background">
+                <div class="gachaCount" th:each="count: ${mixPoolCount}">
+                    <img class="luckImg" th:src="@{'/images/sources/'+${count.luckImg}+'.webp'}" alt="">
+                    <div class="countText">
+                        <span class="gachaTitle">集录祈愿</span>
+                        <span class="alreadyGachaText">已抽 <span class="alreadyGachaTimes"
+                                                                  th:text="${count.alreadyCount}"> 45 </span> 次</span>
+                        <div class="countDetail">
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.ave}">65</span>
+                                <span class="countText">平均出金</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.allCount}">65</span>
+                                <span class="countText">总抽卡数</span>
+                            </div>
+                            <div class="eachCount">
+                                <span class="countNum" th:text="${count.fiveUpCount}">65</span>
+                                <span class="countText">五星</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="eachCard">
+                    <div class="eachData">
+                        <div th:each="mixPool : ${mixPools}" class="eachOne">
+                            <div th:if="${mixPool.itemName != null}">
+                                <div class="itemContainer" th:if="${mixPool.itemName != null}"
+                                     th:style="${mixPool.itemName != null} ? 'visibility: visible;' : 'visibility: hidden;'">
+
+                                    <div th:if="${mixPool.itemType=='角色'}">
+                                        <div class="container">
+                                            <img class="backImg"
+                                                 th:src="@{'/images/sources/'+${mixPool.itemAttribute}+'.png'}"
+                                                 alt="First Image">
+                                            <img class="firstImg"
+                                                 th:src="@{${mixPool.isEmpty() ? '/images/role/' + mixPool.itemName  : '/images/role/default.png' }}"
+                                                 th:alt="${mixPool.itemName}">
+                                            <img class="overlay-image" th:src="@{'/images/sources/角色框.png'}"
+                                                 alt="Second Image">
+                                        </div>
+                                    </div>
+                                    <div th:if="${mixPool.itemType=='武器'}">
+                                        <div class="weaponContainer">
+                                            <img class="backImgWeapon" th:src="@{'/images/weapons/bg5.png'}"
+                                                 alt="First Image">
+                                            <img class="weaponImg"
+                                                 th:src="@{${mixPool.isEmpty() ? '/images/weapons/' + mixPool.itemName  : '/images/role/default.png' }}"
+                                                 alt="">
+                                        </div>
+                                    </div>
+                                    <div th:with="percentage=${(mixPool.times / 90.0) * 100}"
+                                         class="progress-container">
+                                        <div th:text="${mixPool.times} + '抽'" class="getTimes"></div>
+                                        <div th:style="'width: ' + ${percentage} + '%; background-color: ' + (${percentage} < 25 ? 'rgba(0,128,0, 0.5);' : (${percentage} < 50 ? 'rgba(255, 255, 0, 0.5);' : (${percentage} < 75 ? 'rgba(255,165,0,0.5);' : 'rgba(255, 0, 0, 0.5);')))"
+                                             class="progress-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="itemContainer" th:if="${mixPool.itemName == null}"
+                                 th:style="${mixPool.itemName != null} ? 'visibility: visible;' : 'visibility: hidden;'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <script th:inline="javascript">
             const div1 = document.getElementsByClassName('progress-container')[0];

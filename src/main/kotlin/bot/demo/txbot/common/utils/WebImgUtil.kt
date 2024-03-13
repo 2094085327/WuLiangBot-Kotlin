@@ -22,6 +22,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.logging.Logger
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
@@ -41,6 +42,7 @@ class WebImgUtil {
         var usePort: String = ""
         var key: String = ""
     }
+    private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
 
     @Value("\${image_load.key}")
     fun getKey(imgKey: String) {
@@ -88,7 +90,7 @@ class WebImgUtil {
     @Suppress("unused")
     fun removeImg(imgUrl: String) {
         HttpUtil.doGetStr(url = imgUrl, headers = headers)
-        println("已经删除图片：$imgUrl")
+        logger.info("已经删除图片：$imgUrl")
     }
 
     /**
@@ -121,7 +123,7 @@ class WebImgUtil {
             .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")
             .build()
         bot.sendMsg(event, sendCacheImg, false)
-        println("使用缓存文件:${file.name}")
+        logger.info("使用缓存文件:${file.name}")
     }
 
 
@@ -135,7 +137,7 @@ class WebImgUtil {
         val fiveMinutesAgo = Date(currentDate.time - 5 * 60 * 1000)
         folder.listFiles()?.forEach { file ->
             if (file.lastModified() < fiveMinutesAgo.time) {
-                println("删除缓存：${file.name}")
+                logger.info("删除缓存：${file.name}")
                 file.delete()
             }
         }
@@ -246,7 +248,7 @@ class WebImgUtil {
         }
     }
 
-
+    @Suppress("unused")
     fun compressImage(imagePath: String) {
         val file = File(imagePath)
         val outfile = File(imagePath)

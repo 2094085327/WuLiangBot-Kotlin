@@ -19,17 +19,21 @@ class GachaLogController {
         val permanents = gachaData.permanents
         val roles = gachaData.roles
         val weapons = gachaData.weapons
+        val mixPools = gachaData.mixPool
 
         val roleCount = gachaData.roleCount
         val weaponCount = gachaData.weaponCount
         val permanentCount = gachaData.permanentCount
+        val mixPoolCount = gachaData.mixCount
 
         model.addAttribute("permanents", permanents)
         model.addAttribute("roles", roles)
         model.addAttribute("weapons", weapons)
+        model.addAttribute("mixPools", mixPools)
         model.addAttribute("roleCount", roleCount)
         model.addAttribute("weaponCount", weaponCount)
         model.addAttribute("permanentCount", permanentCount)
+        model.addAttribute("mixPoolCount", mixPoolCount)
         return "GenShin/GachaLog"
     }
 }

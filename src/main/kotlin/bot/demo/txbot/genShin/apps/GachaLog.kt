@@ -21,8 +21,8 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.io.File
 import java.net.URLEncoder
+import java.util.logging.Logger
 import java.util.regex.Matcher
 
 
@@ -47,23 +47,48 @@ class GachaLog {
 
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
+    private val logger: Logger = Logger.getLogger(GachaLog::class.java.getName())
+
 
     fun getData(authKeyB: JsonNode) {
-        val idList = listOf(301, 302, 200)
+        val idList = listOf(301, 302, 200, 500)
         for (id in idList) {
             gachaThread(authKeyB, id)
-            println("卡池：$id 分析完毕")
+            logger.info("卡池：$id 分析完毕")
         }
         System.gc()
     }
 
     fun getData(url: String) {
-        val idList = listOf(301, 302, 200)
+        val idList = listOf(301, 302, 200, 500)
         for (id in idList) {
             gachaThread(url, id)
-            println("卡池：$id 分析完毕")
+            logger.info("卡池：$id 分析完毕")
         }
         System.gc()
+    }
+
+    /**
+     * 向数据库中插入数据
+     *
+     * @param gachaData 抽卡数据
+     * @return 是否为最后的数据
+     */
+    fun insertData(gachaData: JsonNode): Boolean {
+        val length = gachaData["data"]["list"].size()
+        if (length == 0) return false
+
+        for (item in gachaData["data"]["list"]) {
+            val uid = item["uid"].textValue()
+            val type = item["gacha_type"].textValue()
+            val itemName = item["name"].textValue()
+            val itemType = item["item_type"].textValue()
+            val rankType = item["rank_type"].textValue()
+            val itemId = item["id"].textValue()
+            val getTime = item["time"].textValue()
+            gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
+        }
+        return true
     }
 
     /**
@@ -76,7 +101,6 @@ class GachaLog {
         // 本页最后一条数据的id
         var endId = "0"
         for (i in 1..10000) {
-
             val gachaData = mysApi.getData(
                 "gachaLog",
                 mutableMapOf(
@@ -87,24 +111,13 @@ class GachaLog {
                     "gacha_type" to gachaId
                 )
             )
-            val length = gachaData["data"]["list"].size()
-            if (length == 0) break
-            endId = gachaData["data"]["list"][length - 1]["id"].textValue()
-
-            for (item in gachaData["data"]["list"]) {
-                val uid = item["uid"].textValue()
-                val type = item["gacha_type"].textValue()
-                val itemName = item["name"].textValue()
-                val itemType = item["item_type"].textValue()
-                val rankType = item["rank_type"].textValue()
-                val itemId = item["id"].textValue()
-                val getTime = item["time"].textValue()
-                gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
-            }
+            endId = gachaData["data"]["list"].last()["id"].textValue()
+            if (!insertData(gachaData)) break
 
             Thread.sleep(500)
         }
     }
+
 
     /**
      * 获取抽卡数据进程
@@ -113,26 +126,13 @@ class GachaLog {
      * @param gachaId 卡池类型
      */
     fun gachaThread(gachaUrl: String, gachaId: Int) {
-        // 本页最后一条数据的id
         var endId = "0"
         for (i in 1..10000) {
             val nowGachaUrl =
                 GachaLogUtil().getUrl(url = gachaUrl, gachaType = gachaId.toString(), times = i, endId = endId)
             val gachaData = GachaLogUtil().getDataByUrl(nowGachaUrl)
-            val length = gachaData["data"]["list"].size()
-            if (length == 0) break
-            endId = gachaData["data"]["list"][length - 1]["id"].textValue()
-
-            for (item in gachaData["data"]["list"]) {
-                val uid = item["uid"].textValue()
-                val type = item["gacha_type"].textValue()
-                val itemName = item["name"].textValue()
-                val itemType = item["item_type"].textValue()
-                val rankType = item["rank_type"].textValue()
-                val itemId = item["id"].textValue()
-                val getTime = item["time"].textValue()
-                gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
-            }
+            endId = gachaData["data"]["list"].last()["id"].textValue()
+            if (!insertData(gachaData)) break
 
             Thread.sleep(500)
         }
