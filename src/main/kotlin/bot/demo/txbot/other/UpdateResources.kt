@@ -8,7 +8,6 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.io.File
 
 
 /**
@@ -45,23 +44,22 @@ class UpdateResources {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "更新资源")
     fun updateAll(bot: Bot, event: AnyMessageEvent) {
-        val rootFolder = File("resources")
-        val excludedFolders = listOf("imageCache")
-        val allFolderPaths = otherUtil.getAllRelativePaths(rootFolder, rootFolder, excludedFolders)
         val folderPath = "resources"
-        println("All folder paths:")
-        if (!otherUtil.downloadFolderFromGitHub(
-                owner,
-                repoName,
-                folderPath,
-                folderPath,
-                accessToken
-            )
-        ) {
+
+        val downloadCheck = otherUtil.downloadFolderFromGitHub(
+            owner,
+            repoName,
+            folderPath,
+            folderPath,
+            accessToken
+        )
+
+        if (!downloadCheck. first) {
             bot.sendMsg(event, "资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试", false)
             return
         }
-        bot.sendMsg(event, "资源更新完成", false)
+        bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
+        OtherUtil.fileCount = 0
     }
 
 }

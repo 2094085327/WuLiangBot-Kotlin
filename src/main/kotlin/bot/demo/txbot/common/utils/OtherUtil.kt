@@ -6,6 +6,7 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -30,6 +31,8 @@ class OtherUtil {
 
     companion object {
         var gskPort: String = ""
+        // 文件数量
+        var fileCount = 0
     }
 
     @Value("\${gensokyo_config.port}")
@@ -67,58 +70,67 @@ class OtherUtil {
      * @param folderPath 文件夹路径
      * @param targetFolderPath 目标文件夹路径
      * @param accessToken GitHub访问令牌
+     * @param downloadUrlPrefix 下载URL前缀
+     * @param mirrorUrlPrefix 镜像URL前缀
+     * @return 是否成功与更新文件数量
      */
     fun downloadFolderFromGitHub(
         repoOwner: String,
         repoName: String,
         folderPath: String,
         targetFolderPath: String,
-        accessToken: String? = null
-    ): Boolean {
+        accessToken: String? = null,
+        downloadUrlPrefix: String = "raw.githubusercontent.com",
+        mirrorUrlPrefix: String = "raw.gitmirror.com"
+    ): Pair<Boolean, Int> {
+        val apiUrl =
+            "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
+
         try {
-            val apiUrl =
-                "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
             val url = URL(apiUrl)
             val connection: URLConnection = url.openConnection()
+
             if (!accessToken.isNullOrEmpty()) {
                 connection.setRequestProperty("Authorization", "token $accessToken")
             }
-            try {
-                connection.getInputStream().use { `in` ->
-                    val objectMapper = jacksonObjectMapper()
-                    val jsonNode = objectMapper.readTree(`in`)
 
-                    for (file in jsonNode) {
-                        val fileName = file["name"].textValue()
-                        var fileDownloadUrl = file["download_url"]?.textValue()
+            connection.getInputStream().use { `in` ->
+                val objectMapper = jacksonObjectMapper()
+                val jsonNode = objectMapper.readTree(`in`)
 
-                        if (fileDownloadUrl == null) {
-                            // 这是一个文件夹，递归下载内容
-                            val subFolderPath = "${folderPath}${File.separator}$fileName"
-                            downloadFolderFromGitHub(repoOwner, repoName, subFolderPath, folderPath, accessToken)
-                        } else {
-                            // 文件
-                            // 使用国内镜像下载
-                            fileDownloadUrl = fileDownloadUrl.replace("raw.githubusercontent", "raw.gitmirror")
+                for (file in jsonNode) {
+                    val fileName = file["name"].textValue()
+                    var fileDownloadUrl = file["download_url"]?.textValue()
 
-                            val targetFilePath = Paths.get(folderPath, fileName).toString()
+                    if (fileDownloadUrl == null) {
+                        // 这是一个文件夹，递归下载内容
+                        val subFolderPath = "${folderPath}${File.separator}$fileName"
+                        downloadFolderFromGitHub(repoOwner, repoName, subFolderPath, folderPath, accessToken)
 
-                            if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue()))
-                                downloadFile(fileDownloadUrl, targetFilePath, accessToken)
+                    } else {
+                        // 文件，使用国内镜像下载
+                        fileDownloadUrl = fileDownloadUrl.replace(downloadUrlPrefix, mirrorUrlPrefix)
+
+                        val targetFilePath = Paths.get(folderPath, fileName).toString()
+
+                        if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue())) {
+                            downloadFile(fileDownloadUrl, targetFilePath, accessToken)
+                            fileCount += 1
                         }
                     }
-                    logger.info("文件夹更新成功")
-                    return true
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return false
             }
+            logger.info("文件夹更新完成")
+
+            return Pair(true, fileCount)
+
         } catch (e: IOException) {
             e.printStackTrace()
-            return false
+            logger.logError("文件下载异常:", e)
+            return Pair(false, fileCount)
         }
     }
+
 
     /**
      * 判断本地文件是否存在且内容与远程文件相同
@@ -155,10 +167,11 @@ class OtherUtil {
 
             try {
                 connection.getInputStream().use { `in` ->
-                    // Create parent directories if they do not exist
+                    // 父目录不存在则创建
                     val targetPath = Paths.get(targetFilePath)
                     if (!Files.exists(targetPath.parent)) {
                         Files.createDirectories(targetPath.parent)
+                        logger.info("创建文件夹：${targetPath.parent}")
                     }
 
                     FileOutputStream(targetFilePath).use { out ->
@@ -220,6 +233,7 @@ class OtherUtil {
      * @param excludedFolders 要排除的文件夹名称列表
      * @return 所有文件夹路径
      */
+    @Suppress("unused")
     fun getAllRelativePaths(
         rootFolder: File,
         currentFolder: File,
