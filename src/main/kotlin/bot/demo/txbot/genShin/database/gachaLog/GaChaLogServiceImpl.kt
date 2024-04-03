@@ -1,6 +1,6 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
-import bot.demo.txbot.genShin.util.MysDataUtil
+import bot.demo.txbot.genShin.util.CACHE_PATH
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -54,7 +54,7 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         gachaDataMap["gachaLog"] = gachaLogMap
         gachaDataMap["uid"] = uid
         val json = objectMapper.writeValueAsString(gachaDataMap)
-        val folderPath = MysDataUtil.CACHE_PATH
+        val folderPath = CACHE_PATH
         val folder = File(folderPath)
         if (!folder.exists()) folder.mkdirs()
         val fileName = "$folderPath/gachaLog-$uid.json"

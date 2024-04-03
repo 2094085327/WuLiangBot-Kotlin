@@ -163,7 +163,7 @@ class GachaLog {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "记录查询")
+    @MessageHandlerFilter(cmd = "历史记录")
     fun recordQueryByRealId(bot: Bot, event: AnyMessageEvent) {
         bot.sendMsg(event, "正在查询历史数据，请稍等", false)
         val realId = OtherUtil().getRealId(event)
@@ -193,7 +193,7 @@ class GachaLog {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "记录查询(.*)")
+    @MessageHandlerFilter(cmd = "历史记录(.*)")
     fun recordQuery(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val gameUid = matcher.group(1)?.replace(" ", "") ?: ""
 

@@ -1,6 +1,7 @@
 package bot.demo.txbot.other
 
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.genShin.util.InitGenShinData
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -60,6 +61,9 @@ class UpdateResources {
         }
         bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
         OtherUtil.fileCount = 0
+
+        // 重新初始化原神相关数据
+        InitGenShinData.initGachaLogData()
     }
 
 }

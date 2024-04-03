@@ -2,6 +2,8 @@ package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.JacksonUtil.objectMapper
+import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
+import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -20,9 +22,8 @@ class MysDataUtil {
     private val logger: Logger = Logger.getLogger(MysDataUtil::class.java.getName())
 
     companion object {
-        const val CACHE_PATH = "resources/gachaCache"
-        var poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
-        var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
+//        var poolData = JacksonUtil.getJsonNode(GACHA_JSON)
+//        var upPoolData = JacksonUtil.getJsonNode(POOL_JSON)
         var poolType: String = poolData["poolType"].textValue()
         var nowPoolData: PoolData = PoolData()
 
@@ -126,8 +127,8 @@ class MysDataUtil {
      *
      */
     private fun initGacha() {
-        poolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/gacha.json")
-        upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
+        poolData = JacksonUtil.getJsonNode(GACHA_JSON)
+        upPoolData = JacksonUtil.getJsonNode(POOL_JSON)
         poolType = poolData["poolType"].textValue()
 
         num5 = 0
@@ -163,13 +164,12 @@ class MysDataUtil {
 
     fun changePoolOpen(poolInfo: Pair<String, JsonNode>, poolFormat: String, poolType: String) {
         val (name, _) = poolInfo
-        val gachaJsonPath = "resources/genShin/defSet/gacha/gacha.json"
-        val poolDataChange = JacksonUtil.getJsonNode(gachaJsonPath)
+        val poolDataChange = JacksonUtil.getJsonNode(GACHA_JSON)
         val objRoot = poolDataChange as ObjectNode
         objRoot.put("openPool", name)
         objRoot.put("poolName", poolFormat)
         objRoot.put("poolType", poolType)
-        objectMapper.writeValue(File(gachaJsonPath), poolDataChange)
+        objectMapper.writeValue(File(GACHA_JSON), poolDataChange)
     }
 
     data class PoolData(
@@ -210,7 +210,7 @@ class MysDataUtil {
     }
 
     private fun mergeRole(version: String): Pair<ArrayNode, ArrayNode> {
-        val newAdd = getGachaData("resources/genShin/defSet/gacha/newAdd.json")
+        val newAdd = getGachaData(New_ADD)
         // 获取版本列表
         val versions = newAdd.fieldNames().asSequence().toList()
         // 获取当前版本的索引

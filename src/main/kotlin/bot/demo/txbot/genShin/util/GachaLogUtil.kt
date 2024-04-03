@@ -1,9 +1,9 @@
 package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.HttpUtil
-import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
+import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -31,10 +31,6 @@ import java.util.logging.Logger
 class GachaLogUtil {
     @Autowired
     val webImgUtil = WebImgUtil()
-
-    companion object {
-        var upPoolData = JacksonUtil.getJsonNode("resources/genShin/defSet/gacha/pool.json")
-    }
 
     private val logger: Logger = Logger.getLogger(GachaLogUtil::class.java.getName())
 
@@ -153,7 +149,7 @@ class GachaLogUtil {
      */
     private fun getRoleAttribute(roleName: String): String? {
         val objectMapper = ObjectMapper(YAMLFactory())
-        val file = File("resources/genShin/defSet/element/role.yaml")
+        val file = File(ROLE_JSON)
 
         try {
             val characterMap: Map<String, String> =
@@ -221,9 +217,9 @@ class GachaLogUtil {
      */
     fun getEachData(data: JsonNode, gachaType: String) {
         val folderPaths = when (gachaType) {
-            "200", "500" -> listOf("resources/genShin/GenShinImg/role/", "resources/genShin/GenShinImg/weapons/")
-            "301" -> listOf("resources/genShin/GenShinImg/role/")
-            "302" -> listOf("resources/genShin/GenShinImg/weapons/")
+            "200", "500" -> listOf(ROLE_IMG, WEAPON_IMG)
+            "301" -> listOf(ROLE_IMG)
+            "302" -> listOf(WEAPON_IMG)
             else -> return
         }
         val itemList = when (gachaType) {
@@ -342,7 +338,7 @@ class GachaLogUtil {
             // 从[?]处分割链接以拼接到接口链接上
             val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
             // 含参链接
-            "https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog?$splitUrl2"
+            "$GACHA_LINK$splitUrl2"
         } catch (e: Exception) {
             ""
         }
@@ -402,7 +398,7 @@ class GachaLogUtil {
      * @param imgName 图片名称
      */
     fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
-        val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
         val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
             GachaLogUtil().getEachData(gachaData, type)
@@ -412,7 +408,7 @@ class GachaLogUtil {
     }
 
     fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgName: String) {
-        val gachaData = MysDataUtil().getGachaData("resources/gachaCache/gachaLog-$gameUid.json")
+        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
         val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
             GachaLogUtil().getEachData(gachaData, type)
@@ -460,8 +456,8 @@ class GachaLogUtil {
 
     fun checkCache(imgName: String, gameUid: String): Pair<File?, File?> {
         MysDataUtil().deleteDataCache()
-        val folder = File(MysDataUtil.CACHE_PATH)
-        val cacheImg = File("resources/imageCache")
+        val folder = File(CACHE_PATH)
+        val cacheImg = File(IMG_CACHE_PATH)
 
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
         val matchCache = cacheImg.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
