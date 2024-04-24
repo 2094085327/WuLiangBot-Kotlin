@@ -290,7 +290,6 @@ class MysDataUtil {
 
         poolDataList.weapon3 = poolData["weapon3"]
 
-        println(poolDataList)
         return poolDataList
     }
 
@@ -338,7 +337,6 @@ class MysDataUtil {
             }
             itemList.add(lottery3())
         }
-        println(itemList)
         return itemList
     }
 
