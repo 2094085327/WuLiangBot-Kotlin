@@ -177,6 +177,7 @@ class LifeRestartUtil {
         val length = condition.length
         var i = condition.indexOfFirst { it == '>' || it == '<' || it == '!' || it == '?' || it == '=' }
 
+        // 要求的属性
         val prop = condition.substring(0, i)
         val symbol = condition.substring(i, if (condition[i + 1] == '=') i++ + 2 else i++ + 1)
         val d = condition.substring(i, length)
@@ -407,18 +408,19 @@ class LifeRestartUtil {
             is JsonNode -> {
                 val eventDataJson = eventData.get(eventId)
                 if (eventDataJson != null) {
+                    val eventEffect = eventDataJson["effect"]
                     event = EventDataVO(
                         id = eventId,
                         event = eventDataJson["event"].textValue(),
-                        grade = eventDataJson["grade"].intValue(),
+                        grade = eventDataJson["grade"]?.intValue(),
                         postEvent = eventDataJson["postEvent"]?.textValue(),
-                        effectChr = eventDataJson["effect"]["CHR"].intValue(),
-                        effectInt = eventDataJson["effect"]["INT"].intValue(),
-                        effectStr = eventDataJson["effect"]["STR"].intValue(),
-                        effectMny = eventDataJson["effect"]["MNY"].intValue(),
-                        effectSpr = eventDataJson["effect"]["SPR"].intValue(),
-                        effectLif = eventDataJson["effect"]["LIF"].intValue(),
-                        effectAge = eventDataJson["effect"]["AGE"].intValue(),
+                        effectChr = eventEffect?.get("CHR")?.intValue(),
+                        effectInt = eventEffect?.get("INT")?.intValue(),
+                        effectStr = eventEffect?.get("STR")?.intValue(),
+                        effectMny = eventEffect?.get("MNY")?.intValue(),
+                        effectSpr = eventEffect?.get("SPR")?.intValue(),
+                        effectLif = eventEffect?.get("LIF")?.intValue(),
+                        effectAge = eventEffect?.get("AGE")?.intValue(),
                         noRandom = eventDataJson["NoRandom"]?.intValue(),
                         include = eventDataJson["include"]?.textValue(),
                         exclude = eventDataJson["exclude"]?.textValue(),
@@ -427,7 +429,7 @@ class LifeRestartUtil {
                     branchItem = eventDataJson["branch"]?.filterNotNull()?.firstOrNull { branch ->
                         val cond = branch.textValue().split(":").firstOrNull()
                         cond?.let { thisCond -> checkCondition(userInfo.property ?: emptyMap(), thisCond) } == true
-                    }?.toString()
+                    }?.textValue()
                 }
             }
 
@@ -535,12 +537,12 @@ class LifeRestartUtil {
                 if (eventList.get("noRandom") != null) return false
                 if (eventList.get("exclude") != null && checkCondition(
                         userInfo.property!!,
-                        eventList.get("exclude").toString()
+                        eventList.get("exclude").textValue()
                     )
                 ) return false
                 if (eventList.get("include") != null) return checkCondition(
                     userInfo.property!!,
-                    eventList.get("include").toString()
+                    eventList.get("include").textValue()
                 )
             }
 
