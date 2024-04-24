@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.ExcelReader
 import bot.demo.txbot.common.utils.JacksonUtil
 import com.fasterxml.jackson.databind.JsonNode
 import java.io.File
+import java.util.logging.Logger
 import java.util.regex.Matcher
 import kotlin.random.Random
 
@@ -14,6 +15,8 @@ import kotlin.random.Random
  * @date 2024/2/16 13:24
  */
 class LifeRestartUtil {
+    private val logger: Logger = Logger.getLogger(ExcelReader::class.java.getName()) // 日志打印类
+
     data class UserInfo(
         val userId: String,
         var attributes: Map<*, *>? = null,
@@ -35,7 +38,7 @@ class LifeRestartUtil {
      */
     fun fetchDataAndUpdateLists(): Boolean {
         val ageJsonPath = "resources/lifeRestart/age.json"
-        val eventJsonPath = "resources/lifeRestart/event.json"
+        val eventJsonPath = "resources/lifeRestart/events.json"
         val talentJsonPath = "resources/lifeRestart/talents.json"
         val ageExcelPath = "resources/lifeRestart/age.xlsx"
         val eventExcelPath = "resources/lifeRestart/events.xlsx"
@@ -45,6 +48,7 @@ class LifeRestartUtil {
             return if (File(ageJsonPath).exists()) {
                 JacksonUtil.getJsonNode(ageJsonPath)
             } else {
+                logger.warning("age.json文件缺失，尝试切换age.xlsx")
                 ExcelReader().readExcel(ageExcelPath, "age")
             }
         }
@@ -53,6 +57,7 @@ class LifeRestartUtil {
             return if (File(eventJsonPath).exists()) {
                 JacksonUtil.getJsonNode(eventJsonPath)
             } else {
+                logger.warning("events.json文件缺失，尝试切换events.xlsx")
                 ExcelReader().readExcel(eventExcelPath, "event")
             }
         }
@@ -61,6 +66,7 @@ class LifeRestartUtil {
             return if (File(eventJsonPath).exists()) {
                 JacksonUtil.getJsonNode(talentJsonPath)
             } else {
+                logger.warning("talents.json文件缺失，尝试切换talents.xlsx")
                 ExcelReader().readExcel(talentExcelPath, "talent")
             }
         }
