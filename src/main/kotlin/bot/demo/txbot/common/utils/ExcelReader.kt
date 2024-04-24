@@ -68,6 +68,7 @@ class ExcelReader {
         return when (type) {
             "event" -> parseExcel(workbook) { convertRowToData(it) }
             "age" -> parseExcel(workbook) { convertRowToAgeData(it) }
+            "talent" -> parseExcel(workbook) { convertRowToAgeData(it) }
             else -> null
         }
     }

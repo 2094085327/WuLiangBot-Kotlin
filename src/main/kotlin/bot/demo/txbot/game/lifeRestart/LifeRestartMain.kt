@@ -2,12 +2,14 @@ package bot.demo.txbot.game.lifeRestart
 
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.game.lifeRestart.datebase.LifeRestartService
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.util.regex.Matcher
@@ -21,6 +23,9 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class LifeRestartMain {
+
+    @Autowired
+    lateinit var lifeRestartService: LifeRestartService
 
     companion object {
         val restartUtil = LifeRestartUtil()
@@ -61,16 +66,6 @@ class LifeRestartMain {
         val currentTime = System.currentTimeMillis()
         // 如果超过5分钟或者没有获取过数据，重新获取
         if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventData == null || restartUtil.ageData == null) {
-//            val readEvent = ExcelReader().readExcel("resources/lifeRestart/events.xlsx", "event")
-//
-//            val readAge = ExcelReader().readExcel("resources/lifeRestart/age.xlsx", "age")
-//
-//            if (readEvent != null) {
-//                restartUtil.eventList = readEvent
-//            }
-//            if (readAge != null) {
-//                restartUtil.ageList = readAge
-//            }
             if (!restartUtil.fetchDataAndUpdateLists()) {
                 bot.sendMsg(event, "人生重开数据缺失，请使用「更新资源」指令来下载缺失数据", false)
                 return
@@ -104,6 +99,11 @@ class LifeRestartMain {
     }
 
     @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "天赋(.*)")
+    fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    }
+
+    @AnyMessageHandler
     @MessageHandlerFilter(cmd = "随机分配")
     @Suppress("UNCHECKED_CAST")
     fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -117,6 +117,7 @@ class LifeRestartMain {
                 bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
                 return
             }
+            lifeRestartService.insertTimesByRealId(realId)
             restartUtil.randomAttributes(userInfo)
 
             val sendStr = restartUtil.trajectory(userInfo)
@@ -160,6 +161,7 @@ class LifeRestartMain {
                     return
                 }
             }
+            lifeRestartService.insertTimesByRealId(realId)
             sendNewImage(
                 bot,
                 event,
