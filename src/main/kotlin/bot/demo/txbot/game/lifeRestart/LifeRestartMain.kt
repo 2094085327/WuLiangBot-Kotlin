@@ -150,18 +150,18 @@ class LifeRestartMain {
                 return
             }
             val pattern = Regex("^\\d+( \\d+)*\$")
-            if (!pattern.matches(matcher.group(1))){
+            if (!pattern.matches(matcher.group(1))) {
                 bot.sendMsg(event, "你分配的属性格式错误，请重新分配", false)
                 return
             }
 
             when (restartUtil.assignAttributes(userInfo, matcher)) {
-                "sizeOut" -> {
+                SIZE_OUT -> {
                     bot.sendMsg(event, "注意分配的5个属性值的和不能超过20哦", false)
                     return
                 }
 
-                "valueOut" -> {
+                VALUE_OUT -> {
                     bot.sendMsg(event, "单项属性值不能大于10", false)
                     return
                 }

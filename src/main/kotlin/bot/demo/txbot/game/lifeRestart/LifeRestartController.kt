@@ -22,8 +22,6 @@ class LifeRestartController {
 
         val sendList = LifeRestartMain.sendStrList
 
-        println("sendList:$sendList")
-
         sendList.find { sendMap ->
             sendMap["userId"] == userId
         }.let { sendMap ->

@@ -37,37 +37,31 @@ class LifeRestartUtil {
      * @return 判断是否有文件缺失
      */
     fun fetchDataAndUpdateLists(): Boolean {
-        val ageJsonPath = "resources/lifeRestart/age.json"
-        val eventJsonPath = "resources/lifeRestart/events.json"
-        val talentJsonPath = "resources/lifeRestart/talents.json"
-        val ageExcelPath = "resources/lifeRestart/age.xlsx"
-        val eventExcelPath = "resources/lifeRestart/events.xlsx"
-        val talentExcelPath = "resources/lifeRestart/talents.xlsx"
 
         fun readAgeData(): Any? {
-            return if (File(ageJsonPath).exists()) {
-                JacksonUtil.getJsonNode(ageJsonPath)
+            return if (File(AGE_JSONPATH).exists()) {
+                JacksonUtil.getJsonNode(AGE_JSONPATH)
             } else {
-                logger.warning("age.json文件缺失，尝试切换age.xlsx")
-                ExcelReader().readExcel(ageExcelPath, "age")
+                logger.warning(AGE_JSON_MISS)
+                ExcelReader().readExcel(AGE_EXCEL_PATH, TYPE_AGE)
             }
         }
 
         fun readEventData(): Any? {
-            return if (File(eventJsonPath).exists()) {
-                JacksonUtil.getJsonNode(eventJsonPath)
+            return if (File(EVENT_JSONPATH).exists()) {
+                JacksonUtil.getJsonNode(EVENT_JSONPATH)
             } else {
-                logger.warning("events.json文件缺失，尝试切换events.xlsx")
-                ExcelReader().readExcel(eventExcelPath, "event")
+                logger.warning(EVENT_JSON_MISS)
+                ExcelReader().readExcel(EVENT_EXCEL_PATH, TYPE_EVENT)
             }
         }
 
         fun readTalentData(): Any? {
-            return if (File(eventJsonPath).exists()) {
-                JacksonUtil.getJsonNode(talentJsonPath)
+            return if (File(EVENT_JSONPATH).exists()) {
+                JacksonUtil.getJsonNode(TALENT_JSONPATH)
             } else {
-                logger.warning("talents.json文件缺失，尝试切换talents.xlsx")
-                ExcelReader().readExcel(talentExcelPath, "talent")
+                logger.warning(TALENT_JSON_MISS)
+                ExcelReader().readExcel(TALENT_EXCEL_PATH, TYPE_TALENT)
             }
         }
 
@@ -102,7 +96,7 @@ class LifeRestartUtil {
         val mutableProperty = userInfo.property as MutableMap<String, Any>
 
         // 随机选择第一个字段，给定0-10之间的随机值
-        val attributeNames = listOf("CHR", "INT", "STR", "MNY")
+        val attributeNames = listOf(CHR, INT, STR, MNY)
         val firstAttributeName = attributeNames.shuffled().first()
         val firstValue = (0..10).random()
         mutableProperty[firstAttributeName] = firstValue
@@ -120,9 +114,9 @@ class LifeRestartUtil {
             mutableProperty[attributeName] = value
             remainingSum -= value
         }
-        mutableProperty["EVT"] = mutableListOf<String>()
-        mutableProperty["LIF"] = 1
-        mutableProperty["SPR"] = 5
+        mutableProperty[EVT] = mutableListOf<String>()
+        mutableProperty[LIF] = 1
+        mutableProperty[SPR] = 5
 
         return mutableProperty
     }
@@ -136,21 +130,21 @@ class LifeRestartUtil {
     fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
-        if (total > 20) return "sizeOut"
-        for (value in attributeValues) if (value > 10) return "valueOut"
+        if (total > 20) return SIZE_OUT
+        for (value in attributeValues) if (value > 10) return VALUE_OUT
 
         // 如果property为null，初始化为一个新的MutableMap
         userInfo.property = userInfo.property ?: mutableMapOf()
 
         val mutableProperty = userInfo.property as MutableMap<String, Any>
-        val attributeNames = listOf("CHR", "INT", "STR", "MNY")
+        val attributeNames = listOf(CHR, INT, STR, MNY)
 
         attributeNames.forEachIndexed { index, attributeName ->
             mutableProperty[attributeName] = attributeValues[index]
         }
-        mutableProperty["EVT"] = mutableListOf<String>()
-        mutableProperty["LIF"] = 1
-        mutableProperty["SPR"] = 5
+        mutableProperty[EVT] = mutableListOf<String>()
+        mutableProperty[LIF] = 1
+        mutableProperty[SPR] = 5
 
         return true
     }
@@ -412,13 +406,13 @@ class LifeRestartUtil {
                         event = eventDataJson["event"].textValue(),
                         grade = eventDataJson["grade"]?.intValue(),
                         postEvent = eventDataJson["postEvent"]?.textValue(),
-                        effectChr = eventEffect?.get("CHR")?.intValue(),
-                        effectInt = eventEffect?.get("INT")?.intValue(),
-                        effectStr = eventEffect?.get("STR")?.intValue(),
-                        effectMny = eventEffect?.get("MNY")?.intValue(),
-                        effectSpr = eventEffect?.get("SPR")?.intValue(),
-                        effectLif = eventEffect?.get("LIF")?.intValue(),
-                        effectAge = eventEffect?.get("AGE")?.intValue(),
+                        effectChr = eventEffect?.get(CHR)?.intValue(),
+                        effectInt = eventEffect?.get(INT)?.intValue(),
+                        effectStr = eventEffect?.get(STR)?.intValue(),
+                        effectMny = eventEffect?.get(MNY)?.intValue(),
+                        effectSpr = eventEffect?.get(SPR)?.intValue(),
+                        effectLif = eventEffect?.get(LIF)?.intValue(),
+                        effectAge = eventEffect?.get(AGE)?.intValue(),
                         noRandom = eventDataJson["NoRandom"]?.intValue(),
                         include = eventDataJson["include"]?.textValue(),
                         exclude = eventDataJson["exclude"]?.textValue(),
@@ -463,30 +457,30 @@ class LifeRestartUtil {
         val property = userInfo.property as MutableMap<String, Any>
         val effectStr = StringBuilder()
 
-        listOf("CHR", "INT", "STR", "MNY", "SPR").forEach { key ->
+        listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
             val value = when (key) {
-                "CHR" -> event.effectChr
-                "INT" -> event.effectInt
-                "STR" -> event.effectStr
-                "MNY" -> event.effectMny
-                "SPR" -> event.effectSpr
+                CHR -> event.effectChr
+                INT -> event.effectInt
+                STR -> event.effectStr
+                MNY -> event.effectMny
+                SPR -> event.effectSpr
                 else -> null
             }
             value?.let {
                 property[key] = (property[key] as Int?)?.plus(it) ?: it
                 when (key) {
-                    "CHR" -> effectStr.append("颜值:$value\n")
-                    "INT" -> effectStr.append("智力:$value\n")
-                    "STR" -> effectStr.append("体质:$value\n")
-                    "MNY" -> effectStr.append("家境:$value\n")
-                    "SPR" -> effectStr.append("快乐:$value\n")
+                    CHR -> effectStr.append("颜值:$value\n")
+                    INT -> effectStr.append("智力:$value\n")
+                    STR -> effectStr.append("体质:$value\n")
+                    MNY -> effectStr.append("家境:$value\n")
+                    SPR -> effectStr.append("快乐:$value\n")
                 }
             }
         }
 
-        event.effectLif?.let { property["LIF"] = (property["LIF"] as Int?)?.plus(it) ?: it }
+        event.effectLif?.let { property[LIF] = (property[LIF] as Int?)?.plus(it) ?: it }
         event.effectAge?.let { userInfo.age += it }
-        property["EVT"] = (property["EVT"] as MutableList<String>) + event.id
+        property[EVT] = (property[EVT] as MutableList<String>) + event.id
 
         val contentMap = mapOf("event" to event, "effect" to effectStr.toString(), "age" to userInfo.age)
 
