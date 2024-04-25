@@ -137,9 +137,7 @@ class LifeRestartUtil {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
         if (total > 20) return "sizeOut"
-        for (value in attributeValues) {
-            if (value > 10) return "valueOut"
-        }
+        for (value in attributeValues) if (value > 10) return "valueOut"
 
         // 如果property为null，初始化为一个新的MutableMap
         userInfo.property = userInfo.property ?: mutableMapOf()

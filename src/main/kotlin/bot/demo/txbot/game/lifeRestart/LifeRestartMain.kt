@@ -121,7 +121,6 @@ class LifeRestartMain {
             restartUtil.randomAttributes(userInfo)
 
             val sendStr = restartUtil.trajectory(userInfo)
-
             sendStrList.add(mutableMapOf("userId" to realId, "sendStr" to mutableListOf(sendStr) as List<String>))
 
             sendNewImage(
@@ -150,6 +149,12 @@ class LifeRestartMain {
                 bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
                 return
             }
+            val pattern = Regex("^\\d+( \\d+)*\$")
+            if (!pattern.matches(matcher.group(1))){
+                bot.sendMsg(event, "你分配的属性格式错误，请重新分配", false)
+                return
+            }
+
             when (restartUtil.assignAttributes(userInfo, matcher)) {
                 "sizeOut" -> {
                     bot.sendMsg(event, "注意分配的5个属性值的和不能超过20哦", false)
@@ -162,6 +167,11 @@ class LifeRestartMain {
                 }
             }
             lifeRestartService.insertTimesByRealId(realId)
+
+            val sendStr = restartUtil.trajectory(userInfo)
+
+            sendStrList.add(mutableMapOf("userId" to realId, "sendStr" to mutableListOf(sendStr) as List<Any?>))
+
             sendNewImage(
                 bot,
                 event,
