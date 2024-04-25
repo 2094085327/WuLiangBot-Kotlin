@@ -45,7 +45,7 @@ class GeoMain {
 
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "(.*)天气")
+    @MessageHandlerFilter(cmd = "天气 (.*)")
     fun getWeatherImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         if (event == null) return
 
@@ -68,7 +68,7 @@ class GeoMain {
 
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "(.*)地理")
+    @MessageHandlerFilter(cmd = "地理 (.*)")
     fun getGeoImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         if (event == null) return
 

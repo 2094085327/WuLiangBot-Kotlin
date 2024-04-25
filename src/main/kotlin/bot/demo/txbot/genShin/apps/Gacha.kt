@@ -20,6 +20,36 @@ class Gacha {
         bot.sendMsg(event, poolList.joinToString("\n"), false)
     }
 
+    /**
+     * 解析输入数据，返回卡池名称、卡池 ID 和卡池类型
+     *
+     * @param poolData 输入的卡池数据
+     * @return Triple<String, String, String> 卡池名称、卡池 ID 和卡池类型
+     */
+    private fun parsePoolData(poolData: String): Triple<String, String, String> {
+        val regex = Regex("(.*?)\\s*-\\s*([^-]*?)(武器|常驻)?\\s*$")
+        regex.matchEntire(poolData)?.destructured?.let { (name, id, type) ->
+            val poolType = when (type.trim()) {
+                "武器" -> "weapon"
+                "常驻" -> "permanent"
+                else -> "role" // 默认类型
+            }
+            return Triple(name.trim(), id.trim(), poolType)
+        }
+
+        // 尝试匹配不包含连字符的数字格式，如“4.5 武器”或“4.5 常驻”
+        val simpleRegex = Regex("(\\d+\\.\\d+)\\s*(武器|常驻)?\\s*$")
+        simpleRegex.find(poolData)?.destructured?.let { (id, type) ->
+            val poolType = when (type.trim()) {
+                "武器" -> "weapon"
+                "常驻" -> "permanent"
+                else -> "role" // 默认类型
+            }
+            return Triple("default", id, poolType)
+        }
+        return Triple("", "", "")
+    }
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "启用卡池 (.*)")
     fun setOpenPool(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
@@ -29,28 +59,9 @@ class Gacha {
             return
         }
 
-
-        val poolName: String
-        val poolId: String
-        var poolType = "role"
-
-        if (poolData.contains("-") && poolData.contains("武器")) {
-            // 处理新的格式
-            val parts = poolData.split("-")
-            poolName = parts[0].trim()
-            poolId = parts[1].replace("武器", "").trim()
-            poolType = "weapon"
-        } else if (poolData.contains("-") && poolData.contains("常驻")) {
-            val parts = poolData.split("-")
-            poolName = parts[0].trim()
-            poolId = parts[1].replace("常驻", "").trim()
-            poolType = "permanent"
-        } else if (poolData.contains("-")) {
-            val parts = poolData.split("-")
-            poolName = parts[0].trim()
-            poolId = parts[1].trim()
-        } else {
-            // 处理其他情况，这里可能需要根据具体需求进行调整
+        // 解析输入
+        val (poolName, poolId, poolType) = parsePoolData(poolData)
+        if (poolName.isEmpty() || poolId.isEmpty()) {
             bot.sendMsg(event, "你输入的格式似乎不正确哦", false)
             bot.sendMsg(event, "请使用指令 全部卡池 查看可以启用的卡池", false)
             return
@@ -61,13 +72,13 @@ class Gacha {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            bot.sendMsg(event, "未找到卡池$poolData", false)
+            bot.sendMsg(event, "未找到卡池「$poolData」", false)
             bot.sendMsg(event, "请使用指令 全部卡池 查看可以启用的卡池", false)
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
 
-        bot.sendMsg(event, "已启用卡池「$poolData」", false)
+        bot.sendMsg(event, "已启用卡池「${poolFind.first}」", false)
     }
 
     @AnyMessageHandler
@@ -87,6 +98,4 @@ class Gacha {
 
         bot.sendMsg(event, "你抽中了:$itemList", false)
     }
-
-
 }

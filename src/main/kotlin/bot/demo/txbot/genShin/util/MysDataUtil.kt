@@ -22,7 +22,7 @@ class MysDataUtil {
     private val logger: Logger = Logger.getLogger(MysDataUtil::class.java.getName())
 
     companion object {
-//        var poolData = JacksonUtil.getJsonNode(GACHA_JSON)
+        //        var poolData = JacksonUtil.getJsonNode(GACHA_JSON)
 //        var upPoolData = JacksonUtil.getJsonNode(POOL_JSON)
         var poolType: String = poolData["poolType"].textValue()
         var nowPoolData: PoolData = PoolData()
@@ -152,6 +152,10 @@ class MysDataUtil {
             val keyParts = key.split("-")
             val entryName = if (keyParts.size > 1) keyParts[0] else key
             val entryId = if (keyParts.size > 1) keyParts[1] else ""
+
+            if (name == "default" && entryId.trim() == id) {
+                return Pair(key, entry.value)
+            }
 
             if (entryName.contains(name) && entryId.trim() == id) {
                 return Pair(key, entry.value)
@@ -358,7 +362,7 @@ class MysDataUtil {
         val have: Boolean? = null,
     )
 
-    fun getBingWeapon(): String {
+    private fun getBingWeapon(): String {
         if (poolType != "weapon") return ""
         val name = "薙草之稻光"
         return name
