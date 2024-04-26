@@ -88,7 +88,25 @@ class LifeRestartMain {
         }.let { sendMap ->
             sendStrList.remove(sendMap)
         }
-        userList.add(LifeRestartUtil.UserInfo(realId, null, -1, mutableListOf(), null))
+
+        val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
+
+        val userInfo = LifeRestartUtil.UserInfo(
+            userId = realId,
+            attributes = null,
+            age = -1,
+            events = mutableListOf(),
+            property = null,
+            gameTimes = userGameInfo?.times ?: 0,
+            achievement = userGameInfo?.cachv ?: 0,
+        )
+
+        userList.add(userInfo)
+
+        println("人生重开用户信息：$userList")
+
+        restartUtil.talentRandomInit(userInfo = userInfo)
+
         bot.sendMsg(
             event,
             "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境」或者「随机分配」来获取随机属性",
@@ -101,6 +119,17 @@ class LifeRestartMain {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "天赋(.*)")
     fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val realId = OtherUtil().getRealId(event)
+        userList.find { it.userId == realId }.let { userInfo ->
+            if (userInfo == null) {
+                bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
+                return
+            }
+            if (userInfo.property != null) {
+                bot.sendMsg(event, "你已经选择过天赋了,请不要重复分配", false)
+                return
+            }
+        }
     }
 
     @AnyMessageHandler

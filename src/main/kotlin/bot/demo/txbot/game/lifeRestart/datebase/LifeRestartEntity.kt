@@ -30,8 +30,7 @@ data class LifeRestartEntity(
     /**
      * 用户达成的游戏成就数
      */
-    @TableField(value = "cachv")
-    private val cachv: Int? = null,
+    @TableField(value = "cachv") val cachv: Int? = null,
 
     /**
      * 用户达成的游戏成就

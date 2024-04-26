@@ -1389,7 +1389,7 @@
     "2005": {
         "id": 2005,
         "name": "圆周率",
-        "description": 3.1415926,
+        "description": "3.1415926",
         "grade": 0,
         "exclusive": 1
     },

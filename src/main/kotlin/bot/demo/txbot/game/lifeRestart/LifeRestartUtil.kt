@@ -24,7 +24,9 @@ class LifeRestartUtil {
         var events: MutableList<Any> = mutableListOf(),
         var property: Map<String, Any>? = null,
         var talent: MutableList<Any> = mutableListOf(),
-        var isEnd: Boolean? = false
+        var isEnd: Boolean? = false,
+        var gameTimes: Int = 0,
+        var achievement: Int = 0
     )
 
     var ageData: Any? = null
@@ -348,7 +350,7 @@ class LifeRestartUtil {
                 val ageList = (ageData as JsonNode).get(userInfo.age.toString())
                 val age: Int = userInfo.age
                 val eventList: MutableList<Any?> = mutableListOf()
-                for (element in ageList["event"]) eventList.add(element.textValue())
+                for (element in ageList[TYPE_EVENT]) eventList.add(element.textValue())
 
                 ageDataVO = AgeDataVO(age = age, eventList = eventList)
             }
@@ -372,7 +374,7 @@ class LifeRestartUtil {
      * @return 是否结束
      */
     private fun isEnd(userInfo: UserInfo) {
-        val lif = userInfo.property?.get("LIF") as Int
+        val lif = userInfo.property?.get(LIF) as Int
         if (lif < 1) userInfo.isEnd = true
     }
 
@@ -403,7 +405,7 @@ class LifeRestartUtil {
                     val eventEffect = eventDataJson["effect"]
                     event = EventDataVO(
                         id = eventId,
-                        event = eventDataJson["event"].textValue(),
+                        event = eventDataJson[TYPE_EVENT].textValue(),
                         grade = eventDataJson["grade"]?.intValue(),
                         postEvent = eventDataJson["postEvent"]?.textValue(),
                         effectChr = eventEffect?.get(CHR)?.intValue(),
@@ -554,65 +556,74 @@ class LifeRestartUtil {
         return true
     }
 
-    var talentPullCount: Int? = null
-    var talentRate: MutableMap<Any, Int> = mutableMapOf()
-    var additions: MutableMap<String, Int> = mutableMapOf()
+    val talentConfig = TalentConfig()
 
 
-    fun talentConfig(
-        talentPullCount: Int? = 10,
-        talent: MutableMap<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000),
-        additions: MutableMap<String, Int> = mutableMapOf()
-    ) {
-        this.talentPullCount = talentPullCount
-        this.talentRate = talent
-        this.additions = additions
+//    fun talentConfig(
+//        talentPullCount: Int? = 10,
+//        talent: MutableMap<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000),
+//        additions: MutableMap<String, Int> = mutableMapOf()
+//    ) {
+//        this.talentPullCount = talentPullCount
+//        this.talentRate = talent
+//        this.additions = additions
+//    }
+
+    fun talentRandomInit(userInfo: UserInfo): Any {
+//        val lastExtentTalent = lastExtentTalent(userInfo)
+        val lastExtentTalent = null
+        val talentRandom = talentRandom(lastExtentTalent, userInfo)
+        println("talentRandom:$talentRandom")
+        return talentRandom
     }
-//
-//
-//    fun talentRandom(include: Any?, additionValues: Any?): Array<Any?> {
-//        val rate = getRate(additionValues)
-//
-//        val randomGrade = {
-//            val randomNumber = (0 until rate.total).random()
-//            when {
-//                (randomNumber - rate[3]) < 0 -> 3
-//                (randomNumber - rate[2]) < 0 -> 2
-//                (randomNumber - rate[1]) < 0 -> 1
-//                else -> 0
-//            }
-//        }
-//
-//        val talentList = mutableMapOf<Int, MutableList<TalentDataVo>>()
-//        when (talentData) {
-//            is JsonNode -> {
-//                val talentListJson = talentData as JsonNode
-//                for (talent in talentListJson) {
-//                    val talentId = talent.get("id").textValue()
-//                    val grade = talent.get("grade").intValue()
-//                    val name = talent.get("name").textValue()
-//                    val description = talent.get("description").textValue()
-//                    val exclusive = talent.get("exclusive").booleanValue()
-//                    if (exclusive) continue
-//                    val talentDataVo = TalentDataVo(grade, name, description, talentId)
-//                    if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
-//                    else talentList[grade]?.add(talentDataVo)
-//                }
-//            }
-//
-//            is MutableList<*> -> {
-//                val talentList = talentData as MutableList<*>
-//                // TODO talent Excle
-//            }
-//        }
-//
-//        val talentPullCount = 3
+
+
+    private fun talentRandom(include: Any?, userInfo: UserInfo): MutableList<Any> {
+        val rate = getRate(userInfo)
+
+        fun randomGrade(): Int {
+            val randomNumber = (0 until rate["total"]!!).random()
+            return if ((randomNumber - rate[3]!!) < 0) {
+                3
+            } else if ((randomNumber - rate[2]!!) < 0) {
+                2
+            } else if ((randomNumber - rate[1]!!) < 0) {
+                1
+            } else 0
+        }
+
+        val talentList = mutableMapOf<Int, MutableList<TalentDataVo>>()
+        when (talentData) {
+            is JsonNode -> {
+                val talentListJson = talentData as JsonNode
+                for (talent in talentListJson) {
+                    val talentId = talent.get("id").asInt().toString()
+                    val grade = talent.get("grade").intValue()
+                    val name = talent.get("name").textValue()
+                    val description = talent.get("description").textValue()
+                    val exclusive = talent.get("exclusive")?.booleanValue()
+                    if (exclusive == true) continue
+
+
+                    val talentDataVo = TalentDataVo(grade, name, description, talentId)
+                    if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
+                    else talentList[grade]?.add(talentDataVo)
+                }
+            }
+
+            is MutableList<*> -> {
+                val talentList = talentData as MutableList<*>
+                // TODO talent Excle
+            }
+        }
+
+//        var talentPullCount = 3
 //        var include = include
 //        if (include != null) include = include as Map<String, Any>
 //        if (include != null) talentPullCount--
-////        val talentList = mutableMapOf<Int, MutableList<Map<String, Any>>>(
-//
-//
+//        val talentList = mutableMapOf<Int, MutableList<Map<String, Any>>>(
+
+
 //        return Array(this.talentPullCount)
 //        { i ->
 //            if (i == 0 && include != null) include
@@ -624,40 +635,54 @@ class LifeRestartUtil {
 //                talentList[grade]?.removeAt(random)
 //            }
 //        }
-//    }
-//
-//    fun getAddition(type, value) {
-//        if (!this.additions[type]) return {};
-//        for (const [min, addition] of this.#additions[type]) {
-//            if (value >= min) return addition;
-//        }
-//        return {};
-//    }
-//
-//    fun getRate(additionValues: Map<String, Any>): Map<Int, Int> {
-//        val rate = this.talentRate
-//        val addition = mutableMapOf(1 to 1, 2 to 1, 3 to 1)
-//
-//        additionValues.forEach { (key, value) ->
-//            val addi = getAddition(key, value)
-//            addi.forEach { (grade, amount) ->
-//                addition[grade] = addition.getOrDefault(grade, 0) + amount as Int
-//            }
-//        }
-//
-//        addition.forEach { (grade, value) ->
-//            rate[grade] = rate[grade]?.times(value as Int) ?: 0
-//        }
-//
-//        return rate
-//    }
-//
-//    fun lastExtentTalent(userInfo: UserInfo): Any {
-//        return userInfo.talent.last()
-//    }
-//
-//    fun talentRandomInit(userInfo: UserInfo) {
-//        talentRandom(lastExtentTalent(userInfo), null)
-//    }
+
+        val result = mutableListOf<Any>()
+        repeat(talentConfig.talentPullCount) { i ->
+            if (i == 0 && include != null) {
+                result.add(include)
+            } else {
+                var grade = randomGrade()
+                while (talentList[grade]?.isEmpty() == true) grade--
+                val length = talentList[grade]?.size ?: 0
+                val random = (Math.random() * length).toInt() % length
+                result.add(talentList[grade]?.removeAt(random) ?: "")
+            }
+        }
+        return result
+    }
+
+    private fun getAddition(type: String, value: Int): MutableMap<Int, Int>? {
+        talentConfig.additions[type]?.forEach { mapList ->
+            mapList.forEach { (min, addition) ->
+                if (value >= min) return addition
+            }
+        }
+        return null
+    }
+
+    private fun getRate(userInfo: UserInfo): MutableMap<Any, Int> {
+        val rate = talentConfig.talentRate
+        val addition = mutableMapOf(1 to 1, 2 to 1, 3 to 1)
+
+        val additionValues = mutableMapOf("TMS" to userInfo.gameTimes, "CACHV" to userInfo.achievement)
+
+        additionValues.forEach { (key, value) ->
+            val addi = getAddition(key, value)
+            addi?.forEach { (grade, _) ->
+                addition[grade] = addition[grade]!! + addi[grade]!!
+            }
+        }
+
+        addition.forEach { (grade, _) ->
+            rate[grade] = rate[grade]!! * addition[grade]!!
+        }
+
+        return rate
+    }
+
+    fun lastExtentTalent(userInfo: UserInfo): Any {
+        return userInfo.talent.last()
+    }
+
 
 }
