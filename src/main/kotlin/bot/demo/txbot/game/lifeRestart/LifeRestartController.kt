@@ -31,4 +31,15 @@ class LifeRestartController {
 
         return "LifeRestart/LifeRestartMain"
     }
+
+    @RequestMapping("/lifeRestartTalent")
+    @Suppress("UNCHECKED_CAST")
+    fun talent(model: Model, userId: String): String {
+        val userList = LifeRestartMain.userList
+        userList.find { it.userId == userId }.let { userInfo ->
+            model.addAttribute("talentDataVo", userInfo?.randomTalentTemp as List<TalentDataVo>)
+        }
+
+        return "LifeRestart/LifeRestartTalent"
+    }
 }

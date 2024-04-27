@@ -103,21 +103,28 @@ class LifeRestartMain {
 
         userList.add(userInfo)
 
-        println("人生重开用户信息：$userList")
-
-        restartUtil.talentRandomInit(userInfo = userInfo)
+        val randomTalent = restartUtil.talentRandomInit(userInfo = userInfo)
+        userInfo.randomTalentTemp = randomTalent
 
         bot.sendMsg(
             event,
-            "游戏账号创建成功，请输入「分配属性 颜值 智力 体质 家境」或者「随机分配」来获取随机属性",
+            "游戏账号创建成功，请使用如「天赋 1 2 3」来选择天赋",
             false
         )
+
         bot.sendMsg(event, "请在5分钟内开始游戏", false)
+
+        sendNewImage(
+            bot,
+            event,
+            "${userInfo.userId}-LifeStartTalent",
+            "http://localhost:${WebImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
+        )
 
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "天赋(.*)")
+    @MessageHandlerFilter(cmd = "天赋 (.*)")
     fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
         userList.find { it.userId == realId }.let { userInfo ->
@@ -125,11 +132,43 @@ class LifeRestartMain {
                 bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
                 return
             }
-            if (userInfo.property != null) {
+            if (userInfo.talent.isNotEmpty()) {
                 bot.sendMsg(event, "你已经选择过天赋了,请不要重复分配", false)
                 return
             }
+
+            val pattern = Regex("""^(?:[1-9]|10)(?:\s(?:[1-9]|10))*$""")
+            val match = matcher.group(1)
+            if (!pattern.matches(match)) {
+                bot.sendMsg(event, "你分配的属性格式错误或范围不正确，请重新分配", false)
+                return
+            }
+
+            restartUtil.getChoiceTalent(match, userInfo)
+            println("userInfo: $userInfo")
+
+            bot.sendMsg(
+                event,
+                "请输入「分配属性 颜值 智力 体质 家境」或者「随机分配」来获取随机属性",
+                false
+            )
         }
+    }
+
+    fun errorSituation(bot: Bot, event: AnyMessageEvent, userInfo: LifeRestartUtil.UserInfo? = null): Boolean {
+        if (userInfo == null) {
+            bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
+            return false
+        }
+        if (userInfo.property != null) {
+            bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
+            return false
+        }
+        if (userInfo.talent.isEmpty()) {
+            bot.sendMsg(event, "你还没有选择天赋,请先选择天赋", false)
+            return false
+        }
+        return true
     }
 
     @AnyMessageHandler
@@ -138,16 +177,10 @@ class LifeRestartMain {
     fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
         userList.find { it.userId == realId }.let { userInfo ->
-            if (userInfo == null) {
-                bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
-                return
-            }
-            if (userInfo.property != null) {
-                bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
-                return
-            }
+
+            if (!errorSituation(bot, event, userInfo)) return
             lifeRestartService.insertTimesByRealId(realId)
-            restartUtil.randomAttributes(userInfo)
+            restartUtil.randomAttributes(userInfo!!)
 
             val sendStr = restartUtil.trajectory(userInfo)
             sendStrList.add(mutableMapOf("userId" to realId, "sendStr" to mutableListOf(sendStr) as List<String>))
@@ -170,21 +203,15 @@ class LifeRestartMain {
         val realId = OtherUtil().getRealId(event)
 
         userList.find { it.userId == realId }.let { userInfo ->
-            if (userInfo == null) {
-                bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
-                return
-            }
-            if (userInfo.property != null) {
-                bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
-                return
-            }
+
+            if (!errorSituation(bot, event, userInfo)) return
             val pattern = Regex("^\\d+( \\d+)*\$")
             if (!pattern.matches(matcher.group(1))) {
                 bot.sendMsg(event, "你分配的属性格式错误，请重新分配", false)
                 return
             }
 
-            when (restartUtil.assignAttributes(userInfo, matcher)) {
+            when (restartUtil.assignAttributes(userInfo!!, matcher)) {
                 SIZE_OUT -> {
                     bot.sendMsg(event, "注意分配的5个属性值的和不能超过20哦", false)
                     return

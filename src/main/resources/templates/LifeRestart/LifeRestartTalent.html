@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>人生重开天赋</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/LifeRestartTalent.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/LifeRestartTalent.css">
+    </head>
+    <body>
+        <div class="talentTitle">人生重开天赋选择</div>
+        <div class="talentAll">
+            <div class="eachTalent" th:each="talent,talentState:${talentDataVo}" th:style="'background-color:' + (${talent.grade} == 0 ? '#d6d6d6' : (${talent.grade} == 1 ? '#8d8dec' : (${talent.grade} == 2 ? '#d96ed9' : '#dcc056')))"
+            >
+                <div class="selectId" th:text="${talentState.index+1}">1</div>
+                <div class="talentInfo">
+                    <div class="talentName" th:text="${talent.name}">天赋天赋天赋</div>
+                    <div class="talentDescription" th:text="${talent.description}">天赋描述天赋描述天赋描述天赋描述
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

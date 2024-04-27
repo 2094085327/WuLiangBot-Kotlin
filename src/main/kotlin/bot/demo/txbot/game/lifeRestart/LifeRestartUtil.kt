@@ -26,7 +26,8 @@ class LifeRestartUtil {
         var talent: MutableList<Any> = mutableListOf(),
         var isEnd: Boolean? = false,
         var gameTimes: Int = 0,
-        var achievement: Int = 0
+        var achievement: Int = 0,
+        var randomTalentTemp: MutableList<Any>? = mutableListOf()
     )
 
     var ageData: Any? = null
@@ -556,21 +557,17 @@ class LifeRestartUtil {
         return true
     }
 
-    val talentConfig = TalentConfig()
+    private val talentConfig = TalentConfig()
 
-
-//    fun talentConfig(
-//        talentPullCount: Int? = 10,
-//        talent: MutableMap<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000),
-//        additions: MutableMap<String, Int> = mutableMapOf()
-//    ) {
-//        this.talentPullCount = talentPullCount
-//        this.talentRate = talent
-//        this.additions = additions
-//    }
-
-    fun talentRandomInit(userInfo: UserInfo): Any {
+    /**
+     * 人生重开天赋配置
+     *
+     * @param userInfo 用户信息
+     * @return 天赋列表
+     */
+    fun talentRandomInit(userInfo: UserInfo): MutableList<Any> {
 //        val lastExtentTalent = lastExtentTalent(userInfo)
+        // TODO 上一次保留的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
         println("talentRandom:$talentRandom")
@@ -578,6 +575,13 @@ class LifeRestartUtil {
     }
 
 
+    /**
+     * 随机天赋
+     *
+     * @param include 包含的天赋
+     * @param userInfo 用户信息
+     * @return 天赋列表
+     */
     private fun talentRandom(include: Any?, userInfo: UserInfo): MutableList<Any> {
         val rate = getRate(userInfo)
 
@@ -617,25 +621,6 @@ class LifeRestartUtil {
             }
         }
 
-//        var talentPullCount = 3
-//        var include = include
-//        if (include != null) include = include as Map<String, Any>
-//        if (include != null) talentPullCount--
-//        val talentList = mutableMapOf<Int, MutableList<Map<String, Any>>>(
-
-
-//        return Array(this.talentPullCount)
-//        { i ->
-//            if (i == 0 && include != null) include
-//            else {
-//                var grade = randomGrade()
-//                while (talentList[grade]?.isEmpty() == true) grade--
-//                val length = talentList[grade]?.size ?: 0
-//                val random = (0 until length).random()
-//                talentList[grade]?.removeAt(random)
-//            }
-//        }
-
         val result = mutableListOf<Any>()
         repeat(talentConfig.talentPullCount) { i ->
             if (i == 0 && include != null) {
@@ -651,6 +636,13 @@ class LifeRestartUtil {
         return result
     }
 
+    /**
+     * 获取天赋概率加成
+     *
+     * @param type 类型
+     * @param value 值
+     * @return 天赋概率加成
+     */
     private fun getAddition(type: String, value: Int): MutableMap<Int, Int>? {
         talentConfig.additions[type]?.forEach { mapList ->
             mapList.forEach { (min, addition) ->
@@ -660,6 +652,12 @@ class LifeRestartUtil {
         return null
     }
 
+    /**
+     * 获取天赋概率
+     *
+     * @param userInfo 用户信息
+     * @return 天赋概率
+     */
     private fun getRate(userInfo: UserInfo): MutableMap<Any, Int> {
         val rate = talentConfig.talentRate
         val addition = mutableMapOf(1 to 1, 2 to 1, 3 to 1)
@@ -682,6 +680,18 @@ class LifeRestartUtil {
 
     fun lastExtentTalent(userInfo: UserInfo): Any {
         return userInfo.talent.last()
+    }
+
+    /**
+     * 选择天赋
+     *
+     * @param match 匹配到的天赋值
+     * @param userInfo 用户信息
+     */
+    fun getChoiceTalent(match: String, userInfo: UserInfo) {
+        match.split(" ").forEach { index ->
+            userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { userInfo.talent.add(it) }
+        }
     }
 
 
