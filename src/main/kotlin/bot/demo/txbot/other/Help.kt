@@ -18,6 +18,10 @@ import java.util.regex.Matcher
 @Component
 @Controller
 class Help {
+    companion object {
+        var helpList = mutableListOf<HelpData>()
+    }
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "/help")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
@@ -36,6 +40,7 @@ class Help {
             "help",
             "http://localhost:${WebImgUtil.usePort}/help"
         )
+        helpList = mutableListOf()
     }
 
     @RequestMapping("/help")
@@ -44,12 +49,7 @@ class Help {
         return "Other/Help"
     }
 
-    companion object {
-        val helpList = mutableListOf<HelpData>()
-    }
-
     data class HelpData(
-//        val help: MutableList<Any> = mutableListOf()
         var command: String? = null,
         var description: String? = null
     )
@@ -65,9 +65,7 @@ class Help {
                     description = helpJson[next]["description"].textValue()
                 )
             )
-            println(next)
         }
-        println(helpList)
 
         return helpList
     }
