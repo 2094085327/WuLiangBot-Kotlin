@@ -21,7 +21,6 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logDebug
 import java.net.URLEncoder
 import java.util.logging.Logger
 import java.util.regex.Matcher
@@ -180,7 +179,7 @@ class GachaLog {
 
         if (checkResult.first != null) {
             if (checkResult.second != null) {
-                webImgUtil.sendCachedImage(bot, event, imgName, checkResult.second!!)
+                webImgUtil.sendCachedImage(bot, event, checkResult.second!!)
             } else {
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)
             }
@@ -210,7 +209,7 @@ class GachaLog {
 
         if (checkResult.first != null) {
             if (checkResult.second != null) {
-                webImgUtil.sendCachedImage(bot, event, imgName, checkResult.second!!)
+                webImgUtil.sendCachedImage(bot, event,  checkResult.second!!)
 
             } else {
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)

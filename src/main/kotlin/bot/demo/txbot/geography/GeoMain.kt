@@ -24,6 +24,7 @@ import java.util.regex.Matcher
 class GeoMain {
     @Autowired
     val geoApi = GetGeoApi()
+
     @Autowired
     val webImgUtil = WebImgUtil()
     private fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgName: String, city: String, webUrl: String) {
@@ -59,7 +60,7 @@ class GeoMain {
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
 
         if (matchingFile != null) {
-            webImgUtil.sendCachedImage(bot, event, imgName, matchingFile)
+            webImgUtil.sendCachedImage(bot, event, matchingFile)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/weather")
         }
@@ -83,7 +84,7 @@ class GeoMain {
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
 
         if (matchingFile != null) {
-            webImgUtil.sendCachedImage(bot, event, imgName, matchingFile)
+            webImgUtil.sendCachedImage(bot, event, matchingFile)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/geo")
         }

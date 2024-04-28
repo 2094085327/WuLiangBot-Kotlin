@@ -42,6 +42,7 @@ class WebImgUtil {
         var usePort: String = ""
         var key: String = ""
     }
+
     private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
 
     @Value("\${image_load.key}")
@@ -117,7 +118,14 @@ class WebImgUtil {
         return screenshotFilePath.absolutePath
     }
 
-    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, imgName: String, file: File) {
+    /**
+     * 发送缓存图片
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param file 图片文件
+     */
+    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, file: File) {
         val sendCacheImg: String = MsgUtils
             .builder()
             .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")
@@ -188,6 +196,7 @@ class WebImgUtil {
         width: Int? = null,
         height: Int? = null,
         scale: Double? = null,
+        imageType: String? = "png",
         sleepTime: Long = 0
     ): String? {
         Playwright.create().use { playwright ->
@@ -199,7 +208,7 @@ class WebImgUtil {
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
-            if(element != null){
+            if (element != null) {
                 page.waitForSelector(element)
                 val body: ElementHandle = page.querySelector(element)!!
 
@@ -212,13 +221,12 @@ class WebImgUtil {
 
             if (scale != null) {
                 val thumbnailBuilder = Thumbnails.of(buffer.inputStream()).scale(scale).asBufferedImage()
-                buffer = bufferedImageToByteArray(thumbnailBuilder, "png")
+                buffer = bufferedImageToByteArray(thumbnailBuilder, imageType!!)
             }
 
-            val realImgPath = cacheImg(imgName = realImgName, imgType = "png", imgPath = imgPath, imgBuffer = buffer)
+            val realImgPath = cacheImg(imgName = realImgName, imgType = imageType!!, imgPath = imgPath, imgBuffer = buffer)
 
-
-            if (channel) return "base64://${convertImageToBase64("${realImgPath.split(".")[0]}.png")}"
+            if (channel) return "base64://${convertImageToBase64("${realImgPath.split(".")[0]}.${imageType}")}"
             else {
                 val imgData = loadImg(realImgPath)
 
@@ -228,7 +236,7 @@ class WebImgUtil {
     }
 
     @Suppress("unused")
-    private fun turnPngToWebp(imagePath: String, scale: Float = 0.8f) {
+    fun turnPngToWebp(imagePath: String, scale: Float = 0.8f) {
         try {
             val imageFile = File(imagePath)
             val image = ImageIO.read(imageFile)
@@ -253,6 +261,26 @@ class WebImgUtil {
         val file = File(imagePath)
         val outfile = File(imagePath)
         PngCompressor.compress(file, outfile)
+    }
+
+    fun sendNewImage(
+        bot: Bot,
+        event: AnyMessageEvent?,
+        imgName: String,
+        webUrl: String,
+        scale: Double? = null,
+        element: String? = "body"
+    ) {
+        val imgUrl =
+            WebImgUtil().getImgFromWeb(
+                url = webUrl,
+                imgName = imgName,
+                element = element,
+                channel = true,
+                scale = scale
+            )
+        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+        bot.sendMsg(event, sendMsg, false)
     }
 
 }

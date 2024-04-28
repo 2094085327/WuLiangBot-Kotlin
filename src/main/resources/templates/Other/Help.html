@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>帮助</title>
+        <style>
+            body {
+                padding: 10px;
+                width: 640px;
+                display: flex;
+                border-radius: 10px;
+            }
+
+            .helpList {
+                width: 630px;
+                display: flex;
+            }
+
+            .helpContent {
+                display: grid;
+                grid-template-columns: 50% 50%;
+                grid-gap: 10px 10px;
+            }
+
+            .helpItem {
+                display: flex;
+                flex-direction: column;
+                border-radius: 10px;
+                background: white;
+                box-shadow: 2px 2px 10px black;
+                padding: 10px;
+                grid-row-gap: 5px;
+            }
+
+            .command {
+                font-weight: bold;
+                font-size: 18px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="helpList">
+            <div class="helpContent">
+                <div class="helpItem" th:each="help:${helpList}">
+                    <div class="command" th:text="${help.command}">如何开始</div>
+                    <div class="description" th:text="${help.description}">点击右上角的“开始”按钮，然后选择一个天赋。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
