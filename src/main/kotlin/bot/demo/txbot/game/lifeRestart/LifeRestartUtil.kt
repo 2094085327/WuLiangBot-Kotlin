@@ -22,7 +22,7 @@ class LifeRestartUtil {
         var attributes: Map<*, *>? = null,
         var age: Int,
         var events: MutableList<Any> = mutableListOf(),
-        var property: Map<String, Any>? = null,
+        var property: MutableMap<String, Any>? = null,
         var talent: MutableList<Any> = mutableListOf(),
         var isEnd: Boolean? = false,
         var gameTimes: Int = 0,
@@ -689,9 +689,16 @@ class LifeRestartUtil {
      * @param userInfo 用户信息
      */
     fun getChoiceTalent(match: String, userInfo: UserInfo) {
+        val talentIdList = mutableListOf<String>()
         match.split(" ").forEach { index ->
-            userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { userInfo.talent.add(it) }
+            userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { talentDataVo ->
+                talentDataVo as TalentDataVo
+                userInfo.talent.add(talentDataVo)
+                talentIdList.add(talentDataVo.id)
+            }
         }
+        userInfo.property = userInfo.property ?: mutableMapOf()
+        userInfo.property?.plusAssign(mutableMapOf("TLT" to talentIdList))
     }
 
 

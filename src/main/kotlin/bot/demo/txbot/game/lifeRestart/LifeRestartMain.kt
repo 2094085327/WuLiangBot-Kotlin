@@ -140,12 +140,11 @@ class LifeRestartMain {
             val pattern = Regex("""^(?:[1-9]|10)(?:\s(?:[1-9]|10))*$""")
             val match = matcher.group(1)
             if (!pattern.matches(match)) {
-                bot.sendMsg(event, "你分配的属性格式错误或范围不正确，请重新分配", false)
+                bot.sendMsg(event, "你分配的天赋格式错误或范围不正确，请重新分配", false)
                 return
             }
 
             restartUtil.getChoiceTalent(match, userInfo)
-            println("userInfo: $userInfo")
 
             bot.sendMsg(
                 event,
@@ -160,7 +159,7 @@ class LifeRestartMain {
             bot.sendMsg(event, "你还没有开始游戏，请发送 重开 进行游戏", false)
             return false
         }
-        if (userInfo.property != null) {
+        if (userInfo.property?.containsKey("CHR") == true) {
             bot.sendMsg(event, "你已经分配过属性了,请不要重复分配", false)
             return false
         }
