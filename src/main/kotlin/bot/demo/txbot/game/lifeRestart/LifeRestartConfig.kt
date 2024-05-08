@@ -23,7 +23,8 @@ const val EVT: String = "EVT" // 事件
 const val LIF: String = "LIF" // 生命
 const val SPR: String = "SPR" // 快乐
 const val AGE: String = "AGE" // 年龄
-const val TMS: String = "TMS" // 次数
+const val RDM: String = "RDM" // 随机属性
+const val TMS: String = "TMS" // 游戏次数
 const val CACHV: String = "CACHV" // 成就达成数 Count Achievement
 
 const val SIZE_OUT: String = "sizeOut"
@@ -34,14 +35,14 @@ data class TalentConfig(
     val talentPullCount: Int = 10, // 从天赋池中抽取的天赋数量
     val talentRate: MutableMap<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000), // 天赋概率
     val additions: MutableMap<String, MutableList<MutableMap<Int, MutableMap<Int, Int>>>> = mutableMapOf(
-        "TMS" to mutableListOf(
+        TMS to mutableListOf(
             mutableMapOf(10 to mutableMapOf(2 to 1)),
             mutableMapOf(30 to mutableMapOf(2 to 2)),
             mutableMapOf(50 to mutableMapOf(2 to 3)),
             mutableMapOf(70 to mutableMapOf(2 to 4)),
             mutableMapOf(100 to mutableMapOf(2 to 5)),
         ),
-        "CACHV" to mutableListOf(
+        CACHV to mutableListOf(
             mutableMapOf(10 to mutableMapOf(2 to 1)),
             mutableMapOf(30 to mutableMapOf(2 to 2)),
             mutableMapOf(50 to mutableMapOf(2 to 3)),

@@ -23,16 +23,19 @@ class LifeRestartUtil {
         var age: Int,
         var events: MutableList<Any> = mutableListOf(),
         var property: MutableMap<String, Any>? = null,
+        var propertyDistribution: Boolean? = false,
         var talent: MutableList<Any> = mutableListOf(),
         var isEnd: Boolean? = false,
         var gameTimes: Int = 0,
         var achievement: Int = 0,
-        var randomTalentTemp: MutableList<Any>? = mutableListOf()
+        var randomTalentTemp: MutableList<Any>? = mutableListOf(),
+        var status: Int = 20,
+        var activeGameTime: Long = System.currentTimeMillis()
     )
 
     var ageData: Any? = null
     var eventData: Any? = null
-    var talentData: Any? = null
+    private var talentData: Any? = null
 
     /**
      * 获取并更新数据
@@ -85,18 +88,44 @@ class LifeRestartUtil {
         return true
     }
 
+    /**
+     * 分配默认属性与随机额外的属性
+     *
+     * @param userInfo 用户信息
+     * @param attributeNames 属性名数组
+     * @param mutableProperty 属性
+     * @return 属性
+     */
+    private fun additionalAttributes(
+        userInfo: UserInfo,
+        attributeNames: List<String>,
+        mutableProperty: MutableMap<String, Any>
+    ): MutableMap<String, Any>? {
+        mutableProperty[EVT] = mutableListOf<String>()
+        mutableProperty[LIF] = 1.plus((userInfo.property!![LIF] ?: 0) as Int)
+        mutableProperty[SPR] = 5.plus((userInfo.property!![SPR] ?: 0) as Int)
+        if (userInfo.property!![RDM] != null) {
+            val randomAttributes = attributeNames.random()
+            mutableProperty[randomAttributes] =
+                (mutableProperty[randomAttributes] as Int).plus(userInfo.property!![RDM] as Int)
+            return mutableProperty
+        }
+        return null
+    }
 
     /**
      * 随机生成属性
      *
+     * @param userInfo 用户信息
+     * @return 属性
      */
-    fun randomAttributes(userInfo: UserInfo): Map<String, Any> {
+    fun randomAttributes(userInfo: UserInfo): MutableMap<String, Any> {
         // 如果property为null，初始化为一个新的MutableMap
         if (userInfo.property == null) {
             userInfo.property = mutableMapOf()
         }
 
-        val mutableProperty = userInfo.property as MutableMap<String, Any>
+        var mutableProperty = userInfo.property as MutableMap<String, Any>
 
         // 随机选择第一个字段，给定0-10之间的随机值
         val attributeNames = listOf(CHR, INT, STR, MNY)
@@ -106,21 +135,18 @@ class LifeRestartUtil {
 
         // 随机选择剩下的字段，给定0到（20-第一个值）之间的随机值
         val remainingAttributes = attributeNames - firstAttributeName
-        // TODO 在userInfo中设置初始可用的属性点数字段来根据天赋修改可用点数
-        var remainingSum = 20 - firstValue
+        var remainingSum = userInfo.status - firstValue
 
         for (attributeName in remainingAttributes.shuffled()) {
             val maxPossibleValue = minOf(remainingSum, 10) // 确保属性最大值为10
             val value = if (remainingAttributes.last() == attributeName) maxPossibleValue
             else (0..maxPossibleValue).random()
 
-            mutableProperty[attributeName] = value
+            mutableProperty[attributeName] = (mutableProperty[attributeName] as Int).plus(value)
             remainingSum -= value
         }
-        mutableProperty[EVT] = mutableListOf<String>()
-        mutableProperty[LIF] = 1
-        mutableProperty[SPR] = 5
 
+        mutableProperty = additionalAttributes(userInfo, attributeNames, mutableProperty) ?: mutableProperty
         return mutableProperty
     }
 
@@ -133,22 +159,24 @@ class LifeRestartUtil {
     fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
-        if (total > 20) return SIZE_OUT
+        if (total > userInfo.status) return SIZE_OUT
         for (value in attributeValues) if (value > 10) return VALUE_OUT
 
         // 如果property为null，初始化为一个新的MutableMap
         userInfo.property = userInfo.property ?: mutableMapOf()
 
-        val mutableProperty = userInfo.property as MutableMap<String, Any>
+        var mutableProperty = userInfo.property as MutableMap<String, Any>
         val attributeNames = listOf(CHR, INT, STR, MNY)
 
         attributeNames.forEachIndexed { index, attributeName ->
-            mutableProperty[attributeName] = attributeValues[index]
+            if (mutableProperty[attributeName] != null) {
+                mutableProperty[attributeName] = (mutableProperty[attributeName] as Int).plus(attributeValues[index])
+            } else {
+                mutableProperty[attributeName] = attributeValues[index]
+            }
         }
-        mutableProperty[EVT] = mutableListOf<String>()
-        mutableProperty[LIF] = 1
-        mutableProperty[SPR] = 5
-
+        mutableProperty = additionalAttributes(userInfo, attributeNames, mutableProperty) ?: mutableProperty
+        userInfo.property = mutableProperty
         return true
     }
 
@@ -570,7 +598,6 @@ class LifeRestartUtil {
         // TODO 上一次保留的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
-        println("talentRandom:$talentRandom")
         return talentRandom
     }
 
@@ -699,6 +726,38 @@ class LifeRestartUtil {
         }
         userInfo.property = userInfo.property ?: mutableMapOf()
         userInfo.property?.plusAssign(mutableMapOf("TLT" to talentIdList))
+    }
+
+    /**
+     * 获取天赋加成，分配初始属性
+     *
+     */
+    fun getTalentAllocationAddition(userInfo: UserInfo) {
+        val talent: MutableList<String> = userInfo.property?.get("TLT") as MutableList<String>
+        val userProperty = userInfo.property as MutableMap<String, Any>
+        talent.forEach { talentId ->
+            when (talentData) {
+                is JsonNode -> {
+                    val talentDataJson = talentData as JsonNode
+                    val talentData = talentDataJson.get(talentId)
+                    val status = talentData.get("status")?.intValue() ?: 0
+                    userInfo.status += status
+                    val effect = talentData.get("effect") ?: null
+                    effect?.let {
+                        listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
+                            val value = effect.get(key)?.intValue()
+                            value?.let {
+                                userProperty[key] = (userProperty[key] as Int?)?.plus(value) ?: value
+                            }
+                        }
+                    }
+                }
+
+                is MutableList<*> -> {
+                    // TODO 表格数据
+                }
+            }
+        }
     }
 
 
