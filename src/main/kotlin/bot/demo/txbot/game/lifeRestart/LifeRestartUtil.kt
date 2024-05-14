@@ -142,7 +142,7 @@ class LifeRestartUtil {
             val value = if (remainingAttributes.last() == attributeName) maxPossibleValue
             else (0..maxPossibleValue).random()
 
-            mutableProperty[attributeName] = (mutableProperty[attributeName] as Int).plus(value)
+            mutableProperty[attributeName] = ((mutableProperty[attributeName] ?: 0) as Int).plus(value)
             remainingSum -= value
         }
 
@@ -633,6 +633,7 @@ class LifeRestartUtil {
                     val name = talent.get("name").textValue()
                     val description = talent.get("description").textValue()
                     val exclusive = talent.get("exclusive")?.booleanValue()
+                    // TODO 这里有个BUG，随机到的天赋会出现专属天赋
                     if (exclusive == true) continue
 
 
