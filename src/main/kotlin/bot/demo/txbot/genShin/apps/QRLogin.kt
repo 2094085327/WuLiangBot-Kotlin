@@ -80,7 +80,6 @@ class QRLogin {
     fun getAccountInfo(stoken: JsonNode): JsonNode {
         mysApi.cookie =
             "mid=${stoken["data"]["user_info"]["mid"].textValue()};stoken=${stoken["data"]["token"]["token"].textValue()}"
-
         return mysApi.getData("getAccountInfo")
     }
 

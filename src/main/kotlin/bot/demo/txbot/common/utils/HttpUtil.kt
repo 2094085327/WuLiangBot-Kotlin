@@ -16,10 +16,12 @@ import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.core5.http.*
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.IOException
 import java.net.URI
 import java.net.URLEncoder
+import java.util.logging.Logger
 
 
 /**
@@ -44,7 +46,17 @@ open class HttpBase {
 
     protected open val client = OkHttpClient()
 
+    private val logger: Logger = Logger.getLogger(HttpBase::class.java.getName())
 
+    /**
+     * 发送get请求
+     *
+     * @param url 请求地址
+     * @param header 请求头
+     * @param params 请求参数
+     * @param isDefault 是否使用默认httpClient
+     * @return 请求结果
+     */
     @Throws(IOException::class)
     fun doGetBytes(
         url: String,
@@ -57,6 +69,13 @@ open class HttpBase {
         return doHttpRequestBytes(httpGet, isDefault)
     }
 
+    /**
+     * 发送get请求
+     *
+     * @param httpRequestBase 请求
+     * @param isDefault 是否使用默认httpClient
+     * @return 请求结果
+     */
     private fun doHttpRequestStr(httpRequestBase: HttpUriRequestBase, isDefault: Boolean = false): String {
         val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClientBuilder.create().build()
         try {
@@ -69,6 +88,13 @@ open class HttpBase {
     }
 
 
+    /**
+     * 发送get请求
+     *
+     * @param httpRequestBase 请求
+     * @param isDefault 是否使用默认httpClient
+     * @return 请求结果
+     */
     private fun doHttpRequestBytes(httpRequestBase: HttpUriRequestBase, isDefault: Boolean = false): ByteArray {
         val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClients.createDefault()
         try {
@@ -128,7 +154,7 @@ open class HttpBase {
                 it.body.string()
             } else {
                 val errorResponse = it.body.string()
-                println("Get请求失败: ${it.code}")
+                logger.logError("Get请求失败: ${it.code}")
                 throw HttpException(it.code, errorResponse)
             }
         }

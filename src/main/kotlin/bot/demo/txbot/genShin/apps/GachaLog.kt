@@ -209,7 +209,7 @@ class GachaLog {
 
         if (checkResult.first != null) {
             if (checkResult.second != null) {
-                webImgUtil.sendCachedImage(bot, event,  checkResult.second!!)
+                webImgUtil.sendCachedImage(bot, event, checkResult.second!!)
 
             } else {
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)
@@ -243,12 +243,12 @@ class GachaLog {
         )
 
         val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
-        bot.sendMsg(event, sendMsg, false)
+        val qrImageMsg = bot.sendMsg(event, sendMsg, false)
 
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
-            println("等待完毕")
-            event.let { bot.deleteMsg(it.messageId) }
+            logger.info("撤回二维码")
+            bot.deleteMsg(qrImageMsg.data.messageId)
         }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
@@ -261,6 +261,7 @@ class GachaLog {
         MysDataUtil().deleteDataCache()
         // 获取临时stoken
         val stoken = qrLogin.getStoken(qrCodeStatus)
+
         val accountInfo = qrLogin.getAccountInfo(stoken)["data"]["list"][0]
         val gameUid = accountInfo["game_uid"].textValue()
 

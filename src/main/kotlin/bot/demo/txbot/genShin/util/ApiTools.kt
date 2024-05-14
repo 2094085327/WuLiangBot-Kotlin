@@ -17,11 +17,11 @@ class ApiTools(
         val android: ArrayList<String> = arrayListOf("cn_gf01", "cn_qd01", "prod_gf_cn", "prod_qd_cn")
         val ios: ArrayList<String> = arrayListOf("os_usa", "os_euro", "os_asia", "os_cht")
         if (android.contains(server)) {
-            host = "https://api-takumi.mihoyo.com/"
-            hostRecord = "https://api-takumi-record.mihoyo.com/"
+            host = ANDROID_HOST
+            hostRecord = ANDROID_RECORD
         } else if (ios.contains(server)) {
-            host = "https://api-os-takumi.mihoyo.com/"
-            hostRecord = "https://bbs-api-os.mihoyo.com/"
+            host = IOS_HOST
+            hostRecord = IOS_RECORD
         }
         val urlMap = mutableMapOf<String, Map<String, Any>>(
             //首页宝箱
@@ -137,7 +137,7 @@ class ApiTools(
             ),
             // 获取抽卡分析用到的AuthKey
             "authKeyB" to mutableMapOf(
-                "url" to "https://api-takumi.mihoyo.com/binding/api/genAuthKey",
+                "url" to AUTHKEY_B,
                 "body" to mutableMapOf(
                     "auth_appid" to "webview_gacha",
                     "game_biz" to "hk4e_cn",
@@ -156,22 +156,21 @@ class ApiTools(
             ),
             // 抽卡记录
             "gachaLog" to mutableMapOf(
-                "url" to "https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog",
+                "url" to GACHA_LOG_URL,
                 "query" to "authkey_ver=1&authkey=${data["authkey"]}&lang=zh-cn&size=${data["size"]}&end_id=${data["end_id"]}&page=${data["page"]}&gacha_type=${data["gacha_type"]}"
             ),
             // 用户信息
             "accountInfo" to mutableMapOf(
-                "url" to "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn"
+                "url" to ACCOUNT_INFO
             ),
             // 获取二维码
             "qrCode" to mutableMapOf(
-                "url" to "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/fetch",
+                "url" to QR_CODE,
                 "query" to "app_id=4&device=${data["device"]}"
-//                "sign" to true
             ),
             // 二维码状态
             "qrCodeStatus" to mutableMapOf(
-                "url" to "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/query",
+                "url" to QR_CODE_STATUS,
                 "body" to mutableMapOf(
                     "app_id" to "4",
                     "device" to data["device"],

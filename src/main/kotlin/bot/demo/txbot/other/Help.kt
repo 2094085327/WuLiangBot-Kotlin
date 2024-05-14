@@ -23,7 +23,7 @@ class Help {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "/help")
+    @MessageHandlerFilter(cmd = "help")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         val helpImageName = "resources/imageCache/help.png"
         val helpImage = File(helpImageName)
