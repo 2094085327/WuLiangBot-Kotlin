@@ -248,7 +248,7 @@ class GachaLog {
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
             logger.info("撤回二维码")
-            bot.deleteMsg(qrImageMsg.data.messageId)
+            bot.deleteMsg(event.groupId, bot.selfId, qrImageMsg.data.messageId)
         }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
