@@ -194,6 +194,14 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
+
+        <!-- 简繁转换，分词-->
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>opencc4j</artifactId>
+            <version>1.8.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -225,31 +233,31 @@
             </plugin>
         </plugins>
         <resources>
-<!--            <resource>-->
-<!--                <filtering>true</filtering>-->
-<!--                <directory>src/main/resources</directory>-->
-<!--                <includes>-->
-<!--                    <include>application.yml</include>-->
-<!--                    <include>iSignature_PDF_API.lic</include>-->
-<!--                    <include>config/**</include>-->
-<!--                    <include>mapper/**</include>-->
-<!--                    <include>static/**</include>-->
-<!--                    <include>templates/**</include>-->
-<!--                    <include>font/**</include>-->
-<!--                </includes>-->
-<!--                <excludes>-->
-<!--                    <exclude>**/*.ttf</exclude>-->
-<!--                    <exclude>**/*.woff</exclude>-->
-<!--                </excludes>-->
-<!--            </resource>-->
-<!--            <resource>-->
-<!--                <filtering>false</filtering>-->
-<!--                <directory>src/main/resources</directory>-->
-<!--                <includes>-->
-<!--                    <include>**/*.ttf</include>-->
-<!--                    <include>**/*.woff</include>-->
-<!--                </includes>-->
-<!--            </resource>-->
+            <!--            <resource>-->
+            <!--                <filtering>true</filtering>-->
+            <!--                <directory>src/main/resources</directory>-->
+            <!--                <includes>-->
+            <!--                    <include>application.yml</include>-->
+            <!--                    <include>iSignature_PDF_API.lic</include>-->
+            <!--                    <include>config/**</include>-->
+            <!--                    <include>mapper/**</include>-->
+            <!--                    <include>static/**</include>-->
+            <!--                    <include>templates/**</include>-->
+            <!--                    <include>font/**</include>-->
+            <!--                </includes>-->
+            <!--                <excludes>-->
+            <!--                    <exclude>**/*.ttf</exclude>-->
+            <!--                    <exclude>**/*.woff</exclude>-->
+            <!--                </excludes>-->
+            <!--            </resource>-->
+            <!--            <resource>-->
+            <!--                <filtering>false</filtering>-->
+            <!--                <directory>src/main/resources</directory>-->
+            <!--                <includes>-->
+            <!--                    <include>**/*.ttf</include>-->
+            <!--                    <include>**/*.woff</include>-->
+            <!--                </includes>-->
+            <!--            </resource>-->
         </resources>
     </build>
 

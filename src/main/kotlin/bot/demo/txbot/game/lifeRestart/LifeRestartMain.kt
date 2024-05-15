@@ -155,19 +155,36 @@ class LifeRestartMain {
                 bot.sendMsg(event, "你分配的天赋格式错误或范围不正确，请重新分配", false)
                 return
             }
-            // TODO 选择的天赋为重复项
 
-            // 更新数据与账户时间戳
-            updateGameTime(userInfo)
+            when (restartUtil.talentCheck(match, userInfo)) {
+                TALENT_SELECT_NOT_COMPLETE -> bot.sendMsg(
+                    event,
+                    "要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择",
+                    false
+                )
 
-            restartUtil.getChoiceTalent(match, userInfo)
-            restartUtil.getTalentAllocationAddition(userInfo)
+                TALENT_SELECT_Limit -> bot.sendMsg(
+                    event,
+                    "只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择",
+                    false
+                )
 
-            bot.sendMsg(
-                event,
-                "请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配",
-                false
-            )
+                else -> {
+                    // 更新数据与账户时间戳
+                    updateGameTime(userInfo)
+
+                    restartUtil.getChoiceTalent(match, userInfo)
+                    restartUtil.getTalentAllocationAddition(userInfo)
+
+
+
+                    bot.sendMsg(
+                        event,
+                        "请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配",
+                        false
+                    )
+                }
+            }
         }
     }
 

@@ -30,6 +30,7 @@ class LifeRestartUtil {
         var achievement: Int = 0,
         var randomTalentTemp: MutableList<Any>? = mutableListOf(),
         var status: Int = 20,
+        var talentSelectLimit: Int = 3,
         var activeGameTime: Long = System.currentTimeMillis()
     )
 
@@ -632,10 +633,8 @@ class LifeRestartUtil {
                     val grade = talent.get("grade").intValue()
                     val name = talent.get("name").textValue()
                     val description = talent.get("description").textValue()
-                    val exclusive = talent.get("exclusive")?.booleanValue()
-                    // TODO 这里有个BUG，随机到的天赋会出现专属天赋
-                    if (exclusive == true) continue
-
+                    val exclusive = talent.get("exclusive")?.booleanValue() ?: true
+                    if (!exclusive) continue
 
                     val talentDataVo = TalentDataVo(grade, name, description, talentId)
                     if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
@@ -674,6 +673,8 @@ class LifeRestartUtil {
     private fun getAddition(type: String, value: Int): MutableMap<Int, Int>? {
         talentConfig.additions[type]?.forEach { mapList ->
             mapList.forEach { (min, addition) ->
+                println("mapList:$mapList")
+                // TODO 这里有个Bug ，当重复开启多次游戏时，天赋概率加成会逐渐上升
                 if (value >= min) return addition
             }
         }
@@ -718,7 +719,8 @@ class LifeRestartUtil {
      */
     fun getChoiceTalent(match: String, userInfo: UserInfo) {
         val talentIdList = mutableListOf<String>()
-        match.split(" ").forEach { index ->
+        val matchList = match.split(" ")
+        matchList.forEach { index ->
             userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { talentDataVo ->
                 talentDataVo as TalentDataVo
                 userInfo.talent.add(talentDataVo)
@@ -728,6 +730,28 @@ class LifeRestartUtil {
         userInfo.property = userInfo.property ?: mutableMapOf()
         userInfo.property?.plusAssign(mutableMapOf("TLT" to talentIdList))
     }
+
+    /**
+     * 天赋选择检查
+     *
+     * @param match 匹配项
+     * @param userInfo 用户信息
+     * @return 检查结果
+     */
+    fun talentCheck(match: String, userInfo: UserInfo): String {
+        var matchList = match.split(" ")
+        println(matchList)
+        matchList = matchList.distinct()
+        println(matchList)
+        return if (matchList.size < userInfo.talentSelectLimit) {
+            TALENT_SELECT_NOT_COMPLETE
+        } else if (matchList.size > userInfo.talentSelectLimit) {
+            TALENT_SELECT_Limit
+        } else {
+            TALENT_SELECT_COMPLETE
+        }
+    }
+
 
     /**
      * 获取天赋加成，分配初始属性

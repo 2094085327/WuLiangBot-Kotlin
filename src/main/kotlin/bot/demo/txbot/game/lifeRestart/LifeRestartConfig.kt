@@ -30,6 +30,10 @@ const val CACHV: String = "CACHV" // 成就达成数 Count Achievement
 const val SIZE_OUT: String = "sizeOut"
 const val VALUE_OUT: String = "valueOut"
 
+const val TALENT_SELECT_NOT_COMPLETE: String = "sizeNotComplete" // 天赋选择不足
+const val TALENT_SELECT_Limit: String = "sizeOut" // 天赋选择过多
+const val TALENT_SELECT_COMPLETE: String = "sizeComplete" // 天赋选择完成
+
 // 天赋配置
 data class TalentConfig(
     val talentPullCount: Int = 10, // 从天赋池中抽取的天赋数量
