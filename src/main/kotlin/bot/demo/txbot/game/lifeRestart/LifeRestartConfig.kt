@@ -37,7 +37,7 @@ const val TALENT_SELECT_COMPLETE: String = "sizeComplete" // 天赋选择完成
 // 天赋配置
 data class TalentConfig(
     val talentPullCount: Int = 10, // 从天赋池中抽取的天赋数量
-    val talentRate: MutableMap<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000), // 天赋概率
+    val talentRate: Map<Any, Int> = mutableMapOf(1 to 100, 2 to 10, 3 to 1, "total" to 1000), // 天赋概率
     val additions: MutableMap<String, MutableList<MutableMap<Int, MutableMap<Int, Int>>>> = mutableMapOf(
         TMS to mutableListOf(
             mutableMapOf(10 to mutableMapOf(2 to 1)),

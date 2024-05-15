@@ -595,8 +595,6 @@ class LifeRestartUtil {
      * @return 天赋列表
      */
     fun talentRandomInit(userInfo: UserInfo): MutableList<Any> {
-//        val lastExtentTalent = lastExtentTalent(userInfo)
-        // TODO 上一次保留的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
         return talentRandom
@@ -673,8 +671,6 @@ class LifeRestartUtil {
     private fun getAddition(type: String, value: Int): MutableMap<Int, Int>? {
         talentConfig.additions[type]?.forEach { mapList ->
             mapList.forEach { (min, addition) ->
-                println("mapList:$mapList")
-                // TODO 这里有个Bug ，当重复开启多次游戏时，天赋概率加成会逐渐上升
                 if (value >= min) return addition
             }
         }
@@ -688,7 +684,7 @@ class LifeRestartUtil {
      * @return 天赋概率
      */
     private fun getRate(userInfo: UserInfo): MutableMap<Any, Int> {
-        val rate = talentConfig.talentRate
+        val rate = talentConfig.talentRate.toMutableMap()
         val addition = mutableMapOf(1 to 1, 2 to 1, 3 to 1)
 
         val additionValues = mutableMapOf("TMS" to userInfo.gameTimes, "CACHV" to userInfo.achievement)
@@ -705,10 +701,6 @@ class LifeRestartUtil {
         }
 
         return rate
-    }
-
-    fun lastExtentTalent(userInfo: UserInfo): Any {
-        return userInfo.talent.last()
     }
 
     /**
@@ -754,8 +746,9 @@ class LifeRestartUtil {
 
 
     /**
-     * 获取天赋加成，分配初始属性
+     *  获取天赋加成，分配初始属性
      *
+     * @param userInfo 用户信息
      */
     fun getTalentAllocationAddition(userInfo: UserInfo) {
         val talent: MutableList<String> = userInfo.property?.get("TLT") as MutableList<String>
