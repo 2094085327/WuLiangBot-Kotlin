@@ -1,5 +1,26 @@
 package bot.demo.txbot.genShin.util
 
+/**
+ * @description: 原神用到的一些常量
+ * @author Nature Zero
+ * @date 2024/4/3 8:17
+ */
+
+
+const val CACHE_PATH = "resources/gachaCache" // 缓存路径
+const val IMG_CACHE_PATH = "resources/imageCache" // 图片缓存路径
+
+const val GACHA_JSON = "resources/genShin/defSet/gacha/gacha.json" // 当前启用的模拟抽卡卡池信息
+const val POOL_JSON = "resources/genShin/defSet/gacha/pool.json" // 历史卡池信息
+const val New_ADD = "resources/genShin/defSet/gacha/newAdd.json" // 各版本卡池新增常驻物品信息
+const val ROLE_JSON = "resources/genShin/defSet/element/role.yaml" // 角色元素信息
+const val WEAPON_JSON = "resources/genShin/defSet/element/weapon.yaml" // 武器类型信息
+
+const val ROLE_IMG = "resources/genShin/GenShinImg/role/" // 角色图片资源
+const val WEAPON_IMG = "resources/genShin/GenShinImg/weapons/" // 武器图片资源
+
+const val GACHA_LOG_FILE = "resources/gachaCache/gachaLog-" // 抽卡记录缓存路径
+
 const val ANDROID_HOST = "https://api-takumi.mihoyo.com/" // 安卓请求host
 const val ANDROID_RECORD = "https://api-takumi-record.mihoyo.com/" // 安卓请求host record
 const val IOS_HOST = "https://api-os-takumi.mihoyo.com/" // IOS请求host

@@ -338,7 +338,7 @@ class GachaLogUtil {
             // 从[?]处分割链接以拼接到接口链接上
             val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
             // 含参链接
-            "$GACHA_LINK$splitUrl2"
+            "$GACHA_LOG_URL?$splitUrl2"
         } catch (e: Exception) {
             ""
         }
