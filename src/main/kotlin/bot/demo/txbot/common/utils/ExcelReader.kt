@@ -1,7 +1,5 @@
 package bot.demo.txbot.common.utils
 
-import bot.demo.txbot.game.lifeRestart.AgeDataVO
-import bot.demo.txbot.game.lifeRestart.EventDataVO
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
@@ -21,6 +19,7 @@ import java.util.logging.Logger
  * @author Nature Zero
  * @date 2024/2/14 20:12
  */
+@Suppress("UNUSED")
 class ExcelReader {
     private val logger: Logger = Logger.getLogger(ExcelReader::class.java.getName()) // 日志打印类
 
@@ -47,7 +46,7 @@ class ExcelReader {
      * @param fileName 要读取的Excel文件所在路径
      * @return 读取结果列表，读取失败时返回null
      */
-    fun readExcel(fileName: String, type: String): MutableList<Any>? {
+    fun readExcel(fileName: String): Workbook? {
         val workbook: Workbook?
         val inputStream: FileInputStream?
 
@@ -64,13 +63,7 @@ class ExcelReader {
         inputStream = FileInputStream(excelFile)
         workbook = getWorkbook(inputStream, fileType)
 
-        // 读取excel中的数据
-        return when (type) {
-            "event" -> parseExcel(workbook) { convertRowToData(it) }
-            "age" -> parseExcel(workbook) { convertRowToAgeData(it) }
-            "talent" -> parseExcel(workbook) { convertRowToAgeData(it) }
-            else -> null
-        }
+        return workbook
     }
 
     /**
@@ -141,64 +134,6 @@ class ExcelReader {
             else -> {}
         }
         return returnValue
-    }
-
-    /**
-     * 提取每一行中需要的数据，构造成为一个结果数据对象
-     *
-     * 当该行中有单元格的数据为空或不合法时，忽略该行的数据
-     *
-     * @param row 行数据
-     * @return 解析后的行数据对象，行数据错误时返回null
-     */
-    private fun convertRowToData(row: Row): EventDataVO? {
-        var cellNum = row.firstCellNum.toInt()
-        return if (convertCellValueToString(row.getCell(cellNum)) != null) {
-            EventDataVO().apply {
-                id = convertCellValueToString(row.getCell(cellNum++))
-                event = convertCellValueToString(row.getCell(cellNum++))
-                grade = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                postEvent = convertCellValueToString(row.getCell(cellNum++))
-                effectChr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectInt = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectStr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectMny = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectSpr = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectLif = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                effectAge = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                noRandom = convertCellValueToString(row.getCell(cellNum++))?.toIntOrNull()
-                include = convertCellValueToString(row.getCell(cellNum++))
-                exclude = convertCellValueToString(row.getCell(cellNum++))
-                branch = (14 until 17).map { convertCellValueToString(row.getCell(it)) }.toMutableList()
-
-            }
-        } else null
-    }
-
-
-    /**
-     * 提取每一行中需要的数据，构造成为一个结果数据对象
-     *
-     * 当该行中有单元格的数据为空或不合法时，忽略该行的数据
-     *
-     * @param row 行数据
-     * @return 解析后的行数据对象，行数据错误时返回null
-     */
-    private fun convertRowToAgeData(row: Row): AgeDataVO {
-        val resultData = AgeDataVO()
-        if (row.firstCellNum >= 0) {
-
-            resultData.age = convertCellValueToString(row.getCell(row.firstCellNum.toInt()))?.toInt()
-            val eventList = mutableListOf<Any?>()
-            for (cellNum in row.firstCellNum+1 until row.lastCellNum) {
-                if (row.getCell(cellNum) != null && cellNum >= 0) {
-                    eventList.add(convertCellValueToString(row.getCell(cellNum)))
-                }
-            }
-            resultData.eventList = eventList
-
-        }
-        return resultData
     }
 
 

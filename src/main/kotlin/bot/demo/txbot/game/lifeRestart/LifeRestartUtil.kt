@@ -34,9 +34,9 @@ class LifeRestartUtil {
         var activeGameTime: Long = System.currentTimeMillis()
     )
 
-    var ageData: Any? = null
-    var eventData: Any? = null
-    private var talentData: Any? = null
+    var ageData: JsonNode? = null
+    var eventData: JsonNode? = null
+    private var talentData: JsonNode? = null
 
     /**
      * 获取并更新数据
@@ -45,42 +45,20 @@ class LifeRestartUtil {
      */
     fun fetchDataAndUpdateLists(): Boolean {
 
-        fun readAgeData(): Any? {
-            return if (File(AGE_JSONPATH).exists()) {
-                JacksonUtil.getJsonNode(AGE_JSONPATH)
+        fun readData(filePath: String, missingMessage: String): JsonNode? {
+            return if (File(filePath).exists()) {
+                JacksonUtil.getJsonNode(filePath)
             } else {
-                logger.warning(AGE_JSON_MISS)
-                ExcelReader().readExcel(AGE_EXCEL_PATH, TYPE_AGE)
+                logger.warning(missingMessage)
+                null
             }
         }
 
-        fun readEventData(): Any? {
-            return if (File(EVENT_JSONPATH).exists()) {
-                JacksonUtil.getJsonNode(EVENT_JSONPATH)
-            } else {
-                logger.warning(EVENT_JSON_MISS)
-                ExcelReader().readExcel(EVENT_EXCEL_PATH, TYPE_EVENT)
-            }
-        }
+        val ageData = readData(AGE_JSONPATH, AGE_JSON_MISS)
+        val eventData = readData(EVENT_JSONPATH, EVENT_JSON_MISS)
+        val talentData = readData(TALENT_JSONPATH, TALENT_JSON_MISS)
 
-        fun readTalentData(): Any? {
-            return if (File(EVENT_JSONPATH).exists()) {
-                JacksonUtil.getJsonNode(TALENT_JSONPATH)
-            } else {
-                logger.warning(TALENT_JSON_MISS)
-                ExcelReader().readExcel(TALENT_EXCEL_PATH, TYPE_TALENT)
-            }
-        }
-
-        val ageData = readAgeData()
-        val eventData = readEventData()
-        val talentData = readTalentData()
-
-        if (ageData == null && eventData == null && talentData == null) return false
-        if (ageData == null) return false
-        if (eventData == null) return false
-        if (talentData == null) return false
-
+        if (ageData == null || eventData == null || talentData == null) return false
 
         // 更新列表数据
         this.ageData = ageData
@@ -373,25 +351,12 @@ class LifeRestartUtil {
      * @return 随机事件ID
      */
     private fun getRandom(userInfo: UserInfo): String {
-        var ageDataVO = AgeDataVO()
+        val ageList = (ageData as JsonNode).get(userInfo.age.toString())
+        val age: Int = userInfo.age
+        val eventList: MutableList<Any?> = mutableListOf()
+        for (element in ageList[TYPE_EVENT]) eventList.add(element.textValue())
 
-        when (ageData) {
-            is JsonNode -> {
-                val ageList = (ageData as JsonNode).get(userInfo.age.toString())
-                val age: Int = userInfo.age
-                val eventList: MutableList<Any?> = mutableListOf()
-                for (element in ageList[TYPE_EVENT]) eventList.add(element.textValue())
-
-                ageDataVO = AgeDataVO(age = age, eventList = eventList)
-            }
-
-            is MutableList<*> -> {
-                ageDataVO = (ageData as MutableList<*>).find {
-                    it as AgeDataVO
-                    it.age == userInfo.age
-                } as AgeDataVO
-            }
-        }
+        val ageDataVO = AgeDataVO(age = age, eventList = eventList)
 
         val eventListCheck = generateValidEvent(userInfo, ageDataVO)
         return weightRandom(eventListCheck)
@@ -425,46 +390,31 @@ class LifeRestartUtil {
      * @return 事件
      */
     private fun getDo(userInfo: UserInfo, eventId: String): List<Any?> {
-        var branchItem: String? = null
-        var event: EventDataVO? = null
-
-        when (val eventData = eventData) {
-            is JsonNode -> {
-                val eventDataJson = eventData.get(eventId)
-                if (eventDataJson != null) {
-                    val eventEffect = eventDataJson["effect"]
-                    event = EventDataVO(
-                        id = eventId,
-                        event = eventDataJson[TYPE_EVENT].textValue(),
-                        grade = eventDataJson["grade"]?.intValue(),
-                        postEvent = eventDataJson["postEvent"]?.textValue(),
-                        effectChr = eventEffect?.get(CHR)?.intValue(),
-                        effectInt = eventEffect?.get(INT)?.intValue(),
-                        effectStr = eventEffect?.get(STR)?.intValue(),
-                        effectMny = eventEffect?.get(MNY)?.intValue(),
-                        effectSpr = eventEffect?.get(SPR)?.intValue(),
-                        effectLif = eventEffect?.get(LIF)?.intValue(),
-                        effectAge = eventEffect?.get(AGE)?.intValue(),
-                        noRandom = eventDataJson["NoRandom"]?.intValue(),
-                        include = eventDataJson["include"]?.textValue(),
-                        exclude = eventDataJson["exclude"]?.textValue(),
-                        branch = eventDataJson["branch"]?.mapNotNull { it?.textValue() }?.toMutableList()
-                    )
-                    branchItem = eventDataJson["branch"]?.filterNotNull()?.firstOrNull { branch ->
-                        val cond = branch.textValue().split(":").firstOrNull()
-                        cond?.let { thisCond -> checkCondition(userInfo.property ?: emptyMap(), thisCond) } == true
-                    }?.textValue()
-                }
-            }
-
-            is MutableList<*> -> {
-                event = eventData.filterIsInstance<EventDataVO>().firstOrNull { it.id == eventId }
-                branchItem = event?.branch?.filterNotNull()?.firstOrNull { branch ->
-                    val cond = branch.split(":").firstOrNull()
-                    cond?.let { thisCond -> checkCondition(userInfo.property ?: emptyMap(), thisCond) } == true
-                }
-            }
-        }
+        val branchItem: String?
+        val event: EventDataVO?
+        val eventDataJson = eventData!!.get(eventId)
+        val eventEffect = eventDataJson["effect"]
+        event = EventDataVO(
+            id = eventId,
+            event = eventDataJson[TYPE_EVENT].textValue(),
+            grade = eventDataJson["grade"]?.intValue(),
+            postEvent = eventDataJson["postEvent"]?.textValue(),
+            effectChr = eventEffect?.get(CHR)?.intValue(),
+            effectInt = eventEffect?.get(INT)?.intValue(),
+            effectStr = eventEffect?.get(STR)?.intValue(),
+            effectMny = eventEffect?.get(MNY)?.intValue(),
+            effectSpr = eventEffect?.get(SPR)?.intValue(),
+            effectLif = eventEffect?.get(LIF)?.intValue(),
+            effectAge = eventEffect?.get(AGE)?.intValue(),
+            noRandom = eventDataJson["NoRandom"]?.intValue(),
+            include = eventDataJson["include"]?.textValue(),
+            exclude = eventDataJson["exclude"]?.textValue(),
+            branch = eventDataJson["branch"]?.mapNotNull { it?.textValue() }?.toMutableList()
+        )
+        branchItem = eventDataJson["branch"]?.filterNotNull()?.firstOrNull { branch ->
+            val cond = branch.textValue().split(":").firstOrNull()
+            cond?.let { thisCond -> checkCondition(userInfo.property ?: emptyMap(), thisCond) } == true
+        }?.textValue()
 
         return if (branchItem != null) {
             listOf(event) + branchItem.split(":").getOrNull(1)
@@ -555,33 +505,17 @@ class LifeRestartUtil {
      * @return 是否满足条件
      */
     private fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
-        when (eventData) {
-            is JsonNode -> {
-                val eventList = (eventData as JsonNode).get(eventId)
-                if (eventList.get("noRandom") != null) return false
-                if (eventList.get("exclude") != null && checkCondition(
-                        userInfo.property!!,
-                        eventList.get("exclude").textValue()
-                    )
-                ) return false
-                if (eventList.get("include") != null) return checkCondition(
-                    userInfo.property!!,
-                    eventList.get("include").textValue()
-                )
-            }
-
-            is MutableList<*> -> {
-                val eventList = (eventData as MutableList<*>).filterIsInstance<EventDataVO>()
-                eventList.find {
-                    it.id == eventId
-                }.let {
-                    it as EventDataVO
-                    if (it.noRandom != null) return false
-                    if (it.exclude != null && checkCondition(userInfo.property!!, it.exclude.toString())) return false
-                    if (it.include != null) return checkCondition(userInfo.property!!, it.include.toString())
-                }
-            }
-        }
+        val eventList = (eventData as JsonNode).get(eventId)
+        if (eventList.get("noRandom") != null) return false
+        if (eventList.get("exclude") != null && checkCondition(
+                userInfo.property!!,
+                eventList.get("exclude").textValue()
+            )
+        ) return false
+        if (eventList.get("include") != null) return checkCondition(
+            userInfo.property!!,
+            eventList.get("include").textValue()
+        )
 
         return true
     }
@@ -623,27 +557,19 @@ class LifeRestartUtil {
         }
 
         val talentList = mutableMapOf<Int, MutableList<TalentDataVo>>()
-        when (talentData) {
-            is JsonNode -> {
-                val talentListJson = talentData as JsonNode
-                for (talent in talentListJson) {
-                    val talentId = talent.get("id").asInt().toString()
-                    val grade = talent.get("grade").intValue()
-                    val name = talent.get("name").textValue()
-                    val description = talent.get("description").textValue()
-                    val exclusive = talent.get("exclusive")?.booleanValue() ?: true
-                    if (!exclusive) continue
 
-                    val talentDataVo = TalentDataVo(grade, name, description, talentId)
-                    if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
-                    else talentList[grade]?.add(talentDataVo)
-                }
-            }
+        val talentListJson = talentData as JsonNode
+        for (talent in talentListJson) {
+            val talentId = talent.get("id").asInt().toString()
+            val grade = talent.get("grade").intValue()
+            val name = talent.get("name").textValue()
+            val description = talent.get("description").textValue()
+            val exclusive = talent.get("exclusive")?.booleanValue() ?: true
+            if (!exclusive) continue
 
-            is MutableList<*> -> {
-                val talentList = talentData as MutableList<*>
-                // TODO talent Excle
-            }
+            val talentDataVo = TalentDataVo(grade, name, description, talentId)
+            if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
+            else talentList[grade]?.add(talentDataVo)
         }
 
         val result = mutableListOf<Any>()
@@ -716,7 +642,7 @@ class LifeRestartUtil {
             userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { talentDataVo ->
                 talentDataVo as TalentDataVo
                 userInfo.talent.add(talentDataVo)
-                talentIdList.add(talentDataVo.id)
+                talentIdList.add(talentDataVo.id!!)
             }
         }
         userInfo.property = userInfo.property ?: mutableMapOf()
@@ -732,9 +658,7 @@ class LifeRestartUtil {
      */
     fun talentCheck(match: String, userInfo: UserInfo): String {
         var matchList = match.split(" ")
-        println(matchList)
         matchList = matchList.distinct()
-        println(matchList)
         return if (matchList.size < userInfo.talentSelectLimit) {
             TALENT_SELECT_NOT_COMPLETE
         } else if (matchList.size > userInfo.talentSelectLimit) {
@@ -750,29 +674,22 @@ class LifeRestartUtil {
      *
      * @param userInfo 用户信息
      */
+    @Suppress("UNCHECKED_CAST")
     fun getTalentAllocationAddition(userInfo: UserInfo) {
         val talent: MutableList<String> = userInfo.property?.get("TLT") as MutableList<String>
         val userProperty = userInfo.property as MutableMap<String, Any>
         talent.forEach { talentId ->
-            when (talentData) {
-                is JsonNode -> {
-                    val talentDataJson = talentData as JsonNode
-                    val talentData = talentDataJson.get(talentId)
-                    val status = talentData.get("status")?.intValue() ?: 0
-                    userInfo.status += status
-                    val effect = talentData.get("effect") ?: null
-                    effect?.let {
-                        listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
-                            val value = effect.get(key)?.intValue()
-                            value?.let {
-                                userProperty[key] = (userProperty[key] as Int?)?.plus(value) ?: value
-                            }
-                        }
+            val talentDataJson = talentData as JsonNode
+            val talentData = talentDataJson.get(talentId)
+            val status = talentData.get("status")?.intValue() ?: 0
+            userInfo.status += status
+            val effect = talentData.get("effect") ?: null
+            effect?.let {
+                listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
+                    val value = effect.get(key)?.intValue()
+                    value?.let {
+                        userProperty[key] = (userProperty[key] as Int?)?.plus(value) ?: value
                     }
-                }
-
-                is MutableList<*> -> {
-                    // TODO 表格数据
                 }
             }
         }

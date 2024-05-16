@@ -1,6 +1,5 @@
 package bot.demo.txbot.other
 
-import bot.demo.txbot.genShin.apps.GachaLog
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -22,89 +21,25 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class SystemResources {
-    private val logger: Logger = Logger.getLogger(GachaLog::class.java.getName())
+    private val logger: Logger = Logger.getLogger(SystemResources::class.java.getName())
 
     data class MonitorInfoModel(
-        /**
-         * 使用中的堆内存信息
-         */
-        var usedHeapMemoryInfo: String? = null,
-
-        /**
-         * 最大堆内存信息
-         */
-        var maxHeapMemoryInfo: String? = null,
-
-        /**
-         * 使用中的非堆内存信息
-         */
-        var usedNonHeapMemoryInfo: String? = null,
-
-        /**
-         * 最大非堆内存信息
-         */
-        var maxNonHeapMemoryInfo: String? = null,
-
-        // INFO: DCTANT: 2024/3/21 计算机信息
-        /**
-         * 系统cpu使用率信息
-         */
-        var cpuLoadInfo: String? = null,
-
-        /**
-         * JVM进程 cpu使用率信息
-         */
-        var processCpuLoadInfo: String? = null,
-
-        /**
-         * 系统总内存信息
-         */
-        var totalMemoryInfo: String? = null,
-
-        /**
-         * 系统空闲内存信息
-         */
-        var freeMemoryInfo: String? = null,
-
-        /**
-         * 使用中的内存信息
-         */
-        var useMemoryInfo: String? = null,
-
-        /**
-         * 内存使用率
-         */
-        var memoryUseRatioInfo: String? = null,
-
-        /**
-         * 空闲交换内存信息
-         */
-        var freeSwapSpaceInfo: String? = null,
-
-        /**
-         * 总交换内存信息
-         */
-        var totalSwapSpaceInfo: String? = null,
-
-        /**
-         * 使用中交换内存信息
-         */
-        var useSwapSpaceInfo: String? = null,
-
-        /**
-         * 交换内存使用率信息
-         */
-        var swapUseRatioInfo: String? = null,
-
-        /**
-         * 系统架构
-         */
-        var arch: String? = null,
-
-        /**
-         * 系统名称
-         */
-        var name: String? = null
+        var usedHeapMemoryInfo: String? = null, // 使用中的堆内存信息
+        var maxHeapMemoryInfo: String? = null, // 最大堆内存信息
+        var usedNonHeapMemoryInfo: String? = null, // 使用中的非堆内存信息
+        var maxNonHeapMemoryInfo: String? = null, // 最大非堆内存信息
+        var cpuLoadInfo: String? = null, // 系统cpu使用率信息
+        var processCpuLoadInfo: String? = null,// JVM进程 cpu使用率信息
+        var totalMemoryInfo: String? = null, // 系统总内存信息
+        var freeMemoryInfo: String? = null, // 系统空闲内存信息
+        var useMemoryInfo: String? = null,// 使用中的内存信息
+        var memoryUseRatioInfo: String? = null,// 内存使用率
+        var freeSwapSpaceInfo: String? = null,// 空闲交换内存信息
+        var totalSwapSpaceInfo: String? = null, // 总交换内存信息
+        var useSwapSpaceInfo: String? = null,// 使用中交换内存信息
+        var swapUseRatioInfo: String? = null, // 交换内存使用率信息
+        var arch: String? = null,// 系统架构
+        var name: String? = null // 系统名称
     )
 
     fun monitor(): MonitorInfoModel {

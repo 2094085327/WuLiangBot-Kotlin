@@ -3,9 +3,6 @@ package bot.demo.txbot.game.lifeRestart
 const val AGE_JSONPATH: String = "resources/lifeRestart/age.json"
 const val EVENT_JSONPATH: String = "resources/lifeRestart/events.json"
 const val TALENT_JSONPATH: String = "resources/lifeRestart/talents.json"
-const val AGE_EXCEL_PATH: String = "resources/lifeRestart/age.xlsx"
-const val EVENT_EXCEL_PATH: String = "resources/lifeRestart/events.xlsx"
-const val TALENT_EXCEL_PATH: String = "resources/lifeRestart/talents.xlsx"
 
 const val TYPE_AGE = "age"
 const val TYPE_EVENT = "event"
