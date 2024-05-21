@@ -59,11 +59,11 @@ class WfTranslateLexicon {
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
 
         try {
-            // 获取英文JSON数据并解析
+            // 获取中英文JSON数据并解析
             val lexiconList = getLexiconList(lexiconMap)
 
             // 更新数据库
-            wfLexiconService.setEnLexicon(lexiconList)
+            wfLexiconService.insertLexicon(lexiconList)
         } finally {
             // 显式地将变量置空
             lexiconMap.clear()
