@@ -70,5 +70,9 @@
   "19": {
     "command": "更新词库",
     "description": "更新Warframe中英文翻译的词库"
+  },
+  "20": {
+    "command": "wm [*]",
+    "description": "使用指令「wm 物品名」来查询Warframe Market上的物品订单\n如「wm Saryn Prime Set」，支持中文模糊查询"
   }
 }
