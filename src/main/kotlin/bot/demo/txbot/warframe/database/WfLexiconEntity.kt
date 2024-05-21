@@ -23,7 +23,7 @@ data class WfLexiconEntity(
      * 英文词条名
      */
     @TableField("en_item_name")
-    val enItemName: String? = null,
+    var enItemName: String? = null,
     /**
      * 中文词条名
      */
