@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.*
 
 
 /**
- *@Description:
+ *@Description: 用户实体类
  *@Author zeng
  *@Date 2023/10/3 21:51
  *@User 86188

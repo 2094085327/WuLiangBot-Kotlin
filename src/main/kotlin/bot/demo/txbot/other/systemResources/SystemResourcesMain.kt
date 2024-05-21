@@ -206,7 +206,7 @@ class SystemResourcesMain {
                     "已使用内存: ${ramData.getUsed()}G\n" +
                     "空闲内存: ${ramData.getFree()}G\n" +
                     "内存使用率: ${ramData.getUsage()}%\n\n" +
-                    "操作系统名称: ${sysData.osName}\n" +
+                    "操作系统: ${sysData.osName}\n" +
                     "系统架构: ${sysData.osArch}\n" +
                     "用户目录: ${sysData.userDir}\n\n" +
                     "JVM总内存: ${jvmData.getTotal()}M\n" +

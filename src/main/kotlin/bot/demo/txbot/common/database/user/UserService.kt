@@ -3,12 +3,11 @@ package bot.demo.txbot.common.database.user
 import com.baomidou.mybatisplus.extension.service.IService
 
 /**
- *@Description:
+ *@Description: 用户服务
  *@Author zeng
  *@Date 2023/10/3 22:25
  *@User 86188
  */
-
 interface UserService : IService<UserEntity?> {
     /**
      * 根据真实ID查询原神UID

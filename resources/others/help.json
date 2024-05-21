@@ -66,5 +66,9 @@
   "18": {
     "command": "无量姬状态",
     "description": "获取无量姬在当前系统中的运行状态"
+  },
+  "19": {
+    "command": "更新词库",
+    "description": "更新Warframe中英文翻译的词库"
   }
 }
