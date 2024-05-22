@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.utils
 
+import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import com.fasterxml.jackson.databind.JsonNode
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -9,11 +10,10 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.core5.http.*
+import org.apache.hc.core5.http.io.HttpClientResponseHandler
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
 import pers.wuliang.robot.common.utils.LoggerUtils.logError
@@ -23,11 +23,6 @@ import java.net.URI
 import java.net.URLEncoder
 import java.util.logging.Logger
 
-
-/**
- * @author zsck
- * @date   2023/1/26 - 20:04
- */
 
 /**
  * 公共的http请求工具类
@@ -76,11 +71,17 @@ open class HttpBase {
      * @param isDefault 是否使用默认httpClient
      * @return 请求结果
      */
-    private fun doHttpRequestStr(httpRequestBase: HttpUriRequestBase, isDefault: Boolean = false): String {
-        val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClientBuilder.create().build()
-        try {
-            httpClient.execute(httpRequestBase).use { exec -> return EntityUtils.toString(exec.entity) }
-        } finally {//若不使用默认httpClient则自动关闭
+    private fun doHttpRequestStr(httpRequestBase: ClassicHttpRequest, isDefault: Boolean = false): String {
+        val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClients.createDefault()
+        return try {
+            val responseHandler = HttpClientResponseHandler { response ->
+                val entity = response.entity
+                if (entity != null) {
+                    EntityUtils.toString(entity)
+                } else throw IOException("No response entity")
+            }
+            httpClient.execute(httpRequestBase, responseHandler)
+        } finally {
             if (!isDefault) {
                 httpClient.close()
             }
@@ -95,17 +96,30 @@ open class HttpBase {
      * @param isDefault 是否使用默认httpClient
      * @return 请求结果
      */
-    private fun doHttpRequestBytes(httpRequestBase: HttpUriRequestBase, isDefault: Boolean = false): ByteArray {
+    private fun doHttpRequestBytes(httpRequestBase: ClassicHttpRequest, isDefault: Boolean = false): ByteArray {
         val httpClient: CloseableHttpClient = if (isDefault) this.httpClient else HttpClients.createDefault()
-        try {
-            httpClient.execute(httpRequestBase).use { exec -> return EntityUtils.toByteArray(exec.entity) }
-        } finally {//若不使用默认httpClient则自动关闭
+        return try {
+            val responseHandler = HttpClientResponseHandler { response ->
+                val entity = response.entity
+                if (entity != null) {
+                    EntityUtils.toByteArray(entity)
+                } else throw IOException("No response entity")
+            }
+            httpClient.execute(httpRequestBase, responseHandler)
+        } finally {
             if (!isDefault) {
                 httpClient.close()
             }
         }
     }
 
+    /**
+     * 编码
+     *
+     * @param url 请求地址
+     * @param params 参数
+     * @return uri
+     */
     private fun getUri(url: String, params: Map<String, Any>?): String {
         val uri = URI(url)
         val encodedUrl = uri.toASCIIString()
@@ -118,26 +132,36 @@ open class HttpBase {
         return builder.build().toString()
     }
 
+    /**
+     * 构建带参URL
+     *
+     * @param url 根URL
+     * @param params 参数
+     * @return 带参URL
+     */
     private fun buildUrlWithParams(url: String, params: Map<String, Any>): String {
-        val queryString = params.entries.joinToString("&") { "${it.key}=${it.value}" }
-        return if (url.contains("?")) {
-            "$url&$queryString"
-        } else {
-            "$url?$queryString"
+        val queryString = params.entries.joinToString("&") {
+            "${it.key.urlEncode()}=${it.value.toString().urlEncode()}"
         }
+        return if (url.contains("?")) "$url&$queryString" else "$url?$queryString"
     }
 
+    /**
+     * 发送StrGet请求
+     *
+     * @param url 请求链接
+     * @param params 请求参数
+     * @param headers 请求头
+     * @return 请求结果
+     */
     @Throws(IOException::class)
     fun doGetStr(
         url: String,
         params: Map<String, Any>? = null,
         headers: MutableMap<String, Any>? = null,
     ): String {
-        val fullUrl = if (params != null) {
-            buildUrlWithParams(url, params)
-        } else {
-            url
-        }
+        val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
+
         val requestBuilder = Request.Builder()
             .url(fullUrl)
             .get()
@@ -154,12 +178,20 @@ open class HttpBase {
                 it.body.string()
             } else {
                 val errorResponse = it.body.string()
-                logger.logError("Get请求失败: ${it.code}")
+                logger.logError("Get请求失败: ${it.code} $request")
                 throw HttpException(it.code, errorResponse)
             }
         }
     }
 
+    /**
+     * 发送JsonGet请求
+     *
+     * @param url 请求链接
+     * @param headers 请求头
+     * @param params 请求参数
+     * @return 请求结果
+     */
     @Throws(IOException::class)
     fun doGetJson(
         url: String,
@@ -170,7 +202,13 @@ open class HttpBase {
     }
 
     /**
-     * url:
+     * 发送带有文件的Post请求
+     *
+     * @param url 请求链接
+     * @param files 文件
+     * @param params 参数
+     * @param headers 请求头
+     * @return 请求结果
      */
     @Throws(IOException::class, HttpException::class)
     fun doPostStr(
@@ -204,12 +242,20 @@ open class HttpBase {
                 it.body.string()
             } else {
                 val errorResponse = it.body.string()
-                println("Post请求失败: ${it.code}")
+                logger.logError("Post请求失败: ${it.code} $request")
                 throw HttpException(it.code, errorResponse)
             }
         }
     }
 
+    /**
+     * 发送带有Json请求体的Post请求
+     *
+     * @param url 请求链接
+     * @param jsonBody 请求体
+     * @param headers 请求头
+     * @return 请求结果
+     */
     @Throws(IOException::class, HttpException::class)
     fun doPostJson(
         url: String,
@@ -218,8 +264,7 @@ open class HttpBase {
     ): JsonNode {
         val mediaType = "application/json; charset=utf-8".toMediaType()
 
-        val requestBuilder = Request.Builder()
-            .url(url)
+        val requestBuilder = Request.Builder().url(url)
 
         jsonBody?.let {
             val requestBody = it.toRequestBody(mediaType)
@@ -235,16 +280,24 @@ open class HttpBase {
         val response = client.newCall(request).execute()
 
         return response.use {
-            if (it.isSuccessful) {
-                JacksonUtil.readTree(it.body.string())
-            } else {
+            if (it.isSuccessful) JacksonUtil.readTree(it.body.string())
+            else {
                 val errorResponse = it.body.string()
-                println("Post请求失败: ${it.code}")
+                logger.logError("Post请求失败: ${it.code} $request")
                 throw HttpException(it.code, errorResponse)
             }
         }
     }
 
+    /**
+     * 发送带有文件的Post请求并以JsonNode返回
+     *
+     * @param url 请求链接
+     * @param files 文件
+     * @param params 参数
+     * @param headers 请求头
+     * @return 请求结果
+     */
     @Throws(IOException::class, HttpException::class)
     fun doPostJson(
         url: String,
