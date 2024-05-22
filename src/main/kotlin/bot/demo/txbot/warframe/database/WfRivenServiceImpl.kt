@@ -28,7 +28,22 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
     }
 
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
-        val queryWrapper = QueryWrapper<WfRivenEntity>().eq("zh_item_name", zh).or().eq("en_item_name", zh)
+        val queryWrapper = QueryWrapper<WfRivenEntity>().eq("zh", zh).or().eq("en", zh)
         return rivenMapper.selectOne(queryWrapper)
+    }
+
+    override fun turnKeyToUrlNameByRivenLike(zh: String): List<WfRivenEntity?>? {
+        val regex = zh.toCharArray().joinToString(".*") { it.toString() }  // 将输入字符串转换为.*分隔的正则表达式
+        val queryWrapper = QueryWrapper<WfRivenEntity>()
+            .apply("zh REGEXP {0}", regex)
+            .or()
+            .like("en", "%$zh%")
+            .eq("attributes", 1)
+        return rivenMapper.selectList(queryWrapper)
+    }
+
+    override fun turnUrlNameToKeyByRiven(urlName: String): String {
+        val queryWrapper = QueryWrapper<WfRivenEntity>().eq("url_name", urlName)
+        return rivenMapper.selectOne(queryWrapper)?.zhName ?: ""
     }
 }

@@ -21,24 +21,30 @@ data class WfRivenEntity(
     /**
      * 词条URL名
      */
-    @TableField("url_name")
+    @TableField(value = "url_name")
     val urlName: String,
 
     /**
      * 英文词条名
      */
-    @TableField("en")
+    @TableField(value = "en")
     var enName: String? = null,
 
     /**
      * 中文词条名
      */
-    @TableField("zh")
+    @TableField(value = "zh")
     var zhName: String? = null,
 
     /**
      * 紫卡组
      */
-    @TableField("group")
-    val group: String
+    @TableField(value = "r_group")
+    val rGroup: String,
+
+    /**
+     * 是否为紫卡属性
+     */
+    @TableField(value = "attributes")
+    val attributesBool: Int? = 0
 )

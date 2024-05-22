@@ -115,10 +115,11 @@ class WfTranslateLexicon {
             val id = item["id"].textValue()
             val entity = rivenMap[id] ?: WfRivenEntity(
                 id = id,
-                group = item["group"].textValue(),
+                rGroup = item["group"].textValue(),
                 enName = if (!isChinese) item[nameKey].textValue() else "",
                 urlName = item["url_name"].textValue(),
-                zhName = if (isChinese) item[nameKey].textValue() else ""
+                zhName = if (isChinese) item[nameKey].textValue() else "",
+                attributesBool = if (url == WARFRAME_MARKET_RIVEN_ATTRIBUTES) 1 else 0
             )
             if (isChinese) {
                 entity.zhName = item[nameKey].textValue()

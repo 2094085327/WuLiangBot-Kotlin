@@ -7,6 +7,6 @@ import org.apache.ibatis.annotations.Param
 
 @Mapper
 interface WfRivenMapper : BaseMapper<WfRivenEntity?> {
-    @Insert("INSERT IGNORE INTO wfRiven (id, url_name, en , zh, `group`)  VALUES (#{entity.id}, #{entity.urlName}, #{entity.enName}, #{entity.zhName}, #{entity.group});")
+    @Insert("INSERT IGNORE INTO wfRiven (id, url_name, en , zh, r_group,attributes)  VALUES (#{entity.id}, #{entity.urlName}, #{entity.enName}, #{entity.zhName}, #{entity.rGroup},#{entity.attributesBool});")
     fun insertIgnore(@Param("entity") wfRivenEntity: WfRivenEntity)
 }

@@ -10,7 +10,7 @@ import java.time.LocalDateTime
  *@Date 2023/10/4 11:26
  *@User 86188
  */
-@TableName("genshininfo")
+@TableName("genshinInfo")
 data class GenShinEntity(
     /**
      * 用户UID
@@ -60,6 +60,6 @@ data class GenShinEntity(
     /**
      * 更新时间
      */
-    @TableField(value = "updatetime") val updateTime: LocalDateTime? = null
+    @TableField(value = "update_time") val updateTime: LocalDateTime? = null
 
 )

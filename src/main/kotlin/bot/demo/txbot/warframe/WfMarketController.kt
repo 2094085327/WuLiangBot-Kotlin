@@ -3,6 +3,7 @@ package bot.demo.txbot.warframe
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
+import bot.demo.txbot.warframe.database.WfRivenService
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -24,10 +25,53 @@ class WfMarketController {
     @Autowired
     lateinit var wfLexiconService: WfLexiconService
 
+    @Autowired
+    lateinit var wfRivenService: WfRivenService
+
+    /**
+     * Warframe 市场物品
+     *
+     *
+     * @property platinum 价格
+     * @property quantity 数量
+     * @property inGameName 游戏内名称
+     */
     data class OrderInfo(
         val platinum: Int,
         val quantity: Int,
         val inGameName: String,
+    )
+
+    /**
+     * Warframe 紫卡信息
+     *
+     * @property value 属性值
+     * @property positive 是否为正属性
+     * @property urlName 属性URL名
+     */
+    data class Attributes(
+        val value: Double,
+        val positive: Boolean,
+        val urlName: String
+    )
+
+    /**
+     * Warframe 紫卡订单信息
+     *
+     * @property modRank mod等级
+     * @property reRolls 循环次数
+     * @property startPlatinum 起拍价格
+     * @property buyOutPlatinum 一口价
+     * @property polarity 极性
+     * @property positive 属性
+     */
+    data class RivenOrderInfo(
+        val modRank: Int,
+        val reRolls: Int,
+        val startPlatinum: Int,
+        val buyOutPlatinum: Int,
+        val polarity: String,
+        val positive: List<Attributes>,
     )
 
     /**
@@ -123,5 +167,97 @@ class WfMarketController {
 
         val item = keyList.last()!!
         sendMarketItemInfo(bot, event, item, level)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "wr (.*)")
+    fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val key = matcher.group(1)
+        val parameterList = key.split(" ")
+
+        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(parameterList[0])
+        if (itemEntity == null) {
+            bot.sendMsg(event, "未找到该物品", false)
+            return
+        }
+
+        val positiveList = mutableListOf<String>()
+        var negativeParam: String? = null
+
+        parameterList.drop(1).forEach { parameter ->
+            when {
+                parameter.contains("负") -> {
+                    if (parameter == "无负") negativeParam = "none"
+                    else {
+                        val negative = wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))
+                        negative?.firstOrNull()?.urlName?.let { negativeParam = it }
+                    }
+                }
+
+                else -> {
+                    val positive = wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
+                    positive?.firstOrNull()?.urlName?.let { positiveList.add(it) }
+                }
+            }
+        }
+
+        val params = mutableMapOf(
+            "weapon_url_name" to itemEntity.urlName,
+            "sort_by" to "price_asc"
+        ).apply {
+            if (positiveList.isNotEmpty()) put("positive_stats", positiveList.joinToString(","))
+            if (negativeParam != null) put("negative_stats", negativeParam!!)
+        }
+
+        val rivenJson = try {
+            HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = params)
+        } catch (e: Exception) {
+            bot.sendMsg(event, "查询失败，请稍后重试", false)
+            return
+        }
+
+        val orders = rivenJson["payload"]["auctions"]
+        val allowedStatuses = setOf("online", "ingame")
+
+        val rivenOrderList = orders.asSequence()
+            .filter { order -> order["owner"]["status"].textValue() in allowedStatuses }
+            .take(5)
+            .map { order ->
+                RivenOrderInfo(
+                    modRank = order["item"]["mod_rank"].intValue(),
+                    reRolls = order["item"]["re_rolls"].intValue(),
+                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                    polarity = order["item"]["polarity"].textValue(),
+                    positive = order["item"]["attributes"].map { attribute ->
+                        Attributes(
+                            value = attribute["value"].doubleValue(),
+                            positive = attribute["positive"].booleanValue(),
+                            urlName = attribute["url_name"].textValue()
+                        )
+                    }
+                )
+            }.toList()
+
+        val orderString = if (rivenOrderList.isEmpty()) "当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}"
+        else {
+            rivenOrderList.joinToString("\n") { order ->
+                val polaritySymbol = when (order.polarity) {
+                    "madurai" -> "r"
+                    "vazarin" -> "Δ"
+                    else -> "-"
+                }
+                "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数: ${order.reRolls} 极性:$polaritySymbol\n" +
+                        order.positive.joinToString("|") { positive ->
+                            "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} ${if (positive.positive) "+${positive.value}" else positive.value}%"
+                        }
+            }
+        }
+
+        bot.sendMsg(
+            event,
+            "你查找的「${itemEntity.zhName}」紫卡前5条拍卖信息如下:\n$orderString\n示例:wr 战刃 爆伤 暴击 负触发",
+            false
+        )
     }
 }
