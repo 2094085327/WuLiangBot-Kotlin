@@ -46,4 +46,12 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         val queryWrapper = QueryWrapper<WfRivenEntity>().eq("url_name", urlName)
         return rivenMapper.selectOne(queryWrapper)?.zhName ?: ""
     }
+
+    override fun superFuzzyQuery(key: String): List<WfRivenEntity?>? {
+        val queryWrapper = QueryWrapper<WfRivenEntity>()
+            .like("zh", "%$key%")
+            .or()
+            .like("en", "%$key%")
+        return rivenMapper.selectList(queryWrapper)
+    }
 }

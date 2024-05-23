@@ -161,7 +161,24 @@ class WfMarketController {
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
         if (keyList.isNullOrEmpty()) {
-            bot.sendMsg(event, "未找到该物品", false)
+            val fuzzyList = mutableListOf<String>()
+
+            // 遍历 key 的每个字符，并将其转换为字符串
+            key.forEach { eachKey ->
+                // 调用 wfLexiconService.fuzzyQuery() 方法进行模糊查询，并将结果存储在 result 变量中
+                wfLexiconService.fuzzyQuery(eachKey.toString())?.forEach {
+                    it?.zhItemName?.let { name ->
+                        fuzzyList.add(name)
+                    }
+                }
+            }
+
+            if (fuzzyList.isNotEmpty()) {
+                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${fuzzyList.joinToString(", ")}]", false)
+            } else {
+                bot.sendMsg(event, "未找到任何匹配项。", false)
+            }
+
             return
         }
 
@@ -175,9 +192,26 @@ class WfMarketController {
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
-        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(parameterList[0])
+        val itemNameKey: String = parameterList.first()
+        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
+
+        // 判断 itemEntity 是否为空
         if (itemEntity == null) {
-            bot.sendMsg(event, "未找到该物品", false)
+            // 创建一个空的字符串列表用于存储模糊查询的结果
+            val fuzzyList = mutableListOf<String>()
+
+            // 遍历 itemNameKey 的每个字符，并将其转换为字符串
+            itemNameKey.forEach { eachKey ->
+                // 调用 superFuzzyQuery() 方法进行模糊查询，并将结果存储在 result 变量中
+                wfRivenService.superFuzzyQuery(eachKey.toString())
+                    ?.forEach { it?.zhName?.let { name -> fuzzyList.add(name) } }
+            }
+            val fuzzy = fuzzyList.toSet().toList()
+            if (fuzzy.isNotEmpty()) {
+                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${fuzzy.joinToString(", ")}]", false)
+            } else {
+                bot.sendMsg(event, "未找到任何匹配项。", false)
+            }
             return
         }
 
@@ -256,7 +290,7 @@ class WfMarketController {
 
         bot.sendMsg(
             event,
-            "你查找的「${itemEntity.zhName}」紫卡前5条拍卖信息如下:\n$orderString\n示例:wr 战刃 爆伤 暴击 负触发",
+            "你查找的「${itemEntity.zhName}」紫卡前5条拍卖信息如下:\n$orderString\n示例:wr 战刃 暴伤 暴击 负触发",
             false
         )
     }

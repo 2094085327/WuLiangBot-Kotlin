@@ -40,4 +40,12 @@ class WfLexiconServiceImpl : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), 
             .like("en_item_name", "%$zh%")
         return lexiconMapper.selectList(queryWrapper)
     }
+
+    override fun fuzzyQuery(key: String): List<WfLexiconEntity?>? {
+        val queryWrapper = QueryWrapper<WfLexiconEntity>()
+            .like("zh_item_name", "%$key%")
+            .or()
+            .like("en_item_name", "%$key%")
+        return lexiconMapper.selectList(queryWrapper)
+    }
 }

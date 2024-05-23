@@ -33,4 +33,12 @@ interface WfRivenService : IService<WfRivenEntity?> {
      * @return 中文物品
      */
     fun turnUrlNameToKeyByRiven(urlName: String): String
+
+    /**
+     * 超模糊查询
+     *
+     * @param key 关键字
+     * @return 查询结果
+     */
+    fun superFuzzyQuery(key: String): List<WfRivenEntity?>?
 }

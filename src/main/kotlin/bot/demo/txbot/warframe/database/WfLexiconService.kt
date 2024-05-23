@@ -25,4 +25,12 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @return 英文物品
      */
     fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>?
+
+    /**
+     * 进行超模糊查询
+     *
+     * @param key 关键字
+     * @return 查询结果
+     */
+    fun fuzzyQuery(key: String): List<WfLexiconEntity?>?
 }
