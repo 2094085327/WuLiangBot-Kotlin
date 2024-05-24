@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
+import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -138,6 +139,161 @@ class WfMarketController {
         )
     }
 
+    fun findMatchingStrings(key: String, keyList: List<String>): List<String> {
+        // 统计key中每个字符的频率
+        val keyFrequency = HashMap<Char, Int>()
+        key.forEach { char ->
+            keyFrequency[char] = keyFrequency.getOrDefault(char, 0) + 1
+        }
+
+        val map = HashMap<String, Int>()
+        keyList.forEach { eachKey ->
+            // 统计eachKey中每个字符的频率
+            val eachKeyFrequency = HashMap<Char, Int>()
+            eachKey.forEach { char ->
+                eachKeyFrequency[char] = eachKeyFrequency.getOrDefault(char, 0) + 1
+            }
+
+            // 计算两个频率映射的匹配程度
+            var num = 0
+            for ((char, freq) in keyFrequency) {
+                num += minOf(freq, eachKeyFrequency.getOrDefault(char, 0))
+            }
+
+            map[eachKey] = num
+        }
+
+        // 将结果按匹配度降序排序并取前5个
+        val sortedMap = map.toList().sortedByDescending { (_, value) -> value }.toMap()
+        return sortedMap.keys.take(5).toList()
+    }
+
+    /**
+     * 如果找不到项目，则处理模糊搜索的功能
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param itemNameKey 物品名称关键字
+     */
+    fun handleFuzzySearch(bot: Bot, event: AnyMessageEvent, itemNameKey: String) {
+        val fuzzyList = mutableSetOf<String>()
+        itemNameKey.forEach { char ->
+            wfRivenService.superFuzzyQuery(char.toString())
+                ?.forEach { it?.zhName?.let { name -> fuzzyList.add(name) } }
+        }
+
+        if (fuzzyList.isNotEmpty()) {
+            findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
+                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
+            }
+        } else {
+            bot.sendMsg(event, "未找到任何匹配项。", false)
+        }
+    }
+
+    /**
+     * 处理参数并分离正负词条的功能
+     *
+     * @param parameters 参数
+     * @param positiveStats 正词条
+     * @param negativeStat 负词条
+     */
+    fun processParameters(
+        parameters: List<String>,
+        positiveStats: MutableList<String>,
+        negativeStat: String?
+    ): String? {
+        var negative = negativeStat
+        parameters.forEach { parameter ->
+            when {
+                parameter.contains("负") -> {
+                    negative = if (parameter == "无负") "none"
+                    else wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))?.firstOrNull()?.urlName
+                }
+
+                else -> wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
+                    ?.firstOrNull()?.urlName?.let { positiveStats.add(it) }
+            }
+        }
+        return negative
+    }
+
+
+    /**
+     * 用于为API调用创建查询参数的函数
+     *
+     * @param weaponUrlName 武器URL名称
+     * @param positiveStats 正词条
+     * @param negativeStat 负词条
+     * @return 查询参数
+     */
+    fun createQueryParams(
+        weaponUrlName: String,
+        positiveStats: List<String>,
+        negativeStat: String?
+    ): MutableMap<String, String> {
+        return mutableMapOf(
+            "weapon_url_name" to weaponUrlName,
+            "sort_by" to "price_asc"
+        ).apply {
+            if (positiveStats.isNotEmpty()) {
+                put("positive_stats", positiveStats.joinToString(","))
+            }
+            negativeStat?.let {
+                put("negative_stats", it)
+            }
+        }
+    }
+
+    /**
+     * 将拍卖数据格式化为字符串消息的函数
+     *
+     * @param rivenJson 紫卡Json数据
+     * @param itemZhName 物品中文名称
+     * @return 格式化后的拍卖数据
+     */
+    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String): String {
+        val orders = rivenJson["payload"]["auctions"]
+        val allowedStatuses = setOf("online", "ingame")
+
+        val rivenOrderList = orders.asSequence()
+            .filter { order -> order["owner"]["status"].textValue() in allowedStatuses }
+            .take(5)
+            .map { order ->
+                RivenOrderInfo(
+                    modRank = order["item"]["mod_rank"].intValue(),
+                    reRolls = order["item"]["re_rolls"].intValue(),
+                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                    polarity = order["item"]["polarity"].textValue(),
+                    positive = order["item"]["attributes"].map { attribute ->
+                        Attributes(
+                            value = attribute["value"].doubleValue(),
+                            positive = attribute["positive"].booleanValue(),
+                            urlName = attribute["url_name"].textValue()
+                        )
+                    }
+                )
+            }.toList()
+
+        return if (rivenOrderList.isEmpty()) {
+            "当前没有任何在线的玩家出售这种词条的${itemZhName}"
+        } else {
+            val auctionDetails = rivenOrderList.joinToString("\n") { order ->
+                val polaritySymbol = when (order.polarity) {
+                    "madurai" -> "r"
+                    "vazarin" -> "Δ"
+                    else -> "-"
+                }
+                "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n" +
+                        order.positive.joinToString("|") { positive ->
+                            "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} ${if (positive.positive) "+${positive.value}" else positive.value}%"
+                        }
+            }
+            "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
+        }
+    }
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wm (.*)")
     fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -174,7 +330,9 @@ class WfMarketController {
             }
 
             if (fuzzyList.isNotEmpty()) {
-                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${fuzzyList.joinToString(", ")}]", false)
+                findMatchingStrings(key, fuzzyList).let {
+                    bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
+                }
             } else {
                 bot.sendMsg(event, "未找到任何匹配项。", false)
             }
@@ -195,103 +353,32 @@ class WfMarketController {
         val itemNameKey: String = parameterList.first()
         val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
 
-        // 判断 itemEntity 是否为空
         if (itemEntity == null) {
-            // 创建一个空的字符串列表用于存储模糊查询的结果
-            val fuzzyList = mutableListOf<String>()
-
-            // 遍历 itemNameKey 的每个字符，并将其转换为字符串
-            itemNameKey.forEach { eachKey ->
-                // 调用 superFuzzyQuery() 方法进行模糊查询，并将结果存储在 result 变量中
-                wfRivenService.superFuzzyQuery(eachKey.toString())
-                    ?.forEach { it?.zhName?.let { name -> fuzzyList.add(name) } }
-            }
-            val fuzzy = fuzzyList.toSet().toList()
-            if (fuzzy.isNotEmpty()) {
-                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${fuzzy.joinToString(", ")}]", false)
-            } else {
-                bot.sendMsg(event, "未找到任何匹配项。", false)
-            }
+            // 如果未找到物品，则执行模糊搜索
+            handleFuzzySearch(bot, event, itemNameKey)
             return
         }
 
-        val positiveList = mutableListOf<String>()
-        var negativeParam: String? = null
+        val positiveStats = mutableListOf<String>()
+        val negativeStat: String? = null
 
-        parameterList.drop(1).forEach { parameter ->
-            when {
-                parameter.contains("负") -> {
-                    if (parameter == "无负") negativeParam = "none"
-                    else {
-                        val negative = wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))
-                        negative?.firstOrNull()?.urlName?.let { negativeParam = it }
-                    }
-                }
+        // 处理参数以查找正词条和负词条
+        processParameters(parameterList.drop(1), positiveStats, negativeStat)
 
-                else -> {
-                    val positive = wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
-                    positive?.firstOrNull()?.urlName?.let { positiveList.add(it) }
-                }
-            }
-        }
+        // 为API调用创建查询参数
+        val queryParams = createQueryParams(itemEntity.urlName, positiveStats, negativeStat)
 
-        val params = mutableMapOf(
-            "weapon_url_name" to itemEntity.urlName,
-            "sort_by" to "price_asc"
-        ).apply {
-            if (positiveList.isNotEmpty()) put("positive_stats", positiveList.joinToString(","))
-            if (negativeParam != null) put("negative_stats", negativeParam!!)
-        }
-
+        // 调用API并获取数据
         val rivenJson = try {
-            HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = params)
+            HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = queryParams)
         } catch (e: Exception) {
             bot.sendMsg(event, "查询失败，请稍后重试", false)
             return
         }
 
-        val orders = rivenJson["payload"]["auctions"]
-        val allowedStatuses = setOf("online", "ingame")
+        // 筛选和格式化拍卖数据
+        val auctionInfo = formatAuctionData(rivenJson, itemEntity.zhName!!)
 
-        val rivenOrderList = orders.asSequence()
-            .filter { order -> order["owner"]["status"].textValue() in allowedStatuses }
-            .take(5)
-            .map { order ->
-                RivenOrderInfo(
-                    modRank = order["item"]["mod_rank"].intValue(),
-                    reRolls = order["item"]["re_rolls"].intValue(),
-                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
-                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                    polarity = order["item"]["polarity"].textValue(),
-                    positive = order["item"]["attributes"].map { attribute ->
-                        Attributes(
-                            value = attribute["value"].doubleValue(),
-                            positive = attribute["positive"].booleanValue(),
-                            urlName = attribute["url_name"].textValue()
-                        )
-                    }
-                )
-            }.toList()
-
-        val orderString = if (rivenOrderList.isEmpty()) "当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}"
-        else {
-            rivenOrderList.joinToString("\n") { order ->
-                val polaritySymbol = when (order.polarity) {
-                    "madurai" -> "r"
-                    "vazarin" -> "Δ"
-                    else -> "-"
-                }
-                "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数: ${order.reRolls} 极性:$polaritySymbol\n" +
-                        order.positive.joinToString("|") { positive ->
-                            "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} ${if (positive.positive) "+${positive.value}" else positive.value}%"
-                        }
-            }
-        }
-
-        bot.sendMsg(
-            event,
-            "你查找的「${itemEntity.zhName}」紫卡前5条拍卖信息如下:\n$orderString\n示例:wr 战刃 暴伤 暴击 负触发",
-            false
-        )
+        bot.sendMsg(event, auctionInfo, false)
     }
 }
