@@ -5,7 +5,7 @@ package bot.demo.txbot.genShin.util
  * @author Nature Zero
  * @date 2024/4/3 8:17
  */
-
+const val UIGF_VERSION = "v3.0" // 抽卡数据统一标准版本
 
 const val CACHE_PATH = "resources/gachaCache" // 缓存路径
 const val IMG_CACHE_PATH = "resources/imageCache" // 图片缓存路径

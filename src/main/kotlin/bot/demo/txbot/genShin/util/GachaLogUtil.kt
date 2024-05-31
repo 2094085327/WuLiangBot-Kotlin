@@ -112,34 +112,6 @@ class GachaLogUtil {
         return if (matchingFiles.isNotEmpty()) Pair(true, matchingFiles[0]) else Pair(false, fileName)
     }
 
-    /**
-     * 将卡池301和卡池400数据合并
-     *
-     * @param array1 卡池1
-     * @param array2 卡池2
-     * @return 返回合并后的数据
-     */
-    private fun mergeJsonArrays(array1: JsonNode, array2: JsonNode): JsonNode {
-        val resultArray = mutableListOf<JsonNode>()
-        resultArray.addAll(array1)
-        resultArray.addAll(array2)
-        return ObjectMapper().valueToTree(resultArray)
-    }
-
-    /**
-     * 将合并后的Json数据按照时间进行排序
-     *
-     * @param jsonArray 传入的待排序的数据
-     * @return 返回排序后的数据
-     */
-    private fun sortJsonArrayByTime(jsonArray: JsonNode): JsonNode {
-        if (jsonArray.isArray) {
-            val array = jsonArray as ArrayNode
-            val sortedArray = array.sortedByDescending { it["getTime"].asText() }.reversed()
-            return ObjectMapper().valueToTree(sortedArray)
-        }
-        return jsonArray
-    }
 
     /**
      * 读取角色属性
@@ -216,25 +188,11 @@ class GachaLogUtil {
      * @param gachaType 需要处理的卡池类型
      */
     fun getEachData(data: JsonNode, gachaType: String) {
-        val folderPaths = when (gachaType) {
-            "200", "500" -> listOf(ROLE_IMG, WEAPON_IMG)
-            "301" -> listOf(ROLE_IMG)
-            "302" -> listOf(WEAPON_IMG)
-            else -> return
-        }
-        val itemList = when (gachaType) {
-            "200" -> GachaData.permanents
-            "301" -> GachaData.roles
-            "302" -> GachaData.weapons
-            "500" -> GachaData.mixPool
-            else -> return
-        }
-
-        val countList = when (gachaType) {
-            "200" -> GachaData.permanentCount
-            "301" -> GachaData.roleCount
-            "302" -> GachaData.weaponCount
-            "500" -> GachaData.mixCount
+        val (folderPaths, itemList, countList) = when (gachaType) {
+            "200" -> Triple(listOf(ROLE_IMG, WEAPON_IMG), GachaData.permanents, GachaData.permanentCount)
+            "301" -> Triple(listOf(ROLE_IMG), GachaData.roles, GachaData.roleCount)
+            "302" -> Triple(listOf(WEAPON_IMG), GachaData.weapons, GachaData.weaponCount)
+            "500" -> Triple(listOf(ROLE_IMG, WEAPON_IMG), GachaData.mixPool, GachaData.mixCount)
             else -> return
         }
 
@@ -245,76 +203,67 @@ class GachaLogUtil {
             fileList.addAll(items)
         }
 
-        var getData = data["gachaLog"][gachaType]
-
-        if (gachaType == "301") {
-            val mergedArray = mergeJsonArrays(data["gachaLog"]["301"], data["gachaLog"]["400"])
-            getData = sortJsonArrayByTime(mergedArray)
-        }
-
-
         var unFiveStarTimes = 0
         var fiveCount = 0
         val timesList = mutableListOf<Int>()
-        getData.forEach { array ->
+
+        // 创建抽卡网页数据
+        fun createGachaEntity(array: JsonNode, unFiveStarTimes: Int, isUp: Boolean): HtmlEntity {
+            val itemType = array["itemType"].textValue()
+            val itemName = array["name"].textValue()
+            val (isEmpty, itemFileName) = checkFile(itemName)
+            val roleAttribute = if (itemType == "角色") getRoleAttribute(itemName) else null
+
+            return HtmlEntity(
+                itemId = array["id"].textValue(),
+                itemName = itemFileName,
+                itemType = itemType,
+                itemAttribute = roleAttribute,
+                getTime = array["time"].textValue(),
+                times = unFiveStarTimes + 1,
+                isEmpty = isEmpty,
+                isUp = isUp
+            )
+        }
+
+        fun isItemUp(gachaType: String, upData: JsonNode, itemName: String): Boolean {
+            return when (gachaType) {
+                "301" -> upData["up5"].asText() == itemName || (upData.has("up5_2") && upData["up5_2"].asText() == itemName)
+                "500" -> true
+                else -> upData["weapon5"].any { it.asText() == itemName }
+            }
+        }
+
+        val filteredData = data["list"].filter { it["uigfGachaType"].textValue() == gachaType }
+        val filteredDataCount = filteredData.size
+
+        filteredData.forEach { array ->
             if (array["rankType"].asInt() == 5) {
-                val itemType = array["itemType"].textValue()
-                val itemName = array["itemName"].textValue()
-
-                val (isEmpty, itemFileName) = checkFile(itemName)
-                val roleAttribute = if (itemType == "角色") getRoleAttribute(itemName) else null
-
-                val gachaEntity = HtmlEntity(
-                    itemId = array["itemId"].textValue(),
-                    itemName = itemFileName,
-                    itemType = itemType,
-                    itemAttribute = roleAttribute,
-                    getTime = array["getTime"].textValue(),
-                    times = unFiveStarTimes + 1,
-                    isEmpty = isEmpty,
-                    isUp = false
-                )
-
-                val upPoolName = findPoolName(array["getTime"].textValue())
+                val itemName = array["name"].textValue()
+                val upPoolName = findPoolName(array["time"].textValue())
                 val upData = upPoolData[upPoolName]
-                if (gachaType == "301") {
-                    if (upData["up5"].asText() == itemName) {
-                        gachaEntity.isUp = true
-                        fiveCount += 1
-                    } else {
-                        if (upData.has("up5_2") && upData["up5_2"].asText() == itemName) {
-                            gachaEntity.isUp = true
-                            fiveCount += 1
-                        }
-                    }
-                } else if (gachaType == "500") {
-                    gachaEntity.isUp = true
-                    fiveCount += 1
-                } else {
-                    for (weapon5 in upData["weapon5"]) {
-                        if (weapon5.asText() == itemName) {
-                            gachaEntity.isUp = true
-                            fiveCount += 1
-                            break
-                        }
-                    }
-                }
 
+                val isUp = isItemUp(gachaType, upData, itemName)
+                if (isUp) fiveCount++
+
+                val gachaEntity = createGachaEntity(array, unFiveStarTimes, isUp)
                 itemList.add(gachaEntity)
                 timesList.add(unFiveStarTimes)
                 unFiveStarTimes = 0
             } else {
-                unFiveStarTimes += 1
+                unFiveStarTimes++
             }
         }
+
+        // 根据综合评价获取抽卡运气
         val luckImg = getLuckImg(itemList.size.toDouble(), fiveCount.toDouble(), timesList.average(), gachaType)
 
         countList.add(
             CountDetail(
                 alreadyCount = unFiveStarTimes,
                 ave = String.format("%.1f", timesList.average()),
-                allCount = getData.size(),
-                fiveUpCount = if (gachaType == "200") itemList.size.toString() else "${fiveCount}/${itemList.size}",
+                allCount = filteredDataCount,
+                fiveUpCount = if (gachaType == "200") itemList.size.toString() else "$fiveCount/${itemList.size}",
                 luckImg = luckImg
             )
         )
@@ -401,7 +350,7 @@ class GachaLogUtil {
         val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
         val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
-            GachaLogUtil().getEachData(gachaData, type)
+            getEachData(gachaData, type)
         }
 
         sendNewImage(bot, privateMessageEvent, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
@@ -411,7 +360,7 @@ class GachaLogUtil {
         val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
         val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
-            GachaLogUtil().getEachData(gachaData, type)
+            getEachData(gachaData, type)
         }
 
         sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")

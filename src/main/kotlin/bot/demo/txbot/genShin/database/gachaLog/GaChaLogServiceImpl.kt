@@ -1,12 +1,15 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
 import bot.demo.txbot.genShin.util.CACHE_PATH
+import bot.demo.txbot.genShin.util.UIGF_VERSION
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.logging.Logger
 
 /**
@@ -24,65 +27,75 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
     private val logger: Logger = Logger.getLogger(GaChaLogServiceImpl::class.java.getName())
 
 
-    val gachaDataMap = mutableMapOf(
-        "gachaLog" to mutableMapOf<String, Any>(),
-        "uid" to "",
-        "gachaType" to mutableMapOf(
-            "100" to "新手祈愿",
-            "200" to "常驻祈愿",
-            "301" to "角色活动祈愿",
-            "400" to "角色活动祈愿2",
-            "302" to "武器活动祈愿",
-            "500" to "集录祈愿"
-        ),
-    )
-
     override fun selectByUid(uid: String): Int? {
+        val gachaDataMap: MutableMap<String, Any> = mutableMapOf()
+
         val judgeWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid)
         val dataSize = gaChaLogMapper.selectList(judgeWrapper).size
         if (dataSize == 0) return null
 
-
-        val types = listOf(200, 301, 302, 400, 500)
-        val gachaLogMap = mutableMapOf<String, List<GaChaLogEntity?>>()
-        for (type in types) {
-            val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid).eq("type", type).orderByAsc("get_time")
-            val gachaBefore = gaChaLogMapper.selectList(queryWrapper) ?: mutableListOf()
-            gachaLogMap[type.toString()] = gachaBefore
-        }
+        val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid).orderByAsc("time")
+        val gachaBefore = gaChaLogMapper.selectList(queryWrapper) ?: mutableListOf()
         logger.info("数据查询完毕")
-        gachaDataMap["gachaLog"] = gachaLogMap
-        gachaDataMap["uid"] = uid
-        val json = objectMapper.writeValueAsString(gachaDataMap)
+
+        // 基础信息
+        val exportTimestamp = System.currentTimeMillis()
+        val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        gachaDataMap["info"] = mutableMapOf<String, Any>(
+            "uid" to uid,
+            "lang" to "zh-cn",
+            "export_time" to dateFormatter.format(Date(exportTimestamp)),
+            "export_timestamp" to exportTimestamp,
+            "export_app" to "无量姬",
+            "export_app_version" to "v1.0.0",
+            "uigf_version" to UIGF_VERSION
+        )
+
+        gachaDataMap["list"] = gachaBefore
+
+        // 格式化为Json数据
+        val objectMapper = ObjectMapper()
+        val jsonString = objectMapper.writeValueAsString(gachaDataMap)
+
+
+        // 保存数据
         val folderPath = CACHE_PATH
         val folder = File(folderPath)
         if (!folder.exists()) folder.mkdirs()
         val fileName = "$folderPath/gachaLog-$uid.json"
         val file = File(fileName)
-        file.writeText(json)
+        file.writeText(jsonString)
         return dataSize
     }
 
     override fun insertByUid(
         uid: String,
-        type: String,
-        itemName: String,
-        itemType: String,
-        rankType: Int,
+        gachaType: String,
         itemId: String,
-        getTime: String,
+        count: String,
+        time: String,
+        name: String,
+        lang: String,
+        itemType: String,
+        rankType: String,
+        id: String,
+        uigfGachaType: String
     ) {
         val gachaInfo = GaChaLogEntity(
             uid = uid,
-            gachaType = type,
-            itemName = itemName,
+            gachaType = gachaType,
+            itemId = itemId,
+            count = count,
+            time = time,
+            name = name,
+            lang = lang,
             itemType = itemType,
             rankType = rankType,
-            itemId = itemId,
-            getTime = getTime
+            id = id,
+            uigfGachaType = uigfGachaType
         )
 
-        val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("item_id", itemId)
+        val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("id", id)
         val existGachaInfo = gaChaLogMapper.selectOne(queryWrapper)
         if (existGachaInfo == null) gaChaLogMapper.insert(gachaInfo)
     }

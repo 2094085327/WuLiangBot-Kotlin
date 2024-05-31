@@ -45,6 +45,8 @@ class GachaLog {
     @Autowired
     val webImgUtil = WebImgUtil()
 
+    val gachaLogUtil = GachaLogUtil()
+
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
     private val logger: Logger = Logger.getLogger(GachaLog::class.java.getName())
@@ -80,13 +82,29 @@ class GachaLog {
 
         for (item in gachaData["data"]["list"]) {
             val uid = item["uid"].textValue()
-            val type = item["gacha_type"].textValue()
-            val itemName = item["name"].textValue()
+            val gachaType = item["gacha_type"].textValue()
+            val itemId = item["item_id"].textValue()
+            val count = item["count"].textValue()
+            val time = item["time"].textValue()
+            val name = item["name"].textValue()
+            val lang = item["lang"].textValue()
             val itemType = item["item_type"].textValue()
             val rankType = item["rank_type"].textValue()
-            val itemId = item["id"].textValue()
-            val getTime = item["time"].textValue()
-            gaChaLogService.insertByUid(uid, type, itemName, itemType, rankType.toInt(), itemId, getTime)
+            val id = item["id"].textValue()
+            val uigfGachaType = if (gachaType == "301" || gachaType == "400") "301" else gachaType
+            gaChaLogService.insertByUid(
+                uid = uid,
+                gachaType = gachaType,
+                itemId = itemId,
+                count = count,
+                time = time,
+                name = name,
+                lang = lang,
+                itemType = itemType,
+                rankType = rankType,
+                id = id,
+                uigfGachaType = uigfGachaType,
+            )
         }
         return true
     }
@@ -130,9 +148,11 @@ class GachaLog {
         var endId = "0"
         for (i in 1..10000) {
             val nowGachaUrl =
-                GachaLogUtil().getUrl(url = gachaUrl, gachaType = gachaId.toString(), times = i, endId = endId)
-            val gachaData = GachaLogUtil().getDataByUrl(nowGachaUrl)
-            endId = gachaData["data"]["list"].last()["id"].textValue()
+                gachaLogUtil.getUrl(url = gachaUrl, gachaType = gachaId.toString(), times = i, endId = endId)
+            val gachaData = gachaLogUtil.getDataByUrl(nowGachaUrl)
+            if (gachaData["data"]["list"].size() != 0) {
+                endId = gachaData["data"]["list"].last()["id"].textValue()
+            } else return
             if (!insertData(gachaData)) break
 
             Thread.sleep(500)
@@ -172,10 +192,9 @@ class GachaLog {
             return
         }
 
-        val gachaLogUtil = GachaLogUtil()
         val imgName = "gachaLog-${gameUid}"
 
-        val checkResult = GachaLogUtil().checkCache(imgName, gameUid)
+        val checkResult = gachaLogUtil.checkCache(imgName, gameUid)
 
         if (checkResult.first != null) {
             if (checkResult.second != null) {
@@ -202,10 +221,9 @@ class GachaLog {
 
         bot.sendMsg(event, "正在查询历史数据，请稍等", false)
 
-        val gachaLogUtil = GachaLogUtil()
         val imgName = "gachaLog-${gameUid}"
 
-        val checkResult = GachaLogUtil().checkCache(imgName, gameUid)
+        val checkResult = gachaLogUtil.checkCache(imgName, gameUid)
 
         if (checkResult.first != null) {
             if (checkResult.second != null) {
@@ -224,7 +242,6 @@ class GachaLog {
                 return
             }
             gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)
-
         }
 
         System.gc()
@@ -274,7 +291,7 @@ class GachaLog {
         val authKeyB = mysApi.getData("authKeyB")
         getData(authKeyB)
         gaChaLogService.selectByUid(gameUid)
-        GachaLogUtil().getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
+        gachaLogUtil.getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
         userService.insertGenUidByRealId(OtherUtil().getRealId(event), gameUid)
     }
 
@@ -300,7 +317,6 @@ class GachaLog {
         }
 
         bot.sendPrivateMsg(event.userId, "收到链接，正在处理中，请耐心等待", false)
-        val gachaLogUtil = GachaLogUtil()
         val processingUrl = gachaLogUtil.toUrl(gachaUrl)
         val checkUrl = gachaLogUtil.checkApi(processingUrl)
         when (checkUrl.first) {
@@ -327,7 +343,7 @@ class GachaLog {
                 getData(processingUrl)
                 val gameUid = checkUrl.second!!
                 gaChaLogService.selectByUid(gameUid)
-                GachaLogUtil().getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
+                gachaLogUtil.getGachaLog(bot, event, gameUid, "gachaLog-${gameUid}")
                 userService.insertGenUidByRealId(OtherUtil().getRealId(event), gameUid)
             }
 

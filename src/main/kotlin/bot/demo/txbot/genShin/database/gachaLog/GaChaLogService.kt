@@ -13,18 +13,22 @@ interface GaChaLogService : IService<GaChaLogEntity?> {
     /**
      * 根据uid查询数据
      */
-    fun selectByUid(uid: String):Int?
+    fun selectByUid(uid: String): Int?
 
     /**
      * 根据uid插入数据
      */
     fun insertByUid(
         uid: String,
-        type: String,
-        itemName: String,
-        itemType: String,
-        rankType: Int,
+        gachaType: String,
         itemId: String,
-        getTime: String,
+        count: String,
+        time: String,
+        name: String,
+        lang: String,
+        itemType: String,
+        rankType: String,
+        id: String,
+        uigfGachaType: String
     )
 }
