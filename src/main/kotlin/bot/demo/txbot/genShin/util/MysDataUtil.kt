@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.JacksonUtil.objectMapper
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
+import bot.demo.txbot.other.CACHE_PATH
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -22,8 +23,6 @@ class MysDataUtil {
     private val logger: Logger = Logger.getLogger(MysDataUtil::class.java.getName())
 
     companion object {
-        //        var poolData = JacksonUtil.getJsonNode(GACHA_JSON)
-//        var upPoolData = JacksonUtil.getJsonNode(POOL_JSON)
         var poolType: String = poolData["poolType"].textValue()
         var nowPoolData: PoolData = PoolData()
 
@@ -62,14 +61,6 @@ class MysDataUtil {
         }
     }
 
-    // 强制删除数据缓存
-    fun forceDeleteCache(cachePath: String) {
-        val folder = File(cachePath)
-        folder.listFiles()?.forEach { file ->
-            logger.info("删除缓存：${file.name}")
-            file.delete()
-        }
-    }
 
     /**
      * 新角色添加属性

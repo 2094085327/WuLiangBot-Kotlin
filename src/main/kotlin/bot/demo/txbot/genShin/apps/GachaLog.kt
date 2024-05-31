@@ -7,6 +7,7 @@ import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.util.GachaLogUtil
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
+import bot.demo.txbot.other.CACHE_PATH
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.GroupMessageHandler
@@ -21,6 +22,9 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
+import pers.wuliang.robot.common.utils.LoggerUtils.logWarn
+import java.io.File
 import java.net.URLEncoder
 import java.util.logging.Logger
 import java.util.regex.Matcher
@@ -173,13 +177,6 @@ class GachaLog {
         }
     }
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "清除缓存")
-    fun deleteCache(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        MysDataUtil().forceDeleteCache("resources/gachaCache")
-        MysDataUtil().forceDeleteCache("resources/imageCache")
-        bot.sendMsg(event, "已完成缓存清理", false)
-    }
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "历史记录")
@@ -245,6 +242,33 @@ class GachaLog {
         }
 
         System.gc()
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "删除记录")
+    fun deleteGachaLog(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val realId = OtherUtil().getRealId(event)
+        val gameUid = userService.selectGenUidByRealId(realId)
+        if (gameUid == null) {
+            bot.sendMsg(event, "Uid还没有绑定，请发送 抽卡记录 进行绑定", false)
+            return
+        }
+
+        val folder = File(CACHE_PATH)
+        val prefix = "gachaLog-${gameUid}"
+
+        val files = folder.listFiles { _, name -> name.startsWith(prefix) }
+        if (files != null && files.isNotEmpty()) {
+            val fileToDelete = files.first()
+            val deleted = fileToDelete.delete()
+            if (deleted) {
+                bot.sendMsg(event, "抽卡记录${prefix}删除成功", false)
+                logInfo("删除文件: ${fileToDelete.name}")
+            } else {
+                bot.sendMsg(event, "抽卡记录${prefix}删除失败，记录可能正在使用，请稍后再试", false)
+                logWarn("删除文件: ${fileToDelete.name} 失败")
+            }
+        } else bot.sendMsg(event, "抽卡记录不存在", false)
     }
 
 

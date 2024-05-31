@@ -7,9 +7,6 @@ package bot.demo.txbot.genShin.util
  */
 const val UIGF_VERSION = "v3.0" // 抽卡数据统一标准版本
 
-const val CACHE_PATH = "resources/gachaCache" // 缓存路径
-const val IMG_CACHE_PATH = "resources/imageCache" // 图片缓存路径
-
 const val GACHA_JSON = "resources/genShin/defSet/gacha/gacha.json" // 当前启用的模拟抽卡卡池信息
 const val POOL_JSON = "resources/genShin/defSet/gacha/pool.json" // 历史卡池信息
 const val New_ADD = "resources/genShin/defSet/gacha/newAdd.json" // 各版本卡池新增常驻物品信息

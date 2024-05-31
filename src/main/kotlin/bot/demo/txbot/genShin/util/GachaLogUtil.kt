@@ -4,10 +4,11 @@ import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
+import bot.demo.txbot.other.CACHE_PATH
+import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
@@ -342,28 +343,32 @@ class GachaLogUtil {
      * 获取抽卡记录并发送图片
      *
      * @param bot 机器人
-     * @param privateMessageEvent 私聊事件
+     * @param event 消息事件
      * @param gameUid 游戏Uid
      * @param imgName 图片名称
      */
-    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
+    fun <T> getGachaLogCommon(
+        bot: Bot,
+        event: T,
+        gameUid: String,
+        imgName: String,
+        sendImageFunc: (Bot, T, String, String) -> Unit
+    ) {
         val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
         val pools = arrayOf("200", "301", "302", "500")
         pools.forEach { type ->
             getEachData(gachaData, type)
         }
 
-        sendNewImage(bot, privateMessageEvent, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+        sendImageFunc(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+    }
+
+    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
+        getGachaLogCommon(bot, privateMessageEvent, gameUid, imgName, ::sendNewImage)
     }
 
     fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgName: String) {
-        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
-        val pools = arrayOf("200", "301", "302", "500")
-        pools.forEach { type ->
-            getEachData(gachaData, type)
-        }
-
-        sendNewImage(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+        getGachaLogCommon(bot, event, gameUid, imgName, ::sendNewImage)
     }
 
     /**

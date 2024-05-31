@@ -1,7 +1,10 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
-import bot.demo.txbot.genShin.util.CACHE_PATH
 import bot.demo.txbot.genShin.util.UIGF_VERSION
+import bot.demo.txbot.other.CACHE_PATH
+import bot.demo.txbot.other.DELETE_PERCENTAGE
+import bot.demo.txbot.other.MAX_SIZE_MB
+import bot.demo.txbot.other.UpdateResources
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -54,7 +57,6 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         gachaDataMap["list"] = gachaBefore
 
         // 格式化为Json数据
-        val objectMapper = ObjectMapper()
         val jsonString = objectMapper.writeValueAsString(gachaDataMap)
 
 
@@ -64,6 +66,8 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         if (!folder.exists()) folder.mkdirs()
         val fileName = "$folderPath/gachaLog-$uid.json"
         val file = File(fileName)
+        // 当总缓存超过最大缓存大小时删除最久未修改的文件
+        UpdateResources().manageFolderSize(folderPath, MAX_SIZE_MB, DELETE_PERCENTAGE)
         file.writeText(jsonString)
         return dataSize
     }
