@@ -2,6 +2,7 @@ package bot.demo.txbot.genShin.database.gachaLog
 
 import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableName
+import com.fasterxml.jackson.annotation.JsonProperty
 
 
 /**
@@ -10,7 +11,7 @@ import com.baomidou.mybatisplus.annotation.TableName
  *@Date 2023/10/3 21:51
  *@User 86188
  */
-@TableName("gachaloginfo3")
+@TableName("gacha_log_info")
 data class GaChaLogEntity(
 
     /**
@@ -23,12 +24,14 @@ data class GaChaLogEntity(
      * 卡池类型
      */
     @TableField(value = "gacha_type")
+    @JsonProperty(value = "gacha_type")
     val gachaType: String? = null,
 
     /**
      * 物品Id
      */
     @TableField(value = "item_id")
+    @JsonProperty(value = "item_id")
     val itemId: String? = null,
 
     /**
@@ -59,12 +62,14 @@ data class GaChaLogEntity(
      * 物品类型
      */
     @TableField(value = "item_type")
+    @JsonProperty(value = "item_type")
     val itemType: String? = null,
 
     /**
      * 物品等级
      */
     @TableField(value = "rank_type")
+    @JsonProperty(value = "rank_type")
     val rankType: String? = null,
 
     /**
@@ -78,5 +83,6 @@ data class GaChaLogEntity(
      * uigf统一规范卡池类型
      */
     @TableField(value = "uigf_gacha_type")
+    @JsonProperty(value = "uigf_gacha_type")
     val uigfGachaType: String? = null,
 )

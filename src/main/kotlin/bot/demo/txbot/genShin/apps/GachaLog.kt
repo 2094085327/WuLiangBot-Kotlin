@@ -268,7 +268,7 @@ class GachaLog {
                 bot.sendMsg(event, "抽卡记录${prefix}删除失败，记录可能正在使用，请稍后再试", false)
                 logWarn("删除文件: ${fileToDelete.name} 失败")
             }
-        } else bot.sendMsg(event, "抽卡记录不存在", false)
+        } else bot.sendMsg(event, "当前账户下无抽卡记录", false)
     }
 
 

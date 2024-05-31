@@ -210,7 +210,7 @@ class GachaLogUtil {
 
         // 创建抽卡网页数据
         fun createGachaEntity(array: JsonNode, unFiveStarTimes: Int, isUp: Boolean): HtmlEntity {
-            val itemType = array["itemType"].textValue()
+            val itemType = array["item_type"].textValue()
             val itemName = array["name"].textValue()
             val (isEmpty, itemFileName) = checkFile(itemName)
             val roleAttribute = if (itemType == "角色") getRoleAttribute(itemName) else null
@@ -235,11 +235,11 @@ class GachaLogUtil {
             }
         }
 
-        val filteredData = data["list"].filter { it["uigfGachaType"].textValue() == gachaType }
+        val filteredData = data["list"].filter { it["uigf_gacha_type"].textValue() == gachaType }
         val filteredDataCount = filteredData.size
 
         filteredData.forEach { array ->
-            if (array["rankType"].asInt() == 5) {
+            if (array["rank_type"].asInt() == 5) {
                 val itemName = array["name"].textValue()
                 val upPoolName = findPoolName(array["time"].textValue())
                 val upData = upPoolData[upPoolName]

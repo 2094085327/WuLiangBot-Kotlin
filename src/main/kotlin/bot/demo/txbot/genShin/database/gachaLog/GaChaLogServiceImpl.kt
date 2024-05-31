@@ -8,6 +8,8 @@ import bot.demo.txbot.other.UpdateResources
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.io.File
@@ -26,12 +28,16 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
     @Autowired
     lateinit var gaChaLogMapper: GaChaLogMapper
 
-    private val objectMapper = ObjectMapper()
     private val logger: Logger = Logger.getLogger(GaChaLogServiceImpl::class.java.getName())
 
 
     override fun selectByUid(uid: String): Int? {
         val gachaDataMap: MutableMap<String, Any> = mutableMapOf()
+        val objectMapper = jacksonObjectMapper().apply {
+            // 设置序列化时的特性，例如缩进和日期格式等
+            configure(SerializationFeature.INDENT_OUTPUT, false)
+        }
+
 
         val judgeWrapper = QueryWrapper<GaChaLogEntity>().eq("uid", uid)
         val dataSize = gaChaLogMapper.selectList(judgeWrapper).size
