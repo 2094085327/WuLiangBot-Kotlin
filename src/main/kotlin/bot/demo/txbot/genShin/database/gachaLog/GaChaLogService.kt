@@ -1,6 +1,7 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
 import com.baomidou.mybatisplus.extension.service.IService
+import com.fasterxml.jackson.databind.JsonNode
 
 /**
  *@Description:
@@ -16,19 +17,10 @@ interface GaChaLogService : IService<GaChaLogEntity?> {
     fun selectByUid(uid: String): Int?
 
     /**
-     * 根据uid插入数据
+     * 向数据库中插入数据
+     *
+     * @param gachaData 抽卡数据
+     * @return 是否为最后的数据
      */
-    fun insertByUid(
-        uid: String,
-        gachaType: String,
-        itemId: String,
-        count: String,
-        time: String,
-        name: String,
-        lang: String,
-        itemType: String,
-        rankType: String,
-        id: String,
-        uigfGachaType: String
-    )
+    fun insertByJson(gachaData: JsonNode): Boolean
 }

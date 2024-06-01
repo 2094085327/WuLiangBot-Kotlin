@@ -7,7 +7,7 @@ import bot.demo.txbot.other.MAX_SIZE_MB
 import bot.demo.txbot.other.UpdateResources
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
@@ -78,35 +78,39 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
         return dataSize
     }
 
-    override fun insertByUid(
-        uid: String,
-        gachaType: String,
-        itemId: String,
-        count: String,
-        time: String,
-        name: String,
-        lang: String,
-        itemType: String,
-        rankType: String,
-        id: String,
-        uigfGachaType: String
-    ) {
-        val gachaInfo = GaChaLogEntity(
-            uid = uid,
-            gachaType = gachaType,
-            itemId = itemId,
-            count = count,
-            time = time,
-            name = name,
-            lang = lang,
-            itemType = itemType,
-            rankType = rankType,
-            id = id,
-            uigfGachaType = uigfGachaType
-        )
-
-        val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("id", id)
-        val existGachaInfo = gaChaLogMapper.selectOne(queryWrapper)
-        if (existGachaInfo == null) gaChaLogMapper.insert(gachaInfo)
+    override fun insertByJson(gachaData: JsonNode): Boolean {
+        val length = gachaData["list"].size()
+        if (length == 0) return false
+        var gachaInfo: GaChaLogEntity
+        for (item in gachaData["list"]) {
+            val uid = item["uid"].textValue()
+            val gachaType = item["gacha_type"].textValue()
+            val itemId = item["item_id"].textValue()
+            val count = item["count"].textValue()
+            val time = item["time"].textValue()
+            val name = item["name"].textValue()
+            val lang = item["lang"].textValue()
+            val itemType = item["item_type"].textValue()
+            val rankType = item["rank_type"].textValue()
+            val id = item["id"].textValue()
+            val uigfGachaType = if (gachaType == "301" || gachaType == "400") "301" else gachaType
+            gachaInfo = GaChaLogEntity(
+                uid = uid,
+                gachaType = gachaType,
+                itemId = itemId,
+                count = count,
+                time = time,
+                name = name,
+                lang = lang,
+                itemType = itemType,
+                rankType = rankType,
+                id = id,
+                uigfGachaType = uigfGachaType
+            )
+            val queryWrapper = QueryWrapper<GaChaLogEntity>().eq("id", id)
+            val existGachaInfo = gaChaLogMapper.selectOne(queryWrapper)
+            if (existGachaInfo == null) gaChaLogMapper.insert(gachaInfo)
+        }
+        return true
     }
 }

@@ -4,6 +4,7 @@ import bot.demo.txbot.common.database.user.UserService
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
+import bot.demo.txbot.genShin.util.GACHA_LOG_IMPORT
 import bot.demo.txbot.genShin.util.GachaLogUtil
 import bot.demo.txbot.genShin.util.MysApi
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -22,6 +23,7 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 import pers.wuliang.robot.common.utils.LoggerUtils.logWarn
 import java.io.File
@@ -74,44 +76,6 @@ class GachaLog {
         System.gc()
     }
 
-    /**
-     * 向数据库中插入数据
-     *
-     * @param gachaData 抽卡数据
-     * @return 是否为最后的数据
-     */
-    fun insertData(gachaData: JsonNode): Boolean {
-        val length = gachaData["data"]["list"].size()
-        if (length == 0) return false
-
-        for (item in gachaData["data"]["list"]) {
-            val uid = item["uid"].textValue()
-            val gachaType = item["gacha_type"].textValue()
-            val itemId = item["item_id"].textValue()
-            val count = item["count"].textValue()
-            val time = item["time"].textValue()
-            val name = item["name"].textValue()
-            val lang = item["lang"].textValue()
-            val itemType = item["item_type"].textValue()
-            val rankType = item["rank_type"].textValue()
-            val id = item["id"].textValue()
-            val uigfGachaType = if (gachaType == "301" || gachaType == "400") "301" else gachaType
-            gaChaLogService.insertByUid(
-                uid = uid,
-                gachaType = gachaType,
-                itemId = itemId,
-                count = count,
-                time = time,
-                name = name,
-                lang = lang,
-                itemType = itemType,
-                rankType = rankType,
-                id = id,
-                uigfGachaType = uigfGachaType,
-            )
-        }
-        return true
-    }
 
     /**
      * 获取抽卡数据进程
@@ -135,7 +99,7 @@ class GachaLog {
             )
             if (gachaData["data"]["list"].size() == 0) break
             endId = gachaData["data"]["list"].last()["id"].textValue()
-            if (!insertData(gachaData)) break
+            if (!gaChaLogService.insertByJson(gachaData["data"])) break
 
             Thread.sleep(500)
         }
@@ -157,7 +121,7 @@ class GachaLog {
             if (gachaData["data"]["list"].size() != 0) {
                 endId = gachaData["data"]["list"].last()["id"].textValue()
             } else return
-            if (!insertData(gachaData)) break
+            if (!gaChaLogService.insertByJson(gachaData["data"])) break
 
             Thread.sleep(500)
         }
@@ -374,6 +338,53 @@ class GachaLog {
             else -> {
                 bot.sendPrivateMsg(event.userId, "抽卡链接格式不正确，请仔细检查或联系管理员", false)
             }
+        }
+    }
+
+    /**
+     * 导入抽卡记录
+     *
+     * @return 导入状态
+     */
+    fun importGachaLog(): String {
+        try {
+            val folder = File(GACHA_LOG_IMPORT)
+            if (!folder.exists()) {
+                folder.mkdirs()
+            }
+            val foldList = folder.listFiles()!!
+            if (foldList.isEmpty()) {
+                return "empty"
+            } else {
+                foldList.forEach { file ->
+                    if (file.name.endsWith(".json")) {
+                        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_IMPORT/${file.name}")
+                        println("gachaData:$gachaData")
+                        gaChaLogService.insertByJson(gachaData)
+                        logInfo("抽卡记录导入完成")
+                        file.delete()
+                    }
+                }
+            }
+            return "success"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            logError("读取gachaLog失败:$e")
+            return "false"
+        }
+    }
+
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "导入记录")
+    suspend fun importGachaLogInfo(bot: Bot, event: AnyMessageEvent) {
+        val importState = importGachaLog()
+        bot.sendMsg(event, "正在导入记录，请稍等", false)
+        when (importState) {
+            "success" -> bot.sendMsg(event, "记录导入完成", false)
+            // 受腾讯机器人API限制，无法通过群聊获取文件，暂时只能由开发者手动将文件放入导入文件夹
+            "empty" -> bot.sendMsg(event, "没有可以导入的记录", false)
+            "false" -> bot.sendMsg(event, "记录导入失败，请检查记录格式是否符合UIGF标准", false)
         }
     }
 

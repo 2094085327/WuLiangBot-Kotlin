@@ -17,6 +17,7 @@ const val ROLE_IMG = "resources/genShin/GenShinImg/role/" // 角色图片资源
 const val WEAPON_IMG = "resources/genShin/GenShinImg/weapons/" // 武器图片资源
 
 const val GACHA_LOG_FILE = "resources/gachaCache/gachaLog-" // 抽卡记录缓存路径
+const val GACHA_LOG_IMPORT = "resources/genShin/ImportGacha" // 抽卡记录导入路径
 
 const val ANDROID_HOST = "https://api-takumi.mihoyo.com/" // 安卓请求host
 const val ANDROID_RECORD = "https://api-takumi-record.mihoyo.com/" // 安卓请求host record

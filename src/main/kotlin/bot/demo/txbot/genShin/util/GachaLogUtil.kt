@@ -2,6 +2,7 @@ package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.genShin.apps.GachaLog
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
 import bot.demo.txbot.other.CACHE_PATH
@@ -17,6 +18,7 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
