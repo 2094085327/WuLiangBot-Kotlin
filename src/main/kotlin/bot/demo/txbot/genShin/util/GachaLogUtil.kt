@@ -379,32 +379,73 @@ class GachaLogUtil {
      * @param webUrl 待截图地址
      * @param scale 缩放等级
      */
-    private fun sendNewImage(
+//    private fun sendNewImage(
+//        bot: Bot,
+//        event: PrivateMessageEvent,
+//        imgName: String,
+//        webUrl: String,
+//        scale: Double? = null
+//    ) {
+//        val imgData = WebImgUtil.ImgData(
+//            url = webUrl,
+//            imgName = imgName,
+//            channel = true,
+//            element = "body",
+//            scale = scale
+//        )
+//
+//        val imgUrl = webImgUtil.returnUrlImg(imgData)
+//        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+//        bot.sendPrivateMsg(event.userId, sendMsg, false)
+//        bot.sendPrivateMsg(event.userId, "发送完毕", false)
+//    }
+//
+//    private fun sendNewImage(
+//        bot: Bot,
+//        event: AnyMessageEvent?,
+//        imgName: String,
+//        webUrl: String,
+//        scale: Double? = null
+//    ) {
+//        val imgData = WebImgUtil.ImgData(
+//            url = webUrl,
+//            imgName = imgName,
+//            channel = true,
+//            element = "body",
+//            scale = scale
+//        )
+//        val imgUrl = webImgUtil.returnUrlImg(imgData)
+//        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
+//        bot.sendMsg(event, sendMsg, false)
+//        bot.sendMsg(event, "发送完毕", false)
+//    }
+    private fun <T> sendNewImage(
         bot: Bot,
-        event: PrivateMessageEvent,
+        event: T,
         imgName: String,
         webUrl: String,
         scale: Double? = null
     ) {
-        val imgUrl =
-            webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
+        val imgData = WebImgUtil.ImgData(
+            url = webUrl,
+            imgName = imgName,
+            element = "body",
+            scale = scale
+        )
+        val imgUrl = webImgUtil.returnUrlImg(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-        bot.sendPrivateMsg(event.userId, sendMsg, false)
-        bot.sendPrivateMsg(event.userId, "发送完毕", false)
-    }
 
-    private fun sendNewImage(
-        bot: Bot,
-        event: AnyMessageEvent?,
-        imgName: String,
-        webUrl: String,
-        scale: Double? = null
-    ) {
-        val imgUrl =
-            webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
-        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-        bot.sendMsg(event, sendMsg, false)
-        bot.sendMsg(event, "发送完毕", false)
+        when (event) {
+            is PrivateMessageEvent -> {
+                bot.sendPrivateMsg(event.userId, sendMsg, false)
+                bot.sendPrivateMsg(event.userId, "发送完毕，可能因为网络波动未显示图片，请稍后再试", false)
+            }
+
+            is AnyMessageEvent -> {
+                bot.sendMsg(event, sendMsg, false)
+                bot.sendMsg(event, "发送完毕，可能因为网络波动未显示图片，请稍后再试", false)
+            }
+        }
     }
 
     fun checkCache(imgName: String, gameUid: String): Pair<File?, File?> {

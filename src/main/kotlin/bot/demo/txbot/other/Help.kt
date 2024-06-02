@@ -34,11 +34,14 @@ class Help {
         }
 
         readHelp()
+        val imageData = WebImgUtil.ImgData(
+            imgName = "help",
+            url = "http://localhost:${WebImgUtil.usePort}/help"
+        )
         webImgUtil.sendNewImage(
             bot,
             event,
-            "help",
-            "http://localhost:${WebImgUtil.usePort}/help"
+            imageData
         )
         helpList = mutableListOf()
     }

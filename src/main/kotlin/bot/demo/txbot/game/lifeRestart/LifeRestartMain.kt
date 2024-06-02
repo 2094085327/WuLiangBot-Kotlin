@@ -40,10 +40,12 @@ class LifeRestartMain {
         event: AnyMessageEvent?,
         imgName: String,
         webUrl: String,
-        scale: Double? = null
+        scale: Double? = null,
+        useUrlImg: Boolean? = false
     ) {
-        val imgUrl =
-            WebImgUtil().getImgFromWeb(url = webUrl, imgName = imgName, element = "body", channel = true, scale = scale)
+        val imgData = WebImgUtil.ImgData(url = webUrl, imgName = imgName, element = "body", scale = scale)
+        val imgUrl = if (useUrlImg == true) WebImgUtil().returnUrlImg(imgData)
+        else WebImgUtil().returnBs4Img(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
     }
@@ -299,7 +301,8 @@ class LifeRestartMain {
                     bot,
                     event,
                     "${userInfo.userId}-LifeStart",
-                    "http://localhost:${WebImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
+                    "http://localhost:${WebImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}",
+                    useUrlImg = true
                 )
                 bot.sendMsg(event, "游戏结束", false)
                 userList.remove(userInfo)

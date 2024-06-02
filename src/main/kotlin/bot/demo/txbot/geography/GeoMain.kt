@@ -33,15 +33,10 @@ class GeoMain {
             bot.sendMsg(event, "没有找到'$city'的信息，请检查是否输入错误", false)
             return
         }
-        val imgUrl = webImgUtil.getImgFromWeb(url = webUrl, imgName = imgName, channel = true)
+        val imgData = WebImgUtil.ImgData(url = webUrl, imgName = imgName)
+        val imgUrl = webImgUtil.returnBs4Img(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
-        // 群聊模式下通过图床发送图片
-        // val imgData = GetGeoImg().loadImg(imgPath)
-        // val imgUrl = imgData?.get("url")?.textValue()
-        // val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-        // bot.sendMsg(event, sendMsg, false)
-        // imgData?.get("delete")?.let { GetGeoImg().removeImg(it.textValue()) }
     }
 
 

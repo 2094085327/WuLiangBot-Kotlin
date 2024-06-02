@@ -2,10 +2,8 @@ package bot.demo.txbot.common.utils
 
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import com.fasterxml.jackson.databind.JsonNode
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.apache.hc.client5.http.classic.methods.HttpGet
@@ -210,6 +208,44 @@ open class HttpBase {
      * @param headers 请求头
      * @return 请求结果
      */
+//    @Throws(IOException::class, HttpException::class)
+//    fun doPostStr(
+//        url: String,
+//        files: Map<String, File>? = null,
+//        params: Map<String, String>? = null,
+//        headers: MutableMap<String, Any>? = null
+//    ): String {
+//        val body = MultipartBody.Builder()
+//
+//        files?.forEach { (key, file) ->
+//            body.setType(MultipartBody.FORM)
+//                .addFormDataPart(key, file.name, file.asRequestBody("application/octet-stream".toMediaType()))
+//        }
+//        params?.forEach { (key, value) -> body.addFormDataPart(key, value) }
+//        val multipartBody = body.build()
+//
+//        val requestBuilder = Request.Builder()
+//            .url(url)
+//            .post(multipartBody)
+//
+//        headers?.forEach { (key, value) ->
+//            requestBuilder.addHeader(key, value.toString())
+//        }
+//        val request = requestBuilder.build()
+//
+//        val response = client.newCall(request).execute()
+//
+//        return response.use {
+//            if (it.isSuccessful) {
+//                it.body.string()
+//            } else {
+//                val errorResponse = it.body.string()
+//                logger.logError("Post请求失败: ${it.code} $request")
+//                throw HttpException(it.code, errorResponse)
+//            }
+//        }
+//    }
+
     @Throws(IOException::class, HttpException::class)
     fun doPostStr(
         url: String,
@@ -217,24 +253,37 @@ open class HttpBase {
         params: Map<String, String>? = null,
         headers: MutableMap<String, Any>? = null
     ): String {
-        val body = MultipartBody.Builder()
+        // 创建 MultipartBody.Builder，并设置类型为 FORM
+        val bodyBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
 
+
+        // 添加文件部分
         files?.forEach { (key, file) ->
-            body.setType(MultipartBody.FORM)
-                .addFormDataPart(key, file.name, file.asRequestBody("application/octet-stream".toMediaType()))
-        }
-        params?.forEach { (key, value) -> body.addFormDataPart(key, value) }
-        val multipartBody = body.build()
+            val fileBody: RequestBody = file.asRequestBody("multipart/form-data".toMediaType())
 
+            bodyBuilder.addFormDataPart(key, file.name, fileBody)
+        }
+
+        // 添加其他表单参数
+        params?.forEach { (key, value) ->
+            bodyBuilder.addFormDataPart(key, value)
+        }
+
+        // 构建最终的 MultipartBody
+        val multipartBody = bodyBuilder.build()
+
+        // 创建请求构建器
         val requestBuilder = Request.Builder()
             .url(url)
             .post(multipartBody)
 
+        // 添加请求头
         headers?.forEach { (key, value) ->
             requestBuilder.addHeader(key, value.toString())
         }
-        val request = requestBuilder.build()
 
+        // 构建请求
+        val request = requestBuilder.build()
         val response = client.newCall(request).execute()
 
         return response.use {

@@ -1,6 +1,5 @@
 package bot.demo.txbot.common.utils
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.Browser
@@ -15,7 +14,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import java.awt.image.BufferedImage
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -38,7 +40,32 @@ class WebImgUtil {
     companion object {
         var usePort: String = ""
         var key: String = ""
+        var imgBedPath: String = ""
     }
+
+    /**
+     * 图片相关数据
+     *
+     * @param url 网址链接
+     * @param element 指定截图元素
+     * @param imgName 图片名称
+     * @param imgPath 图片存储路径
+     * @param width 图片宽度
+     * @param height 图片高度
+     * @param scale 缩放等级
+     * @param sleepTime 等待时间
+     */
+    data class ImgData(
+        val url: String,
+        val element: String? = null,
+        val imgName: String? = null,
+        val imgPath: String? = null,
+        val width: Int? = null,
+        val height: Int? = null,
+        val scale: Double? = null,
+        var imageType: String? = "jpeg",
+        var sleepTime: Long = 0
+    )
 
     private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
 
@@ -52,12 +79,10 @@ class WebImgUtil {
         usePort = port
     }
 
-    private val headers: MutableMap<String, Any> = mutableMapOf(
-        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0;Win64;x64)AppleWebKit/537.36 (KHTML,like Gecko)Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0",
-        "Authorization" to key,
-        "Content-Type" to "multipart/form-data"
-    )
-    private val baseUrl = "https://sm.ms/api/v2"
+    @Value("\${web_config.img_bed_path}")
+    fun setImgBedPath(path: String) {
+        imgBedPath = path
+    }
 
 
     fun convertImageToBase64(imagePath: String): String {
@@ -69,27 +94,6 @@ class WebImgUtil {
         return "base64://${Base64.getEncoder().encodeToString(outputStream)}"
     }
 
-
-    fun loadImg(imgPath: String): JsonNode? {
-        val files: Map<String, File> = mapOf("smfile" to File(imgPath))
-
-        val params: Map<String, String> = mapOf("format" to "json")
-
-        val imgData = HttpUtil.doPostJson(
-            url = "$baseUrl/upload",
-            files = files,
-            params = params,
-            headers = headers
-        )
-
-        return imgData["data"]
-    }
-
-    @Suppress("unused")
-    fun removeImg(imgUrl: String) {
-        HttpUtil.doGetStr(url = imgUrl, headers = headers)
-        logger.info("已经删除图片：$imgUrl")
-    }
 
     /**
      * 发送缓存图片
@@ -124,6 +128,13 @@ class WebImgUtil {
         }
     }
 
+    /**
+     * 将 BufferedImage 转换为字节数组
+     *
+     * @param image 图片流
+     * @param formatName 图片格式
+     * @return ByteArray字节数组
+     */
     fun bufferedImageToByteArray(image: BufferedImage, formatName: String): ByteArray {
         val byteArrayOutputStream = ByteArrayOutputStream()
 
@@ -177,65 +188,72 @@ class WebImgUtil {
         return screenshotFilePath.absolutePath
     }
 
+    /**
+     * 返回Base64图片
+     *
+     * @param imgData 图片数据
+     * @return Base64图片地址
+     */
+    fun returnBs4Img(imgData: ImgData): String? {
+        val imagePath = getImgFromWeb(imgData)
+        return "base64://${convertImageToBase64("${imagePath.split(".")[0]}.${imgData.imageType}")}"
+    }
+
+    /**
+     * 图床发送图片，如果不使用Telegraph-Image（自行搜索），请自行实现图床逻辑
+     *
+     * @param imgData 图片数据
+     * @return 图片Url
+     */
+    fun returnUrlImg(imgData: ImgData): String? {
+        val imagePath = getImgFromWeb(imgData)
+        val imgJson = HttpUtil.doPostJson(
+            url = "${imgBedPath}/upload",
+            files = mapOf("file" to File(imagePath)),
+            headers = mutableMapOf("content-type" to "multipart/form-data;")
+        )
+        return "${imgBedPath}${imgJson[0]["src"].textValue()}"
+    }
 
     /**
      * 从网页获取截图
      *
-     * @param url 网址链接
-     * @param channel 是否为频道信息
-     * @param element 指定截图元素
-     * @param imgName 图片名称
-     * @param imgPath 图片存储路径
-     * @param width 图片宽度
-     * @param height 图片高度
-     * @param scale 缩放等级
-     * @param sleepTime 等待时间
+     * @param imgData 图片数据
      * @return Base64链接
      */
-    fun getImgFromWeb(
-        url: String,
-        channel: Boolean,
-        element: String? = null,
-        imgName: String? = null,
-        imgPath: String? = null,
-        width: Int? = null,
-        height: Int? = null,
-        scale: Double? = null,
-        imageType: String? = "jpeg",
-        sleepTime: Long = 0
-    ): String? {
+    fun getImgFromWeb(imgData: ImgData): String {
         Playwright.create().use { playwright ->
             val browser: Browser = playwright.chromium().launch()
             val page: Page = browser.newPage()
-            val realImgName = imgName ?: System.currentTimeMillis().toString()
-            page.navigate(url)
+            val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
+            page.navigate(imgData.url)
             var byteArray = page.screenshot(
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
-            if (element != null) {
-                page.waitForSelector(element)
-                val body: ElementHandle = page.querySelector(element)!!
+            if (imgData.element != null) {
+                page.waitForSelector(imgData.element)
+                val body: ElementHandle = page.querySelector(imgData.element)!!
 
                 // 截图
                 byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
             }
 
 
-            if (scale != null) {
-                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(scale).asBufferedImage()
-                byteArray = bufferedImageToByteArray(thumbnailBuilder, imageType!!)
+            if (imgData.scale != null) {
+                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(imgData.scale).asBufferedImage()
+                byteArray = bufferedImageToByteArray(thumbnailBuilder, imgData.imageType!!)
             }
 
             val realImgPath =
-                turnByteToJpeg(byteArray = byteArray, imgName = realImgName, imgType = imageType!!, imgPath = imgPath)
+                turnByteToJpeg(
+                    byteArray = byteArray,
+                    imgName = realImgName,
+                    imgType = imgData.imageType!!,
+                    imgPath = imgData.imgPath
+                )
 
-            if (channel) return "base64://${convertImageToBase64("${realImgPath.split(".")[0]}.${imageType}")}"
-            else {
-                val imgData = loadImg(realImgPath)
-
-                return imgData?.get("url")?.textValue()
-            }
+            return realImgPath
         }
     }
 
@@ -267,22 +285,8 @@ class WebImgUtil {
         PngCompressor.compress(file, outfile)
     }
 
-    fun sendNewImage(
-        bot: Bot,
-        event: AnyMessageEvent?,
-        imgName: String,
-        webUrl: String,
-        scale: Double? = null,
-        element: String? = "body"
-    ) {
-        val imgUrl =
-            WebImgUtil().getImgFromWeb(
-                url = webUrl,
-                imgName = imgName,
-                element = element,
-                channel = true,
-                scale = scale
-            )
+    fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgData: ImgData) {
+        val imgUrl = getImgFromWeb(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
     }
