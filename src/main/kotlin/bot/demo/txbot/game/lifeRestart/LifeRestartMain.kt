@@ -74,6 +74,30 @@ class LifeRestartMain {
         }
     }
 
+    /**
+     * 错误状态判断
+     *
+     * @param bot 机器人
+     * @param event 事件
+     * @param userInfo 用户信息
+     * @return
+     */
+    fun errorStateMsg(bot: Bot, event: AnyMessageEvent, userInfo: LifeRestartUtil.UserInfo?): Boolean {
+        if (userInfo == null) {
+            bot.sendMsg(event, "你还没有开始游戏，请发送「重开」进行游戏", false)
+            return false
+        }
+        if (userInfo.propertyDistribution == false) {
+            bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
+            return false
+        }
+        if (userInfo.talent.isEmpty()) {
+            bot.sendMsg(event, "你还没有选择天赋,请先选择天赋", false)
+            return false
+        }
+        return true
+    }
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "重开")
     fun startRestart(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -283,20 +307,9 @@ class LifeRestartMain {
     fun nextStep(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val realId = OtherUtil().getRealId(event)
         userList.find { it.userId == realId }.let { userInfo ->
-            if (userInfo == null) {
-                bot.sendMsg(event, "你还没有开始游戏，请发送「重开」进行游戏", false)
-                return
-            }
-            if (userInfo.propertyDistribution == false) {
-                bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
-                return
-            }
-            if (userInfo.talent.isEmpty()) {
-                bot.sendMsg(event, "你还没有选择天赋,请先选择天赋", false)
-                return
-            }
+            if (!errorStateMsg(bot, event, userInfo)) return
 
-            if (userInfo.isEnd == true) {
+            if (userInfo!!.isEnd == true) {
                 sendNewImage(
                     bot,
                     event,
@@ -334,16 +347,10 @@ class LifeRestartMain {
         val realId = OtherUtil().getRealId(event)
         val stepNext = matcher.group(1).toInt()
         userList.find { it.userId == realId }.let { userInfo ->
-            if (userInfo == null) {
-                bot.sendMsg(event, "你还没有开始游戏，请发送「重开」进行游戏", false)
-                return
-            }
-            if (userInfo.property == null) {
-                bot.sendMsg(event, "你还没有分配属性，请先分配属性", false)
-                return
-            }
+            if (!errorStateMsg(bot, event, userInfo)) return
+
             // 更新数据与账户时间戳
-            updateGameTime(userInfo)
+            updateGameTime(userInfo!!)
 
             val strList = mutableListOf<Any?>()
             for (i in 1..stepNext) {
