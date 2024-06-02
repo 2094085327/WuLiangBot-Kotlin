@@ -15,10 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -95,30 +92,6 @@ class WebImgUtil {
     }
 
     /**
-     * 缓存图片
-     * @param imgName 图片名
-     * @param imgType 图片类型
-     * @param imgPath 图片存储路径
-     * @param imgBuffer 图片流
-     *
-     * @return 本地文件路径
-     */
-    fun cacheImg(imgName: String, imgType: String, imgPath: String? = null, imgBuffer: ByteArray): String {
-        deleteImgCache()
-
-        val folderPath = "resources/imageCache"
-        val screenshotFilePath =
-            if (imgPath != null) File("$imgPath/$imgName.$imgType") else File("$folderPath/$imgName.$imgType")
-        val folder = File(folderPath)
-
-        if (!folder.exists()) folder.mkdirs()
-        FileOutputStream(screenshotFilePath).use { fos ->
-            fos.write(imgBuffer)
-        }
-        return screenshotFilePath.absolutePath
-    }
-
-    /**
      * 发送缓存图片
      *
      * @param bot 机器人
@@ -166,10 +139,42 @@ class WebImgUtil {
 
             return byteArray
         } catch (e: Exception) {
-            // 处理异常，比如 IOException
+            // 处理异常
             e.printStackTrace()
             return byteArrayOf() // 返回空数组或其他默认值
         }
+    }
+
+
+    /**
+     * 将字节数组转换为JPEG图片并保存到本地
+     * @param byteArray 图片字节数组
+     * @param imgName 图片名
+     * @param imgType 图片类型
+     * @param imgPath 图片存储路径
+     *
+     * @return 本地文件路径
+     */
+    fun turnByteToJpeg(byteArray: ByteArray, imgName: String, imgType: String, imgPath: String? = null): String {
+        deleteImgCache()
+
+        val folderPath = "resources/imageCache"
+        val screenshotFilePath =
+            if (imgPath != null) File("$imgPath/$imgName.$imgType") else File("$folderPath/$imgName.$imgType")
+        val folder = File(folderPath)
+        if (!folder.exists()) folder.mkdirs()
+
+
+        val byteArrayInputStream = ByteArrayInputStream(byteArray)
+        val originalImage: BufferedImage = ImageIO.read(byteArrayInputStream)
+
+        // 创建一个新的BufferedImage对象，指定为JPEG格式
+        val jpegImage = BufferedImage(originalImage.width, originalImage.height, BufferedImage.TYPE_INT_RGB)
+
+        // 将原始图像绘制到新的JPEG图像上
+        jpegImage.graphics.drawImage(originalImage, 0, 0, null)
+        ImageIO.write(jpegImage, imgType, screenshotFilePath)
+        return screenshotFilePath.absolutePath
     }
 
 
@@ -196,7 +201,7 @@ class WebImgUtil {
         width: Int? = null,
         height: Int? = null,
         scale: Double? = null,
-        imageType: String? = "png",
+        imageType: String? = "jpeg",
         sleepTime: Long = 0
     ): String? {
         Playwright.create().use { playwright ->
@@ -204,7 +209,7 @@ class WebImgUtil {
             val page: Page = browser.newPage()
             val realImgName = imgName ?: System.currentTimeMillis().toString()
             page.navigate(url)
-            var buffer = page.screenshot(
+            var byteArray = page.screenshot(
                 Page.ScreenshotOptions()
                     .setFullPage(true)
             )
@@ -213,18 +218,17 @@ class WebImgUtil {
                 val body: ElementHandle = page.querySelector(element)!!
 
                 // 截图
-                buffer = body.screenshot(
-                    ElementHandle.ScreenshotOptions()
-                )
+                byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
             }
 
 
             if (scale != null) {
-                val thumbnailBuilder = Thumbnails.of(buffer.inputStream()).scale(scale).asBufferedImage()
-                buffer = bufferedImageToByteArray(thumbnailBuilder, imageType!!)
+                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(scale).asBufferedImage()
+                byteArray = bufferedImageToByteArray(thumbnailBuilder, imageType!!)
             }
 
-            val realImgPath = cacheImg(imgName = realImgName, imgType = imageType!!, imgPath = imgPath, imgBuffer = buffer)
+            val realImgPath =
+                turnByteToJpeg(byteArray = byteArray, imgName = realImgName, imgType = imageType!!, imgPath = imgPath)
 
             if (channel) return "base64://${convertImageToBase64("${realImgPath.split(".")[0]}.${imageType}")}"
             else {
