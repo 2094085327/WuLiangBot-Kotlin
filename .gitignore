@@ -36,4 +36,3 @@ build/
 /resources/imageCache/
 /resources/gachaCache/
 /src/main/kotlin/bot/demo/txbot/genShin/database/gachaLog2/
-/src/main/resources/application.yaml
