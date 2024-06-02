@@ -4,7 +4,6 @@ import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
-import bot.demo.txbot.other.CACHE_PATH
 import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
@@ -410,7 +409,7 @@ class GachaLogUtil {
 
     fun checkCache(imgName: String, gameUid: String): Pair<File?, File?> {
         MysDataUtil().deleteDataCache()
-        val folder = File(CACHE_PATH)
+        val folder = File(GACHA_CACHE_PATH)
         val cacheImg = File(IMG_CACHE_PATH)
 
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }

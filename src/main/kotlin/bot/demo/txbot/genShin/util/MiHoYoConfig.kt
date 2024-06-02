@@ -1,5 +1,7 @@
 package bot.demo.txbot.genShin.util
 
+import bot.demo.txbot.other.RESOURCES_PATH
+
 /**
  * @description: 原神用到的一些常量
  * @author Nature Zero
@@ -16,7 +18,8 @@ const val WEAPON_JSON = "resources/genShin/defSet/element/weapon.yaml" // 武器
 const val ROLE_IMG = "resources/genShin/GenShinImg/role/" // 角色图片资源
 const val WEAPON_IMG = "resources/genShin/GenShinImg/weapons/" // 武器图片资源
 
-const val GACHA_LOG_FILE = "resources/gachaCache/gachaLog-" // 抽卡记录缓存路径
+const val GACHA_CACHE_PATH = "$RESOURCES_PATH/gachaCache" // 缓存路径
+const val GACHA_LOG_FILE = "$GACHA_CACHE_PATH/gachaLog-" // 抽卡记录缓存路径
 const val GACHA_LOG_IMPORT = "resources/genShin/ImportGacha" // 抽卡记录导入路径
 
 const val ANDROID_HOST = "https://api-takumi.mihoyo.com/" // 安卓请求host

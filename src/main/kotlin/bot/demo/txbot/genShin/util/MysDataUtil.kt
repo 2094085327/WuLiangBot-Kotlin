@@ -4,7 +4,7 @@ import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.JacksonUtil.objectMapper
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
-import bot.demo.txbot.other.CACHE_PATH
+import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -47,11 +47,11 @@ class MysDataUtil {
     }
 
     /**
-     * 删除数据缓存
+     * 删除图片缓存
      *
      */
     fun deleteDataCache() {
-        val folder = File(CACHE_PATH)
+        val folder = File(IMG_CACHE_PATH)
         val fiveMinutesAgo = System.currentTimeMillis() - 10 * 60 * 1000
         folder.listFiles()?.forEach { file ->
             if (file.lastModified() < fiveMinutesAgo) {

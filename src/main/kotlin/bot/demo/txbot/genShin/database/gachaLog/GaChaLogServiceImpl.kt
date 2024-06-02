@@ -1,7 +1,7 @@
 package bot.demo.txbot.genShin.database.gachaLog
 
+import bot.demo.txbot.genShin.util.GACHA_CACHE_PATH
 import bot.demo.txbot.genShin.util.UIGF_VERSION
-import bot.demo.txbot.other.CACHE_PATH
 import bot.demo.txbot.other.DELETE_PERCENTAGE
 import bot.demo.txbot.other.MAX_SIZE_MB
 import bot.demo.txbot.other.UpdateResources
@@ -67,7 +67,7 @@ class GaChaLogServiceImpl : ServiceImpl<GaChaLogMapper?, GaChaLogEntity?>(), GaC
 
 
         // 保存数据
-        val folderPath = CACHE_PATH
+        val folderPath = GACHA_CACHE_PATH
         val folder = File(folderPath)
         if (!folder.exists()) folder.mkdirs()
         val fileName = "$folderPath/gachaLog-$uid.json"

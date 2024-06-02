@@ -4,11 +4,7 @@ import bot.demo.txbot.common.database.user.UserService
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
-import bot.demo.txbot.genShin.util.GACHA_LOG_IMPORT
-import bot.demo.txbot.genShin.util.GachaLogUtil
-import bot.demo.txbot.genShin.util.MysApi
-import bot.demo.txbot.genShin.util.MysDataUtil
-import bot.demo.txbot.other.CACHE_PATH
+import bot.demo.txbot.genShin.util.*
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.GroupMessageHandler
@@ -218,7 +214,7 @@ class GachaLog {
             return
         }
 
-        val folder = File(CACHE_PATH)
+        val folder = File(GACHA_CACHE_PATH)
         val prefix = "gachaLog-${gameUid}"
 
         val files = folder.listFiles { _, name -> name.startsWith(prefix) }
