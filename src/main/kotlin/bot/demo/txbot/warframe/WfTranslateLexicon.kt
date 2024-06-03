@@ -16,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 
 
 /**
@@ -76,6 +77,31 @@ class WfTranslateLexicon {
         return rivenMap.values.toMutableList()
     }
 
+    /**
+     * 获取赤毒紫卡列表
+     *
+     * @param richMap 词库Map
+     * @return 赤毒紫卡列表
+     */
+    fun getLichList(richMap: MutableMap<String, WfRivenEntity>): MutableList<WfRivenEntity> {
+        updateLich(richMap, WARFRAME_MARKET_LICH_WEAPONS, LANGUAGE_EN_HANS, "weapons", "item_name")
+        updateLich(richMap, WARFRAME_MARKET_LICH_WEAPONS, LANGUAGE_ZH_HANS, "weapons", "item_name", isChinese = true)
+        updateLich(richMap, WARFRAME_MARKET_SISTER_WEAPONS, LANGUAGE_EN_HANS, "weapons", "item_name")
+        updateLich(richMap, WARFRAME_MARKET_SISTER_WEAPONS, LANGUAGE_ZH_HANS, "weapons", "item_name", isChinese = true)
+
+        return richMap.values.toMutableList()
+    }
+
+    /**
+     * 更新紫卡词库
+     *
+     * @param lexiconMap 词库Map
+     * @param url 请求URL
+     * @param language 请求语言
+     * @param listKey 词库列表Key
+     * @param nameKey 词库名称Key
+     * @param isChinese 是否为中文
+     */
     private fun updateLexicon(
         lexiconMap: MutableMap<String, WfLexiconEntity>,
         url: String,
@@ -102,6 +128,16 @@ class WfTranslateLexicon {
         }
     }
 
+    /**
+     * 更新紫卡词库
+     *
+     * @param rivenMap 词库Map
+     * @param url 请求URL
+     * @param language 语言
+     * @param listKey 词库列表Key
+     * @param nameKey 物品名称Key
+     * @param isChinese 是否为中文
+     */
     private fun updateRiven(
         rivenMap: MutableMap<String, WfRivenEntity>,
         url: String,
@@ -130,6 +166,45 @@ class WfTranslateLexicon {
         }
     }
 
+    /**
+     * 更新玄骸武器词库
+     *
+     * @param richMap 词库Map
+     * @param url 请求URL
+     * @param language 语言
+     * @param listKey 词库列表Key
+     * @param nameKey 物品名称Key
+     * @param isChinese 是否为中文
+     */
+    fun updateLich(
+        richMap: MutableMap<String, WfRivenEntity>,
+        url: String,
+        language: MutableMap<String, Any>,
+        listKey: String,
+        nameKey: String,
+        isChinese: Boolean = false
+    ) {
+        val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
+        items.forEach { item ->
+            val id = item["id"].textValue()
+            val entity = richMap[id] ?: WfRivenEntity(
+                id = id,
+                rGroup = "lich",
+                enName = if (!isChinese) item[nameKey].textValue() else "",
+                urlName = item["url_name"].textValue(),
+                zhName = if (isChinese) item[nameKey].textValue() else "",
+                attributesBool = 2
+            )
+
+            if (isChinese) {
+                entity.zhName = item[nameKey].textValue()
+            } else {
+                entity.enName = item[nameKey].textValue()
+            }
+            richMap[id] = entity
+        }
+    }
+
 
     @OptIn(DelicateCoroutinesApi::class)
     @AnyMessageHandler
@@ -137,6 +212,7 @@ class WfTranslateLexicon {
     fun upDataWfTranslateLexicon(bot: Bot, event: AnyMessageEvent) {
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
         val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
+        val lichMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
 
         GlobalScope.launch {
             try {
@@ -144,17 +220,31 @@ class WfTranslateLexicon {
                 bot.sendMsg(event, "词库更新中，请稍等", false)
 
                 // 使用async并行执行插入操作
-                val lexiconJob = async { wfLexiconService.insertLexicon(getLexiconList(lexiconMap)) }
-                val rivenJob = async { wfRivenService.insertRiven(getRivenList(rivenMap)) }
+                val lexiconJob = async {
+                    wfLexiconService.insertLexicon(getLexiconList(lexiconMap))
+                    logInfo("词库更新完成")
+                }
+                val rivenJob = async {
+                    wfRivenService.insertRiven(getRivenList(rivenMap))
+                    logInfo("紫卡词库更新完成")
+                }
+                val lichJob = async {
+                    wfRivenService.insertRiven(getLichList(lichMap))
+                    logInfo("玄骸武器词库更新完成")
+                }
 
                 // 等待所有任务完成
                 lexiconJob.await()
                 rivenJob.await()
+                lichJob.await()
+
 
                 bot.sendMsg(event, "词库更新完成", false)
             } finally {
                 // 显式地将变量置空
                 lexiconMap.clear()
+                rivenMap.clear()
+                lichMap.clear()
                 System.gc()
             }
         }

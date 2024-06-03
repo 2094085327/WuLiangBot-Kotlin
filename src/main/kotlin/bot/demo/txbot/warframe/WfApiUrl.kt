@@ -36,6 +36,11 @@ const val WARFRAME_MARKET_RIVEN_ATTRIBUTES = "$WARFRAME_MARKET_BASE_URL/riven/at
 const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=riven"
 
 /**
+ * Market 玄骸武器拍卖
+ */
+const val WARFRAME_MARKET_LICH = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=lich"
+
+/**
  * 赤毒武器
  */
 const val WARFRAME_MARKET_LICH_WEAPONS = "$WARFRAME_MARKET_BASE_URL/lich/weapons"

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.util.logging.Logger
 
 
 /**
@@ -17,18 +16,19 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
     @Autowired
     lateinit var rivenMapper: WfRivenMapper
 
-    private val logger: Logger = Logger.getLogger(WfRivenServiceImpl::class.java.getName())
-
-
     override fun insertRiven(wfEnRivenList: List<WfRivenEntity>) {
         wfEnRivenList.forEach { enLexicon ->
             rivenMapper.insertIgnore(enLexicon)
         }
-        logger.info("紫卡词库更新完成")
     }
 
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
-        val queryWrapper = QueryWrapper<WfRivenEntity>().eq("zh", zh).or().eq("en", zh)
+        val queryWrapper = QueryWrapper<WfRivenEntity>()
+            .eq("zh", zh)
+            .eq("attributes", 0)
+            .or()
+            .eq("en", zh)
+            .eq("attributes", 0)
         return rivenMapper.selectOne(queryWrapper)
     }
 
@@ -36,6 +36,7 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         val regex = zh.toCharArray().joinToString(".*") { it.toString() }  // 将输入字符串转换为.*分隔的正则表达式
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .apply("zh REGEXP {0}", regex)
+            .eq("attributes", 1)
             .or()
             .like("en", "%$zh%")
             .eq("attributes", 1)

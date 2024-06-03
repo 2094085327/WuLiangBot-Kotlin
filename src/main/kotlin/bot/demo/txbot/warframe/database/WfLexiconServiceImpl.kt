@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.util.logging.Logger
 
 
 /**
@@ -17,14 +16,10 @@ class WfLexiconServiceImpl @Autowired constructor(
     private val lexiconMapper: WfLexiconMapper
 ) : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), WfLexiconService {
 
-    private val logger: Logger = Logger.getLogger(WfLexiconServiceImpl::class.java.getName())
-
-
     override fun insertLexicon(wfEnLexiconList: List<WfLexiconEntity>) {
         wfEnLexiconList.forEach { enLexicon ->
             lexiconMapper.insertIgnore(enLexicon)
         }
-        logger.info("词库更新完成")
     }
 
     override fun turnKeyToUrlNameByLexicon(zh: String): WfLexiconEntity? {
