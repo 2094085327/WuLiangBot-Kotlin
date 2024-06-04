@@ -33,4 +33,20 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @return 查询结果
      */
     fun fuzzyQuery(key: String): List<WfLexiconEntity?>?
+
+    /**
+     * 获取其他名称
+     *
+     * @param zh 中文
+     * @return 英文
+     */
+    fun getOtherName(zh: String): String?
+
+    /**
+     * 获取其他名称
+     *
+     * @param en 英文
+     * @return 中文别名
+     */
+    fun getOtherEnName(en: String): String?
 }

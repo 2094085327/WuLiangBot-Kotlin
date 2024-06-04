@@ -3,6 +3,7 @@ package bot.demo.txbot.warframe
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
+import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -12,6 +13,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import java.util.regex.Matcher
 
 
@@ -73,6 +75,14 @@ class WfMarketController {
         val buyOutPlatinum: Int,
         val polarity: String,
         val positive: List<Attributes>,
+    )
+
+    data class LichOrderInfo(
+        val element: String,
+        val havingEphemera: Boolean,
+        val damage: Int,
+        val startPlatinum: Int,
+        val buyOutPlatinum: Int,
     )
 
     /**
@@ -204,17 +214,17 @@ class WfMarketController {
         negativeStat: String?
     ): String? {
         var negative = negativeStat
-        parameters.forEach { parameter ->
-            when {
-                parameter.contains("负") -> {
-                    negative = if (parameter == "无负") "none"
-                    else wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))?.firstOrNull()?.urlName
-                }
 
-                else -> wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
+        parameters.forEach { parameter ->
+            if (parameter.contains("负")) {
+                negative = if (parameter == "无负") "none"
+                else wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))?.firstOrNull()?.urlName
+            } else {
+                wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
                     ?.firstOrNull()?.urlName?.let { positiveStats.add(it) }
             }
         }
+
         return negative
     }
 
@@ -246,6 +256,28 @@ class WfMarketController {
     }
 
     /**
+     * 用于为API调用创建查询参数的函数
+     *
+     * @param weaponUrlName 武器URL名称
+     * @param element 元素
+     * @param ephemera 是否有幻纹
+     * @return 查询参数
+     */
+    fun createLichQueryParams(
+        weaponUrlName: String,
+        element: String? = null,
+        ephemera: Boolean? = false
+    ): MutableMap<String, String> {
+        return mutableMapOf(
+            "weapon_url_name" to weaponUrlName,
+            "sort_by" to "price_asc"
+        ).apply {
+            if (ephemera != null) put("having_ephemera", ephemera.toString())
+            if (element != null) put("element", element)
+        }
+    }
+
+    /**
      * 将拍卖数据格式化为字符串消息的函数
      *
      * @param rivenJson 紫卡Json数据
@@ -257,7 +289,7 @@ class WfMarketController {
         val allowedStatuses = setOf("online", "ingame")
 
         val rivenOrderList = orders.asSequence()
-            .filter { order -> order["owner"]["status"].textValue() in allowedStatuses }
+            .filter { it["owner"]["status"].textValue() in allowedStatuses }
             .take(5)
             .map { order ->
                 RivenOrderInfo(
@@ -276,21 +308,106 @@ class WfMarketController {
                 )
             }.toList()
 
+        if (rivenOrderList.isEmpty()) {
+            return "当前没有任何在线的玩家出售这种词条的${itemZhName}"
+        }
+
+        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "-")
+        val auctionDetails = rivenOrderList.joinToString("\n") { order ->
+            val polaritySymbol = polaritySymbols[order.polarity] ?: "-"
+            val attributes = order.positive.joinToString("|") { positive ->
+                val sign = if (positive.positive) "+" else ""
+                "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} $sign${positive.value}%"
+            }
+            "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n$attributes"
+        }
+
+        return "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
+    }
+
+
+    /**
+     * 获取拍卖数据
+     *
+     * @param parameterList 紫卡参数列表
+     * @param element 武器元素
+     * @param ephemera 是否有幻纹
+     * @param itemEntity 物品实体类
+     * @param auctionType 拍卖类型
+     * @param lichType 玄骸类型
+     * @return Json数据
+     */
+    fun getAuctionsJson(
+        parameterList: List<String>? = null,
+        element: String? = null,
+        ephemera: String? = null,
+        itemEntity: WfRivenEntity,
+        auctionType: String,
+        lichType: String? = null
+    ): JsonNode? {
+        val positiveStats = mutableListOf<String>()
+        val negativeStat: String? = null
+
+        val queryParams = when (auctionType) {
+            "riven" -> {
+                processParameters(parameterList!!.drop(1), positiveStats, negativeStat)
+                createQueryParams(itemEntity.urlName, positiveStats, negativeStat)
+            }
+
+            "lich" -> {
+                val ephemeraBoolean = ephemera?.contains("有")
+                createLichQueryParams(itemEntity.urlName, element = element, ephemera = ephemeraBoolean)
+            }
+
+            else -> return null
+        }
+
+        return try {
+            when (auctionType) {
+                "riven" -> HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = queryParams)
+                "lich" -> when (lichType) {
+                    "lich" -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
+                    else -> HttpUtil.doGetJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
+                }
+
+                else -> null
+            }
+        } catch (e: Exception) {
+            logError("WM查询错误:$e")
+            null
+        }
+    }
+
+
+    /**
+     * 将拍卖数据格式化为字符串消息的函数
+     *
+     * @param lichJson 紫卡Json数据
+     * @param itemZhName 物品中文名称
+     * @return 格式化后的拍卖数据
+     */
+    fun formatLichAuctionData(lichJson: JsonNode, itemZhName: String): String {
+        val orders = lichJson["payload"]["auctions"]
+
+        val rivenOrderList = orders.asSequence()
+            .take(5)
+            .map { order ->
+                LichOrderInfo(
+                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
+                    havingEphemera = order["item"]["having_ephemera"].booleanValue(),
+                    damage = order["item"]["damage"].intValue(),
+                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                )
+            }.toList()
+
         return if (rivenOrderList.isEmpty()) {
             "当前没有任何在线的玩家出售这种词条的${itemZhName}"
         } else {
             val auctionDetails = rivenOrderList.joinToString("\n") { order ->
-                val polaritySymbol = when (order.polarity) {
-                    "madurai" -> "r"
-                    "vazarin" -> "Δ"
-                    else -> "-"
-                }
-                "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n" +
-                        order.positive.joinToString("|") { positive ->
-                            "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} ${if (positive.positive) "+${positive.value}" else positive.value}%"
-                        }
+                "元素:${order.element} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 有无幻纹:${if (!order.havingEphemera) "无" else "有"} 伤害:${order.damage}"
             }
-            "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
+            "你查找的「${itemZhName}」玄骸武器前5条拍卖信息如下:\n$auctionDetails\n示例:wl 信条·典客 火 无幻纹"
         }
     }
 
@@ -302,12 +419,8 @@ class WfMarketController {
         val matchResult = regex.find(key)
         val level = matchResult?.value
 
-        // 移除匹配到的部分
-        val cleanKey = if (matchResult != null) {
-            key.replace("${matchResult.value}级", "").replace("满级", "").trim()
-        } else {
-            key
-        }
+        // 移除匹配到的部分并去除多余的空格
+        val cleanKey = matchResult?.let { key.replace("${it.value}级", "").replace("满级", "").trim() } ?: key
         val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(cleanKey)
 
         if (itemEntity != null) {
@@ -316,33 +429,27 @@ class WfMarketController {
         }
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
-        if (keyList.isNullOrEmpty()) {
-            val fuzzyList = mutableListOf<String>()
-
-            // 遍历 key 的每个字符，并将其转换为字符串
-            key.forEach { eachKey ->
-                // 调用 wfLexiconService.fuzzyQuery() 方法进行模糊查询，并将结果存储在 result 变量中
-                wfLexiconService.fuzzyQuery(eachKey.toString())?.forEach {
-                    it?.zhItemName?.let { name ->
-                        fuzzyList.add(name)
-                    }
-                }
-            }
-
-            if (fuzzyList.isNotEmpty()) {
-                findMatchingStrings(key, fuzzyList).let {
-                    bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
-                }
-            } else {
-                bot.sendMsg(event, "未找到任何匹配项。", false)
-            }
-
+        if (!keyList.isNullOrEmpty()) {
+            sendMarketItemInfo(bot, event, keyList.last()!!, level)
             return
         }
 
-        val item = keyList.last()!!
-        sendMarketItemInfo(bot, event, item, level)
+        val fuzzyList = mutableListOf<String>()
+        key.forEach { eachKey ->
+            wfLexiconService.fuzzyQuery(eachKey.toString())?.forEach {
+                it?.zhItemName?.let { name -> fuzzyList.add(name) }
+            }
+        }
+
+        if (fuzzyList.isNotEmpty()) {
+            findMatchingStrings(key, fuzzyList).let {
+                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
+            }
+        } else {
+            bot.sendMsg(event, "未找到任何匹配项。", false)
+        }
     }
+
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wr (.*)")
@@ -358,20 +465,13 @@ class WfMarketController {
             handleFuzzySearch(bot, event, itemNameKey)
             return
         }
+        val rivenJson = getAuctionsJson(
+            parameterList = parameterList,
+            itemEntity = itemEntity,
+            auctionType = "riven",
+        )
 
-        val positiveStats = mutableListOf<String>()
-        val negativeStat: String? = null
-
-        // 处理参数以查找正词条和负词条
-        processParameters(parameterList.drop(1), positiveStats, negativeStat)
-
-        // 为API调用创建查询参数
-        val queryParams = createQueryParams(itemEntity.urlName, positiveStats, negativeStat)
-
-        // 调用API并获取数据
-        val rivenJson = try {
-            HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = queryParams)
-        } catch (e: Exception) {
+        if (rivenJson == null) {
             bot.sendMsg(event, "查询失败，请稍后重试", false)
             return
         }
@@ -379,6 +479,46 @@ class WfMarketController {
         // 筛选和格式化拍卖数据
         val auctionInfo = formatAuctionData(rivenJson, itemEntity.zhName!!)
 
+        bot.sendMsg(event, auctionInfo, false)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "wl (.*)")
+    fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val key = matcher.group(1)
+        val parameterList = key.split(" ")
+
+        val itemNameKey: String = parameterList.first()
+        val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
+
+        if (itemEntity == null) {
+            handleFuzzySearch(bot, event, itemNameKey)
+            return
+        }
+
+        val otherPrams = parameterList.drop(1)
+        val element: String? = otherPrams.firstOrNull { !it.matches(Regex("([有无])")) }
+        val ephemera: String? = otherPrams.firstOrNull { it.contains("无") || it.contains("有") }
+
+        val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
+
+        val lichType = if (itemNameKey.contains("赤毒")) "lich" else "sister"
+
+        val lichJson = getAuctionsJson(
+            element = urlElement,
+            ephemera = ephemera,
+            itemEntity = itemEntity,
+            auctionType = "lich",
+            lichType = lichType
+        )
+
+        if (lichJson == null) {
+            bot.sendMsg(event, "查询失败，请稍后重试", false)
+            return
+        }
+
+        // 筛选和格式化拍卖数据
+        val auctionInfo = formatLichAuctionData(lichJson, itemEntity.zhName!!)
         bot.sendMsg(event, auctionInfo, false)
     }
 }

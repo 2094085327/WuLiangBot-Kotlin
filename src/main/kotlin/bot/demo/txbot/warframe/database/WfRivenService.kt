@@ -24,6 +24,14 @@ interface WfRivenService : IService<WfRivenEntity?> {
      * @param zh 中文物品
      * @return 英文物品
      */
+    fun turnKeyToUrlNameByLich(zh: String): WfRivenEntity?
+
+    /**
+     * 通过词库转换中文为英文
+     *
+     * @param zh 中文物品
+     * @return 英文物品
+     */
     fun turnKeyToUrlNameByRivenLike(zh: String): List<WfRivenEntity?>?
 
     /**

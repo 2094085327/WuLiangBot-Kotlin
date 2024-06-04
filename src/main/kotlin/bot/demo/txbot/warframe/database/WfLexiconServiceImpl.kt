@@ -70,6 +70,15 @@ class WfLexiconServiceImpl @Autowired constructor(
         return lexiconMapper.selectList(queryWrapper)
     }
 
+    override fun getOtherName(zh: String): String? {
+        return lexiconMapper.selectByZhItemName(zh)
+    }
+
+    override fun getOtherEnName(en: String): String? {
+        return lexiconMapper.selectByEnItemName(en)?.firstOrNull()
+    }
+
+
     private fun generateSubstrings(input: String): List<String> {
         val substrings = mutableListOf<String>()
         for (i in input.indices) {

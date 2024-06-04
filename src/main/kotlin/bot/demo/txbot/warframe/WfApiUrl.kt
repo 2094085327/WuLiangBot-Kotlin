@@ -38,7 +38,8 @@ const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/s
 /**
  * Market 玄骸武器拍卖
  */
-const val WARFRAME_MARKET_LICH = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=lich"
+const val WARFRAME_MARKET_LICH_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=lich"
+const val WARFRAME_MARKET_SISTER_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=sister"
 
 /**
  * 赤毒武器

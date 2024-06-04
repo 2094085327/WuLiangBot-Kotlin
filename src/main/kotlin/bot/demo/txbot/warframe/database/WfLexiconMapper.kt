@@ -18,10 +18,19 @@ interface WfLexiconMapper : BaseMapper<WfLexiconEntity?> {
 
     @Select(
         """
-        SELECT wf_other_name.en_item_name 
+        SELECT LOWER(wf_other_name.en_item_name) 
         FROM wf_other_name 
         WHERE LOWER(wf_other_name.other_name) = LOWER(#{otherName})
         """
     )
     fun selectByZhItemName(@Param("otherName") otherName: String): String?
+
+    @Select(
+        """
+        SELECT wf_other_name.other_name 
+        FROM wf_other_name 
+        WHERE LOWER(wf_other_name.en_item_name) = LOWER(#{enItemName})
+        """
+    )
+    fun selectByEnItemName(@Param("enItemName") enItemName: String): List<String>?
 }
