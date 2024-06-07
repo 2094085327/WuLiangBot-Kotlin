@@ -121,7 +121,7 @@ class GachaLogUtil {
      */
     private fun getRoleAttribute(roleName: String): String? {
         val objectMapper = ObjectMapper(YAMLFactory())
-        val file = File(ROLE_JSON)
+        val file = File(ROLE_YAML)
 
         try {
             val characterMap: Map<String, String> =

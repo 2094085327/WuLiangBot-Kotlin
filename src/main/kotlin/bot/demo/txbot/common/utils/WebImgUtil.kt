@@ -103,6 +103,7 @@ class WebImgUtil {
      * @param file 图片文件
      */
     fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, file: File) {
+        // TODO 缓存文件仍然使用了本地Bs4图片发送，考虑后续更改为缓存图床链接，之后直接发送缓存图床链接
         val sendCacheImg: String = MsgUtils
             .builder()
             .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")

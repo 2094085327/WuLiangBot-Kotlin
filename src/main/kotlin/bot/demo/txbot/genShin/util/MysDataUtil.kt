@@ -71,7 +71,7 @@ class MysDataUtil {
      */
     fun insertAttribute(itemName: String, attribute: String): String {
         val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
-        val file = File(ROLE_JSON)
+        val file = File(ROLE_YAML)
 
         try {
             val characterMap: LinkedHashMap<String, String> =

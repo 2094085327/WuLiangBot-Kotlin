@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.time.LocalDateTime
@@ -34,6 +36,9 @@ class UpdateGachaResources {
 
     private val versionMap = mutableMapOf<String, GachaData>()
     private val titleMap = mutableMapOf<String, String>()
+
+    private var roleYamlMap: HashMap<String, String> = HashMap<String, String>()
+    private var weaponYamlMap: HashMap<String, String> = HashMap<String, String>()
 
     /**
      * 处理卡池数据，进行格式化
@@ -75,6 +80,21 @@ class UpdateGachaResources {
                 val fourStarCharList = fourStarChars.split("「").filter { it.isNotEmpty() }
                     .map { it.substringAfter("·").substringBefore("(").trim() }
 
+                // 修改这里以正确地从5星和4星字符中获取属性
+                val fiveAttributeList = fiveStarChars.split("「").filter { it.isNotEmpty() }
+                    .map { it.substringAfter("(").substringBefore(")").trim() }
+                val fourAttributeList = fourStarChars.split("「").filter { it.isNotEmpty() }
+                    .map { it.substringAfter("(").substringBefore(")").trim() }
+
+
+                val combinedCharacters = fiveStarCharList + fourStarCharList
+                val combinedAttributes = fiveAttributeList + fourAttributeList
+
+                // 使用zip将合并后的列表配对，并构建映射
+                combinedCharacters.zip(combinedAttributes).forEach { (char, attr) ->
+                    roleYamlMap[char] = attr
+                }
+
                 // 只处理第一条数据时的五星角色
                 if (gachaData.up5.isEmpty()) {
                     gachaData.up5 = fiveStarCharList.firstOrNull() ?: ""
@@ -111,6 +131,19 @@ class UpdateGachaResources {
                         .map { it.substringAfter("·").substringBefore("」").trim() }
                     val fourStarWeaponList = fourStarWeapons.split("「").filter { it.isNotEmpty() }
                         .map { it.substringAfter("·").substringBefore("」").trim() }
+
+                    // 修改这里以正确地从5星和4星字符中获取属性
+                    val fiveWeaponType = fiveStarWeapons.split("「").filter { it.isNotEmpty() }
+                        .map { it.substringAfter("「").substringBefore("·").trim() }
+                    val fourWeaponType = fourStarWeapons.split("「").filter { it.isNotEmpty() }
+                        .map { it.substringAfter("「").substringBefore("·").trim() }
+
+                    val combinedWeapons = fiveStarWeaponList + fourStarWeaponList
+                    val combinedTypes = fiveWeaponType + fourWeaponType
+
+                    combinedWeapons.zip(combinedTypes).forEach { (char, attr) ->
+                        weaponYamlMap[char] = attr
+                    }
 
                     gachaData.weapon5.addAll(fiveStarWeaponList)
                     gachaData.weapon4.addAll(fourStarWeaponList)
@@ -233,7 +266,11 @@ class UpdateGachaResources {
         return null
     }
 
-
+    /**
+     * 判断是否需要更新
+     *
+     * @return 布尔值
+     */
     private fun isGachaEndTimeBeforeNow(): Boolean {
         val lastEndTime = getLastGachaEndTime() ?: return true
 
@@ -245,16 +282,68 @@ class UpdateGachaResources {
     }
 
     /**
+     * 读取角色Yaml
+     *
+     * @return HashMap
+     */
+    private fun readYaml(filePath: String): HashMap<String, String> {
+        val objectMapper = ObjectMapper(YAMLFactory())
+        val roleYaml = File(filePath)
+        val typeRef = object : TypeReference<HashMap<String, String>>() {}
+        val content = roleYaml.readText().trim()
+        if (content.isEmpty() || content.isBlank()) {
+            logError("Yaml 文件为空，无法读取")
+            return HashMap()
+        }
+
+        return try {
+            objectMapper.readValue(content, typeRef)
+        } catch (e: Exception) {
+            logError("读取Yaml 文件时发生错误: ${e.message}")
+            HashMap()
+        }
+    }
+
+    /**
+     * 写入Yaml
+     *
+     * @param filePath 文件路径
+     * @param data HashMap
+     */
+    private fun writeToYaml(filePath: String, data: HashMap<String, String>) {
+        val objectMapper = ObjectMapper(YAMLFactory())
+        val outputFile = File(filePath)
+
+        val sortedData = data.toList().sortedBy { (_, value) -> value }.toMap()
+
+        try {
+            // 将HashMap写入YAML文件
+            objectMapper.writeValue(outputFile, sortedData)
+            logInfo("HashMap已成功写入YAML文件。")
+        } catch (e: Exception) {
+            logError("写入文件时发生错误：${e.message}")
+        }
+    }
+
+    /**
      * 更新卡池数据主方法
      *
      */
     fun getDataMain() {
         // 判断是否需要更新
         if (!isGachaEndTimeBeforeNow()) {
+            roleYamlMap = readYaml(ROLE_YAML)
+            weaponYamlMap = readYaml(WEAPON_YAML)
+
             val combinedFilteredTables = getGachaDataFromWiki()
             val json = organizeRunGetData(combinedFilteredTables)
             writeGachaJsonToFile(json)
             logInfo("更新卡池数据成功")
+
+            writeToYaml(ROLE_YAML, roleYamlMap)
+            writeToYaml(WEAPON_YAML, weaponYamlMap)
+
+            System.gc()
         } else logInfo("当前卡池未结束，跳过更新")
     }
 }
