@@ -5,15 +5,7 @@ val LANGUAGE_EN_HANS: MutableMap<String, Any> = mutableMapOf("language" to "en")
 
 const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 
-/**
- * 赤毒幻纹
- */
-const val WARFRAME_MARKET_LICH_EPHEMERAS = "$WARFRAME_MARKET_BASE_URL/lich/ephemeras"
-
-/**
- * 信条幻纹
- */
-const val WARFRAME_MARKET_SISTER_EPHEMERAS = "$WARFRAME_MARKET_BASE_URL/sister/ephemeras"
+const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
 /**
  * Market 物品

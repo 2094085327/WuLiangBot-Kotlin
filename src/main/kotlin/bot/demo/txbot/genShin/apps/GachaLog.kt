@@ -49,6 +49,8 @@ class GachaLog {
 
     val gachaLogUtil = GachaLogUtil()
 
+    val updateGachaResources = UpdateGachaResources()
+
     private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
     private val logger: Logger = Logger.getLogger(GachaLog::class.java.getName())
@@ -142,6 +144,9 @@ class GachaLog {
     @MessageHandlerFilter(cmd = "历史记录")
     fun recordQueryByRealId(bot: Bot, event: AnyMessageEvent) {
         bot.sendMsg(event, "正在查询历史数据，请稍等", false)
+        // 更新卡池数据
+        updateGachaResources.getDataMain()
+
         val realId = OtherUtil().getRealId(event)
         val gameUid = userService.selectGenUidByRealId(realId)
         if (gameUid == null) {
@@ -177,6 +182,8 @@ class GachaLog {
         }
 
         bot.sendMsg(event, "正在查询历史数据，请稍等", false)
+        // 更新卡池数据
+        updateGachaResources.getDataMain()
 
         val imgName = "gachaLog-${gameUid}"
 
@@ -246,6 +253,9 @@ class GachaLog {
         val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         val qrImageMsg = bot.sendMsg(event, sendMsg, false)
 
+        // 更新卡池数据
+        updateGachaResources.getDataMain()
+
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
             logger.info("撤回二维码")
@@ -301,6 +311,10 @@ class GachaLog {
         }
 
         bot.sendPrivateMsg(event.userId, "收到链接，正在处理中，请耐心等待", false)
+
+        // 更新卡池数据
+        updateGachaResources.getDataMain()
+
         val processingUrl = gachaLogUtil.toUrl(gachaUrl)
         val checkUrl = gachaLogUtil.checkApi(processingUrl)
         when (checkUrl.first) {

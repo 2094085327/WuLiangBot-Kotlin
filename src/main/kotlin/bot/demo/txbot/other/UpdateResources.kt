@@ -2,6 +2,7 @@ package bot.demo.txbot.other
 
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.genShin.util.InitGenShinData
+import bot.demo.txbot.genShin.util.UpdateGachaResources
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -105,6 +106,8 @@ class UpdateResources {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "更新资源")
     fun updateAll(bot: Bot, event: AnyMessageEvent) {
+        bot.sendMsg(event, "正在更新资源，请稍后", false)
+
         val folderPath = RESOURCES_PATH
 
         val downloadCheck = otherUtil.downloadFolderFromGitHub(
@@ -121,6 +124,9 @@ class UpdateResources {
         }
         bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
         OtherUtil.fileCount = 0
+
+        // 尝试更新卡池数据
+        UpdateGachaResources().getDataMain()
 
         // 重新初始化原神相关数据
         InitGenShinData.initGachaLogData()

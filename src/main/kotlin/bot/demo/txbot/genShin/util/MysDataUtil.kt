@@ -71,16 +71,14 @@ class MysDataUtil {
      */
     fun insertAttribute(itemName: String, attribute: String): String {
         val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
-        val file = File("resources/genShin/defSet/element/role.yaml")
+        val file = File(ROLE_JSON)
 
         try {
             val characterMap: LinkedHashMap<String, String> =
                 objectMapper.readValue(file, object : TypeReference<LinkedHashMap<String, String>>() {})
 
             // 检查配置文件中是否已经存在角色
-            if (characterMap.containsKey(itemName)) {
-                return "201"
-            }
+            if (characterMap.containsKey(itemName)) return "201"
 
             val lastEntryWithValueOne = characterMap.entries.lastOrNull { it.value == attribute }
 
@@ -94,9 +92,8 @@ class MysDataUtil {
 
                 objectMapper.writeValue(file, newCharacterMap)
                 "200"
-            } else {
-                "404"
-            }
+            } else "404"
+
         } catch (e: Exception) {
             e.printStackTrace()
             return e.toString()
