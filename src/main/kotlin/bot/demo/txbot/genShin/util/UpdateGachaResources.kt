@@ -331,7 +331,7 @@ class UpdateGachaResources {
      */
     fun getDataMain() {
         // 判断是否需要更新
-        if (!isGachaEndTimeBeforeNow()) {
+        if (isGachaEndTimeBeforeNow()) {
             roleYamlMap = readYaml(ROLE_YAML)
             weaponYamlMap = readYaml(WEAPON_YAML)
 
