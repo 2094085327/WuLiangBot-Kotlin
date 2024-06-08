@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.utils
 
+import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.Browser
@@ -13,6 +14,8 @@ import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
+import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -100,16 +103,16 @@ class WebImgUtil {
      *
      * @param bot 机器人
      * @param event 事件
-     * @param file 图片文件
+     * @param imgNameTmp 图片缓存文件名
      */
-    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, file: File) {
-        // TODO 缓存文件仍然使用了本地Bs4图片发送，考虑后续更改为缓存图床链接，之后直接发送缓存图床链接
+    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, imgNameTmp: String) {
         val sendCacheImg: String = MsgUtils
             .builder()
-            .img("base64://${WebImgUtil().convertImageToBase64(file.absolutePath)}")
+            .img(readTmpImgFile(imgNameTmp))
             .build()
+
         bot.sendMsg(event, sendCacheImg, false)
-        logger.info("使用缓存文件:${file.name}")
+        logger.info("使用缓存文件:$imgNameTmp")
     }
 
 
@@ -170,7 +173,7 @@ class WebImgUtil {
     fun turnByteToJpeg(byteArray: ByteArray, imgName: String, imgType: String, imgPath: String? = null): String {
         deleteImgCache()
 
-        val folderPath = "resources/imageCache"
+        val folderPath = IMG_CACHE_PATH
         val screenshotFilePath =
             if (imgPath != null) File("$imgPath/$imgName.$imgType") else File("$folderPath/$imgName.$imgType")
         val folder = File(folderPath)
@@ -213,7 +216,38 @@ class WebImgUtil {
             files = mapOf("file" to File(imagePath)),
             headers = mutableMapOf("content-type" to "multipart/form-data;")
         )
-        return "${imgBedPath}${imgJson[0]["src"].textValue()}"
+        val imgUrl = "${imgBedPath}${imgJson[0]["src"].textValue()}"
+
+        creatTmpImgFile(imgData.imgName ?: System.currentTimeMillis().toString(), imgUrl)
+        return imgUrl
+    }
+
+    fun creatTmpImgFile(imgName: String, input: String) {
+        val tempDir = File(IMG_CACHE_PATH)
+        val tempFile = File.createTempFile(imgName, null, tempDir)
+        try {
+            tempFile.writeText(input)
+            logInfo("写入缓存文件:${tempFile.name}")
+        } catch (e: IOException) {
+            logError("写入缓存文件失败:$e")
+        }
+    }
+
+    fun readTmpImgFile(imgName: String): String? {
+        val directory = File(IMG_CACHE_PATH)
+
+        // 查找以imgName开头的所有文件
+        val matchingFiles = directory.listFiles { file ->
+            file.name.startsWith(imgName) && file.extension == "tmp"
+        } ?: return null
+
+        val fileToRead = matchingFiles[0]
+        return try {
+            fileToRead.readText(Charsets.UTF_8)
+        } catch (e: IOException) {
+            logError("读取文件失败:${fileToRead.path}: $e")
+            null
+        }
     }
 
     /**

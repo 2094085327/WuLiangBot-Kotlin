@@ -156,11 +156,12 @@ class GachaLog {
 
         val imgName = "gachaLog-${gameUid}"
 
-        val checkResult = gachaLogUtil.checkCache(imgName, gameUid)
+        val checkResult = gachaLogUtil.checkCache(imgName)
 
         if (checkResult.first != null) {
-            if (checkResult.second != null) {
-                webImgUtil.sendCachedImage(bot, event, checkResult.second!!)
+            val imgNameResult = checkResult.second
+            if (imgNameResult != null) {
+                webImgUtil.sendCachedImage(bot, event, imgNameResult)
             } else {
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)
             }
@@ -187,11 +188,12 @@ class GachaLog {
 
         val imgName = "gachaLog-${gameUid}"
 
-        val checkResult = gachaLogUtil.checkCache(imgName, gameUid)
+        val checkResult = gachaLogUtil.checkCache(imgName)
 
         if (checkResult.first != null) {
-            if (checkResult.second != null) {
-                webImgUtil.sendCachedImage(bot, event, checkResult.second!!)
+            val imgNameResult = checkResult.second
+            if (imgNameResult != null) {
+                webImgUtil.sendCachedImage(bot, event, imgNameResult)
 
             } else {
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imgName)

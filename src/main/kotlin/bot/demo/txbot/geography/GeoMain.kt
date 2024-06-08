@@ -1,6 +1,7 @@
 package bot.demo.txbot.geography
 
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -50,12 +51,13 @@ class GeoMain {
 
         val city = matcher?.group(1)
         val imgName = "${city}天气"
-        val folderPath = "resources/imageCache"
+        val folderPath = IMG_CACHE_PATH
         val folder = File(folderPath)
-        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchingFileName =
+            folder.listFiles()?.firstOrNull { it.nameWithoutExtension.contains(imgName) && it.extension == "tmp" }?.name
 
-        if (matchingFile != null) {
-            webImgUtil.sendCachedImage(bot, event, matchingFile)
+        if (matchingFileName != null) {
+            webImgUtil.sendCachedImage(bot, event, matchingFileName)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/weather")
         }
@@ -73,13 +75,13 @@ class GeoMain {
 
         val city = matcher?.group(1)
         val imgName = "${city}地理"
-        val folderPath = "resources/imageCache"
+        val folderPath = IMG_CACHE_PATH
         val folder = File(folderPath)
 
-        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchingFileName = folder.listFiles()?.firstOrNull {  it.nameWithoutExtension.contains(imgName) && it.extension == "tmp" }?.name
 
-        if (matchingFile != null) {
-            webImgUtil.sendCachedImage(bot, event, matchingFile)
+        if (matchingFileName != null) {
+            webImgUtil.sendCachedImage(bot, event, matchingFileName)
         } else {
             sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/geo")
         }

@@ -379,46 +379,6 @@ class GachaLogUtil {
      * @param webUrl 待截图地址
      * @param scale 缩放等级
      */
-//    private fun sendNewImage(
-//        bot: Bot,
-//        event: PrivateMessageEvent,
-//        imgName: String,
-//        webUrl: String,
-//        scale: Double? = null
-//    ) {
-//        val imgData = WebImgUtil.ImgData(
-//            url = webUrl,
-//            imgName = imgName,
-//            channel = true,
-//            element = "body",
-//            scale = scale
-//        )
-//
-//        val imgUrl = webImgUtil.returnUrlImg(imgData)
-//        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-//        bot.sendPrivateMsg(event.userId, sendMsg, false)
-//        bot.sendPrivateMsg(event.userId, "发送完毕", false)
-//    }
-//
-//    private fun sendNewImage(
-//        bot: Bot,
-//        event: AnyMessageEvent?,
-//        imgName: String,
-//        webUrl: String,
-//        scale: Double? = null
-//    ) {
-//        val imgData = WebImgUtil.ImgData(
-//            url = webUrl,
-//            imgName = imgName,
-//            channel = true,
-//            element = "body",
-//            scale = scale
-//        )
-//        val imgUrl = webImgUtil.returnUrlImg(imgData)
-//        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-//        bot.sendMsg(event, sendMsg, false)
-//        bot.sendMsg(event, "发送完毕", false)
-//    }
     private fun <T> sendNewImage(
         bot: Bot,
         event: T,
@@ -448,13 +408,13 @@ class GachaLogUtil {
         }
     }
 
-    fun checkCache(imgName: String, gameUid: String): Pair<File?, File?> {
+    fun checkCache(imgName: String): Pair<File?, String?> {
         MysDataUtil().deleteDataCache()
         val folder = File(GACHA_CACHE_PATH)
         val cacheImg = File(IMG_CACHE_PATH)
 
         val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
-        val matchCache = cacheImg.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
+        val matchCache = cacheImg.listFiles()?.firstOrNull { it.extension == "tmp" && it.name.contains(imgName) }?.name
 
         return Pair(matchingFile, matchCache)
     }

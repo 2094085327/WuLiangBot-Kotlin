@@ -25,11 +25,16 @@ class Help {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "help")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        val helpImageName = "resources/imageCache/help.png"
-        val helpImage = File(helpImageName)
+        val helpImageName = "help"
+
+        val folderPath = IMG_CACHE_PATH
+        val folder = File(folderPath)
+
+        val matchingFileName = folder.listFiles()?.firstOrNull {  it.nameWithoutExtension.contains(helpImageName) && it.extension == "tmp" }?.name
+
         val webImgUtil = WebImgUtil()
-        if (helpImage.exists()) {
-            webImgUtil.sendCachedImage(bot, event, helpImage)
+        if (matchingFileName != null) {
+            webImgUtil.sendCachedImage(bot, event, matchingFileName)
             return
         }
 
