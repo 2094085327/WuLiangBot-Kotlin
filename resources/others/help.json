@@ -78,5 +78,17 @@
   "21": {
     "command": "wr [*]",
     "description": "使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\n如「wr 战刃 暴击 无负」，支持中文模糊查询"
+  },
+  "22": {
+    "command": "裂缝",
+    "description": "获取 Warframe 普通裂缝的信息"
+  },
+  "23": {
+    "command": "钢铁裂缝",
+    "description": "获取 Warframe 钢铁裂缝的信息"
+  },
+  "24": {
+    "command": "九重天",
+    "description": "获取 Warframe 九重天裂缝信息"
   }
 }

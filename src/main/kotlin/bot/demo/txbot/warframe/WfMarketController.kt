@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -19,7 +20,7 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class WfMarketController  @Autowired constructor(
+class WfMarketController @Autowired constructor(
     private val wfUtil: WfUtil
 ) {
     @Autowired
@@ -200,5 +201,13 @@ class WfMarketController  @Autowired constructor(
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatLichAuctionData(lichJson, itemEntity.zhName!!)
         bot.sendMsg(event, auctionInfo, false)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "wiki (.*)")
+    fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val key = matcher.group(1)
+        val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
+        bot.sendMsg(event, "你查询的物品的wiki地址可能是:$wikiUrl", false)
     }
 }

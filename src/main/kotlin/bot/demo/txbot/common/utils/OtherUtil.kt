@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.utils
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.houbb.opencc4j.util.ZhConverterUtil
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Value
@@ -31,6 +32,7 @@ class OtherUtil {
 
     companion object {
         var gskPort: String = ""
+
         // 文件数量
         var fileCount = 0
     }
@@ -255,4 +257,17 @@ class OtherUtil {
 
         return relativePaths
     }
+
+    object STConversion
+ {
+        /**
+         * 繁体转换为简体
+         *
+         * @return 转换后的字符串
+         */
+        fun String.turnZhHans(): String {
+            return ZhConverterUtil.toSimple(this)
+        }
+    }
+
 }

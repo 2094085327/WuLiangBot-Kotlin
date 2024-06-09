@@ -47,3 +47,8 @@ const val WARFRAME_MARKET_SISTER_WEAPONS = "$WARFRAME_MARKET_BASE_URL/sister/wea
  * 地图地点
  */
 const val WARFRAME_MARKET_LOCATION = "$WARFRAME_MARKET_BASE_URL/locations"
+
+/**
+ * 裂缝数据
+ */
+const val WARFRAME_STATUS_FISSURES = "$WARFRAME_STATUS_BASE_URL/pc/fissures/"
