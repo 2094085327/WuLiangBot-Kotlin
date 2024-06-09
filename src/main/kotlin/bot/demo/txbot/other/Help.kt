@@ -41,6 +41,7 @@ class Help {
         readHelp()
         val imageData = WebImgUtil.ImgData(
             imgName = "help",
+            element = "body",
             url = "http://localhost:${WebImgUtil.usePort}/help"
         )
         webImgUtil.sendNewImage(

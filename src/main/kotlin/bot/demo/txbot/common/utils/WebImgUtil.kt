@@ -321,7 +321,7 @@ class WebImgUtil {
     }
 
     fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgData: ImgData) {
-        val imgUrl = getImgFromWeb(imgData)
+        val imgUrl = returnUrlImg(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
     }
