@@ -208,44 +208,6 @@ open class HttpBase {
      * @param headers 请求头
      * @return 请求结果
      */
-//    @Throws(IOException::class, HttpException::class)
-//    fun doPostStr(
-//        url: String,
-//        files: Map<String, File>? = null,
-//        params: Map<String, String>? = null,
-//        headers: MutableMap<String, Any>? = null
-//    ): String {
-//        val body = MultipartBody.Builder()
-//
-//        files?.forEach { (key, file) ->
-//            body.setType(MultipartBody.FORM)
-//                .addFormDataPart(key, file.name, file.asRequestBody("application/octet-stream".toMediaType()))
-//        }
-//        params?.forEach { (key, value) -> body.addFormDataPart(key, value) }
-//        val multipartBody = body.build()
-//
-//        val requestBuilder = Request.Builder()
-//            .url(url)
-//            .post(multipartBody)
-//
-//        headers?.forEach { (key, value) ->
-//            requestBuilder.addHeader(key, value.toString())
-//        }
-//        val request = requestBuilder.build()
-//
-//        val response = client.newCall(request).execute()
-//
-//        return response.use {
-//            if (it.isSuccessful) {
-//                it.body.string()
-//            } else {
-//                val errorResponse = it.body.string()
-//                logger.logError("Post请求失败: ${it.code} $request")
-//                throw HttpException(it.code, errorResponse)
-//            }
-//        }
-//    }
-
     @Throws(IOException::class, HttpException::class)
     fun doPostStr(
         url: String,
