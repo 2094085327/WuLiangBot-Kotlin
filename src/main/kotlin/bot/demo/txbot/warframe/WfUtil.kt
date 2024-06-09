@@ -72,7 +72,7 @@ class WfUtil @Autowired constructor(
             "当前没有任何在线的玩家出售${item.zhItemName}"
         } else {
             filteredOrders.joinToString("\n") {
-                "${it.inGameName} 价格: ${it.platinum} 数量: ${it.quantity}"
+                "| ${it.inGameName} 价格: ${it.platinum} 数量: ${it.quantity}"
             } + "\n/w ${filteredOrders.first().inGameName} Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
         }
 

@@ -111,7 +111,7 @@ class WfMarketController @Autowired constructor(
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
         if (!keyList.isNullOrEmpty()) {
-            wfUtil.sendMarketItemInfo(bot, event, keyList.last()!!, level)
+            wfUtil.sendMarketItemInfo(bot, event, keyList.first()!!, level)
             return
         }
 

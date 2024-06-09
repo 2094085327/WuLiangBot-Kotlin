@@ -27,40 +27,41 @@ class WfLexiconServiceImpl @Autowired constructor(
         return lexiconMapper.selectOne(queryWrapper)
     }
 
-    override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {
-        // 拆分输入字符串，生成所有子字符串，并按长度从长到短排序
-        val sortedSubstrings = generateSubstrings(zh).sortedByDescending { it.length }
+    private fun generateSubstrings(input: String): List<String> {
+        return input.indices.flatMap { i -> (i + 1..input.length).map { j -> input.substring(i, j) } }
+    }
 
-        // 查找第一个匹配的别名，并替换
+    override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {
+        val cleanZh = if (zh.contains("蓝图")) zh.replace("蓝图", "") else zh
+        val sortedSubstrings = generateSubstrings(cleanZh).sortedByDescending { it.length }
+
+        val cache = mutableSetOf<String>()
         var newEnName: String? = null
         var remainingString = zh
 
-        // 使用HashSet来缓存查询结果，避免多次查询相同的子字符串
-        val cache = mutableSetOf<String>()
-
         for (substring in sortedSubstrings) {
-            if (substring in cache) continue
-            cache.add(substring)
-            val enItemName = lexiconMapper.selectByZhItemName(substring)
-            if (enItemName != null) {
-                newEnName = enItemName
-                remainingString = zh.replaceFirst(substring, "", ignoreCase = true)
-                break
+            if (cache.add(substring)) {
+                val enItemName = lexiconMapper.selectByZhItemName(substring)
+                if (enItemName != null) {
+                    newEnName = enItemName
+                    remainingString = zh.replaceFirst(substring, "", ignoreCase = true)
+                    break
+                }
             }
         }
 
-        // 构建最终的查询字符串
         val finalQueryString = newEnName?.plus(remainingString) ?: zh
-
-        // 直接构建正则表达式
         val regex = finalQueryString.replace("", ".*").drop(2).dropLast(2)
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
+            .like("url_name", "%${finalQueryString.replace(" ", "%_%")}%")
+            .or()
             .apply("zh_item_name REGEXP {0}", regex)
             .or()
-            .like("en_item_name", "%$zh%")
+            .like("en_item_name", "%${finalQueryString.replace(" ", "%")}%")
 
-        return lexiconMapper.selectList(queryWrapper)
+        return lexiconMapper.selectList(queryWrapper).sortedBy { it?.urlName?.split("_")?.size }
     }
+
 
     override fun fuzzyQuery(key: String): List<WfLexiconEntity?>? {
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
@@ -78,14 +79,4 @@ class WfLexiconServiceImpl @Autowired constructor(
         return lexiconMapper.selectByEnItemName(en)?.firstOrNull()
     }
 
-
-    private fun generateSubstrings(input: String): List<String> {
-        val substrings = mutableListOf<String>()
-        for (i in input.indices) {
-            for (j in i + 1..input.length) {
-                substrings.add(input.substring(i, j))
-            }
-        }
-        return substrings
-    }
 }
