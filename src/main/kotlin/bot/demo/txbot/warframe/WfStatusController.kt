@@ -2,6 +2,7 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -53,6 +54,39 @@ class WfStatusController {
     )
 
     /**
+     * 虚空商人货物
+     *
+     * @property item 物品名
+     * @property ducats 杜卡德金币
+     * @property credits 现金
+     */
+    data class VoidTraderItem(
+        val item: String,
+        val ducats: Int,
+        val credits: Int
+    )
+
+    object WfStatus {
+        private val timeReplacements = mapOf(
+            "d " to "天",
+            " d" to "天",
+            "h " to "小时",
+            " h" to "小时",
+            "m " to "分",
+            " m" to "分",
+            "s " to "秒",
+            " s" to "秒",
+            "s" to "秒"
+        )
+
+        fun String.replaceTime(): String {
+            return timeReplacements.entries.fold(this) { acc: String, entry: Map.Entry<String, String> ->
+                acc.replace(entry.key, entry.value)
+            }
+        }
+    }
+
+    /**
      * 获取裂缝信息
      *
      * @param filteredFissures 筛选后的裂缝信息
@@ -62,7 +96,7 @@ class WfStatusController {
         val fissureList = FissureList()
         filteredFissures.forEach {
             val fissureDetail = FissureDetail(
-                eta = it["eta"].textValue().replace("h ", "小时").replace("m ", "分").replace("s", "秒"),
+                eta = it["eta"].textValue().replaceTime(),
                 node = it["node"].textValue().turnZhHans(),
                 missionType = it["missionType"].textValue().turnZhHans(),
                 enemyKey = when (it["enemyKey"].textValue()) {
@@ -141,5 +175,35 @@ class WfStatusController {
         val sendMsgBuilder = getSendFissureList(filteredFissures)
         val sendMsg = sendMsgBuilder.toString().trimMargin()
         bot.sendMsg(event, sendMsg, false)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "奸商")
+    fun findVoidTrader(bot: Bot, event: AnyMessageEvent) {
+        val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
+
+        val startString = traderJson["startString"].textValue()
+        val endString = traderJson["endString"].textValue()
+        val location = traderJson["location"].textValue().turnZhHans()
+
+        if (traderJson["inventory"].isEmpty) {
+            bot.sendMsg(
+                event,
+                "虚空商人仍未回归...\n也许将在%s后抵达 %s".format(startString.replaceTime(), location),
+                false
+            )
+        } else {
+            val itemList = traderJson["inventory"]
+                .map { item ->
+                    VoidTraderItem(
+                        item = item["item"].textValue(),
+                        ducats = item["ducats"].intValue(),
+                        credits = item["credits"].intValue()
+                    )
+                }
+
+            val itemsText = itemList.joinToString("\n") { "${it.item} ${it.ducats} 杜卡德 ${it.credits} 现金" }
+            bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 ${endString.replaceTime()} 后离开", false)
+        }
     }
 }

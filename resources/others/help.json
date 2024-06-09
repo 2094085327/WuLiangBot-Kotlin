@@ -90,5 +90,9 @@
   "24": {
     "command": "九重天",
     "description": "获取 Warframe 九重天裂缝信息"
+  },
+  "25": {
+    "command": "奸商",
+    "description": "获取 Warframe 虚空商人信息"
   }
 }

@@ -52,3 +52,8 @@ const val WARFRAME_MARKET_LOCATION = "$WARFRAME_MARKET_BASE_URL/locations"
  * 裂缝数据
  */
 const val WARFRAME_STATUS_FISSURES = "$WARFRAME_STATUS_BASE_URL/pc/fissures/"
+
+/**
+ * 虚空商人
+ */
+const val WARFRAME_STATUS_VOID_TRADER = "$WARFRAME_STATUS_BASE_URL/pc/voidTrader"
