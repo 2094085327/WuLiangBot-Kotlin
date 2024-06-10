@@ -206,4 +206,38 @@ class WfStatusController {
             bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 ${endString.replaceTime()} 后离开", false)
         }
     }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "钢铁")
+    fun getSteelPath(bot: Bot, event: AnyMessageEvent) {
+        val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
+
+        val currentReward = steelPath["currentReward"]
+        val currentName = currentReward["name"].textValue()
+        val currentCost = currentReward["cost"].intValue()
+
+        // 寻找下一个奖励
+        val rotation = steelPath["rotation"]
+        var nextReward: JsonNode? = null
+        for ((index, item) in rotation.withIndex()) {
+            if (item["name"].asText() == currentName) {
+                nextReward = if (index < rotation.size() - 1) rotation[index + 1] else rotation[0]
+                break
+            }
+        }
+
+        // 获取下一个奖励
+        val nextName = nextReward?.get("name")?.textValue()
+        val nextCost = nextReward?.get("cost")?.intValue()
+
+        val remaining = steelPath["remaining"].textValue().replaceTime()
+
+        bot.sendMsg(
+            event, "钢铁之路的情况如下:\n" +
+                    "本周可兑换的限时奖励: $currentName -${currentCost}精华\n" +
+                    "兑换剩余时间: $remaining\n" +
+                    "下周奖励: $nextName - ${nextCost}精华",
+            false
+        )
+    }
 }

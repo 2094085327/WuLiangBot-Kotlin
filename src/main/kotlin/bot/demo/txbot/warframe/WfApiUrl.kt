@@ -57,3 +57,8 @@ const val WARFRAME_STATUS_FISSURES = "$WARFRAME_STATUS_BASE_URL/pc/fissures/"
  * 虚空商人
  */
 const val WARFRAME_STATUS_VOID_TRADER = "$WARFRAME_STATUS_BASE_URL/pc/voidTrader"
+
+/**
+ * 钢铁之路
+ */
+const val WARFRAME_STATUS_STEEL_PATH = "$WARFRAME_STATUS_BASE_URL/pc/steelPath"

@@ -94,5 +94,9 @@
   "25": {
     "command": "奸商",
     "description": "获取 Warframe 虚空商人信息"
+  },
+  "26": {
+    "command": "钢铁",
+    "description": "获取 Warframe 钢铁之路信息"
   }
 }
