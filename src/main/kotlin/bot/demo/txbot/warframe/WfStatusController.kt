@@ -2,6 +2,7 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -66,6 +67,30 @@ class WfStatusController {
         val credits: Int
     )
 
+    /**
+     * 突击任务信息
+     *
+     * @property missionType 任务类型
+     * @property modifier 敌方强化
+     * @property node 任务地点
+     */
+    data class Variants(
+        val missionType: String,
+        val modifier: String,
+        val node: String,
+    )
+
+    /**
+     * 执刑官任务信息
+     *
+     * @property node 任务地点
+     * @property type 任务类型
+     */
+    data class Missions(
+        val node: String,
+        val type: String,
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -79,8 +104,26 @@ class WfStatusController {
             "s" to "秒"
         )
 
+        private val factionReplacements = mapOf(
+            "Grineer" to "G系",
+            "Corpus" to "C系",
+            "Infested" to "I系",
+            "Infestation" to "I系",
+            "Orokin" to "O系",
+            "Crossfire" to "多方交战",
+            "The Murmur" to "M系",
+            "Narmer" to "合一众"
+        )
+
+
         fun String.replaceTime(): String {
             return timeReplacements.entries.fold(this) { acc: String, entry: Map.Entry<String, String> ->
+                acc.replace(entry.key, entry.value)
+            }
+        }
+
+        fun String.replaceFaction(): String {
+            return factionReplacements.entries.fold(this) { acc: String, entry: Map.Entry<String, String> ->
                 acc.replace(entry.key, entry.value)
             }
         }
@@ -99,15 +142,7 @@ class WfStatusController {
                 eta = it["eta"].textValue().replaceTime(),
                 node = it["node"].textValue().turnZhHans(),
                 missionType = it["missionType"].textValue().turnZhHans(),
-                enemyKey = when (it["enemyKey"].textValue()) {
-                    "Grineer" -> "G系"
-                    "Corpus" -> "C系"
-                    "Infested" -> "I系"
-                    "Orokin" -> "O系"
-                    "Crossfire" -> "多方交战"
-                    "The Murmur" -> "M系"
-                    else -> "未知"
-                }
+                enemyKey = it["enemyKey"].textValue().replaceFaction()
             )
             when (it["tierNum"].intValue()) {
                 1 -> fissureList.tierLich.add(fissureDetail)
@@ -182,30 +217,30 @@ class WfStatusController {
     fun findVoidTrader(bot: Bot, event: AnyMessageEvent) {
         val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
 
-        val startString = traderJson["startString"].textValue()
-        val endString = traderJson["endString"].textValue()
-        val location = traderJson["location"].textValue().turnZhHans()
+        val startString = traderJson["startString"].asText().replaceTime()
+        val endString = traderJson["endString"].asText().replaceTime()
+        val location = traderJson["location"].asText().turnZhHans()
 
         if (traderJson["inventory"].isEmpty) {
             bot.sendMsg(
                 event,
-                "虚空商人仍未回归...\n也许将在%s后抵达 %s".format(startString.replaceTime(), location),
+                "虚空商人仍未回归...\n也许将在 $startString 后抵达 $location",
                 false
             )
         } else {
-            val itemList = traderJson["inventory"]
-                .map { item ->
-                    VoidTraderItem(
-                        item = item["item"].textValue(),
-                        ducats = item["ducats"].intValue(),
-                        credits = item["credits"].intValue()
-                    )
-                }
+            val itemList = traderJson["inventory"].map { item ->
+                VoidTraderItem(
+                    item = item["item"].asText(),
+                    ducats = item["ducats"].asInt(),
+                    credits = item["credits"].asInt()
+                )
+            }
 
             val itemsText = itemList.joinToString("\n") { "${it.item} ${it.ducats} 杜卡德 ${it.credits} 现金" }
-            bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 ${endString.replaceTime()} 后离开", false)
+            bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 $endString 后离开", false)
         }
     }
+
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "钢铁")
@@ -213,31 +248,97 @@ class WfStatusController {
         val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
 
         val currentReward = steelPath["currentReward"]
-        val currentName = currentReward["name"].textValue()
-        val currentCost = currentReward["cost"].intValue()
+        val currentName = currentReward["name"].asText()
+        val currentCost = currentReward["cost"].asInt()
 
         // 寻找下一个奖励
         val rotation = steelPath["rotation"]
-        var nextReward: JsonNode? = null
-        for ((index, item) in rotation.withIndex()) {
-            if (item["name"].asText() == currentName) {
-                nextReward = if (index < rotation.size() - 1) rotation[index + 1] else rotation[0]
-                break
-            }
+        val currentIndex = rotation.indexOfFirst { it["name"].asText() == currentName }
+        val nextReward = if (currentIndex != -1 && currentIndex < rotation.size() - 1) {
+            rotation[currentIndex + 1]
+        } else {
+            rotation[0]
         }
 
         // 获取下一个奖励
-        val nextName = nextReward?.get("name")?.textValue()
-        val nextCost = nextReward?.get("cost")?.intValue()
+        val nextName = nextReward["name"]?.asText()
+        val nextCost = nextReward["cost"]?.asInt()
 
-        val remaining = steelPath["remaining"].textValue().replaceTime()
+        val remaining = steelPath["remaining"].asText().replaceTime()
 
-        bot.sendMsg(
-            event, "钢铁之路的情况如下:\n" +
-                    "本周可兑换的限时奖励: $currentName -${currentCost}精华\n" +
-                    "兑换剩余时间: $remaining\n" +
-                    "下周奖励: $nextName - ${nextCost}精华",
-            false
-        )
+        val message = """
+        钢铁之路的情况如下:
+        本周可兑换的限时奖励: $currentName - ${currentCost}精华
+        兑换剩余时间: $remaining
+        下周奖励: $nextName - ${nextCost}精华
+    """.trimIndent()
+
+        bot.sendMsg(event, message, false)
     }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "突击")
+    fun getSortie(bot: Bot, event: AnyMessageEvent) {
+        val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
+
+        val variantsList = sortieJson["variants"]
+        val taskList = variantsList.map { item ->
+            Variants(
+                missionType = item["missionType"].asText().turnZhHans(),
+                modifier = item["modifier"].asText().turnZhHans(),
+                node = item["node"].asText().turnZhHans()
+            )
+        }
+
+        val faction = sortieJson["factionKey"].asText().replaceFaction()
+        val boss = sortieJson["boss"].asText()
+        val eta = sortieJson["eta"].asText().replaceTime()
+
+        val sortieMessage = buildString {
+            append("尊敬的Tenno阁下，这是今天的突击信息:\n")
+            append("$faction $boss 给出的任务是:\n")
+            taskList.forEachIndexed { index, task ->
+                append("任务${index + 1}: ${task.missionType} - ${task.node}\n")
+                append("- ${task.modifier}\n")
+            }
+            append("突击剩余时间: $eta")
+        }
+
+        bot.sendMsg(event, sortieMessage, false)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "执(?:行|刑)官")
+    fun getArchonHunt(bot: Bot, event: AnyMessageEvent) {
+        val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
+
+        val boss = archonHuntJson["boss"].asText().replaceFaction()
+        val rewardItem = when (boss) {
+            "欺谋狼主" -> "深红源力石"
+            "混沌蛇主" -> "琥珀源力石"
+            "诡文枭主" -> "蔚蓝源力石"
+            else -> "未知"
+        }
+
+        val taskList = archonHuntJson["missions"].map { item ->
+            Missions(
+                node = item["node"].asText().turnZhHans(),
+                type = item["type"].asText().turnZhHans()
+            )
+        }
+
+        val faction = archonHuntJson["factionKey"].asText().replaceFaction()
+        val eta = archonHuntJson["eta"].asText().replaceTime()
+
+        val archonHuntMessage = """
+        ${faction}首领${boss}带着Tenno通牒[${rewardItem}]来袭:
+        | 任务1 (130-135): ${taskList[0].node} ${taskList[0].type}
+        | 任务2 (135-140): ${taskList[1].node} ${taskList[1].type}
+        | 任务3 (145-150): ${taskList[2].node} ${taskList[2].type}
+        剩余时间: $eta
+    """.trimIndent()
+
+        bot.sendMsg(event, archonHuntMessage, false)
+    }
+
 }

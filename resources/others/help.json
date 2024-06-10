@@ -98,5 +98,13 @@
   "26": {
     "command": "钢铁",
     "description": "获取 Warframe 钢铁之路信息"
+  },
+  "27": {
+    "command": "突击",
+    "description": "获取 Warframe 每日突击信息"
+  },
+  "28": {
+    "command": "执刑官",
+    "description": "获取 Warframe 每周突击信息"
   }
 }
