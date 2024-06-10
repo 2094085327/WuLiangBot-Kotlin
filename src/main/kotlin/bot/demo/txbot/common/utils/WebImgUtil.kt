@@ -42,7 +42,6 @@ import javax.imageio.stream.FileImageOutputStream
 class WebImgUtil {
     companion object {
         var usePort: String = ""
-        var key: String = ""
         var imgBedPath: String = ""
     }
 
@@ -71,11 +70,6 @@ class WebImgUtil {
     )
 
     private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
-
-    @Value("\${image_load.key}")
-    fun getKey(imgKey: String) {
-        key = imgKey
-    }
 
     @Value("\${web_config.port}")
     fun setPort(port: String) {
