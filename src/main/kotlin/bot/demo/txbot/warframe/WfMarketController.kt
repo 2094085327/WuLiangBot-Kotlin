@@ -11,6 +11,7 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 
 /**
@@ -138,6 +139,13 @@ class WfMarketController @Autowired constructor(
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
+        val pattern = Pattern.compile("(?<=\\D)\\d+(?=洗)")
+
+        // 创建Matcher对象
+        val match = pattern.matcher(key)
+
+        val reRollTimes = if (!match.find())  null else match.group().toInt()
+
         val itemNameKey: String = parameterList.first()
         val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
 
@@ -158,7 +166,7 @@ class WfMarketController @Autowired constructor(
         }
 
         // 筛选和格式化拍卖数据
-        val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!)
+        val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!,reRollTimes)
 
         bot.sendMsg(event, auctionInfo, false)
     }

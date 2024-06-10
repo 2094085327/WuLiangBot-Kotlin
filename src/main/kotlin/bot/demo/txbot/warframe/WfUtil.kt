@@ -230,12 +230,15 @@ class WfUtil @Autowired constructor(
      * @param itemZhName 物品中文名称
      * @return 格式化后的拍卖数据
      */
-    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String): String {
+    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): String {
         val orders = rivenJson["payload"]["auctions"]
         val allowedStatuses = setOf("online", "ingame")
 
         val rivenOrderList = orders.asSequence()
-            .filter { it["owner"]["status"].textValue() in allowedStatuses }
+            .filter {
+                it["owner"]["status"].textValue() in allowedStatuses
+                if (reRollTimes != null) it["item"]["re_rolls"].intValue() == reRollTimes else true
+            }
             .take(5)
             .map { order ->
                 RivenOrderInfo(
