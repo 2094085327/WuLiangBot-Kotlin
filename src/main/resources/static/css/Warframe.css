@@ -26,3 +26,28 @@
 .huntTimeInfo {
     color: #ff5a28;
 }
+
+.warframeSortie {
+    margin: 10px;
+}
+.sortieTaskType{
+    color: #9321da;
+}
+
+.sortieFaction {
+    color: #207de6;
+}
+
+.taskBuff {
+    text-indent: 1em
+}
+
+.wfSteelPath{
+    margin: 10px;
+    display: grid;
+    row-gap: 5px;
+}
+
+.steelPathItem {
+    color: #218dda;
+}

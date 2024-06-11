@@ -6,6 +6,8 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -112,6 +114,38 @@ class WfStatusController {
         val eta: String
     )
 
+    /**
+     * 每日突击信息
+     *
+     * @property faction 阵营
+     * @property boss Boss名称
+     * @property taskList 任务列表
+     * @property eta 剩余时间
+     */
+    data class SortieEntity(
+        val faction: String,
+        val boss: String,
+        val taskList: List<Variants>,
+        val eta: String
+    )
+
+    /**
+     * 钢铁之路信息
+     *
+     * @property currentName 当前可兑换物品名称
+     * @property currentCost 当前可兑换物品价格
+     * @property remaining 剩余时间
+     * @property nextName 下一个可兑换物品名称
+     * @property nextCost 下一个可兑换物品价格
+     */
+    data class SteelPathEntity(
+        val currentName: String,
+        val currentCost: Int,
+        val remaining: String,
+        val nextName: String,
+        val nextCost: Int
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -150,6 +184,10 @@ class WfStatusController {
         }
 
         var archonHuntEntity: ArchonHuntEntity? = null
+
+        var sortieEntity: SortieEntity? = null
+
+        var steelPathEntity: SteelPathEntity? = null
     }
 
     /**
@@ -284,19 +322,26 @@ class WfStatusController {
         }
 
         // 获取下一个奖励
-        val nextName = nextReward["name"]?.asText()
-        val nextCost = nextReward["cost"]?.asInt()
+        val nextName = nextReward["name"].asText()
+        val nextCost = nextReward["cost"].asInt()
 
         val remaining = steelPath["remaining"].asText().replaceTime()
 
-        val message = """
-        钢铁之路的情况如下:
-        本周可兑换的限时奖励: $currentName - ${currentCost}精华
-        兑换剩余时间: $remaining
-        下周奖励: $nextName - ${nextCost}精华
-    """.trimIndent()
+        steelPathEntity = SteelPathEntity(
+            currentName = currentName,
+            currentCost = currentCost,
+            nextName = nextName,
+            nextCost = nextCost,
+            remaining = remaining
+        )
 
-        bot.sendMsg(event, message, false)
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${WebImgUtil.usePort}/warframe/steelPath",
+            imgName = "steelPath",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
     }
 
     @AnyMessageHandler
@@ -317,17 +362,20 @@ class WfStatusController {
         val boss = sortieJson["boss"].asText()
         val eta = sortieJson["eta"].asText().replaceTime()
 
-        val sortieMessage = buildString {
-            append("尊敬的Tenno阁下，这是今天的突击信息:\n")
-            append("$faction $boss 给出的任务是:\n")
-            taskList.forEachIndexed { index, task ->
-                append("任务${index + 1}: ${task.missionType} - ${task.node}\n")
-                append("- ${task.modifier}\n")
-            }
-            append("突击剩余时间: $eta")
-        }
+        sortieEntity = SortieEntity(
+            faction = faction,
+            boss = boss,
+            eta = eta,
+            taskList = taskList
+        )
 
-        bot.sendMsg(event, sortieMessage, false)
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${WebImgUtil.usePort}/warframe/sortie",
+            imgName = "sortie",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
     }
 
     @AnyMessageHandler

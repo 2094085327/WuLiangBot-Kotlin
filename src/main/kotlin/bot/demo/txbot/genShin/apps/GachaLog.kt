@@ -295,10 +295,8 @@ class GachaLog {
     @MessageHandlerFilter(cmd = "抽卡记录(.*)")
     suspend fun getGachaLogByUrlGroup(bot: Bot, event: GroupMessageEvent, matcher: Matcher) {
         val gachaUrl = matcher.group(1)?.replace(" ", "")
+        if (gachaUrl.isNullOrEmpty()) return
 
-        if (gachaUrl.isNullOrEmpty()) {
-            return
-        }
         bot.sendGroupMsg(event.groupId, "请通过私聊无量姬发送链接，避免信息泄露，请及时撤回消息", false)
     }
 
@@ -308,9 +306,7 @@ class GachaLog {
         // 获取到的链接会被自动将&转义为&amp;，需要替换回来
         val gachaUrl = matcher?.group(1)?.replace(" ", "")?.replace("&amp;", "&") ?: ""
 
-        if (gachaUrl.isEmpty()) {
-            return
-        }
+        if (gachaUrl.isEmpty()) return
 
         bot.sendPrivateMsg(event.userId, "收到链接，正在处理中，请耐心等待", false)
 
@@ -371,7 +367,6 @@ class GachaLog {
                 foldList.forEach { file ->
                     if (file.name.endsWith(".json")) {
                         val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_IMPORT/${file.name}")
-                        println("gachaData:$gachaData")
                         gaChaLogService.insertByJson(gachaData)
                         logInfo("抽卡记录导入完成")
                         file.delete()
