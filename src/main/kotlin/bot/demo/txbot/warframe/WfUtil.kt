@@ -333,10 +333,11 @@ class WfUtil @Autowired constructor(
      * @param itemZhName 物品中文名称
      * @return 格式化后的拍卖数据
      */
-    fun formatLichAuctionData(lichJson: JsonNode, itemZhName: String): String {
+    fun formatLichAuctionData(lichJson: JsonNode, itemZhName: String, damage: Int? = null): String {
         val orders = lichJson["payload"]["auctions"]
 
         val rivenOrderList = orders.asSequence()
+            .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
             .take(5)
             .map { order ->
                 LichOrderInfo(

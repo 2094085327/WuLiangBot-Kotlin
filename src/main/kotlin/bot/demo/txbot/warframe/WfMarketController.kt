@@ -11,7 +11,6 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 
 /**
@@ -139,12 +138,10 @@ class WfMarketController @Autowired constructor(
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
-        val pattern = Pattern.compile("(?<=\\D)\\d+(?=洗)")
-
-        // 创建Matcher对象
-        val match = pattern.matcher(key)
-
-        val reRollTimes = if (!match.find())  null else match.group().toInt()
+        // 正则匹配紫卡循环次数
+        val pattern = """(?<=\D)\d+(?=洗)""".toRegex()
+        val matchResult = pattern.find(key)
+        val reRollTimes = matchResult?.value?.toInt()
 
         val itemNameKey: String = parameterList.first()
         val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
@@ -166,7 +163,7 @@ class WfMarketController @Autowired constructor(
         }
 
         // 筛选和格式化拍卖数据
-        val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!,reRollTimes)
+        val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
 
         bot.sendMsg(event, auctionInfo, false)
     }
@@ -176,6 +173,10 @@ class WfMarketController @Autowired constructor(
     fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val key = matcher.group(1)
         val parameterList = key.split(" ")
+
+        val regex = """\d+""".toRegex()
+        val matchResult = regex.find(key)
+        val damage = matchResult?.value?.toInt()
 
         val itemNameKey: String = parameterList.first()
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
@@ -207,7 +208,7 @@ class WfMarketController @Autowired constructor(
         }
 
         // 筛选和格式化拍卖数据
-        val auctionInfo = wfUtil.formatLichAuctionData(lichJson, itemEntity.zhName!!)
+        val auctionInfo = wfUtil.formatLichAuctionData(lichJson, itemEntity.zhName!!, damage)
         bot.sendMsg(event, auctionInfo, false)
     }
 

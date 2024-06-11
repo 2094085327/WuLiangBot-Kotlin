@@ -78,8 +78,8 @@ QQ官方机器人Api Kotlin 实现 ✨_
  # github配置 用于更新机器人资源 可以前往仓库自行fork更新
  github:
    owner: "2094085327"
-   repo: "Tencent-Bot-Kotlin"
-   access-token: # 如果使用"Tencent-Bot-Kotlin"仓库进行更新，请向邮箱 2094085327@qq.com 发送申请获取 access-token
+   repo: "WuLiangBot-Kotlin"
+   access-token: # 如果使用"WuLiangBot-Kotlin"仓库进行更新，请向邮箱 2094085327@qq.com 发送申请获取 access-token
 
 
  ##配置数据源
