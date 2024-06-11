@@ -8,7 +8,7 @@
         <style>
             body {
                 padding: 10px;
-                width: 640px;
+                width: 660px;
                 display: flex;
                 border-radius: 10px;
                 font-family: "YaHei", serif;
@@ -16,12 +16,20 @@
         </style>
     </head>
     <body>
-        <div class="helpList">
-            <div class="helpContent">
-                <div class="helpItem" th:each="help:${helpList}">
-                    <div class="command" th:text="${help.command}">如何开始</div>
-                    <div class="description" th:text="${help.description}">点击右上角的“开始”按钮，然后选择一个天赋。
+        <div class="frame">
+            <div class="helpList">
+                <div class="helpContent">
+                    <div class="helpItem" th:each="help:${helpList}">
+                        <div class="command" th:text="${help.command}">如何开始</div>
+                        <div class="description" th:text="${help.description}">点击右上角的“开始”按钮，然后选择一个天赋。
+                        </div>
                     </div>
+                </div>
+            </div>
+            <div class="wuLiangInfo">
+                <div class="wuLiangTxt">
+                    <div style="color: gold;margin-right: 3px"> ★ </div>
+                    From WuLiang Bot
                 </div>
             </div>
         </div>

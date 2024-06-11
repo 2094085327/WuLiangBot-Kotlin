@@ -9,6 +9,7 @@
 .helpList {
     width: 630px;
     display: flex;
+    margin: 5px;
     font-family: "YaHei", serif;
 }
 
@@ -31,4 +32,23 @@
 .command {
     font-weight: bold;
     font-size: 18px;
+}
+
+.frame {
+    border: 5px solid black;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    width: 660px;
+}
+
+.wuLiangInfo {
+    color: white;
+    background: black;
+    display: flex;
+}
+
+.wuLiangTxt {
+    margin-top: 3px;
+    display: flex;
 }

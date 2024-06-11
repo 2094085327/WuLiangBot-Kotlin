@@ -1,0 +1,28 @@
+@font-face {
+    font-family: 'HanYiQiHei';
+    src: url('../ttf/汉仪旗黑.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+.warframeArchonHunt {
+    margin: 10px;
+}
+
+.archonHuntHead {
+    display: flex;
+    flex-direction: row;
+}
+
+.huntBoss {
+    color: chocolate;
+}
+
+.huntType {
+    color: #087998;
+}
+
+.huntTimeInfo {
+    color: #ff5a28;
+}

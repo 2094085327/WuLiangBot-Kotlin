@@ -2,6 +2,8 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
+import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import com.fasterxml.jackson.databind.JsonNode
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Component
 @Shiro
 @Component
 class WfStatusController {
+    val webImgUtil = WebImgUtil()
+
     /**
      * 裂缝信息
      *
@@ -91,6 +95,23 @@ class WfStatusController {
         val type: String,
     )
 
+    /**
+     * 执刑官突击信息
+     *
+     * @property faction 阵营
+     * @property boss Boss名称
+     * @property rewardItem 奖励物品
+     * @property taskList 任务列表
+     * @property eta 剩余时间
+     */
+    data class ArchonHuntEntity(
+        val faction: String,
+        val boss: String,
+        val rewardItem: String,
+        val taskList: List<Missions>,
+        val eta: String
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -127,6 +148,8 @@ class WfStatusController {
                 acc.replace(entry.key, entry.value)
             }
         }
+
+        var archonHuntEntity: ArchonHuntEntity? = null
     }
 
     /**
@@ -330,15 +353,21 @@ class WfStatusController {
         val faction = archonHuntJson["factionKey"].asText().replaceFaction()
         val eta = archonHuntJson["eta"].asText().replaceTime()
 
-        val archonHuntMessage = """
-        ${faction}首领${boss}带着Tenno通牒[${rewardItem}]来袭:
-        | 任务1 (130-135): ${taskList[0].node} ${taskList[0].type}
-        | 任务2 (135-140): ${taskList[1].node} ${taskList[1].type}
-        | 任务3 (145-150): ${taskList[2].node} ${taskList[2].type}
-        剩余时间: $eta
-    """.trimIndent()
+        archonHuntEntity = ArchonHuntEntity(
+            faction = faction,
+            boss = boss,
+            eta = eta,
+            taskList = taskList,
+            rewardItem = rewardItem
+        )
 
-        bot.sendMsg(event, archonHuntMessage, false)
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${WebImgUtil.usePort}/warframe/archonHunt",
+            imgName = "archonHuntInfo",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
     }
 
 }
