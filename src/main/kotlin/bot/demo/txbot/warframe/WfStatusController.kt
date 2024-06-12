@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
@@ -188,6 +189,8 @@ class WfStatusController {
         var sortieEntity: SortieEntity? = null
 
         var steelPathEntity: SteelPathEntity? = null
+
+        var fissureList: FissureList? = null
     }
 
     /**
@@ -196,8 +199,9 @@ class WfStatusController {
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    fun getSendFissureList(filteredFissures: List<JsonNode>): StringBuilder {
-        val fissureList = FissureList()
+    fun getSendFissureList(bot:Bot,event:AnyMessageEvent,filteredFissures: List<JsonNode>){
+        val thisFissureList = FissureList()
+
         filteredFissures.forEach {
             val fissureDetail = FissureDetail(
                 eta = it["eta"].textValue().replaceTime(),
@@ -205,35 +209,25 @@ class WfStatusController {
                 missionType = it["missionType"].textValue().turnZhHans(),
                 enemyKey = it["enemyKey"].textValue().replaceFaction()
             )
+
             when (it["tierNum"].intValue()) {
-                1 -> fissureList.tierLich.add(fissureDetail)
-                2 -> fissureList.tierMeso.add(fissureDetail)
-                3 -> fissureList.tierNeo.add(fissureDetail)
-                4 -> fissureList.tierAxi.add(fissureDetail)
-                5 -> fissureList.tierRequiem.add(fissureDetail)
-                6 -> fissureList.tierOmnia.add(fissureDetail)
+                1 -> thisFissureList.tierLich.add(fissureDetail)
+                2 -> thisFissureList.tierMeso.add(fissureDetail)
+                3 -> thisFissureList.tierNeo.add(fissureDetail)
+                4 -> thisFissureList.tierAxi.add(fissureDetail)
+                5 -> thisFissureList.tierRequiem.add(fissureDetail)
+                6 -> thisFissureList.tierOmnia.add(fissureDetail)
             }
         }
-        val sendMsgBuilder = StringBuilder()
+        fissureList = thisFissureList
 
-        fun appendFissures(era: String, details: List<FissureDetail>) {
-            if (details.isNotEmpty()) {
-                sendMsgBuilder.appendLine("$era:")
-                details.forEach { detail ->
-                    sendMsgBuilder.appendLine("${detail.enemyKey}${detail.missionType} ${detail.node} 剩余: ${detail.eta}")
-                }
-                sendMsgBuilder.appendLine() // 添加空行分隔不同纪元
-            }
-        }
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${WebImgUtil.usePort}/warframe/fissureList",
+            imgName = "fissureList",
+            element = "body"
+        )
 
-        appendFissures("|古纪(T1)", fissureList.tierLich)
-        appendFissures("|前纪(T2)", fissureList.tierMeso)
-        appendFissures("|中纪(T3)", fissureList.tierNeo)
-        appendFissures("|后纪(T4)", fissureList.tierAxi)
-        appendFissures("|安魂(T5)", fissureList.tierRequiem)
-        appendFissures("|全能(T6)", fissureList.tierOmnia)
-
-        return sendMsgBuilder
+        webImgUtil.sendNewImage(bot, event, imgData)
     }
 
 
@@ -244,9 +238,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
         }
-        val sendMsgBuilder = getSendFissureList(filteredFissures)
-        val sendMsg = sendMsgBuilder.toString().trimMargin()
-        bot.sendMsg(event, sendMsg, false)
+        getSendFissureList(bot,event,filteredFissures)
     }
 
     @AnyMessageHandler
@@ -256,9 +248,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        val sendMsgBuilder = getSendFissureList(filteredFissures)
-        val sendMsg = sendMsgBuilder.toString().trimMargin()
-        bot.sendMsg(event, sendMsg, false)
+        getSendFissureList(bot,event,filteredFissures)
     }
 
     @AnyMessageHandler
@@ -268,9 +258,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        val sendMsgBuilder = getSendFissureList(filteredFissures)
-        val sendMsg = sendMsgBuilder.toString().trimMargin()
-        bot.sendMsg(event, sendMsg, false)
+        getSendFissureList(bot,event,filteredFissures)
     }
 
     @AnyMessageHandler

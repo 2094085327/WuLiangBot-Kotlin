@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.warframe.WfStatusController.WfStatus
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
@@ -42,5 +43,14 @@ class WarframeController {
             model.addAttribute("steelPathEntity", steelPathEntity)
         }
         return "Warframe/WfSteelPath"
+    }
+
+    @RequestMapping("/fissureList")
+    fun fissureList(model: Model): String {
+        val fissure = WfStatus.fissureList
+        if (fissure != null) {
+            model.addAttribute("fissureList",fissure)
+        }
+        return "Warframe/WfFissureList"
     }
 }
