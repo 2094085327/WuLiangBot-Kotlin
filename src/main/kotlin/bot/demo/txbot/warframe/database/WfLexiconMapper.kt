@@ -10,8 +10,8 @@ import org.apache.ibatis.annotations.Select
 interface WfLexiconMapper : BaseMapper<WfLexiconEntity?> {
     @Insert(
         """
-        INSERT IGNORE INTO wfLexicon (id, en_item_name, zh_item_name, url_name)  
-        VALUES (#{entity.id}, #{entity.enItemName}, #{entity.zhItemName}, #{entity.urlName});
+        INSERT IGNORE INTO wfLexicon (id, en_item_name, zh_item_name, url_name, in_market)  
+        VALUES (#{entity.id}, #{entity.enItemName}, #{entity.zhItemName}, #{entity.urlName},#{entity.inMarket});
         """
     )
     fun insertIgnore(@Param("entity") wfLexiconEntity: WfLexiconEntity)

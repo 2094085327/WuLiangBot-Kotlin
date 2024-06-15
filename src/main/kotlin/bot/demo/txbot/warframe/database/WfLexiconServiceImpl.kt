@@ -23,7 +23,13 @@ class WfLexiconServiceImpl @Autowired constructor(
     }
 
     override fun turnKeyToUrlNameByLexicon(zh: String): WfLexiconEntity? {
-        val queryWrapper = QueryWrapper<WfLexiconEntity>().eq("zh_item_name", zh).or().eq("en_item_name", zh)
+        val queryWrapper =
+            QueryWrapper<WfLexiconEntity>()
+                .eq("in_market", 1)
+                .eq("zh_item_name", zh)
+                .or()
+                .eq("en_item_name", zh)
+                .eq("in_market", 1)
         return lexiconMapper.selectOne(queryWrapper)
     }
 
@@ -53,10 +59,13 @@ class WfLexiconServiceImpl @Autowired constructor(
         val finalQueryString = newEnName?.plus(remainingString) ?: zh
         val regex = finalQueryString.replace("", ".*").drop(2).dropLast(2)
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
+            .eq("in_market",1)
             .like("url_name", "%${finalQueryString.replace(" ", "%_%")}%")
             .or()
+            .eq("in_market",1)
             .apply("zh_item_name REGEXP {0}", regex)
             .or()
+            .eq("in_market",1)
             .like("en_item_name", "%${finalQueryString.replace(" ", "%")}%")
 
         return lexiconMapper.selectList(queryWrapper).sortedBy { it?.urlName?.split("_")?.size }
@@ -65,8 +74,10 @@ class WfLexiconServiceImpl @Autowired constructor(
 
     override fun fuzzyQuery(key: String): List<WfLexiconEntity?>? {
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
+            .eq("in_market",1)
             .like("zh_item_name", "%$key%")
             .or()
+            .eq("in_market",1)
             .like("en_item_name", "%$key%")
         return lexiconMapper.selectList(queryWrapper)
     }
@@ -77,6 +88,11 @@ class WfLexiconServiceImpl @Autowired constructor(
 
     override fun getOtherEnName(en: String): String? {
         return lexiconMapper.selectByEnItemName(en)?.firstOrNull()
+    }
+
+    override fun getZhName(key: String): String? {
+        val queryWrapper = QueryWrapper<WfLexiconEntity>().eq("en_item_name", key)
+        return lexiconMapper.selectList(queryWrapper)?.firstOrNull()?.zhItemName
     }
 
 }

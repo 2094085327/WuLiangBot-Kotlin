@@ -1,6 +1,7 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.HttpUtil
+import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
@@ -40,8 +41,8 @@ class WfTranslateLexicon {
      * @return 格式化后的词库List
      */
     fun getLexiconList(lexiconMap: MutableMap<String, WfLexiconEntity>): MutableList<WfLexiconEntity> {
-        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_EN_HANS, "items", "item_name")
-        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true)
+        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_EN_HANS, "items", "item_name", inMarket = 1)
+        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true,1)
         updateLexicon(lexiconMap, WARFRAME_MARKET_LOCATION, LANGUAGE_EN_HANS, "locations", "system_name")
         updateLexicon(
             lexiconMap,
@@ -52,8 +53,12 @@ class WfTranslateLexicon {
             isChinese = true
         )
 
+        updateStatusLexicon(lexiconMap, WARFRAME_STATUS_ITEM, "en")
+        updateStatusLexicon(lexiconMap, WARFRAME_STATUS_ITEM, "zh", true)
+
         return lexiconMap.values.toMutableList()
     }
+
 
     /**
      * 获取紫卡列表
@@ -108,7 +113,8 @@ class WfTranslateLexicon {
         language: MutableMap<String, Any>,
         listKey: String,
         nameKey: String,
-        isChinese: Boolean = false
+        isChinese: Boolean = false,
+        inMarket: Int = 0
     ) {
         val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
         items.forEach { item ->
@@ -117,7 +123,8 @@ class WfTranslateLexicon {
                 id = id,
                 enItemName = if (!isChinese) item[nameKey].textValue() else "",
                 urlName = item["url_name"].textValue(),
-                zhItemName = if (isChinese) item[nameKey].textValue() else ""
+                zhItemName = if (isChinese) item[nameKey].textValue() else "",
+                inMarket = inMarket
             )
             if (isChinese) {
                 entity.zhItemName = item[nameKey].textValue()
@@ -125,6 +132,40 @@ class WfTranslateLexicon {
                 entity.enItemName = item[nameKey].textValue()
             }
             lexiconMap[id] = entity
+        }
+    }
+
+    fun updateStatusLexicon(
+        lexiconMap: MutableMap<String, WfLexiconEntity>,
+        url: String,
+        languageType: String,
+        isChinese: Boolean = false
+    ) {
+        val items = HttpUtil.doGetJson(url = url, params = mapOf("language" to languageType))
+        items.forEach { item ->
+            val itemName = item["name"].textValue()
+            // 检查itemName是否已存在于lexiconMap的zhItemName中
+            if (!lexiconMap.values.any { it.zhItemName?.contains(itemName) == true || it.enItemName?.contains(itemName) == true}) {
+                // 确保itemName不在lexiconMap的zhItemNames中后，再执行更新逻辑
+                val urlName = if (item.has("imageName")) item["imageName"].textValue().split(".")[0].replace(
+                    "-",
+                    "_"
+                ) else itemName
+                val id = urlName.toMd5()
+                val entity = lexiconMap[id] ?: WfLexiconEntity(
+                    id = id,
+                    enItemName = if (!isChinese) itemName else "",
+                    urlName = urlName,
+                    zhItemName = if (isChinese) itemName else "",
+                    inMarket = 0
+                )
+                if (isChinese) {
+                    entity.zhItemName = itemName
+                } else {
+                    entity.enItemName = itemName
+                }
+                lexiconMap[id] = entity
+            }
         }
     }
 
@@ -217,20 +258,23 @@ class WfTranslateLexicon {
         GlobalScope.launch {
             try {
                 // 获取中英文JSON数据并解析
-                bot.sendMsg(event, "词库更新中，请稍等", false)
+                bot.sendMsg(event, "因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待", false)
 
                 // 使用async并行执行插入操作
                 val lexiconJob = async {
                     wfLexiconService.insertLexicon(getLexiconList(lexiconMap))
                     logInfo("词库更新完成")
+                    lexiconMap.clear()
                 }
                 val rivenJob = async {
                     wfRivenService.insertRiven(getRivenList(rivenMap))
                     logInfo("紫卡词库更新完成")
+                    rivenMap.clear()
                 }
                 val lichJob = async {
                     wfRivenService.insertRiven(getLichList(lichMap))
                     logInfo("玄骸武器词库更新完成")
+                    lichMap.clear()
                 }
 
                 // 等待所有任务完成

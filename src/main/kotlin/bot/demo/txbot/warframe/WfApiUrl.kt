@@ -12,6 +12,8 @@ const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
  */
 const val WARFRAME_MARKET_ITEMS = "$WARFRAME_MARKET_BASE_URL/items"
 
+const val WARFRAME_STATUS_ITEM = "$WARFRAME_STATUS_BASE_URL/items"
+
 /**
  * Market 紫卡武器
  */

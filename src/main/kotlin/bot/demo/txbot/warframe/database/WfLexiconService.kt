@@ -49,4 +49,12 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @return 中文别名
      */
     fun getOtherEnName(en: String): String?
+
+    /**
+     * 从词库获取中文名称
+     *
+     * @param key 输入的关键字
+     * @return 英文名称
+     */
+    fun getZhName(key: String): String?
 }

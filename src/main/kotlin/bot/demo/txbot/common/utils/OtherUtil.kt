@@ -12,8 +12,10 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.math.BigInteger
 import java.net.URL
 import java.net.URLConnection
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
@@ -258,8 +260,7 @@ class OtherUtil {
         return relativePaths
     }
 
-    object STConversion
- {
+    object STConversion {
         /**
          * 繁体转换为简体
          *
@@ -267,6 +268,12 @@ class OtherUtil {
          */
         fun String.turnZhHans(): String {
             return ZhConverterUtil.toSimple(this)
+        }
+
+        fun String.toMd5(): String {
+            val md = MessageDigest.getInstance("MD5")
+            val digest = md.digest(this.toByteArray(StandardCharsets.UTF_8))
+            return BigInteger(1, digest).toString(16).padStart(32, '0')
         }
     }
 

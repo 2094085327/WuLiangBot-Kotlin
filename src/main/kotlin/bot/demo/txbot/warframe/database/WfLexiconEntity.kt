@@ -34,4 +34,10 @@ data class WfLexiconEntity(
      */
     @TableField("url_name")
     val urlName: String,
+
+    /**
+     * 是否在市场中
+     */
+    @TableField("in_market")
+    val inMarket: Int
 )

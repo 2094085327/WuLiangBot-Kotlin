@@ -9,13 +9,16 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
+import bot.demo.txbot.warframe.database.WfLexiconService
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.util.regex.Pattern
 
 /**
  * @description: Warframe 世界状态
@@ -26,6 +29,9 @@ import org.springframework.stereotype.Component
 @Component
 class WfStatusController {
     val webImgUtil = WebImgUtil()
+
+    @Autowired
+    final lateinit var wfLexiconService: WfLexiconService
 
     /**
      * 裂缝信息
@@ -199,7 +205,7 @@ class WfStatusController {
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    fun getSendFissureList(bot:Bot,event:AnyMessageEvent,filteredFissures: List<JsonNode>){
+    fun getSendFissureList(bot: Bot, event: AnyMessageEvent, filteredFissures: List<JsonNode>) {
         val thisFissureList = FissureList()
 
         filteredFissures.forEach {
@@ -238,7 +244,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(bot,event,filteredFissures)
+        getSendFissureList(bot, event, filteredFissures)
     }
 
     @AnyMessageHandler
@@ -248,7 +254,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(bot,event,filteredFissures)
+        getSendFissureList(bot, event, filteredFissures)
     }
 
     @AnyMessageHandler
@@ -258,7 +264,7 @@ class WfStatusController {
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        getSendFissureList(bot,event,filteredFissures)
+        getSendFissureList(bot, event, filteredFissures)
     }
 
     @AnyMessageHandler
@@ -277,15 +283,24 @@ class WfStatusController {
                 false
             )
         } else {
+            // 定义一个正则表达式用于匹配中文字符
+            val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
+
             val itemList = traderJson["inventory"].map { item ->
                 VoidTraderItem(
-                    item = item["item"].asText(),
+                    item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
                     ducats = item["ducats"].asInt(),
                     credits = item["credits"].asInt()
                 )
             }
 
-            val itemsText = itemList.joinToString("\n") { "${it.item} ${it.ducats} 杜卡德 ${it.credits} 现金" }
+            // 使用sortedWith根据item是否包含中文进行排序
+            val sortedItemList = itemList.sortedWith(compareByDescending {
+                chinesePattern.matcher(it.item).find()
+            })
+
+
+            val itemsText = sortedItemList.joinToString("\n") { "${it.item} ${it.ducats} 杜卡德 ${it.credits} 现金" }
             bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 $endString 后离开", false)
         }
     }
