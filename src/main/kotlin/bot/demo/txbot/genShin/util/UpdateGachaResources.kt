@@ -344,6 +344,10 @@ class UpdateGachaResources {
             writeToYaml(WEAPON_YAML, weaponYamlMap)
 
             System.gc()
+
+            // 重新初始化原神相关数据
+            InitGenShinData.initGachaLogData()
+            logInfo("重新初始化完成")
         } else logInfo("当前卡池未结束，跳过更新")
     }
 }
