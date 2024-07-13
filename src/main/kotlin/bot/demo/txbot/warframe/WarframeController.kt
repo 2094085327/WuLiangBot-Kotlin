@@ -53,4 +53,15 @@ class WarframeController {
         }
         return "Warframe/WfFissureList"
     }
+
+    @RequestMapping("/voidTrader")
+    fun voidTrader(model: Model): String {
+        val voidTrader = WfStatus.voidTraderEntity
+        if (voidTrader != null) {
+            model.addAttribute("voidTrader",voidTrader)
+        }
+        return "Warframe/WfVoidTrader"
+    }
+
+
 }

@@ -9,6 +9,7 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -77,7 +78,7 @@ class WfStatusController {
     data class VoidTraderItem(
         val item: String,
         val ducats: Int,
-        val credits: Int
+        val credits: String
     )
 
     /**
@@ -153,6 +154,12 @@ class WfStatusController {
         val nextCost: Int
     )
 
+    data class VoidTraderEntity(
+        val location: String,
+        val time: String,
+        val items: List<VoidTraderItem>
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -197,6 +204,8 @@ class WfStatusController {
         var steelPathEntity: SteelPathEntity? = null
 
         var fissureList: FissureList? = null
+
+        var voidTraderEntity: VoidTraderEntity? = null
     }
 
     /**
@@ -287,10 +296,11 @@ class WfStatusController {
             val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
 
             val itemList = traderJson["inventory"].map { item ->
+                val regex = Regex("000$")
                 VoidTraderItem(
                     item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
                     ducats = item["ducats"].asInt(),
-                    credits = item["credits"].asInt()
+                    credits = regex.replace(item["credits"].asText(), "k")
                 )
             }
 
@@ -299,9 +309,19 @@ class WfStatusController {
                 chinesePattern.matcher(it.item).find()
             })
 
+            voidTraderEntity = VoidTraderEntity(
+                time = endString,
+                location = location,
+                items = sortedItemList
+            )
 
-            val itemsText = sortedItemList.joinToString("\n") { "${it.item} ${it.ducats} 杜卡德 ${it.credits} 现金" }
-            bot.sendMsg(event, "虚空商人带来了这些物品:\n$itemsText\n将在 $endString 后离开", false)
+            val imgData = WebImgUtil.ImgData(
+                url = "http://localhost:${WebImgUtil.usePort}/warframe/voidTrader",
+                imgName = "voidTrader",
+                element = "body"
+            )
+
+            webImgUtil.sendNewImage(bot, event, imgData)
         }
     }
 

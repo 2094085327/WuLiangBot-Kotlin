@@ -30,7 +30,8 @@
 .warframeSortie {
     margin: 10px;
 }
-.sortieTaskType{
+
+.sortieTaskType {
     color: #9321da;
 }
 
@@ -42,7 +43,7 @@
     text-indent: 1em
 }
 
-.wfSteelPath{
+.wfSteelPath {
     margin: 10px;
     display: grid;
     row-gap: 5px;
@@ -51,3 +52,33 @@
 .steelPathItem {
     color: #218dda;
 }
+
+.warframeVoidTrader {
+    margin: 10px;
+}
+
+.voidTraderHead {
+    display: flex;
+    flex-direction: row;
+}
+
+.voidTraderLocation {
+    color: #0073e6;
+}
+
+.voidItemName {
+    color: #ff5a28;
+}
+
+.voidDucats {
+    color: #FA7F08;
+}
+
+.voidCredits {
+    color: #3695fa;
+}
+
+.voidLeaveTime {
+    color: #F24405;
+}
+
