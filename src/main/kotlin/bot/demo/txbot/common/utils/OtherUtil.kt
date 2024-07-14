@@ -260,6 +260,42 @@ class OtherUtil {
         return relativePaths
     }
 
+    /**
+     * 找到匹配字符串
+     *
+     * @param key 待匹配关键字
+     * @param keyList 待匹配列表
+     * @return 匹配到的字符串列表
+     */
+    fun findMatchingStrings(key: String, keyList: List<String>): List<String> {
+        // 统计key中每个字符的频率
+        val keyFrequency = HashMap<Char, Int>()
+        key.forEach { char ->
+            keyFrequency[char] = keyFrequency.getOrDefault(char, 0) + 1
+        }
+
+        val map = HashMap<String, Int>()
+        keyList.forEach { eachKey ->
+            // 统计eachKey中每个字符的频率
+            val eachKeyFrequency = HashMap<Char, Int>()
+            eachKey.forEach { char ->
+                eachKeyFrequency[char] = eachKeyFrequency.getOrDefault(char, 0) + 1
+            }
+
+            // 计算两个频率映射的匹配程度
+            var num = 0
+            for ((char, freq) in keyFrequency) {
+                num += minOf(freq, eachKeyFrequency.getOrDefault(char, 0))
+            }
+
+            map[eachKey] = num
+        }
+
+        // 将结果按匹配度降序排序并取前5个
+        val sortedMap = map.toList().sortedByDescending { (_, value) -> value }.toMap()
+        return sortedMap.keys.take(5).toList()
+    }
+
     object STConversion {
         /**
          * 繁体转换为简体

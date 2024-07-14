@@ -1,6 +1,7 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.HttpUtil
+import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.warframe.WfMarketController.*
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import pers.wuliang.robot.common.utils.LoggerUtils.logError
 
@@ -22,7 +24,8 @@ import pers.wuliang.robot.common.utils.LoggerUtils.logError
 @Component
 class WfUtil @Autowired constructor(
     val wfLexiconService: WfLexiconService,
-    val wfRivenService: WfRivenService
+    val wfRivenService: WfRivenService,
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
 
     /**
@@ -90,42 +93,6 @@ class WfUtil @Autowired constructor(
     }
 
     /**
-     * 找到匹配字符串
-     *
-     * @param key 待匹配关键字
-     * @param keyList 待匹配列表
-     * @return 匹配到的字符串列表
-     */
-    fun findMatchingStrings(key: String, keyList: List<String>): List<String> {
-        // 统计key中每个字符的频率
-        val keyFrequency = HashMap<Char, Int>()
-        key.forEach { char ->
-            keyFrequency[char] = keyFrequency.getOrDefault(char, 0) + 1
-        }
-
-        val map = HashMap<String, Int>()
-        keyList.forEach { eachKey ->
-            // 统计eachKey中每个字符的频率
-            val eachKeyFrequency = HashMap<Char, Int>()
-            eachKey.forEach { char ->
-                eachKeyFrequency[char] = eachKeyFrequency.getOrDefault(char, 0) + 1
-            }
-
-            // 计算两个频率映射的匹配程度
-            var num = 0
-            for ((char, freq) in keyFrequency) {
-                num += minOf(freq, eachKeyFrequency.getOrDefault(char, 0))
-            }
-
-            map[eachKey] = num
-        }
-
-        // 将结果按匹配度降序排序并取前5个
-        val sortedMap = map.toList().sortedByDescending { (_, value) -> value }.toMap()
-        return sortedMap.keys.take(5).toList()
-    }
-
-    /**
      * 如果找不到项目，则处理模糊搜索的功能
      *
      * @param bot 机器人
@@ -140,7 +107,7 @@ class WfUtil @Autowired constructor(
         }
 
         if (fuzzyList.isNotEmpty()) {
-            findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
+            otherUtil.findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
                 bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
             }
         } else {

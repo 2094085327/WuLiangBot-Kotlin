@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
@@ -123,7 +124,7 @@ class WfMarketController @Autowired constructor(
         }
 
         if (fuzzyList.isNotEmpty()) {
-            wfUtil.findMatchingStrings(key, fuzzyList).let {
+            OtherUtil().findMatchingStrings(key, fuzzyList).let {
                 bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
             }
         } else {
