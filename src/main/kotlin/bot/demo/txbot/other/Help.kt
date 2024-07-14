@@ -23,7 +23,7 @@ class Help {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "help")
+    @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         val helpImageName = "help"
 
