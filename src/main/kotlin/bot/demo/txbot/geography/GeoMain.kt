@@ -5,7 +5,6 @@ import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
-import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,13 +30,11 @@ class GeoMain {
     private fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgName: String, city: String, webUrl: String) {
 
         if (!geoApi.checkCode(geoApi.getWeatherData(city))) {
-            bot.sendMsg(event, "没有找到'$city'的信息，请检查是否输入错误", false)
+            bot.sendMsg(event, "没有找到查询的城市信息，请检查是否输入错误", false)
             return
         }
         val imgData = WebImgUtil.ImgData(url = webUrl, imgName = imgName)
-        val imgUrl = webImgUtil.returnBs4Img(imgData)
-        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-        bot.sendMsg(event, sendMsg, false)
+        webImgUtil.sendNewImage(bot, event, imgData)
     }
 
 
@@ -78,7 +75,8 @@ class GeoMain {
         val folderPath = IMG_CACHE_PATH
         val folder = File(folderPath)
 
-        val matchingFileName = folder.listFiles()?.firstOrNull {  it.nameWithoutExtension.contains(imgName) && it.extension == "tmp" }?.name
+        val matchingFileName =
+            folder.listFiles()?.firstOrNull { it.nameWithoutExtension.contains(imgName) && it.extension == "tmp" }?.name
 
         if (matchingFileName != null) {
             webImgUtil.sendCachedImage(bot, event, matchingFileName)
