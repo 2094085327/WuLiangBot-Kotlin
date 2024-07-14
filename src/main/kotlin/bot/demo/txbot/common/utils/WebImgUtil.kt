@@ -59,7 +59,7 @@ class WebImgUtil {
      */
     data class ImgData(
         val url: String,
-        val element: String? = null,
+        val element: String? = "body",
         val imgName: String? = null,
         val imgPath: String? = null,
         val width: Int? = null,
@@ -192,6 +192,7 @@ class WebImgUtil {
      * @param imgData 图片数据
      * @return Base64图片地址
      */
+    @Suppress("unused")
     fun returnBs4Img(imgData: ImgData): String? {
         val imagePath = getImgFromWeb(imgData)
         return "base64://${convertImageToBase64("${imagePath.split(".")[0]}.${imgData.imageType}")}"
