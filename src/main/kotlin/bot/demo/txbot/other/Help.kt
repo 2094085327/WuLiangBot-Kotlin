@@ -1,6 +1,5 @@
 package bot.demo.txbot.other
 
-import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -18,10 +17,6 @@ import java.util.regex.Matcher
 @Component
 @Controller
 class Help {
-    companion object {
-        var helpList = mutableListOf<HelpData>()
-    }
-
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
@@ -30,7 +25,8 @@ class Help {
         val folderPath = IMG_CACHE_PATH
         val folder = File(folderPath)
 
-        val matchingFileName = folder.listFiles()?.firstOrNull {  it.nameWithoutExtension.contains(helpImageName) && it.extension == "tmp" }?.name
+        val matchingFileName = folder.listFiles()
+            ?.firstOrNull { it.nameWithoutExtension.contains(helpImageName) && it.extension == "tmp" }?.name
 
         val webImgUtil = WebImgUtil()
         if (matchingFileName != null) {
@@ -38,7 +34,6 @@ class Help {
             return
         }
 
-        readHelp()
         val imageData = WebImgUtil.ImgData(
             imgName = "help",
             element = "body",
@@ -49,33 +44,11 @@ class Help {
             event,
             imageData
         )
-        helpList = mutableListOf()
     }
 
     @RequestMapping("/help")
     fun helpWeb(model: Model): String {
-        model.addAttribute("helpList", helpList)
+        model.addAttribute("helpList", TotalDistribution.CommandList.helpList)
         return "Other/Help"
-    }
-
-    data class HelpData(
-        var command: String? = null,
-        var description: String? = null
-    )
-
-    fun readHelp(): MutableList<HelpData> {
-        val helpJson = JacksonUtil.getJsonNode("resources/others/help.json")
-        val fieldNames = helpJson.fieldNames()
-        while (fieldNames.hasNext()) {
-            val next = fieldNames.next()
-            helpList.add(
-                HelpData(
-                    command = helpJson[next]["command"].textValue(),
-                    description = helpJson[next]["description"].textValue()
-                )
-            )
-        }
-
-        return helpList
     }
 }
