@@ -254,12 +254,6 @@
             <version>1.1.21</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.qcloud</groupId>
-            <artifactId>cos_api</artifactId>
-            <version>5.6.218</version>
-        </dependency>
-
         <!--七牛云对象存储服务-->
         <!-- https://mvnrepository.com/artifact/com.qiniu/qiniu-java-sdk -->
         <dependency>
