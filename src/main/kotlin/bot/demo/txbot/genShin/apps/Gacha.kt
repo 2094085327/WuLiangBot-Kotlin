@@ -1,5 +1,6 @@
 package bot.demo.txbot.genShin.apps
 
+import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.MysDataUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -79,23 +80,24 @@ class Gacha {
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
 
         bot.sendMsg(event, "已启用卡池「${poolFind.first}」", false)
+        InitGenShinData.initGachaLogData()
     }
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "十连")
     fun gacha(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         val detailPoolInfo = poolData
-        bot.sendMsg(
-            event,
-            "现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~",
-            false
-        )
+
         val itemListData = MysDataUtil().runGacha()
         val itemList = mutableListOf<String>()
         itemListData.forEach { eachItem ->
             itemList.add(eachItem!!.name.toString())
         }
 
-        bot.sendMsg(event, "你抽中了:$itemList", false)
+        bot.sendMsg(
+            event,
+            "现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~\n" + "你抽中了:$itemList",
+            false
+        )
     }
 }

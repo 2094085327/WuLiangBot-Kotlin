@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -205,27 +206,22 @@ class MysDataUtil {
         val newAdd = getGachaData(New_ADD)
         // 获取版本列表
         val versions = newAdd.fieldNames().asSequence().toList()
-        // 获取当前版本的索引
-        val currentIndex = versions.indexOf(version)
+        // 获取当前版本的索引，如果版本不存在，则使用最后一个版本的索引
+        val currentIndex = versions.indexOf(version).takeIf { it >= 0 } ?: (versions.size - 1)
         // 获取前一个版本的索引
-        val previousIndex = if (currentIndex > 0) currentIndex - 1 else currentIndex
-        val previousVersion = versions.getOrNull(previousIndex)
+        val previousIndex = (currentIndex - 1).takeIf { it >= 0 } ?: currentIndex
+        val previousVersion = versions.getOrNull(previousIndex) ?: return Pair(ArrayNode(JsonNodeFactory.instance), ArrayNode(JsonNodeFactory.instance))
 
-        val role4Base = poolData["role4_base"]
-        val role5Base = poolData["role5_base"]
-        val addRole4 = role4Base as ArrayNode
-        val addRole5 = role5Base as ArrayNode
+        val role4Base = poolData["role4_base"] as? ArrayNode ?: ArrayNode(JsonNodeFactory.instance)
+        val role5Base = poolData["role5_base"] as? ArrayNode ?: ArrayNode(JsonNodeFactory.instance)
 
-        val preRole4 = newAdd[previousVersion]["role4"]
-        preRole4.forEach {
-            addRole4.add(it)
-        }
-        val preRole5 = newAdd[previousVersion]["role5"]
-        preRole5.forEach {
-            addRole5.add(it)
-        }
+        val preRole4 = newAdd[previousVersion]["role4"] ?: ArrayNode(JsonNodeFactory.instance)
+        preRole4.forEach { role4Base.add(it) }
 
-        return Pair(addRole4, addRole5)
+        val preRole5 = newAdd[previousVersion]["role5"] ?: ArrayNode(JsonNodeFactory.instance)
+        preRole5.forEach { role5Base.add(it) }
+
+        return Pair(role4Base, role5Base)
     }
 
 
