@@ -28,10 +28,7 @@ import java.util.logging.Logger
  * @date 2024/2/5 20:04
  */
 @Component
-class GachaLogUtil {
-    @Autowired
-    val webImgUtil = WebImgUtil()
-
+class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
     private val logger: Logger = Logger.getLogger(GachaLogUtil::class.java.getName())
 
 
@@ -359,7 +356,7 @@ class GachaLogUtil {
             getEachData(gachaData, type)
         }
 
-        sendImageFunc(bot, event, imgName, "http://localhost:${WebImgUtil.usePort}/gachaLog")
+        sendImageFunc(bot, event, imgName, "http://localhost:${webImgUtil.usePort}/gachaLog")
     }
 
     fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {

@@ -21,12 +21,12 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class GeoMain {
-    @Autowired
-    val geoApi = GetGeoApi()
+class GeoMain(
+    @Autowired private val geoApi: GetGeoApi,
+    @Autowired val webImgUtil: WebImgUtil
+) {
 
-    @Autowired
-    val webImgUtil = WebImgUtil()
+
     private fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgName: String, city: String, webUrl: String) {
 
         if (!geoApi.checkCode(geoApi.getWeatherData(city))) {
@@ -56,7 +56,7 @@ class GeoMain {
         if (matchingFileName != null) {
             webImgUtil.sendCachedImage(bot, event, matchingFileName)
         } else {
-            sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/weather")
+            sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/weather")
         }
         System.gc()
     }
@@ -81,7 +81,7 @@ class GeoMain {
         if (matchingFileName != null) {
             webImgUtil.sendCachedImage(bot, event, matchingFileName)
         } else {
-            sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${WebImgUtil.usePort}/geo")
+            sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/geo")
         }
         System.gc()
     }

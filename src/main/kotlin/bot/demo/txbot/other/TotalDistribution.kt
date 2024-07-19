@@ -9,6 +9,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.stereotype.Component
 import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
+import java.util.*
 import java.util.regex.Matcher
 
 
@@ -74,13 +75,19 @@ class TotalDistribution {
             likedMatch.forEach { stringBuilder.append("$it\n") }
 
             // 检查帮助配置文件中的checkCmd配置，true则开启未知指令拦截并发送帮助信息
-            if (CommandList.CHECKCOMMEND) bot.sendMsg(
-                event, "\n你输入了未知指令呢，请仔细检查一下,也许你想找的是:\n\n${stringBuilder}\n" +
-                        "/help -获取帮助信息\n" +
-                        "/历史记录 -获取原神抽卡记录\n" +
-                        "/重开 -人生重开小游戏\n" +
-                        "/裂缝 -Warframe 裂缝查询", false
-            )
+            if (CommandList.CHECKCOMMEND) {
+                val jsonStr = "{\"markdown\":{\"custom_template_id\":\"102076980_1721042124\",\"params\":[{\"key\":\"title_text\",\"values\":[\"∠( ᐛ 」∠)＿没找到这个指令呢,但是无量姬找到了这个:\"]},{\"key\":\"image\",\"values\":[\"http://sgtk5pzgv.hn-bkt.clouddn.com/img/wuliang.png\"]},{\"key\":\"data1\",\"values\":[\"菜单1\"]},{\"key\":\"description1\",\"values\":[\"这是菜单1\"]},{\"key\":\"data2\",\"values\":[\"段落2\"]},{\"key\":\"description2\",\"values\":[\"这是菜单2\"]},{\"key\":\"data3\",\"values\":[\"简介\"]},{\"key\":\"description3\",\"values\":[\"这是简介\"]},{\"key\":\"data4\",\"values\":[\"在这个子频道非常开心\"]},{\"key\":\"description4\",\"values\":[\"这是链接介绍\"]}]}}"
+
+                val encodedInputBase64 = Base64.getEncoder().encodeToString(jsonStr.toByteArray())
+                bot.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+            }
+//                bot.sendMsg(
+//                event, "\n你输入了未知指令呢，请仔细检查一下,也许你想找的是:\n\n${stringBuilder}\n" +
+//                        "/help -获取帮助信息\n" +
+//                        "/历史记录 -获取原神抽卡记录\n" +
+//                        "/重开 -人生重开小游戏\n" +
+//                        "/裂缝 -Warframe 裂缝查询", false
+//            )
         }
     }
 }

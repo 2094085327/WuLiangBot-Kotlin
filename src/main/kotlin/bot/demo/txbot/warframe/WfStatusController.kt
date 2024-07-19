@@ -28,8 +28,7 @@ import java.util.regex.Pattern
  */
 @Shiro
 @Component
-class WfStatusController {
-    val webImgUtil = WebImgUtil()
+class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
     @Autowired
     final lateinit var wfLexiconService: WfLexiconService
@@ -237,7 +236,7 @@ class WfStatusController {
         fissureList = thisFissureList
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${WebImgUtil.usePort}/warframe/fissureList",
+            url = "http://localhost:${webImgUtil.usePort}/warframe/fissureList",
             imgName = "fissureList",
             element = "body"
         )
@@ -316,7 +315,7 @@ class WfStatusController {
             )
 
             val imgData = WebImgUtil.ImgData(
-                url = "http://localhost:${WebImgUtil.usePort}/warframe/voidTrader",
+                url = "http://localhost:${webImgUtil.usePort}/warframe/voidTrader",
                 imgName = "voidTrader",
                 element = "body"
             )
@@ -359,7 +358,7 @@ class WfStatusController {
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${WebImgUtil.usePort}/warframe/steelPath",
+            url = "http://localhost:${webImgUtil.usePort}/warframe/steelPath",
             imgName = "steelPath",
             element = "body"
         )
@@ -393,7 +392,7 @@ class WfStatusController {
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${WebImgUtil.usePort}/warframe/sortie",
+            url = "http://localhost:${webImgUtil.usePort}/warframe/sortie",
             imgName = "sortie",
             element = "body"
         )
@@ -433,7 +432,7 @@ class WfStatusController {
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${WebImgUtil.usePort}/warframe/archonHunt",
+            url = "http://localhost:${webImgUtil.usePort}/warframe/archonHunt",
             imgName = "archonHuntInfo",
             element = "body"
         )

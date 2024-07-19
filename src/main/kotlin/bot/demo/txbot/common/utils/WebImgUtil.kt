@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.utils
 
+import bot.demo.txbot.common.qiNiuCos.QiNiuService
 import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
@@ -11,8 +12,8 @@ import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import net.coobird.thumbnailator.Thumbnails
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
@@ -38,12 +39,16 @@ import javax.imageio.stream.FileImageOutputStream
  *@User 86188
  */
 @Component
-@Configuration
-class WebImgUtil {
-    companion object {
-        var usePort: String = ""
-        var imgBedPath: String = ""
-    }
+//@Configuration
+class WebImgUtil(
+    @Autowired private val qiNiuService: QiNiuService,
+    @Value("\${web_config.port}") var usePort: String,
+    @Value("\${web_config.img_bed_path}") var imgBedPath: String
+) {
+//    companion object {
+//        var usePort: String = ""
+//        var imgBedPath: String = ""
+//    }
 
     /**
      * 图片相关数据
@@ -71,15 +76,15 @@ class WebImgUtil {
 
     private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
 
-    @Value("\${web_config.port}")
-    fun setPort(port: String) {
-        usePort = port
-    }
+//    @Value("\${web_config.port}")
+//    fun setPort(port: String) {
+//        usePort = port
+//    }
 
-    @Value("\${web_config.img_bed_path}")
-    fun setImgBedPath(path: String) {
-        imgBedPath = path
-    }
+//    @Value("\${web_config.img_bed_path}")
+//    fun setImgBedPath(path: String) {
+//        imgBedPath = path
+//    }
 
 
     fun convertImageToBase64(imagePath: String): String {
@@ -245,17 +250,11 @@ class WebImgUtil {
         }
     }
 
-    /**
-     * 从网页获取截图
-     *
-     * @param imgData 图片数据
-     * @return Base64链接
-     */
-    fun getImgFromWeb(imgData: ImgData): String {
+    fun getImgByte(imgData: ImgData): ByteArray {
         Playwright.create().use { playwright ->
             val browser: Browser = playwright.chromium().launch()
             val page: Page = browser.newPage()
-            val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
+//            val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
             page.navigate(imgData.url)
             var byteArray = page.screenshot(
                 Page.ScreenshotOptions()
@@ -275,17 +274,68 @@ class WebImgUtil {
                 byteArray = bufferedImageToByteArray(thumbnailBuilder, imgData.imageType!!)
             }
 
-            val realImgPath =
-                turnByteToJpeg(
-                    byteArray = byteArray,
-                    imgName = realImgName,
-                    imgType = imgData.imageType!!,
-                    imgPath = imgData.imgPath
-                )
-
-            return realImgPath
+            return byteArray
         }
     }
+
+    /**
+     * 从网页获取截图
+     *
+     * @param imgData 图片数据
+     * @return Base64链接
+     */
+    fun getImgFromWeb(imgData: ImgData): String {
+//        Playwright.create().use { playwright ->
+//            val browser: Browser = playwright.chromium().launch()
+//            val page: Page = browser.newPage()
+        val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
+//            page.navigate(imgData.url)
+//            var byteArray = page.screenshot(
+//                Page.ScreenshotOptions()
+//                    .setFullPage(true)
+//            )
+//            if (imgData.element != null) {
+//                page.waitForSelector(imgData.element)
+//                val body: ElementHandle = page.querySelector(imgData.element)!!
+//
+//                // 截图
+//                byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
+//            }
+//
+//
+//            if (imgData.scale != null) {
+//                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(imgData.scale).asBufferedImage()
+//                byteArray = bufferedImageToByteArray(thumbnailBuilder, imgData.imageType!!)
+//            }
+
+        val realImgPath =
+            turnByteToJpeg(
+                byteArray = getImgByte(imgData),
+                imgName = realImgName,
+                imgType = imgData.imageType!!,
+                imgPath = imgData.imgPath
+            )
+
+        return realImgPath
+//        }
+    }
+
+//    fun downloadImageFromUrl(imageUrl: String): ByteArray {
+//        val client = OkHttpClient()
+//        val request = Request.Builder().url(imageUrl).build()
+//
+//        client.newCall(request).execute().use { response ->
+//            if (!response.isSuccessful) throw IOException("下载图片失败: $response")
+//
+//            return response.body.bytes()
+//        }
+//    }
+
+    fun returnUrlImgByQiNiu(imgData: ImgData): String? {
+        val byte = getImgByte(imgData)
+        return qiNiuService.upload(byte, imgData.imgName)
+    }
+
 
     @Suppress("unused")
     fun turnPngToWebp(imagePath: String, scale: Float = 0.8f) {
@@ -316,7 +366,7 @@ class WebImgUtil {
     }
 
     fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgData: ImgData) {
-        val imgUrl = returnUrlImg(imgData)
+        val imgUrl = returnUrlImgByQiNiu(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
         bot.sendMsg(event, sendMsg, false)
     }

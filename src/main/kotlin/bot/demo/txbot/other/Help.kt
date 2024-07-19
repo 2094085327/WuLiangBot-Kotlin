@@ -6,6 +6,7 @@ import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -16,7 +17,7 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 @Controller
-class Help {
+class Help(@Autowired private val webImgUtil: WebImgUtil) {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
@@ -28,7 +29,6 @@ class Help {
         val matchingFileName = folder.listFiles()
             ?.firstOrNull { it.nameWithoutExtension.contains(helpImageName) && it.extension == "tmp" }?.name
 
-        val webImgUtil = WebImgUtil()
         if (matchingFileName != null) {
             webImgUtil.sendCachedImage(bot, event, matchingFileName)
             return
@@ -37,7 +37,7 @@ class Help {
         val imageData = WebImgUtil.ImgData(
             imgName = "help",
             element = "body",
-            url = "http://localhost:${WebImgUtil.usePort}/help"
+            url = "http://localhost:${webImgUtil.usePort}/help"
         )
         webImgUtil.sendNewImage(
             bot,

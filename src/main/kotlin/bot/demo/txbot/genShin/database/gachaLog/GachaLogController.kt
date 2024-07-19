@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping
  *@User 86188
  */
 @Controller
-class GachaLogController {
+class GachaLogController(private val gachaLogUtil: GachaLogUtil) {
     @RequestMapping("/gachaLog")
     fun gacha(model: Model): String {
-        val gachaData = GachaLogUtil().getGachaData()
+        val gachaData = gachaLogUtil.getGachaData()
         val permanents = gachaData.permanents
         val roles = gachaData.roles
         val weapons = gachaData.weapons

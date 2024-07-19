@@ -24,9 +24,10 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class QRLogin {
-    @Autowired
-    val webImgUtil = WebImgUtil()
+class QRLogin(
+    @Autowired val webImgUtil: WebImgUtil
+) {
+
 
     private val mysApi = MysApi("144853327", "")
 
@@ -128,7 +129,7 @@ class QRLogin {
         val sendMsg: String = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         bot.sendMsg(event, sendMsg, false)
 
-        val (qrCodeStatus, checkQrCode) = checkQrCode(ticket)
+        val (_, checkQrCode) = checkQrCode(ticket)
         if (!checkQrCode) {
             bot.sendMsg(
                 event,

@@ -21,13 +21,10 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class LifeRestartMain {
-
-    @Autowired
-    lateinit var lifeRestartService: LifeRestartService
-
-    val webImgUtil = WebImgUtil()
-
+class LifeRestartMain(
+    @Autowired private var lifeRestartService: LifeRestartService,
+    @Autowired private val webImgUtil: WebImgUtil
+) {
     companion object {
         val restartUtil = LifeRestartUtil()
         var userList = mutableListOf<LifeRestartUtil.UserInfo>()
@@ -145,7 +142,7 @@ class LifeRestartMain {
 
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStartTalent",
-            url = "http://localhost:${WebImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
+            url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
         )
 
         webImgUtil.sendNewImage(bot, event, imageData)
@@ -168,7 +165,7 @@ class LifeRestartMain {
 
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart",
-            url = "http://localhost:${WebImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
+            url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
 
         webImgUtil.sendNewImage(bot, event, imageData)
@@ -185,7 +182,7 @@ class LifeRestartMain {
     fun sendGameEnd(bot: Bot, event: AnyMessageEvent, userInfo: LifeRestartUtil.UserInfo) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart",
-            url = "http://localhost:${WebImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
+            url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(bot, event, imageData)
         bot.sendMsg(event, "游戏结束", false)

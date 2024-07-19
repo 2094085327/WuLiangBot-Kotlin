@@ -36,22 +36,16 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class GachaLog {
-
-    @Autowired
-    lateinit var gaChaLogService: GaChaLogService
-
-    @Autowired
-    lateinit var userService: UserService
-
-    @Autowired
-    val webImgUtil = WebImgUtil()
-
-    val gachaLogUtil = GachaLogUtil()
+class GachaLog(
+    @Autowired private var gaChaLogService: GaChaLogService,
+    @Autowired private var userService: UserService,
+    @Autowired private val webImgUtil: WebImgUtil,
+    private val qrLogin: QRLogin
+) {
+    val gachaLogUtil = GachaLogUtil(webImgUtil)
 
     val updateGachaResources = UpdateGachaResources()
 
-    private val qrLogin = QRLogin()
     private var mysApi = MysApi("0", "")
     private val logger: Logger = Logger.getLogger(GachaLog::class.java.getName())
 

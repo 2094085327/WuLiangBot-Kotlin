@@ -67,6 +67,17 @@ QQ官方机器人Api Kotlin 实现 ✨_
    port:  # 端口
    img_bed_path:  #图床地址 无图床可以使用Telegraph-Image（自行搜索搭建，无需服务器），若使用其他图床需要修改 WebImgUtil.kt 中的代码
 
+ # 七牛云对象存储配置（七牛云速度较快且有免费额度，如需使用腾讯云等请自行实现配置或联系作者）
+ qi_niu:
+   cos:
+     access_key: "" # 七牛云的AK
+     secret_key: "" # 七牛云的SK
+     bucket: "" # 存储桶名称
+     url: "" # 域名
+     path: "" # 路径前缀，如图片在 'img' 文件夹下，则填写 'img/'
+     policy_expire: 3600 # token过期时间
+
+
  #gensokyo链接配置 可前往gensokyo 官方文档查看配置教程
  gensokyo_config:
    port:  #端口
