@@ -53,14 +53,14 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
      * @param mime 文件类型
      * @return 文件上传结果
      */
-    private fun uploadFile(data: Any, fileName: String?, mime: String? = null): String {
+    private fun uploadFile(data: Any, fileName: String?, mime: String?): String {
         val filePath = when (data) {
             is String -> data
             is File -> data.absolutePath
             else -> null
         }
         val finalFileName = determineFinalFileName(filePath, fileName)
-        val saveFile = "${qiNiuCosConfig.path}$finalFileName"
+        val saveFile = "${qiNiuCosConfig.path}$finalFileName.$mime"
 
         return try {
             val res: Response = when (data) {
@@ -72,6 +72,7 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
             }
 
             val json = JacksonUtil.readTree(res.bodyString())
+            println("${qiNiuCosConfig.url}${json["key"].asText()}")
             "${qiNiuCosConfig.url}${json["key"].asText()}"
         } catch (e: QiniuException) {
             logError("上传失败: ${e.response}")
@@ -87,8 +88,8 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
      * @param fileName 文件上传至七牛云空间的名称
      * @return 文件上传结果
      */
-    override fun upload(filePath: String, fileName: String?): String {
-        return uploadFile(filePath, fileName)
+    override fun upload(filePath: String, fileName: String?, mime: String?): String {
+        return uploadFile(filePath, fileName, mime)
     }
 
     /**
@@ -98,8 +99,8 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
      * @param fileName 文件上传至七牛云空间的名称
      * @return 文件上传结果
      */
-    override fun upload(file: File, fileName: String?): String {
-        return uploadFile(file, fileName)
+    override fun upload(file: File, fileName: String?, mime: String?): String {
+        return uploadFile(file, fileName, mime)
     }
 
     /**
@@ -121,7 +122,19 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
      * @param fileName 文件上传至七牛云空间的名称
      * @return 文件上传结果
      */
-    override fun upload(byteArray: ByteArray, fileName: String?): String {
-        return uploadFile(byteArray, fileName)
+    override fun upload(byteArray: ByteArray, fileName: String?, mime: String?): String {
+        return uploadFile(byteArray, fileName, mime)
     }
+
+
+    override fun deleteFile(fileName: String, mime: String?) {
+        val key = "${qiNiuCosConfig.path}$fileName.${mime ?: ""}"
+        println(key)
+        try {
+            qiNiuCosConfig.bucketManager.delete(qiNiuCosConfig.bucketName, key)
+        } catch (e: QiniuException) {
+            logError("图床文件删除失败: ${e.response}")
+        }
+    }
+
 }

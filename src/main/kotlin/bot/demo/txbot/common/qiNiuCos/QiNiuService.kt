@@ -14,12 +14,13 @@ interface QiNiuService {
 
     fun getUpToken(fileName: String): String
 
-    fun upload(file: File, fileName: String? = null): String
+    fun upload(file: File, fileName: String? = null, mime: String? = "jpeg"): String
 
-    fun upload(filePath: String, fileName: String? = null): String
+    fun upload(filePath: String, fileName: String? = null, mime: String? = "jpeg"): String
 
-    fun upload(byteArray: ByteArray, fileName: String? = null): String
+    fun upload(byteArray: ByteArray, fileName: String? = null, mime: String? = "jpeg"): String
 
-    fun upload(inputStream: InputStream, fileName: String? = null,mime:String?=null): String
+    fun upload(inputStream: InputStream, fileName: String? = null, mime: String? = "jpeg"): String
 
+    fun deleteFile(fileName: String, mime: String? = "jpeg")
 }

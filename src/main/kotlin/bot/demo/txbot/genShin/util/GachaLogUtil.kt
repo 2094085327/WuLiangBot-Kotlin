@@ -389,7 +389,7 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
             element = "body",
             scale = scale
         )
-        val imgUrl = webImgUtil.returnUrlImg(imgData)
+        val imgUrl = webImgUtil.returnUrlImgByQiNiu(imgData)
         val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
 
         when (event) {

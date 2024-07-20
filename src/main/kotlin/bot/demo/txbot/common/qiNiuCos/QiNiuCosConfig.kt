@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.qiNiuCos
 
+import com.qiniu.storage.BucketManager
 import com.qiniu.storage.Configuration
 import com.qiniu.storage.Region
 import com.qiniu.storage.UploadManager
@@ -31,5 +32,9 @@ class QiNiuCosConfig(
 
     val uploadManager: UploadManager by lazy {
         UploadManager(cfg)
+    }
+
+    val bucketManager: BucketManager by lazy {
+        BucketManager(auth, cfg)
     }
 }

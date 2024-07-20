@@ -11,6 +11,7 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.regex.Matcher
 
 
@@ -141,12 +142,13 @@ class LifeRestartMain(
         bot.sendMsg(event, "游戏账号创建成功，请使用如「天赋 1 2 3」来选择图片中的天赋", false)
 
         val imageData = WebImgUtil.ImgData(
-            imgName = "${userInfo.userId}-LifeStartTalent",
+            imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
         )
 
         webImgUtil.sendNewImage(bot, event, imageData)
         bot.sendMsg(event, "请在5分钟内开始游戏", false)
+        webImgUtil.deleteImgByQiNiu(imageData)
     }
 
     /**
@@ -164,12 +166,13 @@ class LifeRestartMain(
         sendStrList.add(mutableMapOf("userId" to userInfo.userId, "sendStr" to listOf(sendStr)))
 
         val imageData = WebImgUtil.ImgData(
-            imgName = "${userInfo.userId}-LifeStart",
+            imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
 
         webImgUtil.sendNewImage(bot, event, imageData)
         if (message != null) bot.sendMsg(event, message, false)
+        webImgUtil.deleteImgByQiNiu(imageData)
     }
 
     /**
@@ -181,12 +184,13 @@ class LifeRestartMain(
      */
     fun sendGameEnd(bot: Bot, event: AnyMessageEvent, userInfo: LifeRestartUtil.UserInfo) {
         val imageData = WebImgUtil.ImgData(
-            imgName = "${userInfo.userId}-LifeStart",
+            imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(bot, event, imageData)
         bot.sendMsg(event, "游戏结束", false)
         userList.remove(userInfo)
+        webImgUtil.deleteImgByQiNiu(imageData)
     }
 
     @AnyMessageHandler
@@ -267,9 +271,12 @@ class LifeRestartMain(
         val realId = OtherUtil().getRealId(event)
         val userInfo = findUserInfo(realId)
 
-        if (isTalentError(bot, event, userInfo)) return
+        if (userInfo == null) {
+            bot.sendMsg(event, "你还没有开始游戏，请发送「重开」进行游戏", false)
+            return
+        }
 
-        userInfo?.let {
+        userInfo.let {
             lifeRestartService.insertTimesByRealId(realId)
             it.property = restartUtil.randomAttributes(it)
             updateAndSend(bot, event, it, "请发送「继续 继续的步数」来进行游戏")
@@ -347,5 +354,16 @@ class LifeRestartMain(
 
             updateAndSend(bot, event, it)
         }
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "5555")
+    fun restartGame(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val imageData = WebImgUtil.ImgData(
+            imgName = "3333",
+            url = "1111"
+        )
+        webImgUtil.deleteImgByQiNiu(imageData)
+        println("${bot.selfId}")
     }
 }

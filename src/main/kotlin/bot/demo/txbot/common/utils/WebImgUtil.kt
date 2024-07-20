@@ -209,6 +209,7 @@ class WebImgUtil(
      * @param imgData 图片数据
      * @return 图片Url
      */
+    @Suppress("unused")
     fun returnUrlImg(imgData: ImgData): String? {
         val imagePath = getImgFromWeb(imgData)
         val imgJson = HttpUtil.doPostJson(
@@ -285,28 +286,7 @@ class WebImgUtil(
      * @return Base64链接
      */
     fun getImgFromWeb(imgData: ImgData): String {
-//        Playwright.create().use { playwright ->
-//            val browser: Browser = playwright.chromium().launch()
-//            val page: Page = browser.newPage()
         val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
-//            page.navigate(imgData.url)
-//            var byteArray = page.screenshot(
-//                Page.ScreenshotOptions()
-//                    .setFullPage(true)
-//            )
-//            if (imgData.element != null) {
-//                page.waitForSelector(imgData.element)
-//                val body: ElementHandle = page.querySelector(imgData.element)!!
-//
-//                // 截图
-//                byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
-//            }
-//
-//
-//            if (imgData.scale != null) {
-//                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(imgData.scale).asBufferedImage()
-//                byteArray = bufferedImageToByteArray(thumbnailBuilder, imgData.imageType!!)
-//            }
 
         val realImgPath =
             turnByteToJpeg(
@@ -317,23 +297,15 @@ class WebImgUtil(
             )
 
         return realImgPath
-//        }
     }
-
-//    fun downloadImageFromUrl(imageUrl: String): ByteArray {
-//        val client = OkHttpClient()
-//        val request = Request.Builder().url(imageUrl).build()
-//
-//        client.newCall(request).execute().use { response ->
-//            if (!response.isSuccessful) throw IOException("下载图片失败: $response")
-//
-//            return response.body.bytes()
-//        }
-//    }
 
     fun returnUrlImgByQiNiu(imgData: ImgData): String? {
         val byte = getImgByte(imgData)
-        return qiNiuService.upload(byte, imgData.imgName)
+        return qiNiuService.upload(byteArray = byte, fileName = imgData.imgName)
+    }
+
+    fun deleteImgByQiNiu(imgData: ImgData) {
+        qiNiuService.deleteFile(imgData.imgName!!)
     }
 
 
