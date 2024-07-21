@@ -3,6 +3,7 @@ package bot.demo.txbot.other
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.WebImgUtil
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -24,7 +25,10 @@ import java.util.regex.Matcher
  */
 @Shiro
 @Component
-class TotalDistribution(@Autowired private val templateService: TemplateService) {
+class TotalDistribution(
+    @Autowired private val templateService: TemplateService,
+    @Autowired private val webImgUtil: WebImgUtil
+) {
 
     object CommandList {
         private val _commandList = mutableListOf<String>()
@@ -89,8 +93,14 @@ class TotalDistribution(@Autowired private val templateService: TemplateService)
     @MessageHandlerFilter(cmd = "重载指令")
     fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         CommandList.reloadCommands()
-        logInfo("指令列表已重载")
         bot.sendMsg(event, "指令列表已重载", false)
+        logInfo("指令列表已重载")
+        val imageData = WebImgUtil.ImgData(
+            imgName = "help",
+            element = "body",
+            url = "http://localhost:${webImgUtil.usePort}/help"
+        )
+        webImgUtil.deleteImgByQiNiu(imageData)
     }
 
     @AnyMessageHandler
@@ -105,20 +115,19 @@ class TotalDistribution(@Autowired private val templateService: TemplateService)
             // 检查帮助配置文件中的 checkCmd 配置，true 则开启未知指令拦截并发送帮助信息
             val template = templateService.searchByBotIdAndTemplateName(bot.selfId, "help")
 
-            if (CommandList.CHECKCOMMEND && template != null) {
-                val templateJson = template.content?.let { JacksonUtil.readTree(it) } as ObjectNode
-                val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
+            if (!CommandList.CHECKCOMMEND && template == null) return
+            val templateJson = template!!.content?.let { JacksonUtil.readTree(it) } as ObjectNode
+            val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
 
-                paramsArray.forEach { param ->
-                    param as ObjectNode
-                    val key = param.get("key").asText()
-                    updateParam(param, key, matchedCommands, descriptions)
-                }
-
-                val encodedInputBase64 =
-                    Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
-                bot.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+            paramsArray.forEach { param ->
+                param as ObjectNode
+                val key = param.get("key").asText()
+                updateParam(param, key, matchedCommands, descriptions)
             }
+
+            val encodedInputBase64 =
+                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
+            bot.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
         }
     }
 }

@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.RequestMapping
-import java.io.File
 import java.util.regex.Matcher
 
 @Shiro
@@ -21,19 +20,6 @@ class Help(@Autowired private val webImgUtil: WebImgUtil) {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        val helpImageName = "help"
-
-        val folderPath = IMG_CACHE_PATH
-        val folder = File(folderPath)
-
-        val matchingFileName = folder.listFiles()
-            ?.firstOrNull { it.nameWithoutExtension.contains(helpImageName) && it.extension == "tmp" }?.name
-
-        if (matchingFileName != null) {
-            webImgUtil.sendCachedImage(bot, event, matchingFileName)
-            return
-        }
-
         val imageData = WebImgUtil.ImgData(
             imgName = "help",
             element = "body",

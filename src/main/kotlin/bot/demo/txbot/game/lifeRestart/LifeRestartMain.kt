@@ -355,15 +355,4 @@ class LifeRestartMain(
             updateAndSend(bot, event, it)
         }
     }
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "5555")
-    fun restartGame(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val imageData = WebImgUtil.ImgData(
-            imgName = "3333",
-            url = "1111"
-        )
-        webImgUtil.deleteImgByQiNiu(imageData)
-        println("${bot.selfId}")
-    }
 }

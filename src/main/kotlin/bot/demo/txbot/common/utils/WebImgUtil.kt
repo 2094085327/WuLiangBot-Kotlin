@@ -11,6 +11,8 @@ import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import com.mikuac.shiro.dto.event.message.GroupMessageEvent
+import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -39,17 +41,11 @@ import javax.imageio.stream.FileImageOutputStream
  *@User 86188
  */
 @Component
-//@Configuration
 class WebImgUtil(
     @Autowired private val qiNiuService: QiNiuService,
     @Value("\${web_config.port}") var usePort: String,
     @Value("\${web_config.img_bed_path}") var imgBedPath: String
 ) {
-//    companion object {
-//        var usePort: String = ""
-//        var imgBedPath: String = ""
-//    }
-
     /**
      * 图片相关数据
      *
@@ -71,21 +67,11 @@ class WebImgUtil(
         val height: Int? = null,
         val scale: Double? = null,
         var imageType: String? = "jpeg",
-        var sleepTime: Long = 0
+        var sleepTime: Long = 0,
+        var openCache: Boolean = true
     )
 
     private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
-
-//    @Value("\${web_config.port}")
-//    fun setPort(port: String) {
-//        usePort = port
-//    }
-
-//    @Value("\${web_config.img_bed_path}")
-//    fun setImgBedPath(path: String) {
-//        imgBedPath = path
-//    }
-
 
     fun convertImageToBase64(imagePath: String): String {
         val bytes = Files.readAllBytes(Paths.get(imagePath))
@@ -94,24 +80,6 @@ class WebImgUtil(
 
     fun outputStreamToBase64(outputStream: ByteArray): String {
         return "base64://${Base64.getEncoder().encodeToString(outputStream)}"
-    }
-
-
-    /**
-     * 发送缓存图片
-     *
-     * @param bot 机器人
-     * @param event 事件
-     * @param imgNameTmp 图片缓存文件名
-     */
-    fun sendCachedImage(bot: Bot, event: AnyMessageEvent?, imgNameTmp: String) {
-        val sendCacheImg: String = MsgUtils
-            .builder()
-            .img(readTmpImgFile(imgNameTmp))
-            .build()
-
-        bot.sendMsg(event, sendCacheImg, false)
-        logger.info("使用缓存文件:$imgNameTmp")
     }
 
 
@@ -234,28 +202,10 @@ class WebImgUtil(
         }
     }
 
-    fun readTmpImgFile(imgName: String): String? {
-        val directory = File(IMG_CACHE_PATH)
-
-        // 查找以imgName开头的所有文件
-        val matchingFiles = directory.listFiles { file ->
-            file.name.startsWith(imgName) && file.extension == "tmp"
-        } ?: return null
-
-        val fileToRead = matchingFiles[0]
-        return try {
-            fileToRead.readText(Charsets.UTF_8)
-        } catch (e: IOException) {
-            logError("读取文件失败:${fileToRead.path}: $e")
-            null
-        }
-    }
-
     fun getImgByte(imgData: ImgData): ByteArray {
         Playwright.create().use { playwright ->
             val browser: Browser = playwright.chromium().launch()
             val page: Page = browser.newPage()
-//            val realImgName = imgData.imgName ?: System.currentTimeMillis().toString()
             page.navigate(imgData.url)
             var byteArray = page.screenshot(
                 Page.ScreenshotOptions()
@@ -337,10 +287,28 @@ class WebImgUtil(
         PngCompressor.compress(file, outfile)
     }
 
-    fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgData: ImgData) {
-        val imgUrl = returnUrlImgByQiNiu(imgData)
-        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-        bot.sendMsg(event, sendMsg, false)
+    fun checkCacheImg(imgData: ImgData): String? {
+        return try {
+            if (imgData.openCache) {
+                qiNiuService.getFileInfo(imgData)
+                val imgPath = qiNiuService.returnFilePath(imgData.imgName, imgData.imageType)
+                qiNiuService.returnFileUrl(imgPath)
+            } else returnUrlImgByQiNiu(imgData)
+        } catch (e: Exception) {
+            returnUrlImgByQiNiu(imgData)
+        }
+    }
+
+    fun sendNewImage(bot: Bot, event: Any?, imgData: ImgData) {
+        val imgUrl: String? = checkCacheImg(imgData)
+
+        val sendMsg = MsgUtils.builder().img(imgUrl).build()
+        when (event) {
+            is AnyMessageEvent -> bot.sendMsg(event, sendMsg, false)
+            is GroupMessageEvent -> bot.sendGroupMsg(event.groupId, sendMsg, false)
+            is PrivateMessageEvent -> bot.sendPrivateMsg(event.userId, sendMsg, false)
+        }
+//        bot.sendMsg(event, sendMsg, false)
     }
 
 }

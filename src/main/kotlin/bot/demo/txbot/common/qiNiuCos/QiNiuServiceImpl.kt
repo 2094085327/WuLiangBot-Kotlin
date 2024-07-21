@@ -1,8 +1,10 @@
 package bot.demo.txbot.common.qiNiuCos
 
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.WebImgUtil
 import com.qiniu.common.QiniuException
 import com.qiniu.http.Response
+import com.qiniu.storage.model.FileInfo
 import com.qiniu.util.StringMap
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -72,7 +74,6 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
             }
 
             val json = JacksonUtil.readTree(res.bodyString())
-            println("${qiNiuCosConfig.url}${json["key"].asText()}")
             "${qiNiuCosConfig.url}${json["key"].asText()}"
         } catch (e: QiniuException) {
             logError("上传失败: ${e.response}")
@@ -126,15 +127,38 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
         return uploadFile(byteArray, fileName, mime)
     }
 
-
+    /**
+     * 删除存储桶中文件
+     *
+     * @param fileName 文件名
+     * @param mime 文件类型
+     */
     override fun deleteFile(fileName: String, mime: String?) {
         val key = "${qiNiuCosConfig.path}$fileName.${mime ?: ""}"
-        println(key)
         try {
             qiNiuCosConfig.bucketManager.delete(qiNiuCosConfig.bucketName, key)
         } catch (e: QiniuException) {
             logError("图床文件删除失败: ${e.response}")
         }
+    }
+
+    /**
+     * 获取文件信息
+     *
+     * @param imgData 图片数据
+     * @return 文件信息
+     */
+    override fun getFileInfo(imgData: WebImgUtil.ImgData): FileInfo {
+        val key = returnFilePath(imgData.imgName, imgData.imageType)
+        return qiNiuCosConfig.bucketManager.stat(qiNiuCosConfig.bucketName, key)
+    }
+
+    override fun returnFilePath(fileName: String?, mime: String?): String {
+        return "${qiNiuCosConfig.path}${fileName}.${mime ?: ""}"
+    }
+
+    override fun returnFileUrl(filePath: String): String {
+        return "${qiNiuCosConfig.url}${filePath}"
     }
 
 }
