@@ -31,12 +31,11 @@ class TotalDistribution(@Autowired private val templateService: TemplateService)
         private val _commands = mutableListOf<String>()
         private val _commandDescription = mutableListOf<String>()
         var CHECKCOMMEND = true
+        var helpList = listOf<HelpData>()
+            private set
+
         val commandList: List<String> get() = _commandList.toList()
         val commands: List<String> get() = _commands.toList()
-        val helpList: List<HelpData>
-            get() = List(_commandList.size) { index ->
-                HelpData(command = _commands[index], description = _commandDescription[index])
-            }
 
         data class HelpData(
             var command: String? = null,
@@ -49,6 +48,9 @@ class TotalDistribution(@Autowired private val templateService: TemplateService)
 
         fun reloadCommands() {
             _commandList.clear()
+            _commands.clear()
+            _commandDescription.clear()
+
             val helpJson = JacksonUtil.getJsonNode("resources/others/help.json")
             val commands = helpJson["commendList"].first()
             CHECKCOMMEND = helpJson["checkCmd"].booleanValue()
@@ -58,6 +60,10 @@ class TotalDistribution(@Autowired private val templateService: TemplateService)
                 _commandList.add(commands[fieldName]["regex"].textValue())
                 _commands.add(commands[fieldName]["command"].textValue())
                 _commandDescription.add(commands[fieldName]["description"].textValue())
+            }
+
+            helpList = List(_commandList.size) { index ->
+                HelpData(command = _commands[index], description = _commandDescription[index])
             }
         }
     }
