@@ -1,0 +1,18 @@
+{
+  "cn": {
+    "app_version": "2.71.1",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13; {device} Build/TKQ1.220829.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.73 Mobile Safari/537.36 miHoYoBBS/{app_version}",
+    "client_type": "5",
+    "Origin": "https://webstatic.mihoyo.com",
+    "X_Requested_With": "com.mihoyo.hyperion",
+    "Referer": "https://webstatic.mihoyo.com"
+  },
+  "os": {
+    "app_version": "2.9.0",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13; {device} Build/TKQ1.220829.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.73 Mobile Safari/537.36 miHoYoBBS/{app_version}",
+    "client_type": "2",
+    "Origin": "https://webstatic-sea.hoyolab.com",
+    "X_Requested_With": "com.mihoyo.hoyolab",
+    "Referer": "https://webstatic-sea.hoyolab.com"
+  }
+}

@@ -1,24 +1,26 @@
 package bot.demo.txbot.genShin.util
 
+import bot.demo.txbot.common.qiNiuCos.QiNiuService
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
-import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.mikuac.shiro.common.utils.MsgUtils
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
+import java.util.*
 import java.util.logging.Logger
 
 
@@ -28,7 +30,7 @@ import java.util.logging.Logger
  * @date 2024/2/5 20:04
  */
 @Component
-class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
+class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val qiNiuService: QiNiuService) {
     private val logger: Logger = Logger.getLogger(GachaLogUtil::class.java.getName())
 
 
@@ -185,32 +187,37 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
      * @param gachaType 需要处理的卡池类型
      */
     fun getEachData(data: JsonNode, gachaType: String) {
+        // 根据gachaType选择相应的文件夹路径、物品列表和计数列表
         val (folderPaths, itemList, countList) = when (gachaType) {
             "200" -> Triple(listOf(ROLE_IMG, WEAPON_IMG), GachaData.permanents, GachaData.permanentCount)
             "301" -> Triple(listOf(ROLE_IMG), GachaData.roles, GachaData.roleCount)
             "302" -> Triple(listOf(WEAPON_IMG), GachaData.weapons, GachaData.weaponCount)
             "500" -> Triple(listOf(ROLE_IMG, WEAPON_IMG), GachaData.mixPool, GachaData.mixCount)
-            else -> return
+            else -> return // 如果gachaType不匹配，直接返回
         }
 
+        // 清空物品列表和计数列表
         itemList.clear()
         countList.clear()
+
+        // 检查文件夹，获取物品并添加到 fileList
         folderPaths.forEach { folderPath ->
             val items = checkFolder(folderPath)
             fileList.addAll(items)
         }
 
-        var unFiveStarTimes = 0
-        var fiveCount = 0
-        val timesList = mutableListOf<Int>()
+        var unFiveStarTimes = 0 // 记录未获取五星物品的次数
+        var fiveCount = 0 // 记录五星物品的数量
+        val timesList = mutableListOf<Int>() // 记录每次获取五星物品前的次数
 
         // 创建抽卡网页数据
         fun createGachaEntity(array: JsonNode, unFiveStarTimes: Int, isUp: Boolean): HtmlEntity {
-            val itemType = array["item_type"].textValue()
-            val itemName = array["name"].textValue()
-            val (isEmpty, itemFileName) = checkFile(itemName)
-            val roleAttribute = if (itemType == "角色") getRoleAttribute(itemName) else null
+            val itemType = array["item_type"].textValue() // 获取物品类型
+            val itemName = array["name"].textValue() // 获取物品名称
+            val (isEmpty, itemFileName) = checkFile(itemName) // 检查物品文件
+            val roleAttribute = if (itemType == "角色") getRoleAttribute(itemName) else null // 如果是角色，获取角色属性
 
+            // 返回HtmlEntity对象
             return HtmlEntity(
                 itemId = array["id"].textValue(),
                 itemName = itemFileName,
@@ -223,6 +230,7 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
             )
         }
 
+        // 判断物品是否为Up物品
         fun isItemUp(gachaType: String, upData: JsonNode, itemName: String): Boolean {
             return when (gachaType) {
                 "301" -> upData["up5"].asText() == itemName || (upData.has("up5_2") && upData["up5_2"].asText() == itemName)
@@ -231,30 +239,31 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
             }
         }
 
-        val filteredData = data["list"].filter { it["uigf_gacha_type"].textValue() == gachaType }
-        val filteredDataCount = filteredData.size
+        val filteredData = data["list"].filter { it["uigf_gacha_type"].textValue() == gachaType } // 过滤出匹配的gachaType的数据
+        val filteredDataCount = filteredData.size // 记录过滤后的数据数量
 
         filteredData.forEach { array ->
-            if (array["rank_type"].asInt() == 5) {
+            if (array["rank_type"].asInt() == 5) { // 如果是五星物品
                 val itemName = array["name"].textValue()
-                val upPoolName = findPoolName(array["time"].textValue())
-                val upData = upPoolData[upPoolName]
+                val upPoolName = findPoolName(array["time"].textValue()) // 查找对应的池名称
+                val upData = upPoolData[upPoolName] // 获取Up物品数据
 
-                val isUp = isItemUp(gachaType, upData, itemName)
-                if (isUp) fiveCount++
+                val isUp = isItemUp(gachaType, upData, itemName) // 判断物品是否为Up物品
+                if (isUp) fiveCount++ // 如果是Up物品，增加五星计数
 
-                val gachaEntity = createGachaEntity(array, unFiveStarTimes, isUp)
-                itemList.add(gachaEntity)
-                timesList.add(unFiveStarTimes)
-                unFiveStarTimes = 0
+                val gachaEntity = createGachaEntity(array, unFiveStarTimes, isUp) // 创建HtmlEntity对象
+                itemList.add(gachaEntity) // 将HtmlEntity对象添加到物品列表
+                timesList.add(unFiveStarTimes) // 将未获取五星物品的次数添加到列表
+                unFiveStarTimes = 0 // 重置未获取五星物品的次数
             } else {
-                unFiveStarTimes++
+                unFiveStarTimes++ // 如果不是五星物品，增加未获取五星物品的次数
             }
         }
 
         // 根据综合评价获取抽卡运气
         val luckImg = getLuckImg(itemList.size.toDouble(), fiveCount.toDouble(), timesList.average(), gachaType)
 
+        // 将计数详情添加到计数列表
         countList.add(
             CountDetail(
                 alreadyCount = unFiveStarTimes,
@@ -264,7 +273,7 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
                 luckImg = luckImg
             )
         )
-        itemList.reverse()
+        itemList.reverse() // 反转物品列表
     }
 
     /**
@@ -341,30 +350,36 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
      * @param bot 机器人
      * @param event 消息事件
      * @param gameUid 游戏Uid
-     * @param imgName 图片名称
+     * @param imgData 图片数据
      */
     fun <T> getGachaLogCommon(
         bot: Bot,
         event: T,
         gameUid: String,
-        imgName: String,
-        sendImageFunc: (Bot, T, String, String) -> Unit
+        imgData: WebImgUtil.ImgData,
+        sendImageFunc: (Bot, T, WebImgUtil.ImgData) -> Unit
     ) {
-        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
-        val pools = arrayOf("200", "301", "302", "500")
-        pools.forEach { type ->
-            getEachData(gachaData, type)
+        try {
+            qiNiuService.getFileInfo(imgData)
+            sendImageFunc(bot, event, imgData)
+        } catch (e: Exception) {
+            logWarn("缓存图片不存在，开始生成图片")
+            val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
+            val pools = arrayOf("200", "301", "302", "500")
+            pools.forEach { type ->
+                getEachData(gachaData, type)
+            }
+
+            sendImageFunc(bot, event, imgData)
         }
-
-        sendImageFunc(bot, event, imgName, "http://localhost:${webImgUtil.usePort}/gachaLog")
     }
 
-    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgName: String) {
-        getGachaLogCommon(bot, privateMessageEvent, gameUid, imgName, ::sendNewImage)
+    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgData: WebImgUtil.ImgData) {
+        getGachaLogCommon(bot, privateMessageEvent, gameUid, imgData, ::sendNewImage)
     }
 
-    fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgName: String) {
-        getGachaLogCommon(bot, event, gameUid, imgName, ::sendNewImage)
+    fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgData: WebImgUtil.ImgData) {
+        getGachaLogCommon(bot, event, gameUid, imgData, ::sendNewImage)
     }
 
     /**
@@ -372,50 +387,48 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil) {
      *
      * @param bot 机器人
      * @param event 事件
-     * @param imgName 图片名
-     * @param webUrl 待截图地址
-     * @param scale 缩放等级
      */
     private fun <T> sendNewImage(
         bot: Bot,
         event: T,
-        imgName: String,
-        webUrl: String,
-        scale: Double? = null
+        imgData: WebImgUtil.ImgData
     ) {
-        val imgData = WebImgUtil.ImgData(
-            url = webUrl,
-            imgName = imgName,
-            element = "body",
-            scale = scale
-        )
-        val imgUrl = webImgUtil.returnUrlImgByQiNiu(imgData)
-        val sendMsg: String = MsgUtils.builder().img(imgUrl).build()
-
+        webImgUtil.sendNewImage(bot, event, imgData)
         when (event) {
             is PrivateMessageEvent -> {
-                bot.sendPrivateMsg(event.userId, sendMsg, false)
-                bot.sendPrivateMsg(event.userId, "发送完毕，可能因为网络波动未显示图片，请稍后再试", false)
+                bot.sendPrivateMsg(event.userId, "发送完毕，可能因网络波动未显示图片，请稍后再试", false)
             }
 
             is AnyMessageEvent -> {
-                bot.sendMsg(event, sendMsg, false)
-                bot.sendMsg(event, "发送完毕，可能因为网络波动未显示图片，请稍后再试", false)
+                bot.sendMsg(event, "发送完毕，可能因网络波动未显示图片，请稍后再试", false)
             }
         }
     }
 
-    fun checkCache(imgName: String): Pair<File?, String?> {
-        MysDataUtil().deleteDataCache()
+    fun checkCache(imgData: WebImgUtil.ImgData): File? {
         val folder = File(GACHA_CACHE_PATH)
-        val cacheImg = File(IMG_CACHE_PATH)
+        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgData.imgName }
 
-        val matchingFile = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == imgName }
-        val matchCache = cacheImg.listFiles()?.firstOrNull { it.extension == "tmp" && it.name.contains(imgName) }?.name
-
-        return Pair(matchingFile, matchCache)
+        return matchingFile
     }
 
+    fun convertStringToUuidFormat(inputString: String): String {
+        // 将输入字符串转换为十六进制哈希值
+        val md = MessageDigest.getInstance("MD5")
+        val hashBytes = md.digest(inputString.toByteArray())
+        val hexId = hashBytes.joinToString("") { "%02x".format(it) }
+
+        // 构建新的UUID字符串，使用哈希值的十六进制表示填充
+        val newUuid = (hexId.substring(0, 8) +
+                    "-${hexId.substring(8, 12)}" +
+                    "-${hexId.substring(12, 16)}" +
+                    "-${hexId.substring(16, 20)}" +
+                    "-${hexId.substring(20, 32)}").uppercase(
+                Locale.getDefault()
+            )
+
+        return newUuid
+    }
 
     fun getGachaData(): GachaData {
         return GachaData

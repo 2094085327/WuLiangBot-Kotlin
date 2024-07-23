@@ -9,6 +9,7 @@ import bot.demo.txbot.other.RESOURCES_PATH
  */
 const val UIGF_VERSION = "v3.0" // 抽卡数据统一标准版本
 
+const val HEADERS_JSON = "resources/genShin/defSet/gacha/headers.json"
 const val GACHA_JSON = "resources/genShin/defSet/gacha/gacha.json" // 当前启用的模拟抽卡卡池信息
 const val POOL_JSON = "resources/genShin/defSet/gacha/pool.json" // 历史卡池信息
 const val New_ADD = "resources/genShin/defSet/gacha/newAdd.json" // 各版本卡池新增常驻物品信息
@@ -26,9 +27,12 @@ const val ANDROID_HOST = "https://api-takumi.mihoyo.com/" // 安卓请求host
 const val ANDROID_RECORD = "https://api-takumi-record.mihoyo.com/" // 安卓请求host record
 const val IOS_HOST = "https://api-os-takumi.mihoyo.com/" // IOS请求host
 const val IOS_RECORD = "https://bbs-api-os.mihoyo.com/" // IOS请求host record
+const val BASE_OS_URL = "https://hk4e-api-os.hoyoverse.com/"
+const val PUBLIC_API_URL = "https://sg-public-api.hoyolab.com/"
 
-const val APP_VERSION = "2.71.1" // 应用版本
-const val SLAT_LK2 = "EJncUPGnOHajenjLhBOsdpwEMZmiCmQX" // 请求头加密slat,KL2版本
+const val SLAT_LK2 = "EJncUPGnOHajenjLhBOsdpwEMZmiCmQX" // 请求头加密slat,KL2版本 根据 'resources/genShin/defSet/gacha/headers.json' 中配置的app_version版本更改
+const val SLAT_4X = "xV8v4Qu54lUKrEYFZkJhB8cuOh9Asafs" // 请求头加密slat,4_X版本
+const val SLAT_OS = "okr4obncj8bw5a65hbnn5oo6ixjc3l9w" // 请求头加密slat,OS版本
 const val GACHA_LOG_URL = "https://public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog" // 抽卡记录链接
 const val AUTHKEY_B = "${ANDROID_HOST}binding/api/genAuthKey" // 获取authkeyB链接
 const val ACCOUNT_INFO = "${ANDROID_HOST}binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn" // 获取账号信息链接
