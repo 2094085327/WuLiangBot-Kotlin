@@ -14,7 +14,7 @@ import org.apache.hc.core5.http.*
 import org.apache.hc.core5.http.io.HttpClientResponseHandler
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.IOException
 import java.net.URI

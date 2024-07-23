@@ -17,7 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 
 
 /**

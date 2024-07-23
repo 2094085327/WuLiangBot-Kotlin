@@ -8,7 +8,7 @@ import com.qiniu.storage.model.FileInfo
 import com.qiniu.util.StringMap
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.InputStream
 import java.util.*

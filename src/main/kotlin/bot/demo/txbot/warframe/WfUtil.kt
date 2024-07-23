@@ -13,7 +13,7 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 
 
 /**

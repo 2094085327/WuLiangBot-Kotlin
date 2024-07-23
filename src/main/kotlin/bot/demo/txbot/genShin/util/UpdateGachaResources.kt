@@ -9,8 +9,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
-import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

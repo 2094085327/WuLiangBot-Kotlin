@@ -13,7 +13,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logInfo
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.util.*
 import java.util.regex.Matcher
 

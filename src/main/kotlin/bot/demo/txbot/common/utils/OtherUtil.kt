@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.utils
 
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
@@ -7,7 +8,6 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
-import pers.wuliang.robot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream

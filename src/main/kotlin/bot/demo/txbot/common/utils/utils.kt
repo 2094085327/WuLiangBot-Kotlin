@@ -1,4 +1,4 @@
-package pers.wuliang.robot.common.utils
+package bot.demo.txbot.common.utils
 
 import cn.hutool.core.util.ClassUtil
 import org.slf4j.Logger
