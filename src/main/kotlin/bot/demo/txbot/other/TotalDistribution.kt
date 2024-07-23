@@ -2,6 +2,7 @@ package bot.demo.txbot.other
 
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -13,7 +14,6 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.util.*
 import java.util.regex.Matcher
 
@@ -34,7 +34,7 @@ class TotalDistribution(
         private val _commandList = mutableListOf<String>()
         private val _commands = mutableListOf<String>()
         private val _commandDescription = mutableListOf<String>()
-        var CHECKCOMMEND = true
+        var CHECKCOMMAND = true
         var helpList = listOf<HelpData>()
             private set
 
@@ -57,7 +57,7 @@ class TotalDistribution(
 
             val helpJson = JacksonUtil.getJsonNode("resources/others/help.json")
             val commands = helpJson["commendList"].first()
-            CHECKCOMMEND = helpJson["checkCmd"].booleanValue()
+            CHECKCOMMAND = helpJson["checkCmd"].booleanValue()
 
             // 遍历 help.json 中的指令列表和正则匹配
             commands.fieldNames().forEach { fieldName ->
@@ -115,7 +115,7 @@ class TotalDistribution(
             // 检查帮助配置文件中的 checkCmd 配置，true 则开启未知指令拦截并发送帮助信息
             val template = templateService.searchByBotIdAndTemplateName(bot.selfId, "help")
 
-            if (!CommandList.CHECKCOMMEND && template == null) return
+            if (!CommandList.CHECKCOMMAND && template == null) return
             val templateJson = template!!.content?.let { JacksonUtil.readTree(it) } as ObjectNode
             val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
 
@@ -128,6 +128,9 @@ class TotalDistribution(
             val encodedInputBase64 =
                 Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
             bot.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+
+            // TODO 临时补丁，被动Md被修复 先直发一下进行兜底回复 未来增加md开关
+            bot.sendMsg(event, "未知指令，你可能在找这些指令：$matchedCommands", false)
         }
     }
 }
