@@ -23,8 +23,6 @@ class WfLexiconServiceImpl @Autowired constructor(
      * @return 计算后的系数
      */
     fun sorensenDiceCoefficient(s: String, t: String): Double {
-        println("s: $s , t: $t")
-
         val sBigrams = s.windowed(2, 1).toSet()
         val tBigrams = t.windowed(2, 1).toSet()
         val intersection = sBigrams.intersect(tBigrams).size.toDouble()
