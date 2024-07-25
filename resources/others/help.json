@@ -100,12 +100,12 @@
       "20": {
         "command": "wm\r",
         "description": "使用指令「wm 物品名」来查询Warframe Market上的物品订单\r如「wm Saryn Prime Set」，支持中文模糊查询",
-        "regex": "\\b^wm\\s(\\S+)"
+        "regex": "\\bwm\\s+(\\S+.*)$"
       },
       "21": {
         "command": "wr\r",
         "description": "使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\r如「wr 战刃 暴击 无负」，支持中文模糊查询",
-        "regex": "\\b^wr\\s(\\S+)"
+        "regex": "\\bwr\\s+(\\S+.*)$"
       },
       "22": {
         "command": "裂缝",
