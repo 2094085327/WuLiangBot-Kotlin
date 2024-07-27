@@ -1,10 +1,13 @@
 package bot.demo.txbot.genShin.apps
 
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.util.MysApiTools
 import cn.hutool.extra.qrcode.QrCodeUtil
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.mikuac.shiro.annotation.common.Shiro
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -62,18 +65,34 @@ class QRLogin(
      * @return 二维码状态
      */
     fun checkQrCode(ticket: String): Pair<JsonNode, Boolean> {
+        val errorCodes = setOf(-3501, -3503, -105, -106)
         var qrCodeStatus: JsonNode? = null
-        while (qrCodeStatus?.get("data")?.get("stat")?.textValue() != "Confirmed") {
+        val maxRetries = 60 * 5  // 设置最大轮询次数，避免出现未知错误导致的死循环
+
+        repeat(maxRetries) {
             qrCodeStatus = getQrCodeStatus(ticket)
-            println("qrCodeStatus：$qrCodeStatus")
-            if (qrCodeStatus.get("message")?.textValue() == "ExpiredCode") return Pair(qrCodeStatus, false)
-            if (qrCodeStatus["retcode"].intValue() == -3501) return Pair(qrCodeStatus, false)
-            if (qrCodeStatus["retcode"].intValue() == -3503) return Pair(qrCodeStatus, false)
-            if (qrCodeStatus["retcode"].intValue() == -105) return Pair(qrCodeStatus, false)
+
+            qrCodeStatus?.let {
+                val retcode = it["retcode"].intValue()
+                val message = it["message"]?.textValue()
+
+                if (it.get("data")?.get("stat")?.textValue() == "Confirmed") {
+                    return Pair(it, true)
+                }
+
+                if (message == "ExpiredCode" || retcode in errorCodes) {
+                    return Pair(it, false)
+                }
+            }
 
             Thread.sleep(1000)
         }
-        return Pair(qrCodeStatus, true)
+
+        // 如果超过最大轮询次数未确认，则返回 false，并创建一个包含错误信息的 JsonNode
+        val errorNode: ObjectNode = JsonNodeFactory.instance.objectNode()
+        errorNode.put("message", "未知错误，超过二维码轮询次数")
+        logError("获取二维码状态失败：${qrCodeStatus ?: errorNode}")
+        return Pair(qrCodeStatus ?: errorNode, false)
     }
 
     /**
@@ -88,7 +107,6 @@ class QRLogin(
         // 米哈游这个数据结构比较抽象，token是嵌套在上一个Json中的，全部经过了一遍转义的一个字符串，所以需要再重新转为Json
         val tokenJson = mapper.readTree(gameTokenRaw)
         val accountId = tokenJson["uid"].textValue().toInt()
-        println("stokenCookie：${mutableMapOf("accountId" to accountId, "gameToken" to tokenJson["token"].textValue())}")
         return mysApiTools.getData(
             "getStokenByGameToken",
             mutableMapOf("accountId" to accountId, "gameToken" to tokenJson["token"].textValue())

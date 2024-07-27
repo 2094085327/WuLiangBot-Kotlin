@@ -98,51 +98,56 @@
         "regex": "\\b更新词库\\b"
       },
       "20": {
-        "command": "wm\r",
+        "command": "wm",
         "description": "使用指令「wm 物品名」来查询Warframe Market上的物品订单\r如「wm Saryn Prime Set」，支持中文模糊查询",
         "regex": "\\bwm\\s+(\\S+.*)$"
       },
       "21": {
-        "command": "wr\r",
+        "command": "wr",
         "description": "使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\r如「wr 战刃 暴击 无负」，支持中文模糊查询",
         "regex": "\\bwr\\s+(\\S+.*)$"
       },
       "22": {
+        "command": "wl",
+        "description": "使用指令「wl 物品名 有无幻纹 属性 伤害数值等」来查询Warframe Market上的玄骸订单\r如「wl 信条·冷冻光束步枪 火 无 60」，支持中文模糊查询",
+        "regex": "\\bwl\\s+(\\S+.*)$"
+      },
+      "23": {
         "command": "裂缝",
         "description": "获取 Warframe 普通裂缝的信息",
         "regex": "\\b裂缝\\b"
       },
-      "23": {
+      "24": {
         "command": "钢铁裂缝",
         "description": "获取 Warframe 钢铁裂缝的信息",
         "regex": "\\b钢铁裂缝\\b"
       },
-      "24": {
+      "25": {
         "command": "九重天",
         "description": "获取 Warframe 九重天裂缝信息",
         "regex": "\\b九重天\\b"
       },
-      "25": {
+      "26": {
         "command": "奸商",
         "description": "获取 Warframe 虚空商人信息",
         "regex": "\\b奸商\\b"
       },
-      "26": {
+      "27": {
         "command": "钢铁",
         "description": "获取 Warframe 钢铁之路信息",
         "regex": "\\b钢铁\\b"
       },
-      "27": {
+      "28": {
         "command": "突击",
         "description": "获取 Warframe 每日突击信息",
         "regex": "\\b突击\\b"
       },
-      "28": {
+      "29": {
         "command": "执刑官",
         "description": "获取 Warframe 每周突击信息",
         "regex": "\\b(执(?:行|刑)官)\\b"
       },
-      "29": {
+      "30": {
         "command": "重载指令",
         "description": "重新加载指令列表",
         "regex": "\\b重载指令\\b"

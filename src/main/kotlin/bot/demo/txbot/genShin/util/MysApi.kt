@@ -1,7 +1,7 @@
 package bot.demo.txbot.genShin.util
 
-import bot.demo.txbot.common.utils.LoggerUtils.logDebug
 import org.springframework.stereotype.Component
+import java.util.*
 
 
 /**
@@ -37,15 +37,19 @@ class MysApi {
 
     val androidServers = arrayListOf("cn_gf01", "cn_qd01", "prod_gf_cn", "prod_qd_cn")
     private val iosServers = arrayListOf("os_usa", "os_euro", "os_asia", "os_cht")
-    private val urlMap: MutableMap<String, ApiEndpoint> = mutableMapOf()
+    private val urlMap: MutableMap<String, ApiEndpoint> = WeakHashMap()
     private val serverType: ServerType = determineServerType()
-    private var data: MutableMap<String, Any?> = mutableMapOf()
 
     enum class ServerType(val host: String, val hostRecord: String) {
         ANDROID(ANDROID_HOST, ANDROID_RECORD),
         IOS(IOS_HOST, IOS_RECORD),
     }
 
+    /**
+     * 根据服务器类型判断使用的设备类型
+     *
+     * @return 服务器类型
+     */
     private fun determineServerType(): ServerType {
         return when (server) {
             in androidServers -> ServerType.ANDROID
@@ -54,18 +58,43 @@ class MysApi {
         }
     }
 
-    fun getUrlApiEndpoint(key: String, data: MutableMap<String, Any?>? = null): ApiEndpoint? {
-        if (!urlMap.containsKey(key)) {
-            data?.let { this.data = it }
-            buildUrl(key)?.let { urlMap[key] = it }
-        }
-
-        logDebug(urlMap[key].toString())
-        return urlMap[key]
+    /**
+     * 通过哈希值生成缓存，保证Data处于最新状态
+     * 当 data 发生变化时，会重新生成缓存
+     *
+     * @param key 缓存名称
+     * @param data 数据
+     * @return 用于缓存的Key
+     */
+    private fun generateCacheKey(key: String, data: MutableMap<String, Any?>?): String {
+        return key + data.hashCode().toString()
     }
 
+    /**
+     * 获取API接口相关数据
+     *
+     * @param key 接口名称
+     * @param data 传入的参数
+     * @return 接口数据
+     */
+    fun getUrlApiEndpoint(key: String, data: MutableMap<String, Any?>? = null): ApiEndpoint? {
+        val cacheKey = generateCacheKey(key, data)
 
-    private fun buildUrl(key: String): ApiEndpoint? {
+        // 检查缓存是否存在
+        if (!urlMap.containsKey(cacheKey)) {
+            data?.let { buildUrl(key, it)?.let { endpoint -> urlMap[cacheKey] = endpoint } }
+        }
+        return urlMap[cacheKey]
+    }
+
+    /**
+     * 构建API接口相关数据
+     *
+     * @param key 接口名称
+     * @param data 传入的参数
+     * @return 构建完成的接口数据
+     */
+    private fun buildUrl(key: String, data: MutableMap<String, Any?> = mutableMapOf()): ApiEndpoint? {
         return when (key) {
             "index" -> ApiEndpoint(
                 url = "${serverType.hostRecord}game_record/app/genshin/api/index",
