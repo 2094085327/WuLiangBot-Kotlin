@@ -57,4 +57,12 @@ interface WfRivenService : IService<WfRivenEntity?> {
      * @return 查询结果
      */
     fun turnKeyToUrlNameByLichLike(key: String): List<WfRivenEntity?>
+
+    /**
+     * 通过词库模糊查询
+     *
+     * @param key 关键字
+     * @return 查询结果
+     */
+    fun searchByRivenLike(key: String): List<WfRivenEntity?>
 }

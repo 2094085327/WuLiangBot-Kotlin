@@ -156,13 +156,20 @@ class WfMarketController @Autowired constructor(
         val reRollTimes = matchResult?.value?.toInt()
 
         val itemNameKey: String = parameterList.first()
-        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
+//        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
 
-        if (itemEntity == null) {
-            // 如果未找到物品，则执行模糊搜索
-            wfUtil.handleFuzzySearch(bot, event, itemNameKey)
-            return
-        }
+//        if (itemEntity == null) {
+//            // 如果未找到物品，则执行模糊搜索
+//            wfUtil.handleFuzzySearch(bot, event, itemNameKey)
+//            return
+//        }
+        val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
+            ?: wfRivenService.searchByRivenLike(itemNameKey).firstOrNull()
+            ?: run {
+                wfUtil.handleFuzzySearch(bot, event, itemNameKey)
+                return
+            }
+
         val rivenJson = wfUtil.getAuctionsJson(
             parameterList = parameterList,
             itemEntity = itemEntity,
@@ -194,7 +201,8 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.turnKeyToUrlNameByLichLike(itemNameKey).firstOrNull()
             ?: run {
-                // 如果没有找到匹配项，返回空
+                // 如果没有找到匹配项
+                wfUtil.handleFuzzySearch(bot, event, itemNameKey)
                 return
             }
 

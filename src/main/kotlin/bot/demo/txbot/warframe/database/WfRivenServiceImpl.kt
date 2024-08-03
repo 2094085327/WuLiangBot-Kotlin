@@ -80,6 +80,16 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         return rivenMapper.selectList(queryWrapper)
     }
 
+    fun getWfRivenEntityLike(queryWrapper: QueryWrapper<WfRivenEntity>, key: String): List<WfRivenEntity?> {
+        // 获取查询结果
+        val resultList = rivenMapper.selectList(queryWrapper)
+
+        // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
+        return resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfRivenEntity?> {
+            sorensenDiceCoefficient(key, it?.zhName ?: it?.enName!!)
+        }.thenByDescending { it?.id })
+    }
+
     override fun turnKeyToUrlNameByLichLike(key: String): List<WfRivenEntity?> {
         // 构造正则表达式用于模糊查询
         val regex = key.replace("", ".*").drop(2).dropLast(2)
@@ -95,16 +105,30 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
             .eq("attributes", 2)
             .like("en", "%${key.replace(" ", "%")}%")
 
-        // 获取查询结果
-        val resultList = rivenMapper.selectList(queryWrapper)
+        return getWfRivenEntityLike(queryWrapper, key)
+    }
 
-        // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
-        val sortedResultList = resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfRivenEntity?> {
-            sorensenDiceCoefficient(key, it?.zhName ?: it?.enName!!)
-        }.thenByDescending { it?.id })
+    override fun searchByRivenLike(key: String): List<WfRivenEntity?> {
+        // 构造正则表达式用于模糊查询
+        val regex = key.replace("", ".*").drop(2).dropLast(2)
 
-        // 执行查询并按URL名称分段数量排序结果
-        return sortedResultList
+        // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
+        val queryWrapper = QueryWrapper<WfRivenEntity>()
+            .eq("attributes", 0)
+            .or()
+            .eq("attributes", 2)
+            .like("url_name", "%${key.replace(" ", "%_%")}%")
+            .or()
+            .eq("attributes", 0)
+            .or()
+            .eq("attributes", 2)
+            .apply("zh REGEXP {0}", regex)
+            .or()
+            .eq("attributes", 0)
+            .or()
+            .eq("attributes", 2)
+            .like("en", "%${key.replace(" ", "%")}%")
+        return getWfRivenEntityLike(queryWrapper, key)
     }
 
 }
