@@ -29,6 +29,15 @@ class WfLexiconServiceImpl @Autowired constructor(
         return (2 * intersection) / (sBigrams.size + tBigrams.size)
     }
 
+    /**
+     * 根据原字符串生成子字符串
+     *
+     * @param input 原字符串
+     * @return 生成的子字符串列表
+     */
+    private fun generateSubstrings(input: String): List<String> {
+        return input.indices.flatMap { i -> (i + 1..input.length).map { j -> input.substring(i, j) } }
+    }
 
     override fun insertLexicon(wfEnLexiconList: List<WfLexiconEntity>) {
         wfEnLexiconList.forEach { enLexicon ->
@@ -45,10 +54,6 @@ class WfLexiconServiceImpl @Autowired constructor(
                 .eq("en_item_name", zh)
                 .eq("in_market", 1)
         return lexiconMapper.selectList(queryWrapper).firstOrNull()
-    }
-
-    private fun generateSubstrings(input: String): List<String> {
-        return input.indices.flatMap { i -> (i + 1..input.length).map { j -> input.substring(i, j) } }
     }
 
     override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {

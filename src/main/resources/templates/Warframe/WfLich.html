@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>Warframe 玄骸武器</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Other.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Other.css">
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Warframe.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Warframe.css">
+        <style>
+            body {
+                padding: 10px;
+                width: 510px;
+                border-radius: 10px;
+                font-family: "HanYiQiHei", serif;
+            }
+
+            .frame {
+                width: 500px;
+            }
+
+            .dmgImg {
+                height: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="frame">
+            <div class="warframeLich" th:object="${lichOrderEntity}">
+                <div class="warframeLichHead">
+                    <span>你查找的</span>
+                    <div class="sortieTaskType" th:text="'「'+${lichOrderEntity.lichName}+'」'">「信条·典客」</div>
+                    <span>玄骸武器的前5条拍卖信息如下:</span>
+                </div>
+                <div class="lichTask">
+                    <div class="eachLichTask" th:each="orderList, info : ${lichOrderEntity.lichOrderInfoList}">
+                    <span>
+                        <span th:if="${orderList.element == '冲击'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/4/4c/DmgImpactSmall64.png/27px-DmgImpactSmall64.png">
+                            <span style="color:rgb(188,188,188)">冲击</span>
+                        </span>
+                        <span th:if="${orderList.element == '火焰'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/5/5c/DmgFireSmall64.png/27px-DmgFireSmall64.png">
+                            <span style="color:rgb(214,100,15)">火焰</span>
+                        </span>
+                        <span th:if="${orderList.element == '冰冻'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/b/b1/DmgColdSmall64.png/27px-DmgColdSmall64.png">
+                            <span style="color:rgb(63,109,198)">冰冻</span>
+                        </span>
+                        <span th:if="${orderList.element == '电击'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/e/ea/DmgElectricitySmall64.png/27px-DmgElectricitySmall64.png">
+                            <span style="color:rgb(174,125,198)">电击</span>
+                        </span>
+                        <span th:if="${orderList.element == '毒素'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/4/4f/DmgToxinSmall64.png/27px-DmgToxinSmall64.png">
+                            <span style="color:rgb(117,194,34)">毒素</span>
+                        </span>
+                        <span th:if="${orderList.element == '磁力'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/8/83/DmgMagneticSmall64.png/27px-DmgMagneticSmall64.png">
+                            <span style="color:rgb(168,171,181)">磁力</span>
+                        </span>
+                        <span th:if="${orderList.element == '辐射'}">
+                            <img class="dmgImg" alt=""
+                                 src="https://huiji-thumb.huijistatic.com/warframe/uploads/thumb/1/1b/DmgRadiationSmall64.png/27px-DmgRadiationSmall64.png">
+                            <span style="color:rgb(222,200,0)">辐射</span>
+                        </span>
+                        <span>伤害:</span>
+                        <span style="color: #ff5a28;font-weight: bold" th:text="${orderList.damage}"/>
+                        <span>起拍价:</span>
+                        <span style="font-weight: bold" th:text="${orderList.startPlatinum}"/>
+                        <span>一口价:</span>
+                        <span style="font-weight: bold" th:text="${orderList.buyOutPlatinum}"/>
+                        <span>幻纹:</span>
+                        <span th:text="${orderList.havingEphemera == false ? '无' : '有'}"/>
+                    </span>
+                    </div>
+                </div>
+            </div>
+            <div class="wuLiangInfo">
+                <div class="wuLiangTxt">
+                    <div style="color: gold; margin-right: 3px">★</div>
+                    From WuLiang Bot
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

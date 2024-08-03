@@ -5,7 +5,6 @@ import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.warframe.WfMarketController.*
 import bot.demo.txbot.warframe.database.WfLexiconEntity
-import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import com.fasterxml.jackson.databind.JsonNode
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Component
  */
 @Component
 class WfUtil @Autowired constructor(
-    val wfLexiconService: WfLexiconService,
     val wfRivenService: WfRivenService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
@@ -292,38 +290,4 @@ class WfUtil @Autowired constructor(
             null
         }
     }
-
-    /**
-     * 将拍卖数据格式化为字符串消息的函数
-     *
-     * @param lichJson 紫卡Json数据
-     * @param itemZhName 物品中文名称
-     * @return 格式化后的拍卖数据
-     */
-    fun formatLichAuctionData(lichJson: JsonNode, itemZhName: String, damage: Int? = null): String {
-        val orders = lichJson["payload"]["auctions"]
-
-        val rivenOrderList = orders.asSequence()
-            .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
-            .take(5)
-            .map { order ->
-                LichOrderInfo(
-                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
-                    havingEphemera = order["item"]["having_ephemera"].booleanValue(),
-                    damage = order["item"]["damage"].intValue(),
-                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
-                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                )
-            }.toList()
-
-        return if (rivenOrderList.isEmpty()) {
-            "当前没有任何在线的玩家出售这种词条的${itemZhName}"
-        } else {
-            val auctionDetails = rivenOrderList.joinToString("\n") { order ->
-                "元素:${order.element} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 有无幻纹:${if (!order.havingEphemera) "无" else "有"} 伤害:${order.damage}"
-            }
-            "你查找的「${itemZhName}」玄骸武器前5条拍卖信息如下:\n$auctionDetails\n示例:wl 信条·典客 火 无幻纹"
-        }
-    }
-
 }

@@ -49,7 +49,7 @@ class WarframeController {
     fun fissureList(model: Model): String {
         val fissure = WfStatus.fissureList
         if (fissure != null) {
-            model.addAttribute("fissureList",fissure)
+            model.addAttribute("fissureList", fissure)
         }
         return "Warframe/WfFissureList"
     }
@@ -58,10 +58,15 @@ class WarframeController {
     fun voidTrader(model: Model): String {
         val voidTrader = WfStatus.voidTraderEntity
         if (voidTrader != null) {
-            model.addAttribute("voidTrader",voidTrader)
+            model.addAttribute("voidTrader", voidTrader)
         }
         return "Warframe/WfVoidTrader"
     }
 
-
+    @RequestMapping("/lich")
+    fun lich(model: Model): String {
+        val lichOrderEntity = WfMarketController.WfMarket.lichOrderEntity
+        lichOrderEntity?.let { model.addAttribute("lichOrderEntity", lichOrderEntity) }
+        return "Warframe/WfLich"
+    }
 }

@@ -19,6 +19,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.regex.Pattern
 
 /**
@@ -237,11 +238,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/fissureList",
-            imgName = "fissureList",
+            imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
 
@@ -316,11 +318,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
             val imgData = WebImgUtil.ImgData(
                 url = "http://localhost:${webImgUtil.usePort}/warframe/voidTrader",
-                imgName = "voidTrader",
+                imgName = "voidTrader-${UUID.randomUUID()}",
                 element = "body"
             )
 
             webImgUtil.sendNewImage(bot, event, imgData)
+            webImgUtil.deleteImgByQiNiu(imgData = imgData)
         }
     }
 
@@ -359,11 +362,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/steelPath",
-            imgName = "steelPath",
+            imgName = "steelPath-${UUID.randomUUID()}",
             element = "body"
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -393,11 +397,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/sortie",
-            imgName = "sortie",
+            imgName = "sortie-${UUID.randomUUID()}",
             element = "body"
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -433,11 +438,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/archonHunt",
-            imgName = "archonHuntInfo",
+            imgName = "archonHuntInfo-${UUID.randomUUID()}",
             element = "body"
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
 }

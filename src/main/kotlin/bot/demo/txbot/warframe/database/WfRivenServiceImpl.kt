@@ -16,6 +16,20 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
     @Autowired
     lateinit var rivenMapper: WfRivenMapper
 
+    /**
+     * Sorensen-Dice 系数计算字符串相似度
+     *
+     * @param s 字符串1
+     * @param t 字符串2
+     * @return 计算后的系数
+     */
+    fun sorensenDiceCoefficient(s: String, t: String): Double {
+        val sBigrams = s.windowed(2, 1).toSet()
+        val tBigrams = t.windowed(2, 1).toSet()
+        val intersection = sBigrams.intersect(tBigrams).size.toDouble()
+        return (2 * intersection) / (sBigrams.size + tBigrams.size)
+    }
+
     override fun insertRiven(wfEnRivenList: List<WfRivenEntity>) {
         wfEnRivenList.forEach { enLexicon ->
             rivenMapper.insertIgnore(enLexicon)
@@ -65,4 +79,32 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
             .like("en", "%$key%")
         return rivenMapper.selectList(queryWrapper)
     }
+
+    override fun turnKeyToUrlNameByLichLike(key: String): List<WfRivenEntity?> {
+        // 构造正则表达式用于模糊查询
+        val regex = key.replace("", ".*").drop(2).dropLast(2)
+
+        // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
+        val queryWrapper = QueryWrapper<WfRivenEntity>()
+            .eq("attributes", 2)
+            .like("url_name", "%${key.replace(" ", "%_%")}%")
+            .or()
+            .eq("attributes", 2)
+            .apply("zh REGEXP {0}", regex)
+            .or()
+            .eq("attributes", 2)
+            .like("en", "%${key.replace(" ", "%")}%")
+
+        // 获取查询结果
+        val resultList = rivenMapper.selectList(queryWrapper)
+
+        // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
+        val sortedResultList = resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfRivenEntity?> {
+            sorensenDiceCoefficient(key, it?.zhName ?: it?.enName!!)
+        }.thenByDescending { it?.id })
+
+        // 执行查询并按URL名称分段数量排序结果
+        return sortedResultList
+    }
+
 }

@@ -82,3 +82,22 @@
     color: #F24405;
 }
 
+.warframeLich {
+    margin: 10px;
+}
+
+.warframeLichHead {
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 20px;
+}
+
+.lichName {
+    color: #9321da;
+}
+
+.eachLichTask {
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+}

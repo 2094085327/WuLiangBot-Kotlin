@@ -2,6 +2,8 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
+import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.warframe.WfMarketController.WfMarket.lichOrderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -11,6 +13,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.regex.Matcher
 
 
@@ -22,11 +25,10 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class WfMarketController @Autowired constructor(
-    private val wfUtil: WfUtil
+    private val wfUtil: WfUtil,
+    private val webImgUtil: WebImgUtil,
+    private val wfLexiconService: WfLexiconService,
 ) {
-    @Autowired
-    final lateinit var wfLexiconService: WfLexiconService
-
     @Autowired
     final lateinit var wfRivenService: WfRivenService
 
@@ -92,6 +94,15 @@ class WfMarketController @Autowired constructor(
         val startPlatinum: Int,
         val buyOutPlatinum: Int,
     )
+
+    data class LichEntity(
+        val lichName: String,
+        val lichOrderInfoList: List<LichOrderInfo>
+    )
+
+    object WfMarket {
+        var lichOrderEntity: LichEntity? = null
+    }
 
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wm (.*)")
@@ -181,15 +192,15 @@ class WfMarketController @Autowired constructor(
 
         val itemNameKey: String = parameterList.first()
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
+            ?: wfRivenService.turnKeyToUrlNameByLichLike(itemNameKey).firstOrNull()
+            ?: run {
+                // 如果没有找到匹配项，返回空
+                return
+            }
 
-        if (itemEntity == null) {
-            wfUtil.handleFuzzySearch(bot, event, itemNameKey)
-            return
-        }
-
-        val otherPrams = parameterList.drop(1)
-        val element: String? = otherPrams.firstOrNull { !it.matches(Regex("([有无])")) }
-        val ephemera: String? = otherPrams.firstOrNull { it.contains("无") || it.contains("有") }
+        val otherParams = parameterList.drop(1)
+        val element: String? = otherParams.firstOrNull { !it.matches(Regex("([有无])")) }
+        val ephemera: String? = otherParams.firstOrNull { it.contains("无") || it.contains("有") }
 
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
 
@@ -209,8 +220,34 @@ class WfMarketController @Autowired constructor(
         }
 
         // 筛选和格式化拍卖数据
-        val auctionInfo = wfUtil.formatLichAuctionData(lichJson, itemEntity.zhName!!, damage)
-        bot.sendMsg(event, auctionInfo, false)
+        val orders = lichJson["payload"]["auctions"]
+
+        val rivenOrderList = orders.asSequence()
+            .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
+            .take(5)
+            .map { order ->
+                LichOrderInfo(
+                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
+                    havingEphemera = order["item"]["having_ephemera"].booleanValue(),
+                    damage = order["item"]["damage"].intValue(),
+                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                )
+            }.toList()
+
+        lichOrderEntity = LichEntity(
+            lichName = itemEntity.zhName!!,
+            lichOrderInfoList = rivenOrderList,
+        )
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/lich",
+            imgName = "lich-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
     @AnyMessageHandler
