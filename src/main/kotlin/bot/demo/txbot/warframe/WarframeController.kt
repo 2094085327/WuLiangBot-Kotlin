@@ -69,4 +69,11 @@ class WarframeController {
         lichOrderEntity?.let { model.addAttribute("lichOrderEntity", lichOrderEntity) }
         return "Warframe/WfLich"
     }
+
+    @RequestMapping("/riven")
+    fun riven(model: Model): String {
+        val rivenOrderList = WfMarketController.WfMarket.rivenOrderList
+        rivenOrderList.let { model.addAttribute("rivenOrderList", rivenOrderList) }
+        return "Warframe/WfRiven"
+    }
 }

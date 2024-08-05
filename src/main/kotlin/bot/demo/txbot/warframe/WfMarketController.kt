@@ -70,12 +70,18 @@ class WfMarketController @Autowired constructor(
      * @property positive 属性
      */
     data class RivenOrderInfo(
+        val user: String,
+        val userStatus: String,
+        val modName: String,
         val modRank: Int,
         val reRolls: Int,
+        val masteryLevel: Int,
         val startPlatinum: Int,
         val buyOutPlatinum: Int,
         val polarity: String,
-        val positive: List<Attributes>,
+        val positive: MutableList<Attributes>,
+        val negative: MutableList<Attributes>,
+        val updateTime: String,
     )
 
     /**
@@ -100,8 +106,14 @@ class WfMarketController @Autowired constructor(
         val lichOrderInfoList: List<LichOrderInfo>
     )
 
+    data class RivenOrderList(
+        val itemName: String,
+        val orderList: List<RivenOrderInfo>
+    )
+
     object WfMarket {
         var lichOrderEntity: LichEntity? = null
+        var rivenOrderList: RivenOrderList? = null
     }
 
     @AnyMessageHandler
@@ -156,13 +168,6 @@ class WfMarketController @Autowired constructor(
         val reRollTimes = matchResult?.value?.toInt()
 
         val itemNameKey: String = parameterList.first()
-//        val itemEntity = wfRivenService.turnKeyToUrlNameByRiven(itemNameKey)
-
-//        if (itemEntity == null) {
-//            // 如果未找到物品，则执行模糊搜索
-//            wfUtil.handleFuzzySearch(bot, event, itemNameKey)
-//            return
-//        }
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.searchByRivenLike(itemNameKey).firstOrNull()
             ?: run {
@@ -183,8 +188,17 @@ class WfMarketController @Autowired constructor(
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
+        if (auctionInfo is String) bot.sendMsg(event, auctionInfo, false)
 
-        bot.sendMsg(event, auctionInfo, false)
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/riven",
+            imgName = "riven-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+
     }
 
     @AnyMessageHandler

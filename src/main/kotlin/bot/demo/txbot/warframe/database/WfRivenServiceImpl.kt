@@ -90,9 +90,16 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         }.thenByDescending { it?.id })
     }
 
+    /**
+     * 判断字符串是否为纯字母
+     *
+     */
+    fun String.onlyLetters() = all { it.isLetter() }
+
+
     override fun turnKeyToUrlNameByLichLike(key: String): List<WfRivenEntity?> {
         // 构造正则表达式用于模糊查询
-        val regex = key.replace("", ".*").drop(2).dropLast(2)
+        val regex = if (!key.onlyLetters()) key.replace("", ".*").drop(2).dropLast(2) else key
 
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfRivenEntity>()
@@ -110,24 +117,21 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
 
     override fun searchByRivenLike(key: String): List<WfRivenEntity?> {
         // 构造正则表达式用于模糊查询
-        val regex = key.replace("", ".*").drop(2).dropLast(2)
+        val regex = if (!key.onlyLetters()) key.replace("", ".*").drop(2).dropLast(2) else key
 
-        // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .eq("attributes", 0)
-            .or()
-            .eq("attributes", 2)
-            .like("url_name", "%${key.replace(" ", "%_%")}%")
-            .or()
-            .eq("attributes", 0)
-            .or()
-            .eq("attributes", 2)
-            .apply("zh REGEXP {0}", regex)
-            .or()
-            .eq("attributes", 0)
-            .or()
-            .eq("attributes", 2)
-            .like("en", "%${key.replace(" ", "%")}%")
+            .nested {
+                it.eq("attributes", 0)
+                    .or()
+                    .eq("attributes", 2)
+            }
+            .and {
+                it.like("url_name", "%${key.replace(" ", "%_%")}%")
+                    .or()
+                    .apply("zh REGEXP {0}", regex)
+                    .or()
+                    .like("en", "%${key.replace(" ", "%")}%")
+            }
         return getWfRivenEntityLike(queryWrapper, key)
     }
 

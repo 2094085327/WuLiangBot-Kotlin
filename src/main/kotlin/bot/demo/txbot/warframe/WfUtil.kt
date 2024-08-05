@@ -13,6 +13,9 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 
 /**
@@ -189,17 +192,70 @@ class WfUtil @Autowired constructor(
     }
 
     /**
+     * 对字符串首字符进行转大写
+     *
+     * @return 首字符转换为大写后的字符串
+     */
+    fun String.capitalizeSpecial(): String {
+        // 将字符串分割为单词，使用空格和 '-' 作为分隔符
+        val words = this.split(" ", "-")
+
+        // 对每个单词的首字母进行大写处理
+        val capitalizedWords = words.joinToString(" ") { word ->
+            if (word.isNotEmpty()) {
+                word.replaceFirstChar { it.uppercase() }
+            } else {
+                word
+            }
+        }
+
+        return capitalizedWords
+    }
+
+    /**
+     * 判断输入的时间字符串距离当前时间有多远
+     *
+     * @param timeStr 时间字符串
+     * @return 判断后的时间
+     */
+    fun timeAgo(timeStr: String): String {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+        val pastTime = LocalDateTime.parse(timeStr, formatter)
+        val now = LocalDateTime.now()
+
+        val years = ChronoUnit.YEARS.between(pastTime, now)
+        val months = ChronoUnit.MONTHS.between(pastTime, now)
+        val days = ChronoUnit.DAYS.between(pastTime, now)
+        val hours = ChronoUnit.HOURS.between(pastTime, now)
+        val minutes = ChronoUnit.MINUTES.between(pastTime, now)
+        val seconds = ChronoUnit.SECONDS.between(pastTime, now)
+
+        return when {
+            years > 0 -> "${years}年前"
+            months > 0 -> "${months}个月前"
+            days > 0 -> "${days}天前"
+            hours > 0 -> "${hours}小时前"
+            minutes > 0 -> "${minutes}分钟前"
+            seconds > 0 -> "${seconds}秒前"
+            else -> "刚刚"
+        }
+    }
+
+    /**
      * 将拍卖数据格式化为字符串消息的函数
      *
      * @param rivenJson 紫卡Json数据
      * @param itemZhName 物品中文名称
+     * @param reRollTimes 紫卡循环次数
      * @return 格式化后的拍卖数据
      */
-    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): String {
+    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): Any {
         val orders = rivenJson["payload"]["auctions"]
         val allowedStatuses = setOf("online", "ingame")
+        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
 
         val rivenOrderList = orders.asSequence()
+            // 筛选游戏状态为 在线 和 游戏中 的信息
             .filter {
                 it["owner"]["status"].textValue() in allowedStatuses
                 if (reRollTimes != null) it["item"]["re_rolls"].intValue() == reRollTimes else true
@@ -207,36 +263,56 @@ class WfUtil @Autowired constructor(
             .take(5)
             .map { order ->
                 RivenOrderInfo(
+                    user = order["owner"]["ingame_name"].textValue(),
+                    userStatus = if (order["owner"]["status"].textValue() == "online") "游戏在线" else "游戏中",
+                    modName = (order["item"]["weapon_url_name"].textValue() + " " + order["item"]["name"].textValue()).capitalizeSpecial(),
                     modRank = order["item"]["mod_rank"].intValue(),
                     reRolls = order["item"]["re_rolls"].intValue(),
+                    masteryLevel = order["item"]["mastery_level"].intValue(),
                     startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
                     buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                    polarity = order["item"]["polarity"].textValue(),
-                    positive = order["item"]["attributes"].map { attribute ->
-                        Attributes(
+                    polarity = polaritySymbols[order["item"]["polarity"].textValue()] ?: "-",
+                    positive = mutableListOf(),
+                    negative = mutableListOf(),
+                    updateTime = timeAgo(order["updated"].textValue())
+                ).apply {
+                    order["item"]["attributes"].forEach { attribute ->
+                        val attr = Attributes(
                             value = attribute["value"].doubleValue(),
                             positive = attribute["positive"].booleanValue(),
-                            urlName = attribute["url_name"].textValue()
+                            urlName = wfRivenService.turnUrlNameToKeyByRiven(attribute["url_name"].textValue())
                         )
+                        if (attr.positive) {
+                            positive.add(attr)
+                        } else {
+                            negative.add(attr)
+                        }
                     }
-                )
+                }
             }.toList()
 
         if (rivenOrderList.isEmpty()) {
             return "当前没有任何在线的玩家出售这种词条的${itemZhName}"
         }
 
-        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "-")
-        val auctionDetails = rivenOrderList.joinToString("\n") { order ->
-            val polaritySymbol = polaritySymbols[order.polarity] ?: "-"
-            val attributes = order.positive.joinToString("|") { positive ->
-                val sign = if (positive.positive) "+" else ""
-                "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} $sign${positive.value}%"
-            }
-            "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n$attributes"
-        }
+        WfMarket.rivenOrderList = RivenOrderList(
+            itemName = itemZhName,
+            orderList = rivenOrderList
+        )
 
-        return "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
+        return true
+
+//        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "-")
+//        val auctionDetails = rivenOrderList.joinToString("\n") { order ->
+//            val polaritySymbol = polaritySymbols[order.polarity] ?: "-"
+//            val attributes = order.positive.joinToString("|") { positive ->
+//                val sign = if (positive.positive) "+" else ""
+//                "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} $sign${positive.value}%"
+//            }
+//            "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n$attributes"
+//        }
+//
+//        return "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
     }
 
     /**

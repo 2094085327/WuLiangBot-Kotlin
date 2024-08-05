@@ -15,6 +15,10 @@
     flex-direction: row;
 }
 
+.purpleText {
+    color: #7120a1
+}
+
 .huntBoss {
     color: chocolate;
 }
@@ -100,4 +104,65 @@
     display: flex;
     flex-direction: row;
     align-content: center;
+}
+
+.eachRivenTask {
+    display: flex;
+    flex-direction: column;
+}
+
+.rivenPrice {
+    display: flex;
+}
+
+.rivenHead {
+    display: flex;
+}
+
+.rivenPriceDetail {
+    margin-left: 5px;
+    margin-right: 10px;
+    color: #28adff;
+}
+
+.rivenHeadDetailAll {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 5px;
+}
+
+.rivenHeadDetail {
+    color: #28adff;
+}
+
+.positiveAll {
+    display: flex;
+    flex-direction: row;
+}
+
+.eachPositive {
+    display: grid;
+    grid-template-columns: repeat(3, 170px);
+    column-gap: 5px;
+}
+
+.positiveText {
+    margin-right: 10px;
+}
+
+.sellerInfo {
+    display: flex;
+}
+
+.sellerStatus {
+    color: #87df87
+}
+
+.sellDivisionText {
+    margin-left: 10px;
+}
+
+.rivenHelp {
+    display: flex;
+    flex-direction: column;
 }
