@@ -105,7 +105,7 @@
       "21": {
         "command": "wr",
         "description": "使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\r如「wr 战刃 暴击 无负」，支持中文模糊查询",
-        "regex": "\\bwr\\s+(\\S+.*)$"
+        "regex": "\\b(wr|wmr)\\s+(\\S+.*)$"
       },
       "22": {
         "command": "wl",
@@ -115,12 +115,12 @@
       "23": {
         "command": "裂缝",
         "description": "获取 Warframe 普通裂缝的信息",
-        "regex": "\\b裂缝\\b"
+        "regex": "\\b(裂缝|裂隙)\\b"
       },
       "24": {
         "command": "钢铁裂缝",
         "description": "获取 Warframe 钢铁裂缝的信息",
-        "regex": "\\b钢铁裂缝\\b"
+        "regex": "\\b(钢铁裂缝|钢铁裂隙)\\b"
       },
       "25": {
         "command": "九重天",
@@ -151,6 +151,11 @@
         "command": "重载指令",
         "description": "重新加载指令列表",
         "regex": "\\b重载指令\\b"
+      },
+      "31": {
+        "command": "电波",
+        "description": "重新加载指令列表",
+        "regex": "\\b(电波|午夜电波)\\b"
       }
     }
   ]

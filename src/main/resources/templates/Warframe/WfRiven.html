@@ -35,17 +35,17 @@
                             <div class="purpleText" th:text="${orderList.modName}"/>
                             <div>」</div>
                             <div class="rivenHeadDetailAll">
-                                <span class="rivenHeadDetail" th:text="${orderList.modRank}+'级'"/>
-                                <span class="rivenHeadDetail" th:text="${orderList.reRolls}+'洗'"/>
-                                <span class="rivenHeadDetail" th:text="${orderList.masteryLevel}+'段'"/>
-                                <span class="rivenHeadDetail" th:text="${orderList.polarity}+'槽'"/>
+                                <span class="blueText" th:text="${orderList.modRank}+'级'"/>
+                                <span class="blueText" th:text="${orderList.reRolls}+'洗'"/>
+                                <span class="blueText" th:text="${orderList.masteryLevel}+'段'"/>
+                                <span class="blueText" th:text="${orderList.polarity}+'槽'"/>
                             </div>
                         </div>
                         <div class="rivenPrice">
                             <span>起拍价:</span>
-                            <span class="rivenPriceDetail" th:text="${orderList.startPlatinum}"/>
+                            <span class="rivenPriceDetail blueText" th:text="${orderList.startPlatinum}"/>
                             <span>一口价:</span>
-                            <span class="rivenPriceDetail" th:text="${orderList.buyOutPlatinum}"/>
+                            <span class="rivenPriceDetail blueText" th:text="${orderList.buyOutPlatinum}"/>
                         </div>
                         <div class="rivenPositive">
                             <div class="positiveAll">
@@ -68,7 +68,7 @@
                         <div class="sellerInfo">
                             <span class="purpleText" th:text="${orderList.user}"/>
                             <span>(</span>
-                            <div class="sellerStatus" th:text="${orderList.userStatus}"/>
+                            <div class="greenText" th:text="${orderList.userStatus}"/>
                             <span>)</span>
                             <span class="sellDivisionText">---</span>
                             <span th:text="${orderList.updateTime}"/>

@@ -157,9 +157,9 @@ class WfMarketController @Autowired constructor(
 
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "wr (.*)")
+    @MessageHandlerFilter(cmd = "\\b(wr|wmr)\\s+(\\S+.*)\$")
     fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val key = matcher.group(1)
+        val key = matcher.group(2)
         val parameterList = key.split(" ")
 
         // 正则匹配紫卡循环次数

@@ -5,6 +5,7 @@ import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
@@ -19,8 +20,12 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
+
 
 /**
  * @description: Warframe 世界状态
@@ -160,6 +165,21 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         val items: List<VoidTraderItem>
     )
 
+    data class NightWaveChallenges(
+        val title: String,
+        val desc: String,
+        val reputation: Int,
+        val isDaily: Boolean
+    )
+
+    data class NightWaveEntity(
+        val activation: String,
+        val startString: String,
+        val expiry: String,
+        val expiryString: String,
+        val activeChallenges: List<NightWaveChallenges>
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -206,6 +226,8 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         var fissureList: FissureList? = null
 
         var voidTraderEntity: VoidTraderEntity? = null
+
+        var nightWaveEntity: NightWaveEntity? = null
     }
 
     /**
@@ -248,7 +270,7 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
 
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "裂缝")
+    @MessageHandlerFilter(cmd = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(bot: Bot, event: AnyMessageEvent) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
@@ -258,7 +280,7 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "钢铁裂缝")
+    @MessageHandlerFilter(cmd = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(bot: Bot, event: AnyMessageEvent) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
@@ -439,6 +461,66 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/archonHunt",
             imgName = "archonHuntInfo-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b(电波|午夜电波)\\b")
+    fun getNightWave(bot: Bot, event: AnyMessageEvent) {
+        val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
+
+        val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
+        val expiryString = nightWaveJson["expiry"].textValue().replace("T", " ").replace(".000Z", "")
+
+        // 定义时间格式化器
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        // 将时间字符串解析为 LocalDateTime 对象
+        val nowTime = LocalDateTime.now()
+        val endTime = LocalDateTime.parse(expiryString, formatter)
+
+        // 计算时间差
+        val duration: Duration = Duration.between(nowTime, endTime)
+
+
+        // 获取时间差的月数
+        val months = (endTime.monthValue - nowTime.monthValue).toLong()
+        // 获取时间差的天数
+        val days = duration.toDays() - months * 30 // 减去月份的天数
+        // 获取剩余的小时数
+        val hours = duration.toHours() % 24
+        // 获取剩余的分钟数
+        val minutes = duration.toMinutes() % 60
+
+        // 格式化时间差
+        var timeDifference = ""
+        if (months > 0) timeDifference += months.toString() + "个月"
+        if (days > 0) timeDifference += days.toString() + "天"
+        if (hours > 0) timeDifference += hours.toString() + "小时"
+        if (minutes > 0) timeDifference += minutes.toString() + "分钟"
+
+        nightWaveEntity = NightWaveEntity(
+            activation = activation,
+            startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
+            expiry = expiryString,
+            expiryString = timeDifference,
+            activeChallenges = nightWaveJson["activeChallenges"].map { item ->
+                NightWaveChallenges(
+                    title = item["title"].textValue().replaceFaction(),
+                    desc = item["desc"].textValue().replaceFaction(),
+                    reputation = item["reputation"].intValue(),
+                    isDaily = item["isDaily"].booleanValue()
+                )
+            }
+        )
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/nightWave",
+            imgName = "nightWave-${UUID.randomUUID()}",
             element = "body"
         )
 

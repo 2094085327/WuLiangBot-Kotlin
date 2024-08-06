@@ -76,4 +76,11 @@ class WarframeController {
         rivenOrderList.let { model.addAttribute("rivenOrderList", rivenOrderList) }
         return "Warframe/WfRiven"
     }
+
+    @RequestMapping("/nightWave")
+    fun nightWave(model: Model): String {
+        val nightWaveEntity = WfStatus.nightWaveEntity
+        nightWaveEntity.let { model.addAttribute("nightWaveEntity", nightWaveEntity) }
+        return "Warframe/WfNightWave"
+    }
 }

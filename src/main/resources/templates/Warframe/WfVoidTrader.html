@@ -35,7 +35,7 @@
                 <div class="voidItemEach" th:each="voidItem,info: ${voidTrader.items}">
                     <span>「</span><span class="voidItemName" th:text="${voidItem.item}"/><span>」</span>
                     <span class="voidDucats" th:text="${voidItem.ducats}"/><span>杜卡德</span>
-                    <span class="voidCredits" th:text="${voidItem.credits}"/><span>现金</span>
+                    <span class="blueText" th:text="${voidItem.credits}"/><span>现金</span>
                 </div>
             </div>
             <div>

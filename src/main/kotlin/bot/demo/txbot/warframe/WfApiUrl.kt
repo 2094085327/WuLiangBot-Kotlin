@@ -74,3 +74,8 @@ const val WARFRAME_STATUS_SORTIE = "$WARFRAME_STATUS_BASE_URL/pc/sortie"
  * 执刑官突击
  */
 const val WARFRAME_STATUS_ARCHON_HUNT = "$WARFRAME_STATUS_BASE_URL/pc/archonHunt"
+
+/**
+ * 午夜电波
+ */
+const val WARFRAME_STATUS_NIGHT_WAVE = "$WARFRAME_STATUS_BASE_URL/pc/nightwave"
