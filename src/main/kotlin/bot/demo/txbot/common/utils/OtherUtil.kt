@@ -5,6 +5,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -78,7 +82,7 @@ class OtherUtil {
      * @param mirrorUrlPrefix 镜像URL前缀
      * @return 是否成功与更新文件数量
      */
-    fun downloadFolderFromGitHub(
+    suspend fun downloadFolderFromGitHub(
         repoOwner: String,
         repoName: String,
         folderPath: String,
@@ -90,48 +94,60 @@ class OtherUtil {
         val apiUrl =
             "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
 
-        try {
-            val url = URL(apiUrl)
-            val connection: URLConnection = url.openConnection()
+        return withContext(Dispatchers.IO) { // 切换到IO线程
+            var fileCount = 0 // 计数器
+            try {
+                val url = URL(apiUrl)
+                val connection: URLConnection = url.openConnection()
 
-            if (!accessToken.isNullOrEmpty()) {
-                connection.setRequestProperty("Authorization", "token $accessToken")
-            }
+                if (!accessToken.isNullOrEmpty()) {
+                    connection.setRequestProperty("Authorization", "token $accessToken")
+                }
 
-            connection.getInputStream().use { `in` ->
-                val objectMapper = jacksonObjectMapper()
-                val jsonNode = objectMapper.readTree(`in`)
+                connection.getInputStream().use { `in` ->
+                    val objectMapper = jacksonObjectMapper()
+                    val jsonNode = objectMapper.readTree(`in`)
 
-                for (file in jsonNode) {
-                    val fileName = file["name"].textValue()
-                    var fileDownloadUrl = file["download_url"]?.textValue()
+                    val downloadJobs = jsonNode.map { file ->
+                        async {
+                            val fileName = file["name"].textValue()
+                            var fileDownloadUrl = file["download_url"]?.textValue()
 
-                    if (fileDownloadUrl == null) {
-                        // 这是一个文件夹，递归下载内容
-                        val subFolderPath = "${folderPath}${File.separator}$fileName"
-                        downloadFolderFromGitHub(repoOwner, repoName, subFolderPath, folderPath, accessToken)
+                            if (fileDownloadUrl == null) {
+                                // 这是一个文件夹，递归下载内容
+                                val subFolderPath = "${folderPath}${File.separator}$fileName"
+                                val (_, count) = downloadFolderFromGitHub(
+                                    repoOwner,
+                                    repoName,
+                                    subFolderPath,
+                                    targetFolderPath,
+                                    accessToken
+                                )
+                                fileCount += count // 累加文件计数
+                            } else {
+                                // 文件，使用国内镜像下载
+                                fileDownloadUrl = fileDownloadUrl.replace(downloadUrlPrefix, mirrorUrlPrefix)
 
-                    } else {
-                        // 文件，使用国内镜像下载
-                        fileDownloadUrl = fileDownloadUrl.replace(downloadUrlPrefix, mirrorUrlPrefix)
+                                val targetFilePath = Paths.get(folderPath, fileName).toString()
 
-                        val targetFilePath = Paths.get(folderPath, fileName).toString()
-
-                        if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue())) {
-                            downloadFile(fileDownloadUrl, targetFilePath, accessToken)
-                            fileCount += 1
+                                if (!fileExistsWithSameContent(targetFilePath, file["sha"].textValue())) {
+                                    downloadFile(fileDownloadUrl, targetFilePath, accessToken)
+                                    fileCount += 1
+                                }
+                            }
                         }
                     }
+
+                    // 等待所有下载任务完成
+                    downloadJobs.awaitAll()
                 }
+                Pair(true, fileCount)
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+                logger.logError("文件下载异常:", e)
+                Pair(false, fileCount)
             }
-            logger.info("文件夹更新完成")
-
-            return Pair(true, fileCount)
-
-        } catch (e: IOException) {
-            e.printStackTrace()
-            logger.logError("文件下载异常:", e)
-            return Pair(false, fileCount)
         }
     }
 

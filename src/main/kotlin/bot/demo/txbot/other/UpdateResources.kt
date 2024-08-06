@@ -1,5 +1,8 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
+import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.UpdateGachaResources
@@ -8,12 +11,15 @@ import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.LoggerUtils.logInfo
-import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import java.io.File
 import java.util.regex.Matcher
+import javax.annotation.PostConstruct
 
 
 /**
@@ -29,6 +35,8 @@ class UpdateResources {
         private var repoName: String = ""
         private var accessToken: String? = null
     }
+
+    private val scope = CoroutineScope(Dispatchers.Default)
 
     @Value("\${github.owner}")
     fun getOwner(githubOwner: String) {
@@ -110,26 +118,28 @@ class UpdateResources {
 
         val folderPath = RESOURCES_PATH
 
-        val downloadCheck = otherUtil.downloadFolderFromGitHub(
-            owner,
-            repoName,
-            folderPath,
-            folderPath,
-            accessToken
-        )
+        runBlocking {
+            val downloadCheck = otherUtil.downloadFolderFromGitHub(
+                owner,
+                repoName,
+                folderPath,
+                folderPath,
+                accessToken
+            )
 
-        if (!downloadCheck.first) {
-            bot.sendMsg(event, "资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试", false)
-            return
+            if (!downloadCheck.first) {
+                bot.sendMsg(event, "资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试", false)
+                return@runBlocking
+            }
+            bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
+            OtherUtil.fileCount = 0
+
+            // 尝试更新卡池数据
+            UpdateGachaResources().getDataMain()
+
+            // 重新初始化原神相关数据
+            InitGenShinData.initGachaLogData()
         }
-        bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
-        OtherUtil.fileCount = 0
-
-        // 尝试更新卡池数据
-        UpdateGachaResources().getDataMain()
-
-        // 重新初始化原神相关数据
-        InitGenShinData.initGachaLogData()
     }
 
     @AnyMessageHandler
@@ -137,5 +147,34 @@ class UpdateResources {
     fun deleteCache(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
         forceDeleteCache("resources/imageCache")
         bot.sendMsg(event, "已完成缓存清理", false)
+    }
+
+    /**
+     * 启动时资源自检
+     *
+     */
+    @PostConstruct
+    fun resourcesCheck() {
+        scope.launch {
+            val folderPath = RESOURCES_PATH
+            repeat(10) { attempt -> // 重试10次
+                val (success, updatedCount) = otherUtil.downloadFolderFromGitHub(
+                    owner,
+                    repoName,
+                    folderPath,
+                    folderPath,
+                    accessToken
+                )
+                if (success) {
+                    logInfo("资源初始化更新完成，本次共更新${updatedCount}个资源")
+                    OtherUtil.fileCount = 0
+                    return@launch // 下载成功，结束协程
+                } else if (attempt < 9) { // 未到最后一次尝试，记录日志
+                    logWarn("资源更新失败,进行自动重试...")
+                }
+            }
+            // 10次尝试均失败，记录错误日志
+            logError("资源更新失败，已达最大重试次数")
+        }
     }
 }
