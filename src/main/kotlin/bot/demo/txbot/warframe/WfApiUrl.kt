@@ -79,3 +79,18 @@ const val WARFRAME_STATUS_ARCHON_HUNT = "$WARFRAME_STATUS_BASE_URL/pc/archonHunt
  * 午夜电波
  */
 const val WARFRAME_STATUS_NIGHT_WAVE = "$WARFRAME_STATUS_BASE_URL/pc/nightwave"
+
+/**
+ * 火卫二世界状态
+ */
+const val WARFRAME_STATUS_PHOBOS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cambionCycle"
+
+/**
+ * 希图斯状态
+ */
+const val WARFRAME_STATUS_CETUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cetusCycle"
+
+/**
+ * 入侵信息
+ */
+const val WARFRAME_STATUS_INVASIONS = "$WARFRAME_STATUS_BASE_URL/pc/invasions"

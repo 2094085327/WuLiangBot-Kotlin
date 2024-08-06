@@ -182,3 +182,55 @@
     grid-template-columns: repeat(3, auto);
     grid-template-rows: repeat(2, auto);
 }
+
+.warframeInvasions {
+    margin: 10px;
+}
+
+.invasionsTask {
+    margin-bottom: 10px;
+    margin-top: 10px;
+    display: grid;
+    row-gap: 15px;
+}
+
+.eachInvasionsTask {
+    display: flex;
+    flex-direction: column;
+}
+
+.progress-bar-container {
+    display: grid;
+    grid-template-columns: 25% 75%;
+    grid-template-rows: repeat(1, auto);
+    align-items: center;
+}
+
+.barFrame {
+    box-sizing: border-box;
+    width: 50%;
+    border: 1px solid #2d2e32;
+    border-radius: 10px;
+}
+
+.eachBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.eachFaction {
+    display: flex;
+}
+
+.progress-bar {
+    width: 20%; /* 初始宽度为 20% */
+    height: 20px;
+    background-color: #4CAF50; /* 绿色 */
+    border-radius: 10px; /* 圆角 */
+}
+
+.invasionFactions {
+    display: flex;
+    flex-direction: column;
+}

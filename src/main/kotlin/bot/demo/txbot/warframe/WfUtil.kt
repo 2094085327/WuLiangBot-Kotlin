@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
@@ -301,18 +303,6 @@ class WfUtil @Autowired constructor(
         )
 
         return true
-
-//        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "-")
-//        val auctionDetails = rivenOrderList.joinToString("\n") { order ->
-//            val polaritySymbol = polaritySymbols[order.polarity] ?: "-"
-//            val attributes = order.positive.joinToString("|") { positive ->
-//                val sign = if (positive.positive) "+" else ""
-//                "${wfRivenService.turnUrlNameToKeyByRiven(positive.urlName)} $sign${positive.value}%"
-//            }
-//            "mod等级:${order.modRank} 起拍价:${order.startPlatinum} 一口价:${order.buyOutPlatinum} 循环次数:${order.reRolls} 极性:$polaritySymbol\n$attributes"
-//        }
-//
-//        return "你查找的「${itemZhName}」紫卡前5条拍卖信息如下:\n$auctionDetails\n示例:wr 战刃 暴伤 暴击 负触发"
     }
 
     /**
@@ -364,6 +354,27 @@ class WfUtil @Autowired constructor(
         } catch (e: Exception) {
             logError("WM查询错误:$e")
             null
+        }
+    }
+
+    /**
+     * 定义一个扩展函数，用于将UTC时间字符串转换为东八区的时间字符串
+     *
+     * @return 东八时区时间字符串
+     */
+
+    object WfUtilObject {
+        fun String.toEastEightTimeZone(): String {
+            // 解析 UTC 时间字符串为 ZonedDateTime
+            val utcTime = ZonedDateTime.parse(this, DateTimeFormatter.ISO_DATE_TIME)
+
+            // 转换为东八区，即中国标准时间
+            val targetZoneId = ZoneId.of("Asia/Shanghai")
+            val targetTime = utcTime.withZoneSameInstant(targetZoneId)
+
+            // 格式化输出
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+            return targetTime.format(formatter)
         }
     }
 }

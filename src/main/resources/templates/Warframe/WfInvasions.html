@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>Warframe 入侵信息</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Other.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Other.css">
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Warframe.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Warframe.css">
+        <style>
+            body {
+                padding: 10px;
+                width: 600px;
+                border-radius: 10px;
+                font-family: "HanYiQiHei", serif;
+            }
+
+            .frame {
+                width: 590px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="frame">
+            <div class="warframeInvasions" th:object="${invasionsEntity}">
+                <div class="warframeInvasionsHead">
+                    <span>以下是目前的入侵任务的情况</span>
+                </div>
+                <div class="invasionsTask">
+                    <div class="eachInvasionsTask" th:each="invasions, info : ${invasionsEntity}">
+                        <div class="progress-bar-container">
+                            <span th:text="${invasions.node}"/>
+                            <div class="eachBar">
+                                <span th:text="${invasions.invasionsDetail[0].factions}"/>
+                                <span th:text="${#numbers.formatDecimal( invasions.completion, 1, 'DEFAULT', 2, 'DEFAULT')} + '%'"/>
+                                <div class="barFrame">
+                                    <div class="progress-bar" th:style="'width:'+${invasions.completion}+'% '"></div>
+                                </div>
+                                <span th:text="${invasions.invasionsDetail[1].factions}"/>
+                                <span th:text="${#numbers.formatDecimal(100 - invasions.completion, 1, 'DEFAULT', 2, 'DEFAULT')} + '%'"/>
+                            </div>
+                        </div>
+                        <div class="invasionFactions">
+                            <div class="eachFaction">
+                                <div>进攻方「</div>
+                                <div class="greenText" th:text="${invasions.invasionsDetail[0].factions}"/>
+                                <div>」</div>
+                                <span class="purpleText" th:text="${invasions.invasionsDetail[0].itemString}"/>
+                            </div>
+                            <div class="eachFaction">
+                                <div>防御方「</div>
+                                <div class="greenText" th:text="${invasions.invasionsDetail[1].factions}"/>
+                                <div>」</div>
+                                <span class="purpleText" th:text="${invasions.invasionsDetail[1].itemString}"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nightHelp">
+                <span>
+                  其他的一些Warframe指令:
+                </span>
+                    <div class="nightHelpDetail">
+                        <span>/wr(紫卡查询)</span>
+                        <span>/wm(wm市场查询)</span>
+                        <span>/突击(每日突击信息)</span>
+                        <span>/裂缝(开核桃裂缝信息)</span>
+                        <span>/执行官(每周执行官信息)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="wuLiangInfo">
+                <div class="wuLiangTxt">
+                    <div style="color: gold; margin-right: 3px">★</div>
+                    From WuLiang Bot
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

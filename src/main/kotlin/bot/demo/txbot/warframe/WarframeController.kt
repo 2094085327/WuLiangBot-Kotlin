@@ -83,4 +83,11 @@ class WarframeController {
         nightWaveEntity.let { model.addAttribute("nightWaveEntity", nightWaveEntity) }
         return "Warframe/WfNightWave"
     }
+
+    @RequestMapping("/invasions")
+    fun invasions(model: Model): String {
+        val invasionsEntity = WfStatus.invasionsEntity
+        invasionsEntity.let { model.addAttribute("invasionsEntity", invasionsEntity) }
+        return "Warframe/WfInvasions"
+    }
 }

@@ -154,8 +154,23 @@
       },
       "31": {
         "command": "电波",
-        "description": "重新加载指令列表",
+        "description": "查询 Warframe 午夜电波信息",
         "regex": "\\b(电波|午夜电波)\\b"
+      },
+      "32": {
+        "command": "火卫二状态",
+        "description": "查询 Warframe 火卫二平原状态",
+        "regex": "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b"
+      },
+      "33": {
+        "command": "希图斯状态",
+        "description": "查询 Warframe 地球平原状态",
+        "regex": "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态)\\b"
+      },
+      "34": {
+        "command": "入侵",
+        "description": "查询 Warframe 入侵信息",
+        "regex": "\\b入侵\\b"
       }
     }
   ]

@@ -5,12 +5,14 @@ import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
+import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconService
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -180,6 +182,17 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         val activeChallenges: List<NightWaveChallenges>
     )
 
+    data class Invasions(
+        val itemString: String,
+        val factions: String,
+    )
+
+    data class InvasionsEntity(
+        val node: String,
+        val invasionsDetail: List<Invasions>,
+        val completion: Double
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -228,6 +241,8 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         var voidTraderEntity: VoidTraderEntity? = null
 
         var nightWaveEntity: NightWaveEntity? = null
+
+        var invasionsEntity = mutableListOf<InvasionsEntity>()
     }
 
     /**
@@ -510,8 +525,8 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
             expiryString = timeDifference,
             activeChallenges = nightWaveJson["activeChallenges"].map { item ->
                 NightWaveChallenges(
-                    title = item["title"].textValue().replaceFaction(),
-                    desc = item["desc"].textValue().replaceFaction(),
+                    title = item["title"].textValue().turnZhHans(),
+                    desc = item["desc"].textValue().turnZhHans(),
                     reputation = item["reputation"].intValue(),
                     isDaily = item["isDaily"].booleanValue()
                 )
@@ -528,4 +543,77 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         webImgUtil.deleteImgByQiNiu(imgData = imgData)
     }
 
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
+    fun phobosStatus(bot: Bot, event: AnyMessageEvent) {
+        val phobosStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_PHOBOS_STATUS, params = mapOf("language" to "zh"))
+        val activation = phobosStatusJson["activation"].textValue().toEastEightTimeZone()
+        val expiry = phobosStatusJson["expiry"].textValue().toEastEightTimeZone()
+        val timeLeft = phobosStatusJson["timeLeft"].textValue().replaceTime()
+        val state = phobosStatusJson["state"].textValue()
+
+        bot.sendMsg(
+            event, "当前火卫二平原的状态为:${state}\n" +
+                    "开始时间:${activation}\n" +
+                    "结束时间:${expiry}\n" +
+                    "剩余:${timeLeft}", false
+        )
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态)\\b")
+    fun cetusCycle(bot: Bot, event: AnyMessageEvent) {
+        val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
+        val activation = cetusStatusJson["activation"].textValue().toEastEightTimeZone()
+        val expiry = cetusStatusJson["expiry"].textValue().toEastEightTimeZone()
+        val timeLeft = cetusStatusJson["timeLeft"].textValue().replaceTime()
+        val state = cetusStatusJson["state"].textValue()
+        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+
+        bot.sendMsg(
+            event, "当前地球平原为 ${stateMap[state]} \n" +
+                    "开始时间:${activation}\n" +
+                    "结束时间:${expiry}\n" +
+                    "剩余:${timeLeft}", false
+        )
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b入侵\\b")
+    fun invasions(bot: Bot, event: AnyMessageEvent) {
+        invasionsEntity.clear()
+        val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
+        invasionsArray.forEach { invasionsJson ->
+            if (!invasionsJson["completed"].booleanValue()) {
+                invasionsEntity.add(
+                    InvasionsEntity(
+                        node = invasionsJson["node"].textValue().turnZhHans(),
+                        invasionsDetail = listOf(
+                            Invasions(
+                                itemString = if (invasionsJson["attacker"]["faction"].textValue() == "Infested") "无" else invasionsJson["attacker"]["reward"]["itemString"].textValue()
+                                    .turnZhHans(),
+                                factions = invasionsJson["attacker"]["faction"].textValue().replaceFaction()
+                            ),
+                            Invasions(
+                                itemString = if (invasionsJson["defender"]["faction"].textValue() == "Infested") "无" else invasionsJson["defender"]["reward"]["itemString"].textValue()
+                                    .turnZhHans(),
+                                factions = invasionsJson["defender"]["faction"].textValue().replaceFaction()
+                            )
+                        ),
+                        completion = invasionsJson["completion"].doubleValue()
+                    )
+                )
+            }
+        }
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/invasions",
+            imgName = "invasions-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        System.gc()
+    }
 }
