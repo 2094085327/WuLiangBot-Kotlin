@@ -13,9 +13,7 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
@@ -78,7 +76,7 @@ class WfUtil @Autowired constructor(
             "当前没有任何在线的玩家出售${item.zhItemName}"
         } else {
             filteredOrders.joinToString("\n") {
-                "| ${it.inGameName} 价格: ${it.platinum} 数量: ${it.quantity}"
+                "| ${it.inGameName} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
             } + "\n/w ${filteredOrders.first().inGameName} Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
         }
 
@@ -357,12 +355,104 @@ class WfUtil @Autowired constructor(
         }
     }
 
+    interface Week {
+        val week: Int
+        var startTime: String?
+        fun copyWithNewStartTime(newStartTime: String?): Week
+    }
+
+    data class OrdinaryWeek(override val week: Int, val items: List<String>, override var startTime: String?) : Week {
+        override fun copyWithNewStartTime(newStartTime: String?): OrdinaryWeek {
+            return copy(startTime = newStartTime)
+        }
+    }
+
+    data class SteelItem(val name: String, val riven: Double?)
+    data class SteelWeek(override val week: Int, val items: List<SteelItem>, override var startTime: String?) : Week {
+        override fun copyWithNewStartTime(newStartTime: String?): SteelWeek {
+            return copy(startTime = newStartTime)
+        }
+    }
+
+    data class Data(val ordinary: List<OrdinaryWeek>, val steel: List<SteelWeek>)
+
+
+    private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+
+    fun <T : Week> findCurrentWeek(weeks: List<T>, currentDate: LocalDateTime): T? {
+        return weeks
+            .sortedBy { it.week }
+            .asSequence() // 使用序列，以便更高效地处理过滤和获取最后一项
+            .filter { week ->
+                week.startTime?.let { startTime ->
+                    val startDateTime = OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
+                    startDateTime.isBefore(currentDate)
+                } ?: true
+            }
+            .lastOrNull()
+    }
+
+    fun updateWeeks2(data: Data, currentDate: LocalDateTime): Data {
+        // 更新周的开始时间
+        fun <T : Week> updateWeekTimes(weeks: List<T>, maxTime: LocalDateTime?, maxIndex: Int): List<T> {
+            if (maxTime == null) return weeks
+
+            // 计算从最大时间到当前时间的天数
+            val daysSinceMax = Duration.between(maxTime, currentDate).toDays().toInt()
+            if (daysSinceMax <= 0) return weeks
+
+            // 计算额外的周数
+            val additionalWeeks = daysSinceMax / 7
+            val weekCount = weeks.size
+            // 计算更新后的起始周索引
+            val startWeekIndex = (maxIndex + additionalWeeks % weekCount) % weekCount
+
+            for (i in weeks.indices) {
+                // 计算实际的索引
+                val actualIndex = (startWeekIndex + i) % weekCount
+                // 更新周的开始时间
+                val updatedDateTime = maxTime.plusWeeks(additionalWeeks + i.toLong())
+                val zonedDateTime = updatedDateTime.atZone(ZoneId.systemDefault())
+                val offsetDateTime = zonedDateTime.toOffsetDateTime() // 转换为 OffsetDateTime
+                // 使用 formatter 格式化并更新开始时间
+                weeks[actualIndex].startTime = offsetDateTime.format(dateTimeFormatter)
+            }
+            return weeks
+        }
+
+        // 辅助函数 获取最大开始时间及其索引
+        fun getMaxStartTimeAndIndex(weeks: List<Week>): Pair<Int, LocalDateTime> {
+            return weeks.withIndex().maxByOrNull { (_, week) ->
+                week.startTime?.let { startTime ->
+                    OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
+                }
+                    ?: LocalDateTime.MIN
+            }?.let { (index, week) ->
+                index to (week.startTime?.let { startTime ->
+                    OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
+                } ?: LocalDateTime.MIN)
+            } ?: (0 to LocalDateTime.MIN)
+        }
+
+        // 获取最大钢铁开始时间及其索引
+        val (maxSteelIndex, maxSteelStartTime) = getMaxStartTimeAndIndex(data.steel)
+
+        // 获取最大普通开始时间及其索引
+        val (maxOrdinaryIndex, maxOrdinaryStartTime) = getMaxStartTimeAndIndex(data.ordinary)
+
+        // 更新数据中的 steel 和 ordinary 列表
+        return data.copy(
+            steel = updateWeekTimes(data.steel, maxSteelStartTime, maxSteelIndex),
+            ordinary = updateWeekTimes(data.ordinary, maxOrdinaryStartTime, maxOrdinaryIndex)
+        )
+    }
+
+
     /**
      * 定义一个扩展函数，用于将UTC时间字符串转换为东八区的时间字符串
      *
      * @return 东八时区时间字符串
      */
-
     object WfUtilObject {
         fun String.toEastEightTimeZone(): String {
             // 解析 UTC 时间字符串为 ZonedDateTime

@@ -234,3 +234,19 @@
     display: flex;
     flex-direction: column;
 }
+
+.warframeIncarono {
+    display: flex;
+    flex-direction: row;
+}
+
+.incaronoAll {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    column-gap: 10px;
+    justify-content: start;
+}
+
+.eachIncarono {
+    display: flex;
+}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>Warframe 本周灵化</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Other.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Other.css">
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Warframe.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Warframe.css">
+        <style>
+            body {
+                padding: 10px;
+                width: 600px;
+                border-radius: 10px;
+                font-family: "HanYiQiHei", serif;
+            }
+
+            .frame {
+                width: 590px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="frame">
+            <div class="warframeLich" th:object="${incarnonEntity}">
+                <div class="warframeIncarono">
+                    <span>距离下一周回廊更新还有:</span>
+                    <span class="orangeText" th:text="${incarnonEntity.remainTime}"/>
+                </div>
+                <div>
+                    <span>以下是本周的回廊信息:</span>
+                </div>
+                <div class="nightTask">
+                    <span>普通回廊:</span>
+                    <div class="incaronoAll">
+                        <div class="eachIncarono"
+                             th:each="ordinaryItem, info : ${incarnonEntity.thisWeekData.ordinary[0].items}">
+                            <div>「</div>
+                            <div class="purpleText" th:text="${ordinaryItem}"/>
+                            <div>」</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nightTask">
+                    <span>钢铁回廊:</span>
+                    <div class="eachNightTask"
+                         th:each="steelItem, info : ${incarnonEntity.thisWeekData.steel[0].items}">
+                        <div>「</div>
+                        <div class="purpleText" th:text="${steelItem.name}"/>
+                        <div>」</div>
+                        <span>倾向:</span>
+                        <span class="circles" th:attr="data-riven=${steelItem.riven}"></span>
+                        <span class="orangeText" th:text="${steelItem.riven}"/>
+                    </div>
+                </div>
+                <div>
+                    <span>下周的回廊信息如下:</span>
+                </div>
+                <div class="nightTask">
+                    <span>普通回廊:</span>
+                    <div class="incaronoAll">
+                        <div class="eachIncarono"
+                             th:each="ordinaryItem, info : ${incarnonEntity.nextWeekData.ordinary[0].items}">
+                            <div>「</div>
+                            <div class="purpleText" th:text="${ordinaryItem}"/>
+                            <div>」</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nightTask">
+                    <span>钢铁回廊:</span>
+                    <div class="incaronoAll">
+                        <div class="eachIncarono"
+                             th:each="steelItem, info : ${incarnonEntity.nextWeekData.steel[0].items}">
+                            <div>「</div>
+                            <div class="purpleText" th:text="${steelItem.name}"/>
+                            <div>」</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nightHelp">
+                <span>
+                  其他的一些Warframe指令:
+                </span>
+                    <div class="nightHelpDetail">
+                        <span>/wr(紫卡查询)</span>
+                        <span>/wm(wm市场查询)</span>
+                        <span>/突击(每日突击信息)</span>
+                        <span>/裂缝(开核桃裂缝信息)</span>
+                        <span>/执行官(每周执行官信息)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="wuLiangInfo">
+                <div class="wuLiangTxt">
+                    <div style="color: gold; margin-right: 3px">★</div>
+                    From WuLiang Bot
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        document.querySelectorAll('.circles').forEach(element => {
+            const rivenValue = parseFloat(element.getAttribute('data-riven'));
+            let fullCircleCount;
+
+            if (rivenValue >= 1.2) {
+                fullCircleCount = 5;
+            } else {
+                fullCircleCount = Math.floor(rivenValue / 0.3) + 1;
+            }
+
+            const emptyCircleCount = 5 - fullCircleCount;
+
+            for (let i = 0; i < fullCircleCount; i++) {
+                element.innerHTML += '●';
+            }
+
+            for (let i = 0; i < emptyCircleCount; i++) {
+                element.innerHTML += '○';
+            }
+        });
+    </script>
+</html>

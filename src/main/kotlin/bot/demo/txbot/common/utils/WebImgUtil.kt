@@ -1,6 +1,8 @@
 package bot.demo.txbot.common.utils
 
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
@@ -17,8 +19,6 @@ import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.LoggerUtils.logError
-import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -40,6 +40,7 @@ import javax.imageio.stream.FileImageOutputStream
  *@Date 2023/6/11 15:05
  *@User 86188
  */
+// TODO 之后将图片名称使用md5格式生成，避免删除相同的缓存图片
 @Component
 class WebImgUtil(
     @Autowired private val qiNiuService: QiNiuService,

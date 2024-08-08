@@ -5,6 +5,7 @@ import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.incarnonEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
@@ -15,6 +16,7 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconService
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -22,9 +24,13 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.io.File
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.regex.Pattern
 
@@ -36,10 +42,11 @@ import java.util.regex.Pattern
  */
 @Shiro
 @Component
-class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
+class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUtil, private val wfUtil: WfUtil) {
 
     @Autowired
     final lateinit var wfLexiconService: WfLexiconService
+
 
     /**
      * 裂缝信息
@@ -193,6 +200,12 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         val completion: Double
     )
 
+    data class IncarnonEntity(
+        val thisWeekData: WfUtil.Data,
+        val nextWeekData: WfUtil.Data,
+        val remainTime: String
+    )
+
     object WfStatus {
         private val timeReplacements = mapOf(
             "d " to "天",
@@ -243,6 +256,8 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         var nightWaveEntity: NightWaveEntity? = null
 
         var invasionsEntity = mutableListOf<InvasionsEntity>()
+
+        var incarnonEntity: IncarnonEntity? = null
     }
 
     /**
@@ -561,7 +576,7 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
     }
 
     @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态)\\b")
+    @MessageHandlerFilter(cmd = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(bot: Bot, event: AnyMessageEvent) {
         val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
         val activation = cetusStatusJson["activation"].textValue().toEastEightTimeZone()
@@ -609,6 +624,71 @@ class WfStatusController(@Autowired private val webImgUtil: WebImgUtil) {
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        System.gc()
+    }
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
+    fun incarnon(bot: Bot, event: AnyMessageEvent) {
+        val mapper = jacksonObjectMapper()
+        val jsonFile = File(WARFRAME_INCARNON)
+        // 读取并解析 JSON 文件
+        val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
+        // 当前日期
+        val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
+
+        val oneWeekLater = currentTime.plusWeeks(1)
+
+        // 更新 week 的 startTime
+        val updatedOrdinaryWeeks = wfUtil.updateWeeks2(data, currentTime)
+
+        if (data != updatedOrdinaryWeeks) mapper.writeValue(jsonFile, updatedOrdinaryWeeks)
+
+        // 查找当前周的数据
+        val currentOrdinaryWeek = wfUtil.findCurrentWeek(data.ordinary, currentTime)
+        val currentSteelWeek = wfUtil.findCurrentWeek(data.steel, currentTime)
+
+        val nextOrdinaryWeek = wfUtil.findCurrentWeek(data.ordinary, oneWeekLater)
+        val nextSteelWeek = wfUtil.findCurrentWeek(data.steel, oneWeekLater)
+        if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
+            bot.sendMsg(event, "啊哦~本周灵化数据不见了", false)
+            return
+        }
+
+        // 获取下周一的日期
+        val nextMonday = currentTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
+
+        // 设置时间为下周一早上8点
+        val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
+
+        // 计算时间差
+        val duration = Duration.between(currentTime, nextMondayAt8)
+
+        val days = duration.toDays()
+        val hours = duration.toHours() % 24
+        val minutes = duration.toMinutes() % 60
+        val seconds = duration.toSeconds() % 60
+
+        incarnonEntity = IncarnonEntity(
+            thisWeekData = WfUtil.Data(
+                ordinary = listOf(currentOrdinaryWeek),
+                steel = listOf(currentSteelWeek)
+            ),
+            nextWeekData = WfUtil.Data(
+                ordinary = listOf(nextOrdinaryWeek),
+                steel = listOf(nextSteelWeek)
+            ),
+            remainTime = "$days 天 $hours 小时 $minutes 分钟 $seconds 秒"
+        )
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/incarnon",
+            imgName = "incarnon-${UUID.randomUUID()}",
             element = "body"
         )
 

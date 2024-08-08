@@ -7,7 +7,7 @@
 }
 
 .helpList {
-    width: 630px;
+    width: 830px;
     display: flex;
     margin: 5px;
     font-family: "YaHei", serif;
@@ -15,7 +15,7 @@
 
 .helpContent {
     display: grid;
-    grid-template-columns: 50% 50%;
+    grid-template-columns: 25% 25% 25% 25%;
     grid-gap: 10px 10px;
 }
 

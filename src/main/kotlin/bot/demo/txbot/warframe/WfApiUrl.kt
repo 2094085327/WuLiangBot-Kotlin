@@ -1,11 +1,17 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.other.RESOURCES_PATH
+
 val LANGUAGE_ZH_HANS: MutableMap<String, Any> = mutableMapOf("language" to "zh-hans")
 val LANGUAGE_EN_HANS: MutableMap<String, Any> = mutableMapOf("language" to "en")
 
 const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
+
+const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
+
+const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
 
 /**
  * Market 物品

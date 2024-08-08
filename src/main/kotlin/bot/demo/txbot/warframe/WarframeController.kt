@@ -90,4 +90,11 @@ class WarframeController {
         invasionsEntity.let { model.addAttribute("invasionsEntity", invasionsEntity) }
         return "Warframe/WfInvasions"
     }
+
+    @RequestMapping("/incarnon")
+    fun incarnon(model: Model): String {
+        val incarnonEntity = WfStatus.incarnonEntity
+        incarnonEntity.let { model.addAttribute("incarnonEntity", incarnonEntity) }
+        return "Warframe/WfIncarnon"
+    }
 }
