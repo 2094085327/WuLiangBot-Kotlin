@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -20,8 +21,9 @@ class Help(@Autowired private val webImgUtil: WebImgUtil) {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
         val imageData = WebImgUtil.ImgData(
-            imgName = "help",
+            imgName = "help-${helpJson["updateMd5"].textValue()}",
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/help"
         )
@@ -31,6 +33,8 @@ class Help(@Autowired private val webImgUtil: WebImgUtil) {
             imageData
         )
     }
+
+    // TODO 重载指令和更新资源后自动删除图床帮助图片然后重新生成
 
     @RequestMapping("/help")
     fun helpWeb(model: Model): String {

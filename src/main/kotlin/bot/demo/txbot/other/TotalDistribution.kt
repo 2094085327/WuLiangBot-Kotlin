@@ -4,7 +4,11 @@ import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.TotalDistribution.CommandList.helpMd5
+import bot.demo.txbot.other.TotalDistribution.CommandList.lastHelpMd5
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -14,6 +18,7 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.io.File
 import java.util.*
 import java.util.regex.Matcher
 
@@ -37,6 +42,9 @@ class TotalDistribution(
         var CHECKCOMMAND = true
         var helpList = listOf<HelpData>()
             private set
+        var helpMd5: String? = null
+        var lastHelpMd5: String? = null
+
 
         val commandList: List<String> get() = _commandList.toList()
         val commands: List<String> get() = _commands.toList()
@@ -55,7 +63,7 @@ class TotalDistribution(
             _commands.clear()
             _commandDescription.clear()
 
-            val helpJson = JacksonUtil.getJsonNode("resources/others/help.json")
+            val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
             val commands = helpJson["commendList"].first()
             CHECKCOMMAND = helpJson["checkCmd"].booleanValue()
 
@@ -69,6 +77,14 @@ class TotalDistribution(
             helpList = List(_commandList.size) { index ->
                 HelpData(command = _commands[index], description = _commandDescription[index])
             }
+            lastHelpMd5 = helpJson["updateMd5"].textValue()
+            helpMd5 = helpJson["commendList"].toString().toMd5()
+            if (helpMd5 != lastHelpMd5) {
+                helpJson as ObjectNode
+                helpJson.put("updateMd5", helpMd5)
+            }
+            val mapper = ObjectMapper()
+            mapper.writeValue(File(HELP_JSON), helpJson)
         }
     }
 
@@ -96,11 +112,15 @@ class TotalDistribution(
         bot.sendMsg(event, "指令列表已重载", false)
         logInfo("指令列表已重载")
         val imageData = WebImgUtil.ImgData(
-            imgName = "help",
+            imgName = "help-$lastHelpMd5",
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/help"
         )
-        webImgUtil.deleteImgByQiNiu(imageData)
+        if (lastHelpMd5 != helpMd5) {
+            webImgUtil.deleteImgByQiNiu(imageData)
+            logInfo("帮助缓存已删除")
+        }
+        lastHelpMd5 = helpMd5
     }
 
     @AnyMessageHandler

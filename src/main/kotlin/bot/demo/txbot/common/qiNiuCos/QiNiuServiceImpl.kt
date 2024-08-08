@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.qiNiuCos
 
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.qiniu.common.QiniuException
 import com.qiniu.http.Response
@@ -8,7 +9,6 @@ import com.qiniu.storage.model.FileInfo
 import com.qiniu.util.StringMap
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import bot.demo.txbot.common.utils.LoggerUtils.logError
 import java.io.File
 import java.io.InputStream
 import java.util.*
@@ -76,8 +76,8 @@ class QiNiuServiceImpl(@Autowired private val qiNiuCosConfig: QiNiuCosConfig) : 
             val json = JacksonUtil.readTree(res.bodyString())
             "${qiNiuCosConfig.url}${json["key"].asText()}"
         } catch (e: QiniuException) {
-            logError("上传失败: ${e.response}")
-            throw e
+            logError("上传失败: $e")
+            "尝试向服务器上传数据失败，请联系管理员或稍后再试"
         }
     }
 
