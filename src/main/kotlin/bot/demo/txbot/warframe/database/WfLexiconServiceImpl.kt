@@ -58,7 +58,8 @@ class WfLexiconServiceImpl @Autowired constructor(
 
     override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {
         // 移除关键词中的"蓝图"字样以优化匹配
-        val cleanZh = if (zh.contains("蓝图")) zh.replace("蓝图", "") else zh
+        val replaceZh = zh.replace(Regex("总图"), "蓝图")
+        val cleanZh = replaceZh.replace("蓝图", "")
 
         // 生成并排序子字符串，优先处理较长的片段
         val sortedSubstrings = generateSubstrings(cleanZh).sortedByDescending { it.length }
@@ -66,35 +67,36 @@ class WfLexiconServiceImpl @Autowired constructor(
         // 使用集合记录已检查过的子串，避免重复工作
         val cache = mutableSetOf<String>()
         var newEnName: String? = null
-        var remainingString = zh // 剩余未匹配的部分
+        var remainingString = cleanZh // 剩余未匹配的部分
 
         for (substring in sortedSubstrings) {
-            if (cache.add(substring)) { // 防止重复处理
-                val enItemName = lexiconMapper.selectByZhItemName(substring)
-                if (enItemName != null) {
-                    newEnName = enItemName
-                    remainingString = zh.replaceFirst(substring, "", ignoreCase = true)
-                    break // 匹配成功则跳出循环
-                }
+            val selectName = lexiconMapper.selectByZhItemName(substring)
+            if (cache.add(substring) && selectName != null) { // 防止重复处理并检查匹配
+                newEnName = selectName
+                remainingString = replaceZh.replaceFirst(substring, "", ignoreCase = true)
+                break // 匹配成功则跳出循环
             }
         }
 
         // 构建最终的查询字符串，结合已匹配的英文名和剩余的中文部分
-        val finalQueryString = newEnName?.plus(remainingString) ?: zh
+        val finalQueryString = newEnName?.plus(remainingString) ?: cleanZh
 
         // 构造正则表达式用于模糊查询
         val regex = finalQueryString.replace("", ".*").drop(2).dropLast(2)
 
+        val urlNameLike = "%${finalQueryString.replace(" ", "%_%")}%"
+        val enItemNameLike = "%${finalQueryString.replace(" ", "%")}%"
+
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
             .eq("in_market", 1)
-            .like("url_name", "%${finalQueryString.replace(" ", "%_%")}%")
+            .like("url_name", urlNameLike)
             .or()
             .eq("in_market", 1)
             .apply("zh_item_name REGEXP {0}", regex)
             .or()
             .eq("in_market", 1)
-            .like("en_item_name", "%${finalQueryString.replace(" ", "%")}%")
+            .like("en_item_name", enItemNameLike)
 
         // 获取查询结果
         val resultList = lexiconMapper.selectList(queryWrapper)
