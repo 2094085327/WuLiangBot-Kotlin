@@ -34,8 +34,6 @@ class Help(@Autowired private val webImgUtil: WebImgUtil) {
         )
     }
 
-    // TODO 重载指令和更新资源后自动删除图床帮助图片然后重新生成
-
     @RequestMapping("/help")
     fun helpWeb(model: Model): String {
         model.addAttribute("helpList", TotalDistribution.CommandList.helpList)

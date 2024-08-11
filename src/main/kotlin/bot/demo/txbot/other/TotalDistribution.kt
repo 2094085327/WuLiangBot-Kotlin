@@ -6,21 +6,33 @@ import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.TotalDistribution.CommandList.dailyActiveJson
 import bot.demo.txbot.other.TotalDistribution.CommandList.helpMd5
 import bot.demo.txbot.other.TotalDistribution.CommandList.lastHelpMd5
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.event.ContextClosedEvent
+import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Matcher
+import javax.annotation.PostConstruct
 
 
 /**
@@ -35,6 +47,9 @@ class TotalDistribution(
     @Autowired private val webImgUtil: WebImgUtil
 ) {
 
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
+
     object CommandList {
         private val _commandList = mutableListOf<String>()
         private val _commands = mutableListOf<String>()
@@ -48,6 +63,8 @@ class TotalDistribution(
 
         val commandList: List<String> get() = _commandList.toList()
         val commands: List<String> get() = _commands.toList()
+
+        var dailyActiveJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
 
         data class HelpData(
             var command: String? = null,
@@ -105,6 +122,61 @@ class TotalDistribution(
         value?.let { param.putArray("values").add(it) }
     }
 
+    @Scheduled(cron = "0 0 0 * * ?")
+    fun creatTodayActiveData() {
+        if (dailyActiveJson is ObjectNode) {
+            val data = dailyActiveJson["data"] as ArrayNode
+            val lastData = data.last() as ObjectNode
+            val currentTime =
+                LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            if (lastData["date"].textValue() != currentTime) {
+                lastData.put("dailyActiveUsers", dailyActiveJson["users"].size())
+                if (lastData["dailyActiveUsers"].intValue() != 0) {
+                    (dailyActiveJson["users"] as ArrayNode).removeAll()
+                }
+                val nodeFactory = mapper.nodeFactory // 获取 JsonNodeFactory 对象
+                val newData = ObjectNode(nodeFactory) // 使用 JsonNodeFactory 创建 ObjectNode
+                newData.put("date", currentTime)
+                newData.put("dailyActiveUsers", 0)
+                newData.put("totalUpMessages", 0)
+                data.add(newData)
+                mapper.writeValue(File(DAILY_ACTIVE_PATH), dailyActiveJson)
+                logInfo("创建今日日活")
+            }
+        }
+    }
+
+    @Scheduled(cron = "0 1 * * * ?")
+    fun saveActiveLog() {
+        mapper.writeValue(File(DAILY_ACTIVE_PATH), dailyActiveJson)
+    }
+
+    @PostConstruct
+    fun creatDailyActiveFile() {
+        scope.launch {
+            val file = File(DAILY_ACTIVE_PATH)
+            if (!file.exists()) {
+                file.createNewFile()
+                // 当前日期
+                val currentTime =
+                    LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                val json =
+                    """{"data":[{"date":"$currentTime","dailyActiveUsers":0,"totalUpMessages":0}],"users":[]}""".trimIndent()
+                file.writeText(json)
+                logInfo("日活日志文件缺失，已自动创建")
+            }
+            creatTodayActiveData()
+        }
+    }
+
+    @EventListener
+    fun endEventListenerShutdown(event: ContextClosedEvent) {
+        // 保存日活日志
+        saveActiveLog()
+        logInfo("程序关闭...进行关键信息保存")
+    }
+
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "重载指令")
     fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -126,6 +198,22 @@ class TotalDistribution(
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
+        todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
+        val realId = OtherUtil().getRealId(event)
+
+        // 将 usersNode 转换为一个可变列表
+        val usersNode = dailyActiveJson["users"] as ArrayNode
+        val usersText = usersNode.toString()
+        val users: MutableSet<String> = if (usersText.isNotEmpty()) mapper.readValue(usersText) else mutableSetOf()
+
+        // 添加 realId 到 users 列表中
+        users.add(realId)
+        // 将更新后的 users 列表转换为 ArrayNode
+        val updatedUsersNode = mapper.valueToTree<ArrayNode>(users)
+        // 更新 dailyActiveJson 中的 users 节点
+        (dailyActiveJson as ObjectNode).replace("users", updatedUsersNode)
+
         val match = matcher.group(1)
         val matchedCommand = CommandList.commandList.firstOrNull { it.toRegex().matches(match) }
         if (matchedCommand == null) {
