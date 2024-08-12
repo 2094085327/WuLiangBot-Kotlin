@@ -34,7 +34,7 @@ class GeoMain(
         }
         val imgData = WebImgUtil.ImgData(url = webUrl, imgName = imgName, openCache = false)
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
 

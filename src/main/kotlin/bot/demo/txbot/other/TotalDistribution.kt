@@ -173,6 +173,7 @@ class TotalDistribution(
     fun endEventListenerShutdown(event: ContextClosedEvent) {
         // 保存日活日志
         saveActiveLog()
+        webImgUtil.shutdown()
         logInfo("程序关闭...进行关键信息保存")
     }
 
@@ -189,7 +190,7 @@ class TotalDistribution(
             url = "http://localhost:${webImgUtil.usePort}/help"
         )
         if (lastHelpMd5 != helpMd5) {
-            webImgUtil.deleteImgByQiNiu(imageData)
+            webImgUtil.deleteImg(imageData)
             logInfo("帮助缓存已删除")
         }
         lastHelpMd5 = helpMd5

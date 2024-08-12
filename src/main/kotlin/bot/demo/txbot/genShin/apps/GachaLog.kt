@@ -414,7 +414,7 @@ class GachaLog(
                     url = "http://localhost:${webImgUtil.usePort}/gachaLog",
                     openCache = false
                 )
-                webImgUtil.deleteImgByQiNiu(imageData)
+                webImgUtil.deleteImg(imageData)
                 gachaLogUtil.getGachaLog(bot, event, gameUid, imageData)
                 userService.insertGenUidByRealId(realId, gameUid)
             }

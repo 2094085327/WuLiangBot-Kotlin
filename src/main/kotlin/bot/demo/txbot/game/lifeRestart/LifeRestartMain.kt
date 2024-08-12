@@ -148,7 +148,7 @@ class LifeRestartMain(
 
         webImgUtil.sendNewImage(bot, event, imageData)
         bot.sendMsg(event, "请在5分钟内开始游戏", false)
-        webImgUtil.deleteImgByQiNiu(imageData)
+        webImgUtil.deleteImg(imageData)
     }
 
     /**
@@ -172,7 +172,7 @@ class LifeRestartMain(
 
         webImgUtil.sendNewImage(bot, event, imageData)
         if (message != null) bot.sendMsg(event, message, false)
-        webImgUtil.deleteImgByQiNiu(imageData)
+        webImgUtil.deleteImg(imageData)
     }
 
     /**
@@ -190,7 +190,7 @@ class LifeRestartMain(
         webImgUtil.sendNewImage(bot, event, imageData)
         bot.sendMsg(event, "游戏结束", false)
         userList.remove(userInfo)
-        webImgUtil.deleteImgByQiNiu(imageData)
+        webImgUtil.deleteImg(imageData)
     }
 
     @AnyMessageHandler

@@ -197,7 +197,7 @@ class WfMarketController @Autowired constructor(
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
 
     }
 
@@ -269,7 +269,7 @@ class WfMarketController @Autowired constructor(
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AnyMessageHandler

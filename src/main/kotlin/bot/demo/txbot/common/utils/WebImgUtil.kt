@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.utils
 
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
+import bot.demo.txbot.common.tencentCos.ICosFileService
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.other.IMG_CACHE_PATH
@@ -20,14 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.IOException
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
-import java.util.logging.Logger
+import javax.annotation.PostConstruct
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
@@ -44,9 +42,27 @@ import javax.imageio.stream.FileImageOutputStream
 @Component
 class WebImgUtil(
     @Autowired private val qiNiuService: QiNiuService,
+    @Autowired private val txCosService: ICosFileService,
     @Value("\${web_config.port}") var usePort: String,
     @Value("\${web_config.img_bed_path}") var imgBedPath: String
 ) {
+    private lateinit var playwright: Playwright
+    private lateinit var browser: Browser
+
+    @PostConstruct
+    fun init() {
+        playwright = Playwright.create()
+        browser = playwright.chromium().launch()
+        logInfo("PlaywrightManager初始化成功")
+    }
+
+    fun shutdown() {
+        browser.close()
+        playwright.close()
+        logInfo("PlaywrightManager关闭成功")
+    }
+
+
     /**
      * 图片相关数据
      *
@@ -72,8 +88,6 @@ class WebImgUtil(
         var openCache: Boolean = true
     )
 
-    private val logger: Logger = Logger.getLogger(WebImgUtil::class.java.getName())
-
     fun convertImageToBase64(imagePath: String): String {
         val bytes = Files.readAllBytes(Paths.get(imagePath))
         return Base64.getEncoder().encodeToString(bytes)
@@ -94,7 +108,7 @@ class WebImgUtil(
         val fiveMinutesAgo = Date(currentDate.time - 5 * 60 * 1000)
         folder.listFiles()?.forEach { file ->
             if (file.lastModified() < fiveMinutesAgo.time) {
-                logger.info("删除缓存：${file.name}")
+                logInfo("删除缓存：${file.name}")
                 file.delete()
             }
         }
@@ -204,22 +218,18 @@ class WebImgUtil(
     }
 
     fun getImgByte(imgData: ImgData): ByteArray {
-        Playwright.create().use { playwright ->
-            val browser: Browser = playwright.chromium().launch()
-            val page: Page = browser.newPage()
-            page.navigate(imgData.url)
-            var byteArray = page.screenshot(
-                Page.ScreenshotOptions()
-                    .setFullPage(true)
-            )
+        val page: Page = browser.newPage()
+        page.use { thisPage ->
+            thisPage.navigate(imgData.url)
+            var byteArray = thisPage.screenshot(Page.ScreenshotOptions().setFullPage(true))
+
             if (imgData.element != null) {
-                page.waitForSelector(imgData.element)
-                val body: ElementHandle = page.querySelector(imgData.element)!!
+                thisPage.waitForSelector(imgData.element)
+                val body: ElementHandle = thisPage.querySelector(imgData.element)!!
 
                 // 截图
                 byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
             }
-
 
             if (imgData.scale != null) {
                 val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(imgData.scale).asBufferedImage()
@@ -255,8 +265,11 @@ class WebImgUtil(
         return qiNiuService.upload(byteArray = byte, fileName = imgData.imgName)
     }
 
-    fun deleteImgByQiNiu(imgData: ImgData) {
-        qiNiuService.deleteFile(imgData.imgName!!)
+    fun deleteImg(imgData: ImgData) {
+        // 七牛云
+        // qiNiuService.deleteFile(imgData.imgName!!)
+        // 腾讯云
+        txCosService.deleteFile(imgData.imgName!!, "jpeg")
     }
 
 
@@ -288,6 +301,7 @@ class WebImgUtil(
         PngCompressor.compress(file, outfile)
     }
 
+    @Suppress("unused")
     fun checkCacheImg(imgData: ImgData): String? {
         return try {
             if (imgData.openCache) {
@@ -300,16 +314,28 @@ class WebImgUtil(
         }
     }
 
-    fun sendNewImage(bot: Bot, event: Any?, imgData: ImgData) {
-        val imgUrl: String? = checkCacheImg(imgData)
+    /**
+     * 使用腾讯云存储上传图片并获取图片链接
+     *
+     * @param imgData 图片数据
+     * @return 返回的图片链接
+     */
+    fun returnUrlImgByTxCos(imgData: ImgData): String? {
+        val byte = getImgByte(imgData)
+        val input: InputStream = ByteArrayInputStream(byte)
+        return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
+    }
 
+    fun sendNewImage(bot: Bot, event: Any?, imgData: ImgData) {
+//        val imgUrl: String? = checkCacheImg(imgData)
+        val imgUrl: String? = returnUrlImgByTxCos(imgData)
         val sendMsg = MsgUtils.builder().img(imgUrl).build()
         when (event) {
             is AnyMessageEvent -> bot.sendMsg(event, sendMsg, false)
             is GroupMessageEvent -> bot.sendGroupMsg(event.groupId, sendMsg, false)
             is PrivateMessageEvent -> bot.sendPrivateMsg(event.userId, sendMsg, false)
         }
-//        bot.sendMsg(event, sendMsg, false)
     }
+
 
 }

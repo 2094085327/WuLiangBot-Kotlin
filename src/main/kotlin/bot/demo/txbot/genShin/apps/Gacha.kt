@@ -3,6 +3,7 @@ package bot.demo.txbot.genShin.apps
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.MysDataUtil
+import bot.demo.txbot.genShin.util.UpdateGachaResources
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -17,6 +18,7 @@ class Gacha {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "全部卡池")
     fun allPool(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+        UpdateGachaResources().getDataMain()
         val poolList = MysDataUtil().findEachPoolName()
         bot.sendMsg(event, poolList.joinToString("\n"), false)
     }
