@@ -295,7 +295,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
 
@@ -375,7 +375,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
             )
 
             webImgUtil.sendNewImage(bot, event, imgData)
-            webImgUtil.deleteImgByQiNiu(imgData = imgData)
+            webImgUtil.deleteImg(imgData = imgData)
         }
     }
 
@@ -419,7 +419,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -454,7 +454,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -495,7 +495,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -555,7 +555,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AnyMessageHandler
@@ -628,7 +628,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
 
@@ -636,25 +636,28 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
     @MessageHandlerFilter(cmd = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(bot: Bot, event: AnyMessageEvent) {
         val mapper = jacksonObjectMapper()
-        val jsonFile = File(WARFRAME_INCARNON)
+        val newJsonFile = File(WARFRAME_NEW_INCARNON)
+        val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_INCARNON)
+
         // 读取并解析 JSON 文件
         val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
+        val beforeData = mapper.readValue(jsonFile, WfUtil.Data::class.java)
         // 当前日期
         val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
         val oneWeekLater = currentTime.plusWeeks(1)
 
         // 更新 week 的 startTime
-        val updatedOrdinaryWeeks = wfUtil.updateWeeks2(data, currentTime)
-
-        if (data != updatedOrdinaryWeeks) mapper.writeValue(jsonFile, updatedOrdinaryWeeks)
+        val updatedOrdinaryWeeks = wfUtil.updateWeeks(data, currentTime)
+        if (beforeData != updatedOrdinaryWeeks) mapper.writeValue(newJsonFile, updatedOrdinaryWeeks)
 
         // 查找当前周的数据
-        val currentOrdinaryWeek = wfUtil.findCurrentWeek(data.ordinary, currentTime)
-        val currentSteelWeek = wfUtil.findCurrentWeek(data.steel, currentTime)
+        val currentOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, currentTime)
+        val currentSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, currentTime)
 
-        val nextOrdinaryWeek = wfUtil.findCurrentWeek(data.ordinary, oneWeekLater)
-        val nextSteelWeek = wfUtil.findCurrentWeek(data.steel, oneWeekLater)
+        val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, oneWeekLater)
+        val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
+
         if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
             bot.sendMsg(event, "啊哦~本周灵化数据不见了", false)
             return
@@ -693,7 +696,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
 
         webImgUtil.sendNewImage(bot, event, imgData)
-        webImgUtil.deleteImgByQiNiu(imgData = imgData)
+        webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
 }

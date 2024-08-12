@@ -12,6 +12,7 @@ const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
+const val WARFRAME_NEW_INCARNON = "$WARFRAME_RESOURCES/new_incarnon.json"
 
 /**
  * Market 物品
