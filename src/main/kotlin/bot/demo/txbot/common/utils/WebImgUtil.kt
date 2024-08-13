@@ -218,6 +218,7 @@ class WebImgUtil(
     }
 
     fun getImgByte(imgData: ImgData): ByteArray {
+        if (!browser.isConnected) browser = playwright.chromium().launch()
         val page: Page = browser.newPage()
         page.use { thisPage ->
             thisPage.navigate(imgData.url)

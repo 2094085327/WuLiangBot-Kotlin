@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <meta charset="UTF-8">
+        <title>无量姬日活</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Other.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Other.css">
+        <script type="text/javascript" th:src="@{/js/echarts.js}"></script>
+        <script type="text/javascript" src="/static/js/echarts.js"></script>
+        <script type="text/javascript" th:src="@{/js/jquery.js}"></script>
+        <script type="text/javascript" src="/static/js/jquery.js"></script>
+
+
+        <style>
+            body {
+                padding: 10px;
+                width: 880px;
+                display: flex;
+                border-radius: 10px;
+                font-family: "YaHei", serif;
+            }
+            #line {
+                width: 435px;
+                height: 400px;
+            }
+            #line2 {
+                width: 435px;
+                height: 400px;
+            }
+        </style>
+        <script type="text/javascript">
+            // 使用 Fetch API 从指定的 URL 获取 JSON 数据
+            fetch('/dailyJson')
+                .then(response => response.json())  // 将响应转换为 JSON
+                .then(data => {
+                    // 提取并处理数据
+                    const dates = data.data.map(item => item.date.slice(5)); // 提取“月-日”
+                    const totalUpMessages = data.data.map(item => item.totalUpMessages);
+                    const dailyActiveUsers = data.data.map(item => item.dailyActiveUsers);
+
+                    // 初始化 ECharts 实例
+                    const myChart = echarts.init(document.getElementById('line'));
+                    const myChart2 = echarts.init(document.getElementById('line2'));
+
+                    // 配置图表
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: dates
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '上行消息量'
+                        },
+                        series: [{
+                            animation: false,
+                            markPoint: {
+                                data: [{
+                                    type: 'max',
+                                    name: '最大值'
+                                }]
+                            },
+                            markLine: { // 平均值
+                                data: [{
+                                    type: 'average',
+                                    name: '平均值'
+                                }]
+                            },
+                            data: totalUpMessages,
+                            type: 'line',
+                            smooth: true,
+                            name: 'Total Up Messages'
+                        }]
+                    };
+                    // 配置图表
+                    const option2 = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: dates
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '日活跃用户'
+                        },
+                        series: [{
+                            animation: false,
+                            markPoint: {
+                                data: [{
+                                    type: 'max',
+                                    name: '最大值'
+                                }]
+                            },
+                            markLine: { // 平均值
+                                data: [{
+                                    type: 'average',
+                                    name: '平均值'
+                                }]
+                            },
+                            data: dailyActiveUsers,
+                            type: 'line',
+                            smooth: true,
+                            name: 'Total Up Messages'
+                        }]
+                    };
+
+                    // 使用配置项和数据生成图表
+                    myChart.setOption(option);
+                    myChart2.setOption(option2);
+                })
+                .catch(error => {
+                    console.error('Error fetching the JSON data:', error);
+                });
+        </script>
+    </head>
+    <body>
+        <div id="line"></div>
+        <div id="line2"></div>
+    </body>
+</html>
