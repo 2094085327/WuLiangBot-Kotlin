@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.OtherUtil
@@ -86,11 +87,7 @@ class WfUtil @Autowired constructor(
             else -> ""
         }
 
-        bot.sendMsg(
-            event,
-            "你查询的物品是 $modLevelString「${item.zhItemName}」\n$orderString",
-            false
-        )
+        ContextProvider.sendMsg("你查询的物品是 $modLevelString「${item.zhItemName}」\n$orderString")
     }
 
     /**
@@ -109,10 +106,10 @@ class WfUtil @Autowired constructor(
 
         if (fuzzyList.isNotEmpty()) {
             otherUtil.findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
-                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
+                ContextProvider.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
             }
         } else {
-            bot.sendMsg(event, "未找到任何匹配项。", false)
+            ContextProvider.sendMsg("未找到任何匹配项。")
         }
     }
 

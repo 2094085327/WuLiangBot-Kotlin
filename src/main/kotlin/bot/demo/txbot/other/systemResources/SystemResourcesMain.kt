@@ -1,5 +1,6 @@
 package bot.demo.txbot.other.systemResources
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -177,12 +178,15 @@ class SystemResourcesMain {
         }
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "无量姬状态")
-    fun sendSystemResources(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun sendSystemResources(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val (cpuData, ramData, sysData, jvmData, sysFileData) = resourcesMain()
 
-        bot.sendMsg(event, "系统状态计算中，请稍后...", false)
+        ContextProvider.sendMsg("系统状态计算中，请稍后...")
         val sysFileString: String = sysFileData.joinToString(separator = "\n") {
             "盘符: ${it.dirName}\n" +
                     "盘符类型: ${it.sysTypeName}\n" +
@@ -193,8 +197,8 @@ class SystemResourcesMain {
                     "空间使用率: ${it.fileUsage}%\n"
         }
 
-        bot.sendMsg(
-            event,
+        ContextProvider.sendMsg(
+
             "Cpu总使用率: ${cpuData.getTotal()}%\n" +
                     "Cpu核心数: ${cpuData.cpuNum}\n" +
                     "Cpu逻辑处理器数: ${cpuData.cpuLogicalNum}\n" +
@@ -218,7 +222,7 @@ class SystemResourcesMain {
                     "JVM路径: ${jvmData.jvmHome}\n\n" +
                     "机器人运行开始时间: ${getStartTime()}\n" +
                     "已运行: ${getRunTime()}\n" +
-                    sysFileString, false
+                    sysFileString
         )
     }
 }

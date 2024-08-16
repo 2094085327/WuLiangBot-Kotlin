@@ -15,4 +15,6 @@ interface ICosFileService {
     fun uploadFileWithFolder(folder: String, uploadFile: MultipartFile): String?
 
     fun deleteFile(fileName: String, mime: String)
+
+    fun checkFileExist(fileName: String, mime: String): Boolean
 }

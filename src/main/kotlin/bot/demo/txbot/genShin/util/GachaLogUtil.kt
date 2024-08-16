@@ -1,7 +1,11 @@
 package bot.demo.txbot.genShin.util
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
+import bot.demo.txbot.common.tencentCos.ICosFileService
 import bot.demo.txbot.common.utils.HttpUtil
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.HtmlEntity
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
@@ -9,13 +13,10 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.LoggerUtils.logError
-import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
@@ -30,7 +31,11 @@ import java.util.logging.Logger
  * @date 2024/2/5 20:04
  */
 @Component
-class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val qiNiuService: QiNiuService) {
+class GachaLogUtil(
+    @Autowired private val webImgUtil: WebImgUtil,
+    @Autowired private val qiNiuService: QiNiuService,
+    @Autowired private val txCosService: ICosFileService
+) {
     private val logger: Logger = Logger.getLogger(GachaLogUtil::class.java.getName())
 
 
@@ -347,21 +352,17 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil, @Autowired pri
     /**
      * 获取抽卡记录并发送图片
      *
-     * @param bot 机器人
-     * @param event 消息事件
      * @param gameUid 游戏Uid
      * @param imgData 图片数据
      */
-    fun <T> getGachaLogCommon(
-        bot: Bot,
-        event: T,
+    fun getGachaLog(
         gameUid: String,
         imgData: WebImgUtil.ImgData,
-        sendImageFunc: (Bot, T, WebImgUtil.ImgData) -> Unit
     ) {
         try {
-            qiNiuService.getFileInfo(imgData)
-            sendImageFunc(bot, event, imgData)
+//            qiNiuService.getFileInfo(imgData)
+            if (txCosService.checkFileExist(imgData.imgName!!, "jpeg")) sendNewImage(imgData)
+            else throw Exception("缓存图片不存在")
         } catch (e: Exception) {
             logWarn("缓存图片不存在，开始生成图片")
             val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
@@ -370,37 +371,24 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil, @Autowired pri
                 getEachData(gachaData, type)
             }
 
-            sendImageFunc(bot, event, imgData)
+            sendNewImage(imgData)
         }
-    }
-
-    fun getGachaLog(bot: Bot, privateMessageEvent: PrivateMessageEvent, gameUid: String, imgData: WebImgUtil.ImgData) {
-        getGachaLogCommon(bot, privateMessageEvent, gameUid, imgData, ::sendNewImage)
-    }
-
-    fun getGachaLog(bot: Bot, event: AnyMessageEvent, gameUid: String, imgData: WebImgUtil.ImgData) {
-        getGachaLogCommon(bot, event, gameUid, imgData, ::sendNewImage)
     }
 
     /**
      * 发送非缓存截图
      *
-     * @param bot 机器人
-     * @param event 事件
+     * @param imgData 图片数据
      */
-    private fun <T> sendNewImage(
-        bot: Bot,
-        event: T,
-        imgData: WebImgUtil.ImgData
-    ) {
-        webImgUtil.sendNewImage(bot, event, imgData)
-        when (event) {
+    private fun sendNewImage(imgData: WebImgUtil.ImgData) {
+        webImgUtil.sendNewImage(imgData)
+        when (ContextProvider.currentEvent) {
             is PrivateMessageEvent -> {
-                bot.sendPrivateMsg(event.userId, "发送完毕，可能因网络波动未显示图片，请稍后再试", false)
+                ContextProvider.sendPrivateMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
             }
 
             is AnyMessageEvent -> {
-                bot.sendMsg(event, "发送完毕，可能因网络波动未显示图片，请稍后再试", false)
+                ContextProvider.sendMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
             }
         }
     }
@@ -420,12 +408,12 @@ class GachaLogUtil(@Autowired private val webImgUtil: WebImgUtil, @Autowired pri
 
         // 构建新的UUID字符串，使用哈希值的十六进制表示填充
         val newUuid = (hexId.substring(0, 8) +
-                    "-${hexId.substring(8, 12)}" +
-                    "-${hexId.substring(12, 16)}" +
-                    "-${hexId.substring(16, 20)}" +
-                    "-${hexId.substring(20, 32)}").uppercase(
-                Locale.getDefault()
-            )
+                "-${hexId.substring(8, 12)}" +
+                "-${hexId.substring(12, 16)}" +
+                "-${hexId.substring(16, 20)}" +
+                "-${hexId.substring(20, 32)}").uppercase(
+            Locale.getDefault()
+        )
 
         return newUuid
     }

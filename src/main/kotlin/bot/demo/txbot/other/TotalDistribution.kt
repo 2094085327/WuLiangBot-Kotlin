@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
@@ -30,7 +31,6 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
 import java.util.regex.Matcher
 import javax.annotation.PostConstruct
 
@@ -177,12 +177,14 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "重载指令")
     fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         CommandList.reloadCommands()
-        bot.sendMsg(event, "指令列表已重载", false)
+        ContextProvider.sendMsg("指令列表已重载")
         logInfo("指令列表已重载")
         val imageData = WebImgUtil.ImgData(
             imgName = "help-$lastHelpMd5",
@@ -196,9 +198,12 @@ class TotalDistribution(
         lastHelpMd5 = helpMd5
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
         todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
         val realId = OtherUtil().getRealId(event)
@@ -238,10 +243,10 @@ class TotalDistribution(
 
 //            val encodedInputBase64 =
 //                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
-//            bot.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+//            ContextProvider.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
 
             // TODO 临时补丁，被动Md被修复 先直发一下进行兜底回复 未来增加md开关
-            bot.sendMsg(event, "未知指令，你可能在找这些指令：$matchedCommands", false)
+            ContextProvider.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
         }
     }
 }

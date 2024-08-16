@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -12,11 +13,13 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class Restart {
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "重启")
-    fun allPool(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        bot.sendMsg(event, "正在重启中，请稍后", false)
+    fun allPool(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
+        ContextProvider.sendMsg("正在重启中，请稍后")
         // 获取操作系统类型
         val osName = System.getProperty("os.name").toLowerCase()
 

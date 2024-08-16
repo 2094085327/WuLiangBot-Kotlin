@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.LoggerUtils.logWarn
@@ -18,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.io.File
-import java.util.regex.Matcher
 import javax.annotation.PostConstruct
 
 
@@ -111,10 +111,13 @@ class UpdateResources {
         }
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "更新资源")
     fun updateAll(bot: Bot, event: AnyMessageEvent) {
-        bot.sendMsg(event, "正在更新资源，请稍后", false)
+        ContextProvider.initialize(event, bot)
+
+        ContextProvider.sendMsg("正在更新资源，请稍后")
 
         val folderPath = RESOURCES_PATH
 
@@ -128,10 +131,10 @@ class UpdateResources {
             )
 
             if (!downloadCheck.first) {
-                bot.sendMsg(event, "资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试", false)
+                ContextProvider.sendMsg("资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试")
                 return@runBlocking
             }
-            bot.sendMsg(event, "资源更新完成，本次共更新${downloadCheck.second}个资源", false)
+            ContextProvider.sendMsg("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
 
             // 尝试更新卡池数据
@@ -142,11 +145,14 @@ class UpdateResources {
         }
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "清除缓存")
-    fun deleteCache(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun deleteCache(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         forceDeleteCache("resources/imageCache")
-        bot.sendMsg(event, "已完成缓存清理", false)
+        ContextProvider.sendMsg("已完成缓存清理")
     }
 
     /**

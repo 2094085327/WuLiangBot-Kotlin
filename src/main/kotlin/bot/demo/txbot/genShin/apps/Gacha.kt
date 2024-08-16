@@ -1,5 +1,6 @@
 package bot.demo.txbot.genShin.apps
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -15,12 +16,15 @@ import java.util.regex.Matcher
 @Shiro
 @Component
 class Gacha {
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "全部卡池")
-    fun allPool(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun allPool(bot: Bot, event: AnyMessageEvent, matcher: Matcher?) {
+        ContextProvider.initialize(event, bot)
+
         UpdateGachaResources().getDataMain()
         val poolList = MysDataUtil().findEachPoolName()
-        bot.sendMsg(event, poolList.joinToString("\n"), false)
+        ContextProvider.sendMsg(poolList.joinToString("\n"))
     }
 
     /**
@@ -53,20 +57,23 @@ class Gacha {
         return Triple("", "", "")
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "启用卡池 (.*)")
-    fun setOpenPool(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun setOpenPool(bot: Bot, event: AnyMessageEvent, matcher: Matcher?) {
+        ContextProvider.initialize(event, bot)
+
         val poolData = matcher?.group(1) ?: ""
         if (poolData == "") {
-            bot.sendMsg(event, "请输入正确的卡池", false)
+            ContextProvider.sendMsg("请输入正确的卡池")
             return
         }
 
         // 解析输入
         val (poolName, poolId, poolType) = parsePoolData(poolData)
         if (poolName.isEmpty() || poolId.isEmpty()) {
-            bot.sendMsg(event, "你输入的格式似乎不正确哦", false)
-            bot.sendMsg(event, "请使用指令 全部卡池 查看可以启用的卡池", false)
+            ContextProvider.sendMsg("你输入的格式似乎不正确哦")
+            ContextProvider.sendMsg("请使用指令 全部卡池 查看可以启用的卡池")
             return
         }
 
@@ -75,19 +82,22 @@ class Gacha {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            bot.sendMsg(event, "未找到卡池「$poolData」", false)
-            bot.sendMsg(event, "请使用指令 全部卡池 查看可以启用的卡池", false)
+            ContextProvider.sendMsg("未找到卡池「$poolData」")
+            ContextProvider.sendMsg("请使用指令 全部卡池 查看可以启用的卡池")
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
 
-        bot.sendMsg(event, "已启用卡池「${poolFind.first}」", false)
+        ContextProvider.sendMsg("已启用卡池「${poolFind.first}」")
         InitGenShinData.initGachaLogData()
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "十连")
-    fun gacha(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun gacha(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val detailPoolInfo = poolData
 
         val itemListData = MysDataUtil().runGacha()
@@ -96,10 +106,6 @@ class Gacha {
             itemList.add(eachItem!!.name.toString())
         }
 
-        bot.sendMsg(
-            event,
-            "现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~\n" + "你抽中了:$itemList",
-            false
-        )
+        ContextProvider.sendMsg("现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~\n" + "你抽中了:$itemList")
     }
 }

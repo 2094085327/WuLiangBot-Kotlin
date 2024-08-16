@@ -1,5 +1,6 @@
 package bot.demo.txbot.geography
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -26,45 +27,45 @@ class GeoMain(
 ) {
 
 
-    private fun sendNewImage(bot: Bot, event: AnyMessageEvent?, imgName: String, city: String, webUrl: String) {
+    private fun sendNewImage(imgName: String, city: String, webUrl: String) {
 
         if (!geoApi.checkCode(geoApi.getWeatherData(city))) {
-            bot.sendMsg(event, "没有找到查询的城市信息，请检查是否输入错误", false)
+            ContextProvider.sendMsg("没有找到查询的城市信息，请检查是否输入错误")
             return
         }
         val imgData = WebImgUtil.ImgData(url = webUrl, imgName = imgName, openCache = false)
-        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.sendNewImage(imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "天气 (.*)")
-    fun getWeatherImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        if (event == null) return
+    fun getWeatherImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
 
-        bot.sendMsg(event, "正在查询信息，请耐心等待", false)
+        ContextProvider.sendMsg("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 
-        val city = matcher?.group(1)
+        val city = matcher.group(1)
         val imgName = "${city}天气-${UUID.randomUUID()}"
-        sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/weather")
+        sendNewImage(imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/weather")
 
         System.gc()
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "地理 (.*)")
-    fun getGeoImg(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        if (event == null) return
+    fun getGeoImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
 
-        bot.sendMsg(event, "正在查询信息，请耐心等待", false)
+        ContextProvider.sendMsg("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 
-        val city = matcher?.group(1)
+        val city = matcher.group(1)
         val imgName = "${city}地理-${UUID.randomUUID()}"
-        sendNewImage(bot, event, imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/geo")
+        sendNewImage(imgName, city ?: "", "http://localhost:${webImgUtil.usePort}/geo")
         System.gc()
     }
 

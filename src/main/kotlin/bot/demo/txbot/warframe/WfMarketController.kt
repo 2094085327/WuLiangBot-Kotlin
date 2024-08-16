@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.common.utils.WebImgUtil
@@ -116,9 +117,12 @@ class WfMarketController @Autowired constructor(
         var rivenOrderList: RivenOrderList? = null
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wm (.*)")
     fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val key = matcher.group(1)
         val regex = """(\d+)(?=级)|(满级)""".toRegex()
         val matchResult = regex.find(key)
@@ -148,17 +152,19 @@ class WfMarketController @Autowired constructor(
 
         if (fuzzyList.isNotEmpty()) {
             OtherUtil().findMatchingStrings(key, fuzzyList).let {
-                bot.sendMsg(event, "未找到该物品,也许你想找的是:[${it.joinToString(", ")}]", false)
+                ContextProvider.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
             }
         } else {
-            bot.sendMsg(event, "未找到任何匹配项。", false)
+            ContextProvider.sendMsg("未找到任何匹配项。")
         }
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(wr|wmr)\\s+(\\S+.*)\$")
     fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val key = matcher.group(2)
         val parameterList = key.split(" ")
 
@@ -182,13 +188,13 @@ class WfMarketController @Autowired constructor(
         )
 
         if (rivenJson == null) {
-            bot.sendMsg(event, "查询失败，请稍后重试", false)
+            ContextProvider.sendMsg("查询失败，请稍后重试")
             return
         }
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
-        if (auctionInfo is String) bot.sendMsg(event, auctionInfo, false)
+        if (auctionInfo is String) ContextProvider.sendMsg(auctionInfo)
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/riven",
@@ -196,14 +202,17 @@ class WfMarketController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.sendNewImage(imgData)
         webImgUtil.deleteImg(imgData = imgData)
 
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wl (.*)")
     fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
@@ -237,7 +246,7 @@ class WfMarketController @Autowired constructor(
         )
 
         if (lichJson == null) {
-            bot.sendMsg(event, "查询失败，请稍后重试", false)
+            ContextProvider.sendMsg("查询失败，请稍后重试")
             return
         }
 
@@ -268,15 +277,18 @@ class WfMarketController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(bot, event, imgData)
+        webImgUtil.sendNewImage(imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wiki (.*)")
     fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
-        bot.sendMsg(event, "你查询的物品的wiki地址可能是:$wikiUrl", false)
+        ContextProvider.sendMsg("你查询的物品的wiki地址可能是:$wikiUrl")
     }
 }

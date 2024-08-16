@@ -162,7 +162,7 @@ class MysDataUtil {
         objRoot.put("openPool", name)
         objRoot.put("poolName", poolFormat)
         objRoot.put("poolType", poolType)
-        objectMapper.writeValue(File(GACHA_JSON), poolDataChange)
+        objectMapper.writeValue(File( GACHA_JSON), poolDataChange)
     }
 
     data class PoolData(

@@ -1,5 +1,6 @@
 package bot.demo.txbot.common.utils
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
 import bot.demo.txbot.common.tencentCos.ICosFileService
 import bot.demo.txbot.common.utils.LoggerUtils.logError
@@ -12,7 +13,6 @@ import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
-import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.GroupMessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
@@ -327,14 +327,14 @@ class WebImgUtil(
         return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
     }
 
-    fun sendNewImage(bot: Bot, event: Any?, imgData: ImgData) {
+    fun sendNewImage(imgData: ImgData) {
 //        val imgUrl: String? = checkCacheImg(imgData)
         val imgUrl: String? = returnUrlImgByTxCos(imgData)
         val sendMsg = MsgUtils.builder().img(imgUrl).build()
-        when (event) {
-            is AnyMessageEvent -> bot.sendMsg(event, sendMsg, false)
-            is GroupMessageEvent -> bot.sendGroupMsg(event.groupId, sendMsg, false)
-            is PrivateMessageEvent -> bot.sendPrivateMsg(event.userId, sendMsg, false)
+        when (ContextProvider.currentEvent) {
+            is AnyMessageEvent -> ContextProvider.sendMsg(sendMsg)
+            is GroupMessageEvent -> ContextProvider.sendGroupMsg(sendMsg)
+            is PrivateMessageEvent -> ContextProvider.sendPrivateMsg(sendMsg)
         }
     }
 

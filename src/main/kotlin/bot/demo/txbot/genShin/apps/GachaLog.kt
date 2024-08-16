@@ -1,6 +1,9 @@
 package bot.demo.txbot.genShin.apps
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.database.user.UserService
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
@@ -19,8 +22,6 @@ import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import bot.demo.txbot.common.utils.LoggerUtils.logError
-import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.net.URLEncoder
 import java.util.regex.Matcher
@@ -174,7 +175,7 @@ class GachaLog(
     }
 
 
-//
+    //
 //
 //    /**
 //     * 获取抽卡数据进程
@@ -225,25 +226,29 @@ class GachaLog(
 //            Thread.sleep(500)
 //        }
 //    }
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "新增角色(.*)")
-    fun updateNewItem(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        val (newItemName, newItemType) = matcher?.group(1)?.split(" ") ?: return
+    fun updateNewItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
+        val (newItemName, newItemType) = matcher.group(1)?.split(" ") ?: return
         val response = when (MysDataUtil().insertAttribute(newItemName, newItemType)) {
             "200" -> "角色更新成功"
             "201" -> "这个角色已经存在了哦"
             "404" -> "属性中没有 $newItemType 类型的属性哦"
             else -> "未知错误，请联系管理员查看"
         }
-        bot.sendMsg(event, response, false)
+        ContextProvider.sendMsg(response)
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "历史记录(.*)")
     fun recordQuery(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        bot.sendMsg(event, "正在查询历史数据，请稍等", false)
+        ContextProvider.initialize(event, bot)
+
+        ContextProvider.sendMsg("正在查询历史数据，请稍等")
         updateGachaResources.getDataMain()
         val realId = OtherUtil().getRealId(event)
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
@@ -251,7 +256,7 @@ class GachaLog(
             ?: userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            bot.sendMsg(event, "Uid还没有绑定，请发送 抽卡记录 进行绑定", false)
+            ContextProvider.sendMsg("Uid还没有绑定，请发送 抽卡记录 进行绑定")
             return
         }
 
@@ -263,20 +268,22 @@ class GachaLog(
         val result = gachaLogUtil.checkCache(imageData) ?: gaChaLogService.selectByUid(gameUid)
 
         result?.let {
-            gachaLogUtil.getGachaLog(bot, event, gameUid, imageData)
+            gachaLogUtil.getGachaLog(gameUid, imageData)
         }
         System.gc()
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "删除记录")
-    fun deleteGachaLog(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    fun deleteGachaLog(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val realId = OtherUtil().getRealId(event)
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            bot.sendMsg(event, "Uid还没有绑定，请发送 抽卡记录 进行绑定", false)
+            ContextProvider.sendMsg("Uid还没有绑定，请发送 抽卡记录 进行绑定")
             return
         }
 
@@ -287,15 +294,17 @@ class GachaLog(
             val deleted = file.delete()
             val message =
                 if (deleted) "抽卡记录${prefix}删除成功" else "抽卡记录${prefix}删除失败，记录可能正在使用，请稍后再试"
-            bot.sendMsg(event, message, false)
-        } ?: bot.sendMsg(event, "当前账户下无抽卡记录", false)
+            ContextProvider.sendMsg(message)
+        } ?: ContextProvider.sendMsg("当前账户下无抽卡记录")
     }
 
-
+    
     @OptIn(DelicateCoroutinesApi::class)
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "抽卡记录")
     suspend fun getGachaLog(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val realId = OtherUtil().getRealId(event)
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
@@ -306,33 +315,29 @@ class GachaLog(
             害怕风险请勿扫码~
         """.trimIndent()
 
-        bot.sendMsg(event, disclaimer, false)
+        ContextProvider.sendMsg(disclaimer)
         val sendMsg = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
-        val qrImageMsg = bot.sendMsg(event, sendMsg, false)
+        val qrImageMsg = ContextProvider.sendMsg(sendMsg)
 
         updateGachaResources.getDataMain()
 
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
             logInfo("撤回二维码")
-            bot.deleteMsg(event.groupId, bot.selfId, qrImageMsg.data.messageId)
+            ContextProvider.deleteMsg(qrImageMsg.data.messageId)
         }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
-            bot.sendMsg(event, qrCodeStatus["message"].textValue(), false)
+            ContextProvider.sendMsg(qrCodeStatus["message"].textValue())
             return
         }
-        bot.sendMsg(event, "登录成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待", false)
+        ContextProvider.sendMsg("登录成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待")
 
         MysDataUtil().deleteDataCache()
         val stoken = qrLogin.getStoken(qrCodeStatus)
         // TODO 之后修改为不为正确状态码即返回
         if (stoken["retcode"].intValue() == -100) {
-            bot.sendMsg(
-                event,
-                "${stoken["message"].textValue()} 若多次出现此提示请尝试使用「抽卡链接」获取链接后进行分析",
-                false
-            )
+            ContextProvider.sendMsg("${stoken["message"].textValue()} 若多次出现此提示请尝试使用「抽卡链接」获取链接后进行分析")
             return
         }
         qrLogin.getAccountInfo(stoken).let { accountInfo ->
@@ -351,16 +356,18 @@ class GachaLog(
                 url = "http://localhost:${webImgUtil.usePort}/gachaLog",
                 openCache = false
             )
-            gachaLogUtil.getGachaLog(bot, event, gameUid, imageData)
+            gachaLogUtil.getGachaLog(gameUid, imageData)
             userService.insertGenUidByRealId(realId, gameUid)
         }
 
     }
 
-
+    
     @GroupMessageHandler
     @MessageHandlerFilter(cmd = "抽卡记录(.*)")
     suspend fun getGachaLogByUrlGroup(bot: Bot, event: GroupMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         val gachaUrl = matcher.group(1)?.replace(" ", "")
         if (!gachaUrl.isNullOrEmpty()) {
             bot.sendGroupMsg(event.groupId, "请通过私聊无量姬发送链接，避免信息泄露，请及时撤回消息", false)
@@ -369,9 +376,12 @@ class GachaLog(
 
     @PrivateMessageHandler
     @MessageHandlerFilter(cmd = "抽卡记录(.*)")
-    suspend fun getGachaLogByUrl(bot: Bot, event: PrivateMessageEvent, matcher: Matcher?) {
+    
+    suspend fun getGachaLogByUrl(bot: Bot, event: PrivateMessageEvent, matcher: Matcher) {
+        ContextProvider.initialize(event, bot)
+
         // 获取到的链接会被自动将&转义为&amp;，需要替换回来
-        val gachaUrl = matcher?.group(1)?.replace(" ", "")?.replace("&amp;", "&") ?: ""
+        val gachaUrl = matcher.group(1)?.replace(" ", "")?.replace("&amp;", "&") ?: ""
 
         if (gachaUrl.isEmpty()) return
 
@@ -415,7 +425,7 @@ class GachaLog(
                     openCache = false
                 )
                 webImgUtil.deleteImg(imageData)
-                gachaLogUtil.getGachaLog(bot, event, gameUid, imageData)
+                gachaLogUtil.getGachaLog(gameUid, imageData)
                 userService.insertGenUidByRealId(realId, gameUid)
             }
 
@@ -457,27 +467,28 @@ class GachaLog(
         }
     }
 
-
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "导入记录")
     suspend fun importGachaLogInfo(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val importState = importGachaLog()
-        bot.sendMsg(event, "正在导入记录，请稍等", false)
+        ContextProvider.sendMsg("正在导入记录，请稍等")
         when (importState) {
-            "success" -> bot.sendMsg(event, "记录导入完成", false)
+            "success" -> ContextProvider.sendMsg("记录导入完成")
             // 受腾讯机器人API限制，无法通过群聊获取文件，暂时只能由开发者手动将文件放入导入文件夹
-            "empty" -> bot.sendMsg(event, "没有可以导入的记录", false)
-            "false" -> bot.sendMsg(event, "记录导入失败，请检查记录格式是否符合UIGF标准", false)
+            "empty" -> ContextProvider.sendMsg("没有可以导入的记录")
+            "false" -> ContextProvider.sendMsg("记录导入失败，请检查记录格式是否符合UIGF标准")
         }
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "抽卡链接")
-    suspend fun getGachaLogUrl(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
-        bot.sendMsg(
-            event,
-            "pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m",
-            false
-        )
+    suspend fun getGachaLogUrl(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
+        ContextProvider.sendMsg("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")
     }
 }

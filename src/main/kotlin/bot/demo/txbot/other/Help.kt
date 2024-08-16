@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import com.fasterxml.jackson.databind.JsonNode
@@ -22,35 +23,34 @@ import java.util.regex.Matcher
 @Component
 @Controller
 class Help(@Autowired private val webImgUtil: WebImgUtil) {
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
-    fun help(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun help(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
         val imageData = WebImgUtil.ImgData(
             imgName = "help-${helpJson["updateMd5"].textValue()}",
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/help"
         )
-        webImgUtil.sendNewImage(
-            bot,
-            event,
-            imageData
-        )
+        webImgUtil.sendNewImage(imageData)
     }
 
+    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "日活")
-    fun daily(bot: Bot, event: AnyMessageEvent?, matcher: Matcher?) {
+    fun daily(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
         val imageData = WebImgUtil.ImgData(
             imgName = "dailyActive-${UUID.randomUUID()}",
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/dailyActive"
         )
-        webImgUtil.sendNewImage(
-            bot,
-            event,
-            imageData
-        )
+        webImgUtil.sendNewImage(imageData)
+        webImgUtil.deleteImg(imageData)
     }
 
     @RequestMapping("/help")
