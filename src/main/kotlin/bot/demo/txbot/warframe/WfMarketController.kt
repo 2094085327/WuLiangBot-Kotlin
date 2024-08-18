@@ -234,8 +234,7 @@ class WfMarketController @Autowired constructor(
         val ephemera: String? = otherParams.firstOrNull { it.contains("无") || it.contains("有") }
 
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
-
-        val lichType = if (itemNameKey.contains("赤毒")) "lich" else "sister"
+        val lichType = if (itemEntity.urlName.contains("kuva")) "lich" else "sister"
 
         val lichJson = wfUtil.getAuctionsJson(
             element = urlElement,
