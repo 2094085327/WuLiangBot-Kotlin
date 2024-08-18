@@ -136,7 +136,6 @@ class CosFileServiceImpl(
 
     override fun checkFileExist(fileName: String, mime: String): Boolean {
         val key = txCosConfig.path + fileName + ".$mime"
-        println("key: $key")
         return cosClient.doesObjectExist(txCosConfig.bucketName, key)
     }
 

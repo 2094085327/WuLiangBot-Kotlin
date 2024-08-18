@@ -134,7 +134,9 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val boss: String,
         val rewardItem: String,
         val taskList: List<Missions>,
-        val eta: String
+        val eta: String,
+        val nextBoss: String,
+        val nextRewardItem: String
     )
 
     /**
@@ -299,7 +301,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(bot: Bot, event: AnyMessageEvent) {
@@ -312,7 +314,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         getSendFissureList(bot, event, filteredFissures)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(bot: Bot, event: AnyMessageEvent) {
@@ -325,7 +327,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         getSendFissureList(bot, event, filteredFissures)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "九重天")
     fun getEmpyreanFissures(bot: Bot, event: AnyMessageEvent) {
@@ -338,7 +340,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         getSendFissureList(bot, event, filteredFissures)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "奸商")
     fun findVoidTrader(bot: Bot, event: AnyMessageEvent) {
@@ -387,7 +389,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         }
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "钢铁")
     fun getSteelPath(bot: Bot, event: AnyMessageEvent) {
@@ -432,7 +434,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "突击")
     fun getSortie(bot: Bot, event: AnyMessageEvent) {
@@ -470,7 +472,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "执(?:行|刑)官")
     fun getArchonHunt(bot: Bot, event: AnyMessageEvent) {
@@ -478,13 +480,14 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
 
         val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
 
-        val boss = archonHuntJson["boss"].asText().replaceFaction()
-        val rewardItem = when (boss) {
-            "欺谋狼主" -> "深红源力石"
-            "混沌蛇主" -> "琥珀源力石"
-            "诡文枭主" -> "蔚蓝源力石"
-            else -> "未知"
-        }
+        val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
+        val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
+
+        val bossIndex = bosses.indexOf(archonHuntJson["boss"].asText().replaceFaction())
+        val boss = if (bossIndex != -1) bosses[bossIndex] else "未知"
+        val rewardItem = if (bossIndex != -1) rewards[bossIndex] else "未知"
+        val nextBoss = if (bossIndex != -1) bosses[(bossIndex + 1) % bosses.size] else "未知"
+        val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
 
         val taskList = archonHuntJson["missions"].map { item ->
             Missions(
@@ -501,7 +504,9 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
             boss = boss,
             eta = eta,
             taskList = taskList,
-            rewardItem = rewardItem
+            rewardItem = rewardItem,
+            nextBoss = nextBoss,
+            nextRewardItem = nextRewardItem
         )
 
         val imgData = WebImgUtil.ImgData(
@@ -514,7 +519,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(电波|午夜电波)\\b")
     fun getNightWave(bot: Bot, event: AnyMessageEvent) {
@@ -577,7 +582,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     fun phobosStatus(bot: Bot, event: AnyMessageEvent) {
@@ -597,7 +602,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(bot: Bot, event: AnyMessageEvent) {
@@ -618,7 +623,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         )
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b入侵\\b")
     fun invasions(bot: Bot, event: AnyMessageEvent) {
@@ -660,7 +665,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         System.gc()
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(bot: Bot, event: AnyMessageEvent) {

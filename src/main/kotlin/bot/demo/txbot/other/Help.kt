@@ -17,13 +17,12 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import java.util.*
-import java.util.regex.Matcher
 
 @Shiro
 @Component
 @Controller
-class Help(@Autowired private val webImgUtil: WebImgUtil) {
-    
+class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
     fun help(bot: Bot, event: AnyMessageEvent) {
@@ -38,12 +37,12 @@ class Help(@Autowired private val webImgUtil: WebImgUtil) {
         webImgUtil.sendNewImage(imageData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "日活")
     fun daily(bot: Bot, event: AnyMessageEvent) {
         ContextProvider.initialize(event, bot)
-
+        totalDistribution.saveActiveLog()
         val imageData = WebImgUtil.ImgData(
             imgName = "dailyActive-${UUID.randomUUID()}",
             element = "body",

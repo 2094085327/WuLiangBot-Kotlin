@@ -8,12 +8,13 @@
         <link rel="stylesheet" type="text/css" th:href="@{/css/Warframe.css}">
         <link rel="stylesheet" type="text/css" href="/static/css/Warframe.css">
         <style>
-            body{
+            body {
                 padding: 10px;
                 width: 435px;
                 border-radius: 10px;
-                font-family: "HanYiQiHei",serif;
+                font-family: "HanYiQiHei", serif;
             }
+
             .frame {
                 width: 425px;
             }
@@ -45,6 +46,17 @@
                 <div class="huntTime">
                     <span>剩余时间: </span>
                     <span class="huntTimeInfo" th:text="${archonHuntEntity.eta}"/>
+                </div>
+                <div class="nextWeek">
+                    <span>下周可能来袭的敌人是:</span>
+                    <div class="archonNextWeek">
+                        <div class="huntBoss" th:text="'「'+${archonHuntEntity.nextBoss}+'」'"/>
+                        <span>正携带</span>
+                        <div class="huntReward"
+                             th:text="'「' + ${archonHuntEntity.nextRewardItem} + '」'"
+                             th:style="'color:' + (${archonHuntEntity.nextRewardItem.contains('红')} ? 'red' : (${archonHuntEntity.nextRewardItem.contains('蓝') ? '#32c5ff' : '#ff9900'}))"/>
+                        <span>等待进攻中</span>
+                    </div>
                 </div>
             </div>
             <div class="wuLiangInfo">

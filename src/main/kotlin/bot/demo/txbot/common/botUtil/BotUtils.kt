@@ -24,47 +24,34 @@ class BotUtils {
         var currentEvent: MessageEvent? = null
         private var currentBot: Bot? = null
 
-        fun initialize(event: MessageEvent, bot: Bot) {
+        fun <T : MessageEvent> initialize(event: T, bot: Bot) {
             currentEvent = event
             currentBot = bot
         }
 
-        fun initialize(event: AnyMessageEvent, bot: Bot) {
-            currentEvent = event
-            currentBot = bot
-        }
-
-        fun initialize(event: GroupMessageEvent, bot: Bot) {
-            currentEvent = event
-            currentBot = bot
-        }
-
-        fun initialize(event: PrivateMessageEvent, bot: Bot) {
-            currentEvent = event
-            currentBot = bot
+        private fun getBotAndEvent(): Pair<Bot, MessageEvent> {
+            val event = currentEvent ?: throw IllegalStateException("Event 未设置")
+            val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
+            return Pair(bot, event)
         }
 
         fun sendMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
-            val event = currentEvent ?: throw IllegalStateException("Event 未设置")
-            val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
+            val (bot, event) = getBotAndEvent()
             return bot.sendMsg(event as AnyMessageEvent, message, autoEscape)
         }
 
         fun sendPrivateMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
-            val event = currentEvent ?: throw IllegalStateException("Event 未设置")
-            val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
+            val (bot, event) = getBotAndEvent()
             return bot.sendPrivateMsg(event.userId, message, autoEscape)
         }
 
         fun sendGroupMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
-            val event = currentEvent ?: throw IllegalStateException("Event 未设置")
-            val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
+            val (bot, event) = getBotAndEvent()
             return bot.sendGroupMsg((event as GroupMessageEvent).groupId, message, autoEscape)
         }
 
         fun deleteMsg(messageId: Int): ActionRaw? {
-            val event = currentEvent ?: throw IllegalStateException("Event 未设置")
-            val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
+            val (bot, event) = getBotAndEvent()
             return when (event) {
                 is GroupMessageEvent -> bot.deleteMsg(event.groupId, bot.selfId, messageId)
                 is PrivateMessageEvent -> bot.deleteMsg(messageId)
