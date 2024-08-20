@@ -29,9 +29,8 @@ class WfMarketController @Autowired constructor(
     private val wfUtil: WfUtil,
     private val webImgUtil: WebImgUtil,
     private val wfLexiconService: WfLexiconService,
+    private val wfRivenService: WfRivenService
 ) {
-    @Autowired
-    final lateinit var wfRivenService: WfRivenService
 
     /**
      * Warframe 市场物品
@@ -117,7 +116,7 @@ class WfMarketController @Autowired constructor(
         var rivenOrderList: RivenOrderList? = null
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wm (.*)")
     fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -133,13 +132,13 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(cleanKey)
 
         if (itemEntity != null) {
-            wfUtil.sendMarketItemInfo(bot, event, itemEntity, level)
+            wfUtil.sendMarketItemInfo(itemEntity, level)
             return
         }
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
         if (!keyList.isNullOrEmpty()) {
-            wfUtil.sendMarketItemInfo(bot, event, keyList.first()!!, level)
+            wfUtil.sendMarketItemInfo(keyList.first()!!, level)
             return
         }
 
@@ -159,7 +158,7 @@ class WfMarketController @Autowired constructor(
         }
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "\\b(wr|wmr)\\s+(\\S+.*)\$")
     fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -177,7 +176,7 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.searchByRivenLike(itemNameKey).firstOrNull()
             ?: run {
-                wfUtil.handleFuzzySearch(bot, event, itemNameKey)
+                wfUtil.handleFuzzySearch(itemNameKey)
                 return
             }
 
@@ -207,7 +206,7 @@ class WfMarketController @Autowired constructor(
 
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wl (.*)")
     fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
@@ -225,7 +224,7 @@ class WfMarketController @Autowired constructor(
             ?: wfRivenService.turnKeyToUrlNameByLichLike(itemNameKey).firstOrNull()
             ?: run {
                 // 如果没有找到匹配项
-                wfUtil.handleFuzzySearch(bot, event, itemNameKey)
+                wfUtil.handleFuzzySearch(itemNameKey)
                 return
             }
 
@@ -280,7 +279,7 @@ class WfMarketController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "wiki (.*)")
     fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {

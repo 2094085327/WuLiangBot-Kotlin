@@ -8,9 +8,9 @@ import bot.demo.txbot.warframe.WfMarketController.*
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -26,19 +26,17 @@ import java.time.temporal.ChronoUnit
  */
 @Component
 class WfUtil @Autowired constructor(
-    val wfRivenService: WfRivenService,
+    private val wfRivenService: WfRivenService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
 
     /**
      * 发送物品信息
      *
-     * @param bot 机器人
-     * @param event 事件
      * @param item 物品
      * @param modLevel 模组等级
      */
-    fun sendMarketItemInfo(bot: Bot, event: AnyMessageEvent, item: WfLexiconEntity, modLevel: Any? = null) {
+    fun sendMarketItemInfo(item: WfLexiconEntity, modLevel: Any? = null) {
         val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
@@ -93,11 +91,9 @@ class WfUtil @Autowired constructor(
     /**
      * 如果找不到项目，则处理模糊搜索的功能
      *
-     * @param bot 机器人
-     * @param event 事件
      * @param itemNameKey 物品名称关键字
      */
-    fun handleFuzzySearch(bot: Bot, event: AnyMessageEvent, itemNameKey: String) {
+    fun handleFuzzySearch(itemNameKey: String) {
         val fuzzyList = mutableSetOf<String>()
         itemNameKey.forEach { char ->
             wfRivenService.superFuzzyQuery(char.toString())
@@ -120,7 +116,7 @@ class WfUtil @Autowired constructor(
      * @param positiveStats 正词条
      * @param negativeStat 负词条
      */
-    fun processParameters(
+    private fun processParameters(
         parameters: List<String>,
         positiveStats: MutableList<String>,
         negativeStat: String?
@@ -148,7 +144,7 @@ class WfUtil @Autowired constructor(
      * @param negativeStat 负词条
      * @return 查询参数
      */
-    fun createQueryParams(
+    private fun createQueryParams(
         weaponUrlName: String,
         positiveStats: List<String>,
         negativeStat: String?
@@ -174,7 +170,7 @@ class WfUtil @Autowired constructor(
      * @param ephemera 是否有幻纹
      * @return 查询参数
      */
-    fun createLichQueryParams(
+    private fun createLichQueryParams(
         weaponUrlName: String,
         element: String? = null,
         ephemera: Boolean? = false
@@ -215,7 +211,7 @@ class WfUtil @Autowired constructor(
      * @param timeStr 时间字符串
      * @return 判断后的时间
      */
-    fun timeAgo(timeStr: String): String {
+    private fun timeAgo(timeStr: String): String {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
         val pastTime = LocalDateTime.parse(timeStr, formatter)
         val now = LocalDateTime.now()
@@ -403,7 +399,7 @@ class WfUtil @Autowired constructor(
     }
 
     // 辅助函数：查找列表中最晚的开始时间及其对应的索引
-    fun findLatestWeekAndIndex(weeks: List<Week>): Pair<Int, LocalDateTime> {
+    private fun findLatestWeekAndIndex(weeks: List<Week>): Pair<Int, LocalDateTime> {
         return weeks.withIndex().maxByOrNull { (_, week) ->
             // 解析 startTime，并转换为 LocalDateTime，若为空则使用 LocalDateTime.MIN
             week.startTime?.let { startTime ->
@@ -417,7 +413,7 @@ class WfUtil @Autowired constructor(
     }
 
     // 更新每周时间的函数，根据当前时间和最晚时间进行调整
-    fun <T : Week> updateWeekTimes(
+    private fun <T : Week> updateWeekTimes(
         weeks: List<T>,
         maxTime: LocalDateTime?, // 传入的最晚时间
         maxIndex: Int, // 对应的索引
@@ -449,7 +445,7 @@ class WfUtil @Autowired constructor(
     }
 
     // 格式化 LocalDateTime 为字符串
-    fun formatDateTime(dateTime: LocalDateTime): String {
+    private fun formatDateTime(dateTime: LocalDateTime): String {
         val zonedDateTime = dateTime.atZone(ZoneId.systemDefault()) // 转换为 ZonedDateTime
         return zonedDateTime.toOffsetDateTime().format(dateTimeFormatter) // 转换为 OffsetDateTime 并格式化
     }
@@ -473,5 +469,118 @@ class WfUtil @Autowired constructor(
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             return targetTime.format(formatter)
         }
+    }
+
+    data class WfWeather(
+        val stateId: Int,
+        val dmgStateId: Int,
+        var startTime: String
+    )
+
+    data class Place(
+        val name: String,
+        val npc: List<NPC>?
+    )
+
+    data class NPC(
+        val name: String,
+        val excludeIds: List<Int>
+    )
+
+    data class ExcludePlace(
+        val name: String,
+        val excludeIds: List<Int>
+    )
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class SpiralsData(
+        val weatherStates: Map<Int, String>,
+        val damageTypes: Map<Int, String>,
+        @JsonProperty("weather")
+        var wfWeather: List<WfWeather>,
+        val places: List<Place>,
+        val excludePlaces: List<ExcludePlace>
+    )
+
+    fun findSpiralsCurrentTime(
+        wfWeathers: List<WfWeather>,
+        currentTime: LocalDateTime
+    ): WfWeather? {
+        return wfWeathers
+            .filter { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime().isBefore(currentTime) }
+            .maxByOrNull { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime() }
+    }
+
+
+    fun findLatestWeatherAndIndex(weathers: List<WfWeather>): LocalDateTime {
+        return weathers.maxOfOrNull { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime() }
+            ?: LocalDateTime.MIN
+    }
+
+
+    fun updateWeathers(spiralData: SpiralsData, currentTime: LocalDateTime): SpiralsData {
+        val maxStartTime = findLatestWeatherAndIndex(spiralData.wfWeather)
+        spiralData.wfWeather = updateWeatherStartTimes(spiralData.wfWeather, maxStartTime, currentTime)
+        return spiralData
+    }
+
+    fun updateWeatherStartTimes(
+        weatherData: List<WfWeather>,
+        maxTime: LocalDateTime?,
+        currentTime: LocalDateTime
+    ): List<WfWeather> {
+        if (maxTime == null) return weatherData
+
+        // hours <= 0 说明仍在当前轮次内，不需要更新
+        val hours = Duration.between(maxTime, currentTime).toHours()
+        if (hours <= 0) return weatherData
+
+        val weatherCount = weatherData.size
+        // 当前时间所在位置下标
+        val nowTimeIndex = (hours / 2 - 1) % weatherCount
+
+        return weatherData.mapIndexed { i, weather ->
+            // 计算时间偏移量，i - nowTimeIndex 可以是负值，偏移量是相对的
+            val offset = (i - nowTimeIndex) * 2L
+            weather.startTime = formatDateTime(maxTime.plusHours((if (hours % 2 != 0L) hours - 1 else hours) + offset))
+            weather
+        }
+    }
+
+    fun formatDuration(duration: Duration): String {
+        return when {
+            duration.toHours() > 0 -> "${duration.toHours()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
+            duration.toMinutes() > 0 -> "${duration.toMinutes()} 分钟 ${duration.toSecondsPart()} 秒"
+            else -> "${duration.toSecondsPart()} 秒"
+        }
+    }
+
+    fun getNpcLists(
+        weatherData: SpiralsData,
+        stateId: Int
+    ): Pair<MutableList<Map<String, String>>, MutableList<Map<String, String>>> {
+        val npcList = mutableListOf<Map<String, String>>()
+        val excludeNpcList = mutableListOf<Map<String, String>>()
+
+        weatherData.places.forEach { place ->
+            place.npc?.forEach { npc ->
+                if (npc.excludeIds.contains(stateId)) excludeNpcList.add(mapOf(npc.name to place.name))
+                else npcList.add(mapOf(npc.name to place.name))
+            }
+        }
+
+        return Pair(npcList, excludeNpcList)
+    }
+
+    fun getPlaceLists(weatherData: SpiralsData, stateId: Int): Pair<MutableList<String>, MutableList<String>> {
+        val excludePlaceList = mutableListOf<String>()
+        val noExcludePlaceList = mutableListOf<String>()
+
+        weatherData.excludePlaces.forEach { place ->
+            if (place.excludeIds.contains(stateId)) excludePlaceList.add(place.name)
+            else noExcludePlaceList.add(place.name)
+        }
+
+        return Pair(excludePlaceList, noExcludePlaceList)
     }
 }

@@ -254,3 +254,38 @@
 .archonNextWeek {
     display: flex;
 }
+
+.warframeSpirals {
+    margin: 10px;
+}
+
+.spirals-detail {
+    display: grid;
+    row-gap: 10px;
+}
+
+.place {
+    display: grid;
+    justify-content: start;
+    grid-auto-flow: column;
+    column-gap: 15px;
+}
+
+.eachPlace {
+    display: grid;
+    column-gap: 10px;
+    grid-auto-flow: column;
+}
+
+.placeDetail {
+    display: flex;
+}
+
+.npc {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.npcDetail {
+    display: flex;
+}

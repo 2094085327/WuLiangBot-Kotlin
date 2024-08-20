@@ -97,4 +97,11 @@ class WarframeController {
         incarnonEntity.let { model.addAttribute("incarnonEntity", incarnonEntity) }
         return "Warframe/WfIncarnon"
     }
+
+    @RequestMapping("/spirals")
+    fun spirals(model: Model): String {
+        val moodSpiralsEntity = WfStatus.moodSpiralsEntity
+        moodSpiralsEntity.let { model.addAttribute("moodSpiralsEntity", moodSpiralsEntity) }
+        return "Warframe/WfMoodSpirals"
+    }
 }

@@ -8,6 +8,7 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.incarnonEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.moodSpiralsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
@@ -26,10 +27,7 @@ import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
-import java.time.DayOfWeek
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.*
@@ -43,10 +41,12 @@ import java.util.regex.Pattern
  */
 @Shiro
 @Component
-class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUtil, private val wfUtil: WfUtil) {
-
-    @Autowired
-    final lateinit var wfLexiconService: WfLexiconService
+class WfStatusController @Autowired constructor(
+    private val webImgUtil: WebImgUtil,
+    private val wfUtil: WfUtil,
+    private val wfLexiconService: WfLexiconService
+) {
+    private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
 
     /**
@@ -171,12 +171,27 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val nextCost: Int
     )
 
+    /**
+     * 虚空商人信息
+     *
+     * @property location 地点
+     * @property time 离开时间
+     * @property items 带来的物品
+     */
     data class VoidTraderEntity(
         val location: String,
         val time: String,
         val items: List<VoidTraderItem>
     )
 
+    /**
+     * 午夜电波任务信息
+     *
+     * @property title 任务名称
+     * @property desc 任务描述
+     * @property reputation 声望
+     * @property isDaily 是否为日常任务
+     */
     data class NightWaveChallenges(
         val title: String,
         val desc: String,
@@ -184,6 +199,15 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val isDaily: Boolean
     )
 
+    /**
+     * 午夜电波信息
+     *
+     * @property activation 开始后过去的时间
+     * @property startString 开始时间
+     * @property expiry 结束时间
+     * @property expiryString 剩余时间的字符串
+     * @property activeChallenges 任务列表
+     */
     data class NightWaveEntity(
         val activation: String,
         val startString: String,
@@ -208,6 +232,19 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val nextWeekData: WfUtil.Data,
         val remainTime: String
     )
+
+    data class MoodSpiralsEntity(
+        val currentState: String,
+        val damageType: String,
+        val npc: List<Map<String, String>>,
+        val excludeNpc: List<Map<String, String>>,
+        val excludePlace: List<String>,
+        val noExcludePlace: List<String>,
+        val remainTime: String,
+        val nextState: String,
+        val nextExcludePlace: List<String>,
+    )
+
 
     object WfStatus {
         private val timeReplacements = mapOf(
@@ -261,6 +298,8 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         var invasionsEntity = mutableListOf<InvasionsEntity>()
 
         var incarnonEntity: IncarnonEntity? = null
+
+        var moodSpiralsEntity: MoodSpiralsEntity? = null
     }
 
     /**
@@ -269,7 +308,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    fun getSendFissureList(bot: Bot, event: AnyMessageEvent, filteredFissures: List<JsonNode>) {
+    private fun getSendFissureList(filteredFissures: List<JsonNode>) {
         val thisFissureList = FissureList()
 
         filteredFissures.forEach {
@@ -311,7 +350,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(bot, event, filteredFissures)
+        getSendFissureList(filteredFissures)
     }
 
 
@@ -324,7 +363,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(bot, event, filteredFissures)
+        getSendFissureList(filteredFissures)
     }
 
 
@@ -337,7 +376,7 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        getSendFissureList(bot, event, filteredFissures)
+        getSendFissureList(filteredFissures)
     }
 
 
@@ -735,4 +774,91 @@ class WfStatusController @Autowired constructor(private val webImgUtil: WebImgUt
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
+
+
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
+    fun moodSpirals(bot: Bot, event: AnyMessageEvent) {
+        ContextProvider.initialize(event, bot)
+
+        val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
+        val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
+        val mapper = jacksonObjectMapper()
+        var weatherData: WfUtil.SpiralsData = mapper.readValue(jsonFile, WfUtil.SpiralsData::class.java)
+        val weatherDataAfter: WfUtil.SpiralsData = mapper.readValue(jsonFile, WfUtil.SpiralsData::class.java)
+        val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
+
+        weatherData = wfUtil.updateWeathers(weatherData, currentTime)
+        val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
+
+        if (currentWeatherData == null) {
+            ContextProvider.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+            return
+        }
+        if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
+
+
+        val hoursLater = OffsetDateTime.parse(currentWeatherData.startTime, dateTimeFormatter)
+            .toLocalDateTime()
+            .plusHours(2)
+            .plusMinutes(1)
+
+        weatherData = wfUtil.updateWeathers(weatherData, hoursLater)
+        val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
+
+        if (hoursLaterWeatherData == null) {
+            ContextProvider.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+            return
+        }
+
+        // 获取当前和下一个天气的状态
+        val currentWeatherState = weatherData.weatherStates[currentWeatherData.stateId]
+        val damageType = weatherData.damageTypes[currentWeatherData.dmgStateId]
+        val nextWeatherState = weatherData.weatherStates[hoursLaterWeatherData.stateId]
+
+        // 确保状态不为null
+        if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
+            ContextProvider.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
+            return
+        }
+
+        // 计算到下一个天气的剩余时间
+        val timeUntilNextWeather = Duration.between(
+            currentTime,
+            OffsetDateTime.parse(hoursLaterWeatherData.startTime, dateTimeFormatter).toLocalDateTime()
+        )
+        val timeUntilNextWeatherFormatted = wfUtil.formatDuration(timeUntilNextWeather)
+
+        // 获取当前和下一个天气的 NPC 和排除场所信息
+        val (npcList, excludeNpcList) = wfUtil.getNpcLists(weatherData, currentWeatherData.stateId)
+        val (excludePlaceList, noExcludePlaceList) = wfUtil.getPlaceLists(weatherData, currentWeatherData.stateId)
+        val nextExcludePlaceList =
+            weatherData.excludePlaces.filter { it.excludeIds.contains(hoursLaterWeatherData.stateId) }
+                .map { it.name }
+
+        // 创建 MoodSpiralsEntity 实例
+        moodSpiralsEntity = MoodSpiralsEntity(
+            currentState = currentWeatherState,
+            damageType = damageType,
+            npc = npcList,
+            excludeNpc = excludeNpcList,
+            excludePlace = excludePlaceList,
+            noExcludePlace = noExcludePlaceList,
+            remainTime = timeUntilNextWeatherFormatted,
+            nextState = nextWeatherState,
+            nextExcludePlace = nextExcludePlaceList
+        )
+
+        // 生成和发送图像
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:${webImgUtil.usePort}/warframe/spirals",
+            imgName = "spirals-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(imgData)
+        webImgUtil.deleteImg(imgData = imgData)
+        System.gc()
+    }
+
 }
