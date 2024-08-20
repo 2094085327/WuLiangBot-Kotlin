@@ -531,9 +531,9 @@ class WfUtil @Autowired constructor(
     ): List<WfWeather> {
         if (maxTime == null) return weatherData
 
-        // hours <= 0 说明仍在当前轮次内，不需要更新
+        // hours <= 1 说明仍在当前轮次内，不需要更新
         val hours = Duration.between(maxTime, currentTime).toHours()
-        if (hours <= 0) return weatherData
+        if (hours <= 1) return weatherData
 
         val weatherCount = weatherData.size
         // 当前时间所在位置下标
