@@ -324,7 +324,9 @@ class GachaLog(
         GlobalScope.launch(Dispatchers.IO) {
             delay(30000)
             logInfo("撤回二维码")
-            ContextProvider.deleteMsg(qrImageMsg.data.messageId)
+            if (qrImageMsg != null) {
+                ContextProvider.deleteMsg(qrImageMsg.data.messageId)
+            }
         }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {

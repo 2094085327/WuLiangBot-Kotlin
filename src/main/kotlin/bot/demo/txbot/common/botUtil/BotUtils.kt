@@ -4,7 +4,6 @@ import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.action.common.ActionData
 import com.mikuac.shiro.dto.action.common.ActionRaw
 import com.mikuac.shiro.dto.action.common.MsgId
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import com.mikuac.shiro.dto.event.message.GroupMessageEvent
 import com.mikuac.shiro.dto.event.message.MessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Component
 
 
 /**
- * @description: TODO
+ * @description: 消息发送封装
  * @author Nature Zero
  * @date 2024/8/16 下午2:32
  */
@@ -35,9 +34,18 @@ class BotUtils {
             return Pair(bot, event)
         }
 
-        fun sendMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
+        fun sendMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId>? {
             val (bot, event) = getBotAndEvent()
-            return bot.sendMsg(event as AnyMessageEvent, message, autoEscape)
+            return when (event.messageType) {
+                "private" -> bot.sendPrivateMsg(event.userId, message, autoEscape)
+                "group" -> {
+                    event as GroupMessageEvent
+                    bot.sendGroupMsg(event.groupId, message, autoEscape)
+                }
+
+                else -> null
+            }
+
         }
 
         fun sendPrivateMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
