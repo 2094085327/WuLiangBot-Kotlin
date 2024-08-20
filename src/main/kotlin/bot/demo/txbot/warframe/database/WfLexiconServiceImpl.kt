@@ -70,22 +70,24 @@ class WfLexiconServiceImpl @Autowired constructor(
         var remainingString = cleanZh // 剩余未匹配的部分
 
         for (substring in sortedSubstrings) {
-            val selectName = lexiconMapper.selectByZhItemName(substring)
-            if (cache.add(substring) && selectName != null) { // 防止重复处理并检查匹配
-                newEnName = selectName
-                remainingString = replaceZh.replaceFirst(substring, "", ignoreCase = true)
-                break // 匹配成功则跳出循环
+            if (cache.add(substring)) {// 防止重复处理并检查匹配
+                val selectName = lexiconMapper.selectByZhItemName(substring)
+                if (selectName != null) {
+                    newEnName = selectName
+                    remainingString = zh.replaceFirst(substring, "", ignoreCase = true)
+                    break // 匹配成功则跳出循环
+                }
             }
         }
 
         // 构建最终的查询字符串，结合已匹配的英文名和剩余的中文部分
         val finalQueryString = newEnName?.plus(remainingString) ?: cleanZh
 
-        // 构造正则表达式用于模糊查询
-        val regex = finalQueryString.replace("", ".*").drop(2).dropLast(2)
-
+        // 构造模糊匹配的查询字符串
         val urlNameLike = "%${finalQueryString.replace(" ", "%_%")}%"
         val enItemNameLike = "%${finalQueryString.replace(" ", "%")}%"
+        val cleanUrlNameLike = "%${cleanZh.replace(" ", "%_%")}%"
+        val cleanEnItemNameLike = "%${cleanZh.replace(" ", "%")}%"
 
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
@@ -93,10 +95,19 @@ class WfLexiconServiceImpl @Autowired constructor(
             .like("url_name", urlNameLike)
             .or()
             .eq("in_market", 1)
-            .apply("zh_item_name REGEXP {0}", regex)
+            .apply("zh_item_name REGEXP {0}", finalQueryString.replace("", ".*").drop(2).dropLast(2))
             .or()
             .eq("in_market", 1)
             .like("en_item_name", enItemNameLike)
+            .or()
+            .eq("in_market", 1)
+            .apply("zh_item_name REGEXP {0}", cleanZh.replace("", ".*").drop(2).dropLast(2))
+            .or()
+            .eq("in_market", 1)
+            .like("en_item_name", cleanEnItemNameLike)
+            .or()
+            .eq("in_market", 1)
+            .like("url_name", cleanUrlNameLike)
 
         // 获取查询结果
         val resultList = lexiconMapper.selectList(queryWrapper)
@@ -106,15 +117,15 @@ class WfLexiconServiceImpl @Autowired constructor(
             sorensenDiceCoefficient(finalQueryString, it?.zhItemName ?: it?.enItemName!!)
         }.thenByDescending { it?.id })
 
-        // 执行查询并按URL名称分段数量排序结果
         return sortedResultList
     }
 
-
     override fun fuzzyQuery(key: String): List<WfLexiconEntity?>? {
+        // 构造正则表达式用于模糊查询
+        val regex = key.replace("", ".*").drop(2).dropLast(2)
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
             .eq("in_market", 1)
-            .like("zh_item_name", "%$key%")
+            .apply("zh_item_name REGEXP {0}", regex)
             .or()
             .eq("in_market", 1)
             .like("en_item_name", "%$key%")
