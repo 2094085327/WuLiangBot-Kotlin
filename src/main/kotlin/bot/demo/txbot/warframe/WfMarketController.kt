@@ -7,6 +7,7 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.warframe.WfMarketController.WfMarket.lichOrderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
+import bot.demo.txbot.warframe.vo.WfMarketVo
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
@@ -31,89 +32,9 @@ class WfMarketController @Autowired constructor(
     private val wfLexiconService: WfLexiconService,
     private val wfRivenService: WfRivenService
 ) {
-
-    /**
-     * Warframe 市场物品
-     *
-     *
-     * @property platinum 价格
-     * @property quantity 数量
-     * @property inGameName 游戏内名称
-     */
-    data class OrderInfo(
-        val platinum: Int,
-        val quantity: Int,
-        val inGameName: String,
-    )
-
-    /**
-     * Warframe 紫卡信息
-     *
-     * @property value 属性值
-     * @property positive 是否为正属性
-     * @property urlName 属性URL名
-     */
-    data class Attributes(
-        val value: Double,
-        val positive: Boolean,
-        val urlName: String
-    )
-
-    /**
-     * Warframe 紫卡订单信息
-     *
-     * @property modRank mod等级
-     * @property reRolls 循环次数
-     * @property startPlatinum 起拍价格
-     * @property buyOutPlatinum 一口价
-     * @property polarity 极性
-     * @property positive 属性
-     */
-    data class RivenOrderInfo(
-        val user: String,
-        val userStatus: String,
-        val modName: String,
-        val modRank: Int,
-        val reRolls: Int,
-        val masteryLevel: Int,
-        val startPlatinum: Int,
-        val buyOutPlatinum: Int,
-        val polarity: String,
-        val positive: MutableList<Attributes>,
-        val negative: MutableList<Attributes>,
-        val updateTime: String,
-    )
-
-    /**
-     * 玄骸武器订单
-     *
-     * @property element 元素
-     * @property havingEphemera 是否有幻纹
-     * @property damage 伤害
-     * @property startPlatinum 起拍价
-     * @property buyOutPlatinum 一口价
-     */
-    data class LichOrderInfo(
-        val element: String,
-        val havingEphemera: Boolean,
-        val damage: Int,
-        val startPlatinum: Int,
-        val buyOutPlatinum: Int,
-    )
-
-    data class LichEntity(
-        val lichName: String,
-        val lichOrderInfoList: List<LichOrderInfo>
-    )
-
-    data class RivenOrderList(
-        val itemName: String,
-        val orderList: List<RivenOrderInfo>
-    )
-
     object WfMarket {
-        var lichOrderEntity: LichEntity? = null
-        var rivenOrderList: RivenOrderList? = null
+        var lichOrderEntity: WfMarketVo.LichEntity? = null
+        var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
 
 
@@ -255,7 +176,7 @@ class WfMarketController @Autowired constructor(
             .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
             .take(5)
             .map { order ->
-                LichOrderInfo(
+                WfMarketVo.LichOrderInfo(
                     element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
                     havingEphemera = order["item"]["having_ephemera"].booleanValue(),
                     damage = order["item"]["damage"].intValue(),
@@ -264,7 +185,7 @@ class WfMarketController @Autowired constructor(
                 )
             }.toList()
 
-        lichOrderEntity = LichEntity(
+        lichOrderEntity = WfMarketVo.LichEntity(
             lichName = itemEntity.zhName!!,
             lichOrderInfoList = rivenOrderList,
         )

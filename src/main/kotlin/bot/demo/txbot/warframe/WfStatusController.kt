@@ -17,6 +17,8 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconService
+import bot.demo.txbot.warframe.vo.WfStatusVo
+import bot.demo.txbot.warframe.vo.WfUtilVo
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.mikuac.shiro.annotation.AnyMessageHandler
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.regex.Pattern
@@ -47,204 +50,6 @@ class WfStatusController @Autowired constructor(
     private val wfLexiconService: WfLexiconService
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-
-
-    /**
-     * 裂缝信息
-     *
-     * @property tierLich  古纪
-     * @property tierMeso 前纪
-     * @property tierNeo 中纪
-     * @property tierAxi 后纪
-     * @property tierRequiem 安魂
-     * @property tierOmnia 全能
-     */
-    data class FissureList(
-        var tierLich: MutableList<FissureDetail> = mutableListOf(),
-        var tierMeso: MutableList<FissureDetail> = mutableListOf(),
-        var tierNeo: MutableList<FissureDetail> = mutableListOf(),
-        var tierAxi: MutableList<FissureDetail> = mutableListOf(),
-        var tierRequiem: MutableList<FissureDetail> = mutableListOf(),
-        var tierOmnia: MutableList<FissureDetail> = mutableListOf(),
-    )
-
-    /**
-     * 裂缝详情
-     *
-     * @property eta 截止时间
-     * @property node 地点
-     * @property missionType 任务类型
-     * @property enemyKey 敌人类型
-     */
-    data class FissureDetail(
-        val eta: String,
-        val node: String,
-        val missionType: String,
-        val enemyKey: String,
-    )
-
-    /**
-     * 虚空商人货物
-     *
-     * @property item 物品名
-     * @property ducats 杜卡德金币
-     * @property credits 现金
-     */
-    data class VoidTraderItem(
-        val item: String,
-        val ducats: Int,
-        val credits: String
-    )
-
-    /**
-     * 突击任务信息
-     *
-     * @property missionType 任务类型
-     * @property modifier 敌方强化
-     * @property node 任务地点
-     */
-    data class Variants(
-        val missionType: String,
-        val modifier: String,
-        val node: String,
-    )
-
-    /**
-     * 执刑官任务信息
-     *
-     * @property node 任务地点
-     * @property type 任务类型
-     */
-    data class Missions(
-        val node: String,
-        val type: String,
-    )
-
-    /**
-     * 执刑官突击信息
-     *
-     * @property faction 阵营
-     * @property boss Boss名称
-     * @property rewardItem 奖励物品
-     * @property taskList 任务列表
-     * @property eta 剩余时间
-     */
-    data class ArchonHuntEntity(
-        val faction: String,
-        val boss: String,
-        val rewardItem: String,
-        val taskList: List<Missions>,
-        val eta: String,
-        val nextBoss: String,
-        val nextRewardItem: String
-    )
-
-    /**
-     * 每日突击信息
-     *
-     * @property faction 阵营
-     * @property boss Boss名称
-     * @property taskList 任务列表
-     * @property eta 剩余时间
-     */
-    data class SortieEntity(
-        val faction: String,
-        val boss: String,
-        val taskList: List<Variants>,
-        val eta: String
-    )
-
-    /**
-     * 钢铁之路信息
-     *
-     * @property currentName 当前可兑换物品名称
-     * @property currentCost 当前可兑换物品价格
-     * @property remaining 剩余时间
-     * @property nextName 下一个可兑换物品名称
-     * @property nextCost 下一个可兑换物品价格
-     */
-    data class SteelPathEntity(
-        val currentName: String,
-        val currentCost: Int,
-        val remaining: String,
-        val nextName: String,
-        val nextCost: Int
-    )
-
-    /**
-     * 虚空商人信息
-     *
-     * @property location 地点
-     * @property time 离开时间
-     * @property items 带来的物品
-     */
-    data class VoidTraderEntity(
-        val location: String,
-        val time: String,
-        val items: List<VoidTraderItem>
-    )
-
-    /**
-     * 午夜电波任务信息
-     *
-     * @property title 任务名称
-     * @property desc 任务描述
-     * @property reputation 声望
-     * @property isDaily 是否为日常任务
-     */
-    data class NightWaveChallenges(
-        val title: String,
-        val desc: String,
-        val reputation: Int,
-        val isDaily: Boolean
-    )
-
-    /**
-     * 午夜电波信息
-     *
-     * @property activation 开始后过去的时间
-     * @property startString 开始时间
-     * @property expiry 结束时间
-     * @property expiryString 剩余时间的字符串
-     * @property activeChallenges 任务列表
-     */
-    data class NightWaveEntity(
-        val activation: String,
-        val startString: String,
-        val expiry: String,
-        val expiryString: String,
-        val activeChallenges: List<NightWaveChallenges>
-    )
-
-    data class Invasions(
-        val itemString: String,
-        val factions: String,
-    )
-
-    data class InvasionsEntity(
-        val node: String,
-        val invasionsDetail: List<Invasions>,
-        val completion: Double
-    )
-
-    data class IncarnonEntity(
-        val thisWeekData: WfUtil.Data,
-        val nextWeekData: WfUtil.Data,
-        val remainTime: String
-    )
-
-    data class MoodSpiralsEntity(
-        val currentState: String,
-        val damageType: String,
-        val npc: List<Map<String, String>>,
-        val excludeNpc: List<Map<String, String>>,
-        val excludePlace: List<String>,
-        val noExcludePlace: List<String>,
-        val remainTime: String,
-        val nextState: String,
-        val nextExcludePlace: List<String>,
-    )
-
 
     object WfStatus {
         private val timeReplacements = mapOf(
@@ -283,23 +88,23 @@ class WfStatusController @Autowired constructor(
             }
         }
 
-        var archonHuntEntity: ArchonHuntEntity? = null
+        var archonHuntEntity: WfStatusVo.ArchonHuntEntity? = null
 
-        var sortieEntity: SortieEntity? = null
+        var sortieEntity: WfStatusVo.SortieEntity? = null
 
-        var steelPathEntity: SteelPathEntity? = null
+        var steelPathEntity: WfStatusVo.SteelPathEntity? = null
 
-        var fissureList: FissureList? = null
+        var fissureList: WfStatusVo.FissureList? = null
 
-        var voidTraderEntity: VoidTraderEntity? = null
+        var voidTraderEntity: WfStatusVo.VoidTraderEntity? = null
 
-        var nightWaveEntity: NightWaveEntity? = null
+        var nightWaveEntity: WfStatusVo.NightWaveEntity? = null
 
-        var invasionsEntity = mutableListOf<InvasionsEntity>()
+        var invasionsEntity = mutableListOf<WfStatusVo.InvasionsEntity>()
 
-        var incarnonEntity: IncarnonEntity? = null
+        var incarnonEntity: WfStatusVo.IncarnonEntity? = null
 
-        var moodSpiralsEntity: MoodSpiralsEntity? = null
+        var moodSpiralsEntity: WfStatusVo.MoodSpiralsEntity? = null
     }
 
     /**
@@ -309,10 +114,10 @@ class WfStatusController @Autowired constructor(
      * @return 发送内容
      */
     private fun getSendFissureList(filteredFissures: List<JsonNode>) {
-        val thisFissureList = FissureList()
+        val thisFissureList = WfStatusVo.FissureList()
 
         filteredFissures.forEach {
-            val fissureDetail = FissureDetail(
+            val fissureDetail = WfStatusVo.FissureDetail(
                 eta = it["eta"].textValue().replaceTime(),
                 node = it["node"].textValue().turnZhHans(),
                 missionType = it["missionType"].textValue().turnZhHans(),
@@ -399,7 +204,7 @@ class WfStatusController @Autowired constructor(
 
             val itemList = traderJson["inventory"].map { item ->
                 val regex = Regex("000$")
-                VoidTraderItem(
+                WfStatusVo.VoidTraderItem(
                     item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
                     ducats = item["ducats"].asInt(),
                     credits = regex.replace(item["credits"].asText(), "k")
@@ -411,7 +216,7 @@ class WfStatusController @Autowired constructor(
                 chinesePattern.matcher(it.item).find()
             })
 
-            voidTraderEntity = VoidTraderEntity(
+            voidTraderEntity = WfStatusVo.VoidTraderEntity(
                 time = endString,
                 location = location,
                 items = sortedItemList
@@ -455,7 +260,7 @@ class WfStatusController @Autowired constructor(
 
         val remaining = steelPath["remaining"].asText().replaceTime()
 
-        steelPathEntity = SteelPathEntity(
+        steelPathEntity = WfStatusVo.SteelPathEntity(
             currentName = currentName,
             currentCost = currentCost,
             nextName = nextName,
@@ -483,7 +288,7 @@ class WfStatusController @Autowired constructor(
 
         val variantsList = sortieJson["variants"]
         val taskList = variantsList.map { item ->
-            Variants(
+            WfStatusVo.Variants(
                 missionType = item["missionType"].asText().turnZhHans(),
                 modifier = item["modifier"].asText().turnZhHans(),
                 node = item["node"].asText().turnZhHans()
@@ -494,7 +299,7 @@ class WfStatusController @Autowired constructor(
         val boss = sortieJson["boss"].asText()
         val eta = sortieJson["eta"].asText().replaceTime()
 
-        sortieEntity = SortieEntity(
+        sortieEntity = WfStatusVo.SortieEntity(
             faction = faction,
             boss = boss,
             eta = eta,
@@ -529,7 +334,7 @@ class WfStatusController @Autowired constructor(
         val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
 
         val taskList = archonHuntJson["missions"].map { item ->
-            Missions(
+            WfStatusVo.Missions(
                 node = item["node"].asText().turnZhHans(),
                 type = item["type"].asText().turnZhHans()
             )
@@ -538,7 +343,7 @@ class WfStatusController @Autowired constructor(
         val faction = archonHuntJson["factionKey"].asText().replaceFaction()
         val eta = archonHuntJson["eta"].asText().replaceTime()
 
-        archonHuntEntity = ArchonHuntEntity(
+        archonHuntEntity = WfStatusVo.ArchonHuntEntity(
             faction = faction,
             boss = boss,
             eta = eta,
@@ -579,30 +384,27 @@ class WfStatusController @Autowired constructor(
         // 计算时间差
         val duration: Duration = Duration.between(nowTime, endTime)
 
+        val timeDifference = StringBuilder()
 
-        // 获取时间差的月数
-        val months = (endTime.monthValue - nowTime.monthValue).toLong()
-        // 获取时间差的天数
-        val days = duration.toDays() - months * 30 // 减去月份的天数
-        // 获取剩余的小时数
+        val months = ChronoUnit.MONTHS.between(nowTime, endTime)
+        if (months > 0) timeDifference.append("${months}个月")
+
+        val days = duration.toDays()
+        if (days > 0) timeDifference.append("${days}天")
+
         val hours = duration.toHours() % 24
-        // 获取剩余的分钟数
+        if (hours > 0) timeDifference.append("${hours}小时")
+
         val minutes = duration.toMinutes() % 60
+        if (minutes > 0) timeDifference.append("${minutes}分钟")
 
-        // 格式化时间差
-        var timeDifference = ""
-        if (months > 0) timeDifference += months.toString() + "个月"
-        if (days > 0) timeDifference += days.toString() + "天"
-        if (hours > 0) timeDifference += hours.toString() + "小时"
-        if (minutes > 0) timeDifference += minutes.toString() + "分钟"
-
-        nightWaveEntity = NightWaveEntity(
+        nightWaveEntity = WfStatusVo.NightWaveEntity(
             activation = activation,
             startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
             expiry = expiryString,
-            expiryString = timeDifference,
+            expiryString = timeDifference.toString(),
             activeChallenges = nightWaveJson["activeChallenges"].map { item ->
-                NightWaveChallenges(
+                WfStatusVo.NightWaveChallenges(
                     title = item["title"].textValue().turnZhHans(),
                     desc = item["desc"].textValue().turnZhHans(),
                     reputation = item["reputation"].intValue(),
@@ -673,15 +475,15 @@ class WfStatusController @Autowired constructor(
         invasionsArray.forEach { invasionsJson ->
             if (!invasionsJson["completed"].booleanValue()) {
                 invasionsEntity.add(
-                    InvasionsEntity(
+                    WfStatusVo.InvasionsEntity(
                         node = invasionsJson["node"].textValue().turnZhHans(),
                         invasionsDetail = listOf(
-                            Invasions(
+                            WfStatusVo.Invasions(
                                 itemString = if (invasionsJson["attacker"]["faction"].textValue() == "Infested") "无" else invasionsJson["attacker"]["reward"]["itemString"].textValue()
                                     .turnZhHans(),
                                 factions = invasionsJson["attacker"]["faction"].textValue().replaceFaction()
                             ),
-                            Invasions(
+                            WfStatusVo.Invasions(
                                 itemString = if (invasionsJson["defender"]["faction"].textValue() == "Infested") "无" else invasionsJson["defender"]["reward"]["itemString"].textValue()
                                     .turnZhHans(),
                                 factions = invasionsJson["defender"]["faction"].textValue().replaceFaction()
@@ -752,7 +554,7 @@ class WfStatusController @Autowired constructor(
         val minutes = duration.toMinutes() % 60
         val seconds = duration.toSeconds() % 60
 
-        incarnonEntity = IncarnonEntity(
+        incarnonEntity = WfStatusVo.IncarnonEntity(
             thisWeekData = WfUtil.Data(
                 ordinary = listOf(currentOrdinaryWeek),
                 steel = listOf(currentSteelWeek)
@@ -784,8 +586,8 @@ class WfStatusController @Autowired constructor(
         val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
         val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
         val mapper = jacksonObjectMapper()
-        var weatherData: WfUtil.SpiralsData = mapper.readValue(jsonFile, WfUtil.SpiralsData::class.java)
-        val weatherDataAfter: WfUtil.SpiralsData = mapper.readValue(jsonFile, WfUtil.SpiralsData::class.java)
+        var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
+        val weatherDataAfter: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
         val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
         weatherData = wfUtil.updateWeathers(weatherData, currentTime)
@@ -837,7 +639,7 @@ class WfStatusController @Autowired constructor(
                 .map { it.name }
 
         // 创建 MoodSpiralsEntity 实例
-        moodSpiralsEntity = MoodSpiralsEntity(
+        moodSpiralsEntity = WfStatusVo.MoodSpiralsEntity(
             currentState = currentWeatherState,
             damageType = damageType,
             npc = npcList,

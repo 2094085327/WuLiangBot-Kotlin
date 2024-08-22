@@ -4,12 +4,12 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.OtherUtil
-import bot.demo.txbot.warframe.WfMarketController.*
+import bot.demo.txbot.warframe.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import bot.demo.txbot.warframe.vo.WfMarketVo
+import bot.demo.txbot.warframe.vo.WfUtilVo
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -63,7 +63,7 @@ class WfUtil @Autowired constructor(
             .sortedBy { it["platinum"].intValue() }
             .take(5)
             .map {
-                OrderInfo(
+                WfMarketVo.OrderInfo(
                     platinum = it["platinum"].intValue(),
                     quantity = it["quantity"].intValue(),
                     inGameName = it["user"]["ingame_name"].textValue()
@@ -75,8 +75,8 @@ class WfUtil @Autowired constructor(
             "当前没有任何在线的玩家出售${item.zhItemName}"
         } else {
             filteredOrders.joinToString("\n") {
-                "| ${it.inGameName} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
-            } + "\n/w ${filteredOrders.first().inGameName} Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
+                "| ${it.inGameName.replace(".","ׅ")} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
+            } + "\n/w ${filteredOrders.first().inGameName.replace(".","ׅ")} Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
         }
 
         val modLevelString = when {
@@ -255,7 +255,7 @@ class WfUtil @Autowired constructor(
             }
             .take(5)
             .map { order ->
-                RivenOrderInfo(
+                WfMarketVo.RivenOrderInfo(
                     user = order["owner"]["ingame_name"].textValue(),
                     userStatus = if (order["owner"]["status"].textValue() == "online") "游戏在线" else "游戏中",
                     modName = (order["item"]["weapon_url_name"].textValue() + " " + order["item"]["name"].textValue()).capitalizeSpecial(),
@@ -270,7 +270,7 @@ class WfUtil @Autowired constructor(
                     updateTime = timeAgo(order["updated"].textValue())
                 ).apply {
                     order["item"]["attributes"].forEach { attribute ->
-                        val attr = Attributes(
+                        val attr = WfMarketVo.Attributes(
                             value = attribute["value"].doubleValue(),
                             positive = attribute["positive"].booleanValue(),
                             urlName = wfRivenService.turnUrlNameToKeyByRiven(attribute["url_name"].textValue())
@@ -288,7 +288,7 @@ class WfUtil @Autowired constructor(
             return "当前没有任何在线的玩家出售这种词条的${itemZhName}"
         }
 
-        WfMarket.rivenOrderList = RivenOrderList(
+        WfMarket.rivenOrderList = WfMarketVo.RivenOrderList(
             itemName = itemZhName,
             orderList = rivenOrderList
         )
@@ -471,64 +471,34 @@ class WfUtil @Autowired constructor(
         }
     }
 
-    data class WfWeather(
-        val stateId: Int,
-        val dmgStateId: Int,
-        var startTime: String
-    )
-
-    data class Place(
-        val name: String,
-        val npc: List<NPC>?
-    )
-
-    data class NPC(
-        val name: String,
-        val excludeIds: List<Int>
-    )
-
-    data class ExcludePlace(
-        val name: String,
-        val excludeIds: List<Int>
-    )
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    data class SpiralsData(
-        val weatherStates: Map<Int, String>,
-        val damageTypes: Map<Int, String>,
-        @JsonProperty("weather")
-        var wfWeather: List<WfWeather>,
-        val places: List<Place>,
-        val excludePlaces: List<ExcludePlace>
-    )
 
     fun findSpiralsCurrentTime(
-        wfWeathers: List<WfWeather>,
+        wfWeathers: List<WfUtilVo.WfWeather>,
         currentTime: LocalDateTime
-    ): WfWeather? {
+    ): WfUtilVo.WfWeather? {
         return wfWeathers
             .filter { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime().isBefore(currentTime) }
             .maxByOrNull { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime() }
     }
 
 
-    fun findLatestWeatherAndIndex(weathers: List<WfWeather>): LocalDateTime {
+    fun findLatestWeatherAndIndex(weathers: List<WfUtilVo.WfWeather>): LocalDateTime {
         return weathers.maxOfOrNull { OffsetDateTime.parse(it.startTime, dateTimeFormatter).toLocalDateTime() }
             ?: LocalDateTime.MIN
     }
 
 
-    fun updateWeathers(spiralData: SpiralsData, currentTime: LocalDateTime): SpiralsData {
+    fun updateWeathers(spiralData: WfUtilVo.SpiralsData, currentTime: LocalDateTime): WfUtilVo.SpiralsData {
         val maxStartTime = findLatestWeatherAndIndex(spiralData.wfWeather)
         spiralData.wfWeather = updateWeatherStartTimes(spiralData.wfWeather, maxStartTime, currentTime)
         return spiralData
     }
 
     fun updateWeatherStartTimes(
-        weatherData: List<WfWeather>,
+        weatherData: List<WfUtilVo.WfWeather>,
         maxTime: LocalDateTime?,
         currentTime: LocalDateTime
-    ): List<WfWeather> {
+    ): List<WfUtilVo.WfWeather> {
         if (maxTime == null) return weatherData
 
         // hours <= 1 说明仍在当前轮次内，不需要更新
@@ -556,7 +526,7 @@ class WfUtil @Autowired constructor(
     }
 
     fun getNpcLists(
-        weatherData: SpiralsData,
+        weatherData: WfUtilVo.SpiralsData,
         stateId: Int
     ): Pair<MutableList<Map<String, String>>, MutableList<Map<String, String>>> {
         val npcList = mutableListOf<Map<String, String>>()
@@ -572,7 +542,7 @@ class WfUtil @Autowired constructor(
         return Pair(npcList, excludeNpcList)
     }
 
-    fun getPlaceLists(weatherData: SpiralsData, stateId: Int): Pair<MutableList<String>, MutableList<String>> {
+    fun getPlaceLists(weatherData: WfUtilVo.SpiralsData, stateId: Int): Pair<MutableList<String>, MutableList<String>> {
         val excludePlaceList = mutableListOf<String>()
         val noExcludePlaceList = mutableListOf<String>()
 

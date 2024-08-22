@@ -86,8 +86,8 @@ class WfLexiconServiceImpl @Autowired constructor(
         // 构造模糊匹配的查询字符串
         val urlNameLike = "%${finalQueryString.replace(" ", "%_%")}%"
         val enItemNameLike = "%${finalQueryString.replace(" ", "%")}%"
-        val cleanUrlNameLike = "%${cleanZh.replace(" ", "%_%")}%"
-        val cleanEnItemNameLike = "%${cleanZh.replace(" ", "%")}%"
+        val cleanUrlNameLike = "%${zh.replace(" ", "%_%")}%"
+        val cleanEnItemNameLike = "%${zh.replace(" ", "%")}%"
 
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
@@ -101,7 +101,7 @@ class WfLexiconServiceImpl @Autowired constructor(
             .like("en_item_name", enItemNameLike)
             .or()
             .eq("in_market", 1)
-            .apply("zh_item_name REGEXP {0}", cleanZh.replace("", ".*").drop(2).dropLast(2))
+            .apply("zh_item_name REGEXP {0}", zh.replace("", ".*").drop(2).dropLast(2))
             .or()
             .eq("in_market", 1)
             .like("en_item_name", cleanEnItemNameLike)
@@ -114,8 +114,13 @@ class WfLexiconServiceImpl @Autowired constructor(
 
         // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
         val sortedResultList = resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfLexiconEntity?> {
-            sorensenDiceCoefficient(finalQueryString, it?.zhItemName ?: it?.enItemName!!)
+            val finalQueryCoefficient = sorensenDiceCoefficient(finalQueryString, it?.zhItemName ?: it?.enItemName!!)
+            val zhCoefficient = sorensenDiceCoefficient(zh, it?.zhItemName ?: it?.enItemName!!)
+            // 这里可以根据需要调整两个系数的权重
+            (finalQueryCoefficient + zhCoefficient) / 2
         }.thenByDescending { it?.id })
+
+        println(sortedResultList)
 
         return sortedResultList
     }
