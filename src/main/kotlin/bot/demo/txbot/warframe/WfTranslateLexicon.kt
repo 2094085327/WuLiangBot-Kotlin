@@ -249,7 +249,6 @@ class WfTranslateLexicon {
 
 
     @OptIn(DelicateCoroutinesApi::class)
-    
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "更新词库")
     fun upDataWfTranslateLexicon(bot: Bot, event: AnyMessageEvent) {

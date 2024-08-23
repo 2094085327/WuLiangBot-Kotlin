@@ -39,5 +39,11 @@ data class WfLexiconEntity(
      * 是否在市场中
      */
     @TableField("in_market")
-    val inMarket: Int
+    val inMarket: Int,
+
+    /**
+     * 被使用到的次数
+     */
+    @TableField("use_count")
+    var useCount: Int? = 0,
 )

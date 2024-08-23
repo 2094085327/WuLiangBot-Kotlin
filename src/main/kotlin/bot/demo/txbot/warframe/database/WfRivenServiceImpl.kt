@@ -30,10 +30,13 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         return (2 * intersection) / (sBigrams.size + tBigrams.size)
     }
 
+    /**
+     * 插入或更新玄骸词库
+     *
+     * @param wfEnRivenList
+     */
     override fun insertRiven(wfEnRivenList: List<WfRivenEntity>) {
-        wfEnRivenList.forEach { enLexicon ->
-            rivenMapper.insertIgnore(enLexicon)
-        }
+        rivenMapper.insertOrUpdateBatch(wfEnRivenList)
     }
 
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {

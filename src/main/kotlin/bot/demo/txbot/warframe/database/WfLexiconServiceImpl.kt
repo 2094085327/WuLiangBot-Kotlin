@@ -39,10 +39,13 @@ class WfLexiconServiceImpl @Autowired constructor(
         return input.indices.flatMap { i -> (i + 1..input.length).map { j -> input.substring(i, j) } }
     }
 
+    /**
+     * 批量插入词库
+     *
+     * @param wfEnLexiconList 待插入的数据列表
+     */
     override fun insertLexicon(wfEnLexiconList: List<WfLexiconEntity>) {
-        wfEnLexiconList.forEach { enLexicon ->
-            lexiconMapper.insertIgnore(enLexicon)
-        }
+        lexiconMapper.insertOrUpdateBatch(wfEnLexiconList)
     }
 
     override fun turnKeyToUrlNameByLexicon(zh: String): WfLexiconEntity? {
@@ -53,7 +56,13 @@ class WfLexiconServiceImpl @Autowired constructor(
                 .or()
                 .eq("en_item_name", zh)
                 .eq("in_market", 1)
-        return lexiconMapper.selectList(queryWrapper).firstOrNull()
+        val wfLexiconEntity = lexiconMapper.selectList(queryWrapper).firstOrNull()
+
+        return if (wfLexiconEntity != null) {
+            wfLexiconEntity.useCount = wfLexiconEntity.useCount?.plus(1)
+            lexiconMapper.updateById(wfLexiconEntity)
+            return wfLexiconEntity
+        } else null
     }
 
     override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {
@@ -112,15 +121,29 @@ class WfLexiconServiceImpl @Autowired constructor(
         // 获取查询结果
         val resultList = lexiconMapper.selectList(queryWrapper)
 
-        // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
-        val sortedResultList = resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfLexiconEntity?> {
-            val finalQueryCoefficient = sorensenDiceCoefficient(finalQueryString, it?.zhItemName ?: it?.enItemName!!)
-            val zhCoefficient = sorensenDiceCoefficient(zh, it?.zhItemName ?: it?.enItemName!!)
-            // 这里可以根据需要调整两个系数的权重
-            (finalQueryCoefficient + zhCoefficient) / 2
-        }.thenByDescending { it?.id })
+        // 对查询结果按 Sorensen-Dice 系数排序 并与词频进行加权排序 搜索简称优先排序 "一套" 的物品
+        val sortedResultList = resultList.sortedWith(compareByDescending { item ->
+            val itemName = item?.zhItemName ?: item?.enItemName!!
 
-        println(sortedResultList)
+            // 计算系数
+            val finalQueryCoefficient = sorensenDiceCoefficient(finalQueryString, itemName)
+            val zhCoefficient = sorensenDiceCoefficient(zh, itemName)
+
+            // 根据需要调整系数的权重
+            val coefficientSum = (finalQueryCoefficient + zhCoefficient) / 2
+
+            // 计算额外加分
+            val useCountBonus = 0.2 * item?.useCount!!
+            val specialBonus = if (itemName.contains("一套")) 1 + useCountBonus else 0.0
+            // 总分
+            coefficientSum + specialBonus + useCountBonus
+        })
+
+        val updateEntity = sortedResultList.first()
+        if (updateEntity != null) {
+            updateEntity.useCount = updateEntity.useCount?.plus(1)
+            lexiconMapper.updateById(updateEntity)
+        }
 
         return sortedResultList
     }
