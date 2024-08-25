@@ -139,7 +139,7 @@ class WfLexiconServiceImpl @Autowired constructor(
             coefficientSum + specialBonus + useCountBonus
         })
 
-        val updateEntity = sortedResultList.first()
+        val updateEntity = sortedResultList.firstOrNull()
         if (updateEntity != null) {
             updateEntity.useCount = updateEntity.useCount?.plus(1)
             lexiconMapper.updateById(updateEntity)
