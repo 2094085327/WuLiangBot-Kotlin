@@ -57,4 +57,12 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @return 英文名称
      */
     fun getZhName(key: String): String?
+
+    /**
+     * 插入别名
+     *
+     * @param enName 英文名
+     * @param zhName 中文别名
+     */
+    fun insertOtherName(enName: String, zhName: String)
 }

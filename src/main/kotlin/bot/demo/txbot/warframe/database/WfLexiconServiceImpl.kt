@@ -173,4 +173,8 @@ class WfLexiconServiceImpl @Autowired constructor(
         return lexiconMapper.selectList(queryWrapper)?.firstOrNull()?.zhItemName
     }
 
+    override fun insertOtherName(enName: String, zhName: String) {
+        lexiconMapper.insertNewOtherName(enName, zhName)
+    }
+
 }

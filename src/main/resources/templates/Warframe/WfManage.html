@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Warframe 管理页面</title>
+    </head>
+    <body>
+        <form th:action="@{/warframe/wfManage/login}" method="post">
+            <p>用户名：<label>
+                <input name="username" type="text" placeholder="userName">
+            </label></p>
+            <p>密 码：<label>
+                <input name="password" type="password" placeholder="Password">
+            </label></p>
+            <p>物品名称：<label>
+                <input name="itemName" type="text" placeholder="itemName">
+            </label></p>
+            <p>别名：<label>
+                <input name="otherName" type="text" placeholder="otherName">
+            </label></p>
+            <button type="submit" onclick="login()">提交</button>
+        </form>
+    </body>
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const itemName = document.getElementById('itemName').value;
+            const otherName = document.getElementById('otherName').value;
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('itemName', itemName);
+            formData.append('otherName', otherName);
+
+            fetch('/warframe/wfManage/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                }) // 处理服务器返回的数据
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</html>

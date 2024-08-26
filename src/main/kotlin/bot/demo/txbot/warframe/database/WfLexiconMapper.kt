@@ -11,4 +11,6 @@ interface WfLexiconMapper : BaseMapper<WfLexiconEntity?> {
     fun selectByEnItemName(@Param("enItemName") enItemName: String): List<String>?
 
     fun insertOrUpdateBatch(wfLexiconEntityList: List<WfLexiconEntity>)
+
+    fun insertNewOtherName(@Param("enItemName") enItemName: String, @Param("otherName") otherName: String)
 }

@@ -4,9 +4,15 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
+import bot.demo.txbot.warframe.database.WfLexiconService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseBody
 
 
 /**
@@ -16,7 +22,35 @@ import org.springframework.web.bind.annotation.RequestMapping
  */
 @Controller
 @RequestMapping("/warframe")
-class WarframeController {
+class WarframeController(
+    @Value("\${wuLiang.config.userName}") val manageUserName: String,
+    @Value("\${wuLiang.config.password}") val managePassword: String,
+    @Autowired val wfLexiconService: WfLexiconService
+) {
+    /**
+     * 临时的别名管理页面
+     */
+    @RequestMapping("/wfManage/page")
+    fun index(model: Model): String {
+        return "Warframe/WfManage"
+    }
+
+    /**
+     * 临时的别名管理页面
+     */
+    @ResponseBody
+    @PostMapping("/wfManage/login")
+    fun login(
+        @RequestParam("username") username: String,
+        @RequestParam("password") password: String,
+        @RequestParam("itemName") itemName: String,
+        @RequestParam("otherName") otherName: String,
+    ): String {
+        if (username == manageUserName && password == managePassword) {
+            wfLexiconService.insertOtherName(itemName, otherName)
+            return "success"
+        } else return "error"
+    }
 
     @RequestMapping("/archonHunt")
     fun archonHunt(model: Model): String {
