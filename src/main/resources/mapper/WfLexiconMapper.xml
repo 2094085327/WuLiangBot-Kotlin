@@ -27,10 +27,16 @@
         WHERE LOWER(wf_other_name.en_item_name) = LOWER(#{enItemName})
     </select>
 
-<insert id="insertNewOtherName">
-    INSERT wf_other_name (en_item_name, other_name)
-    VALUES (#{enItemName}, #{otherName})
-    ON DUPLICATE KEY UPDATE en_item_name = VALUES(en_item_name),
-                            other_name   = VALUES(other_name);
-</insert>
+    <insert id="insertNewOtherName">
+        INSERT wf_other_name (en_item_name, other_name)
+        VALUES (#{enItemName}, #{otherName})
+        ON DUPLICATE KEY UPDATE en_item_name = VALUES(en_item_name),
+                                other_name   = VALUES(other_name);
+    </insert>
+
+    <select id="selectEnFromOther" parameterType="java.lang.String"  resultType="java.lang.String">
+        select en_item_name
+        from wf_other_name
+        WHERE LOWER(en_item_name) = LOWER(#{key})
+    </select>
 </mapper>
