@@ -75,8 +75,13 @@ class WfUtil @Autowired constructor(
             "当前没有任何在线的玩家出售${item.zhItemName}"
         } else {
             filteredOrders.joinToString("\n") {
-                "| ${it.inGameName.replace(".","ׅ")} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
-            } + "\n/w ${filteredOrders.first().inGameName.replace(".","ׅ")} Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
+                "| ${it.inGameName.replace(".", "ׅ")} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
+            } + "\n/w ${
+                filteredOrders.first().inGameName.replace(
+                    ".",
+                    "ׅ"
+                )
+            } Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
         }
 
         val modLevelString = when {
@@ -242,9 +247,9 @@ class WfUtil @Autowired constructor(
      * @param reRollTimes 紫卡循环次数
      * @return 格式化后的拍卖数据
      */
-    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): Any {
+    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): Boolean {
         val orders = rivenJson["payload"]["auctions"]
-        val allowedStatuses = setOf("online", "ingame")
+        val allowedStatuses = setOf("online", "ingame", "offline")
         val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
 
         val rivenOrderList = orders.asSequence()
@@ -275,18 +280,13 @@ class WfUtil @Autowired constructor(
                             positive = attribute["positive"].booleanValue(),
                             urlName = wfRivenService.turnUrlNameToKeyByRiven(attribute["url_name"].textValue())
                         )
-                        if (attr.positive) {
-                            positive.add(attr)
-                        } else {
-                            negative.add(attr)
-                        }
+                        if (attr.positive) positive.add(attr)
+                        else negative.add(attr)
                     }
                 }
             }.toList()
 
-        if (rivenOrderList.isEmpty()) {
-            return "当前没有任何在线的玩家出售这种词条的${itemZhName}"
-        }
+        if (rivenOrderList.isEmpty()) return false
 
         WfMarket.rivenOrderList = WfMarketVo.RivenOrderList(
             itemName = itemZhName,

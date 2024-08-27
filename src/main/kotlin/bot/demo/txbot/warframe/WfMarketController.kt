@@ -114,7 +114,10 @@ class WfMarketController @Autowired constructor(
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
-        if (auctionInfo is String) ContextProvider.sendMsg(auctionInfo)
+        if (!auctionInfo) {
+            ContextProvider.sendMsg("当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}")
+            return
+        }
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/riven",
