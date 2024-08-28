@@ -26,8 +26,6 @@ class BotUtils {
 
         class Context(private val event: MessageEvent, private val bot: Bot) {
             fun sendMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId>? {
-                println(event)
-
                 return when (event) {
                     is PrivateMessageEvent -> bot.sendPrivateMsg(event.userId, message, autoEscape)
                     is GroupMessageEvent -> {
