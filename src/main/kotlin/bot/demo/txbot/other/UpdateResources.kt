@@ -7,9 +7,9 @@ import bot.demo.txbot.common.utils.LoggerUtils.logWarn
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.UpdateGachaResources
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.CoroutineScope
@@ -27,8 +27,8 @@ import javax.annotation.PostConstruct
  * @author Nature Zero
  * @date 2024/3/12 8:08
  */
-@Shiro
 @Component
+@ActionService
 class UpdateResources {
     companion object {
         private var owner: String = ""
@@ -111,13 +111,14 @@ class UpdateResources {
         }
     }
 
-    
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "更新资源")
-    fun updateAll(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "更新资源")
+    fun updateAll(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
-        ContextProvider.sendMsg("正在更新资源，请稍后")
+        context.sendMsg("正在更新资源，请稍后")
 
         val folderPath = RESOURCES_PATH
 
@@ -131,10 +132,10 @@ class UpdateResources {
             )
 
             if (!downloadCheck.first) {
-                ContextProvider.sendMsg("资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试")
+                context.sendMsg("资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试")
                 return@runBlocking
             }
-            ContextProvider.sendMsg("资源更新完成，本次共更新${downloadCheck.second}个资源")
+            context.sendMsg("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
 
             // 尝试更新卡池数据
@@ -145,14 +146,15 @@ class UpdateResources {
         }
     }
 
-    
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "清除缓存")
-    fun deleteCache(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "清除缓存")
+    fun deleteCache(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         forceDeleteCache("resources/imageCache")
-        ContextProvider.sendMsg("已完成缓存清理")
+        context.sendMsg("已完成缓存清理")
     }
 
     /**

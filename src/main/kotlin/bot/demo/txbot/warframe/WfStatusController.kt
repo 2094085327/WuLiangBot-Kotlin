@@ -4,6 +4,9 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.incarnonEntity
@@ -21,8 +24,6 @@ import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
@@ -42,8 +43,8 @@ import java.util.regex.Pattern
  * @author Nature Zero
  * @date 2024/6/9 上午12:35
  */
-@Shiro
 @Component
+@ActionService
 class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
@@ -113,7 +114,7 @@ class WfStatusController @Autowired constructor(
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    private fun getSendFissureList(filteredFissures: List<JsonNode>) {
+    private fun getSendFissureList(context: ContextProvider.Context, filteredFissures: List<JsonNode>) {
         val thisFissureList = WfStatusVo.FissureList()
 
         filteredFissures.forEach {
@@ -141,54 +142,59 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(裂缝|裂隙)\\b")
-    fun getOrdinaryFissures(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(裂缝|裂隙)\\b")
+    fun getOrdinaryFissures(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(filteredFissures)
+        getSendFissureList(context, filteredFissures)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(钢铁裂缝|钢铁裂隙)\\b")
-    fun getHardFissures(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
+    fun getHardFissures(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(filteredFissures)
+        getSendFissureList(context, filteredFissures)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "九重天")
-    fun getEmpyreanFissures(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "九重天")
+    fun getEmpyreanFissures(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        getSendFissureList(filteredFissures)
+        getSendFissureList(context, filteredFissures)
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "奸商")
-    fun findVoidTrader(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "奸商")
+    fun findVoidTrader(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
 
@@ -197,7 +203,7 @@ class WfStatusController @Autowired constructor(
         val location = traderJson["location"].asText().turnZhHans()
 
         if (traderJson["inventory"].isEmpty) {
-            ContextProvider.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
+            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
         } else {
             // 定义一个正则表达式用于匹配中文字符
             val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
@@ -228,16 +234,18 @@ class WfStatusController @Autowired constructor(
                 element = "body"
             )
 
-            webImgUtil.sendNewImage(imgData)
+            webImgUtil.sendNewImage(context, imgData)
             webImgUtil.deleteImg(imgData = imgData)
         }
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "钢铁")
-    fun getSteelPath(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "钢铁")
+    fun getSteelPath(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
 
@@ -274,15 +282,16 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "突击")
-    fun getSortie(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "突击")
+    fun getSortie(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
 
@@ -312,15 +321,16 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "执(?:行|刑)官")
-    fun getArchonHunt(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "执(?:行|刑)官")
+    fun getArchonHunt(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
 
@@ -359,15 +369,17 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(电波|午夜电波)\\b")
-    fun getNightWave(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(电波|午夜电波)\\b")
+    fun getNightWave(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
 
@@ -419,15 +431,16 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
-    fun phobosStatus(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
+    fun phobosStatus(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val phobosStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_PHOBOS_STATUS, params = mapOf("language" to "zh"))
         val activation = phobosStatusJson["activation"].textValue().toEastEightTimeZone()
@@ -435,7 +448,7 @@ class WfStatusController @Autowired constructor(
         val timeLeft = phobosStatusJson["timeLeft"].textValue().replaceTime()
         val state = phobosStatusJson["state"].textValue()
 
-        ContextProvider.sendMsg(
+        context.sendMsg(
             "当前火卫二平原的状态为:${state}\n" +
                     "开始时间:${activation}\n" +
                     "结束时间:${expiry}\n" +
@@ -443,11 +456,12 @@ class WfStatusController @Autowired constructor(
         )
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
-    fun cetusCycle(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
+    fun cetusCycle(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
         val activation = cetusStatusJson["activation"].textValue().toEastEightTimeZone()
@@ -456,7 +470,7 @@ class WfStatusController @Autowired constructor(
         val state = cetusStatusJson["state"].textValue()
         val stateMap = mapOf("night" to "夜晚", "day" to "白天")
 
-        ContextProvider.sendMsg(
+        context.sendMsg(
             "当前地球平原为 ${stateMap[state]} \n" +
                     "开始时间:${activation}\n" +
                     "结束时间:${expiry}\n" +
@@ -464,11 +478,12 @@ class WfStatusController @Autowired constructor(
         )
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b入侵\\b")
-    fun invasions(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b入侵\\b")
+    fun invasions(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         invasionsEntity.clear()
         val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
@@ -501,16 +516,17 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
-    fun incarnon(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
+    fun incarnon(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val mapper = jacksonObjectMapper()
         val newJsonFile = File(WARFRAME_NEW_INCARNON)
@@ -536,7 +552,7 @@ class WfStatusController @Autowired constructor(
         val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
 
         if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
-            ContextProvider.sendMsg("啊哦~本周灵化数据不见了")
+            context.sendMsg("啊哦~本周灵化数据不见了")
             return
         }
 
@@ -572,16 +588,17 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
-    fun moodSpirals(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
+    fun moodSpirals(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
         val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
@@ -594,7 +611,7 @@ class WfStatusController @Autowired constructor(
         val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
 
         if (currentWeatherData == null) {
-            ContextProvider.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+            context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
             return
         }
         if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
@@ -609,7 +626,7 @@ class WfStatusController @Autowired constructor(
         val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
 
         if (hoursLaterWeatherData == null) {
-            ContextProvider.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+            context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
             return
         }
 
@@ -620,7 +637,7 @@ class WfStatusController @Autowired constructor(
 
         // 确保状态不为null
         if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
-            ContextProvider.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
+            context.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
             return
         }
 
@@ -658,7 +675,7 @@ class WfStatusController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }

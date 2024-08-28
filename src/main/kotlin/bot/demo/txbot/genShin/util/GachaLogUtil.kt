@@ -13,8 +13,6 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
-import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -356,12 +354,13 @@ class GachaLogUtil(
      * @param imgData 图片数据
      */
     fun getGachaLog(
+        context: ContextProvider.Context,
         gameUid: String,
         imgData: WebImgUtil.ImgData,
     ) {
         try {
 //            qiNiuService.getFileInfo(imgData)
-            if (txCosService.checkFileExist(imgData.imgName!!, "jpeg")) sendNewImage(imgData)
+            if (txCosService.checkFileExist(imgData.imgName!!, "jpeg")) webImgUtil.sendNewImage(context, imgData)
             else throw Exception("缓存图片不存在")
         } catch (e: Exception) {
             logWarn("缓存图片不存在，开始生成图片")
@@ -371,7 +370,7 @@ class GachaLogUtil(
                 getEachData(gachaData, type)
             }
 
-            sendNewImage(imgData)
+            webImgUtil.sendNewImage(context, imgData)
         }
     }
 
@@ -380,18 +379,18 @@ class GachaLogUtil(
      *
      * @param imgData 图片数据
      */
-    private fun sendNewImage(imgData: WebImgUtil.ImgData) {
-        webImgUtil.sendNewImage(imgData)
-        when (ContextProvider.currentEvent) {
-            is PrivateMessageEvent -> {
-                ContextProvider.sendPrivateMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
-            }
+    /*    private fun sendNewImage(imgData: WebImgUtil.ImgData) {
+            webImgUtil.sendNewImage(context, imgData)
+            when (ContextProvider.currentEvent) {
+                is PrivateMessageEvent -> {
+                    context.sendPrivateMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
+                }
 
-            is AnyMessageEvent -> {
-                ContextProvider.sendMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
+                is AnyMessageEvent -> {
+                    context.sendMsg("发送完毕，可能因网络波动未显示图片，请稍后再试")
+                }
             }
-        }
-    }
+        }*/
 
     fun checkCache(imgData: WebImgUtil.ImgData): File? {
         val folder = File(GACHA_CACHE_PATH)

@@ -13,9 +13,6 @@ import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.mikuac.shiro.common.utils.MsgUtils
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
-import com.mikuac.shiro.dto.event.message.GroupMessageEvent
-import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -327,15 +324,11 @@ class WebImgUtil(
         return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
     }
 
-    fun sendNewImage(imgData: ImgData) {
+    fun sendNewImage(context: ContextProvider.Context, imgData: ImgData) {
 //        val imgUrl: String? = checkCacheImg(imgData)
         val imgUrl: String? = returnUrlImgByTxCos(imgData)
         val sendMsg = MsgUtils.builder().img(imgUrl).build()
-        when (ContextProvider.currentEvent) {
-            is AnyMessageEvent -> ContextProvider.sendMsg(sendMsg)
-            is GroupMessageEvent -> ContextProvider.sendGroupMsg(sendMsg)
-            is PrivateMessageEvent -> ContextProvider.sendPrivateMsg(sendMsg)
-        }
+        context.sendMsg(sendMsg)
     }
 
 

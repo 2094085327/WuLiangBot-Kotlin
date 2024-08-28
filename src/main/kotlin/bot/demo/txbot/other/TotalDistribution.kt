@@ -1,5 +1,6 @@
 package bot.demo.txbot.other
 
+import bot.demo.txbot.TencentBotKotlinApplication
 import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
@@ -10,12 +11,18 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.dailyActiveJson
 import bot.demo.txbot.other.TotalDistribution.CommandList.helpMd5
 import bot.demo.txbot.other.TotalDistribution.CommandList.lastHelpMd5
+import bot.demo.txbot.other.distribute.actionConfig.ActionFactory
+import bot.demo.txbot.other.distribute.actionConfig.Addition
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
+import com.mikuac.shiro.annotation.common.Order
 import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
@@ -42,9 +49,12 @@ import javax.annotation.PostConstruct
  */
 @Shiro
 @Component
+@ActionService
 class TotalDistribution(
     @Autowired private val templateService: TemplateService,
-    @Autowired private val webImgUtil: WebImgUtil
+    @Autowired private val webImgUtil: WebImgUtil,
+    @Autowired private val actionFactory: ActionFactory,
+    @Autowired private val addition: Addition
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -177,14 +187,19 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-    
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "重载指令")
-    fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+
+    //    @AnyMessageHandler
+//    @MessageHandlerFilter(cmd = "重载指令")
+//    fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    @Executor(action = "重载指令")
+    fun reloadConfig(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         CommandList.reloadCommands()
-        ContextProvider.sendMsg("指令列表已重载")
+        context.sendMsg("指令列表已重载")
         logInfo("指令列表已重载")
         val imageData = WebImgUtil.ImgData(
             imgName = "help-$lastHelpMd5",
@@ -198,11 +213,13 @@ class TotalDistribution(
         lastHelpMd5 = helpMd5
     }
 
-    
+
+    @Order(0)
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+        logInfo("Initializing with event: $event, bot: $bot")
+        val context = ContextProvider.initialize(event, bot)
 
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
         todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
@@ -241,12 +258,26 @@ class TotalDistribution(
                 updateParam(param, key, matchedCommands, descriptions)
             }
 
-//            val encodedInputBase64 =
-//                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
-//            ContextProvider.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+            //            val encodedInputBase64 =
+            //                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
+            //            context.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
 
             // TODO 临时补丁，被动Md被修复 先直发一下进行兜底回复 未来增加md开关
-            ContextProvider.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
+            context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
+            return
         }
+
+
+//        val match = matcher.group(1)
+        // 扫描包，这里直接扫描Demo所在的包
+        actionFactory.newInstance().scanAction(TencentBotKotlinApplication::class.java)
+
+        //        addition.doRequest("test", new ArgumentMaker().add("1", "1").toOgnl());
+//    ArgumentMaker().add("1", "帮助方法").toOgnl()?.let { addition.doRequest("帮助", it) }
+        println("match:$match")
+//        ArgumentMaker().add("bot", bot).add("event", event).toOgnl()?.let {
+//            addition.doRequest(match, bot, event)
+//        }
+        addition.doRequest(match, bot, event)
     }
 }

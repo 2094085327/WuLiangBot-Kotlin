@@ -4,9 +4,9 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.game.lifeRestart.datebase.LifeRestartService
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,8 +21,8 @@ import java.util.regex.Matcher
  * @author Nature Zero
  * @date 2024/2/14 18:54
  */
-@Shiro
 @Component
+@ActionService
 class LifeRestartMain(
     @Autowired private var lifeRestartService: LifeRestartService,
     @Autowired private val webImgUtil: WebImgUtil
@@ -77,17 +77,17 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @return
      */
-    fun isErrorState(userInfo: LifeRestartUtil.UserInfo?): Boolean {
+    fun isErrorState(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
         if (userInfo == null) {
-            ContextProvider.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
+            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return true
         }
         if (userInfo.talent.isEmpty()) {
-            ContextProvider.sendMsg("你还没有选择天赋,请先选择天赋")
+            context.sendMsg("你还没有选择天赋,请先选择天赋")
             return true
         }
         if (!userInfo.propertyDistribution!!) {
-            ContextProvider.sendMsg("你还没有分配属性，请先分配属性")
+            context.sendMsg("你还没有分配属性，请先分配属性")
             return true
         }
         return false
@@ -99,13 +99,13 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @return Boolean
      */
-    fun isTalentError(userInfo: LifeRestartUtil.UserInfo?): Boolean {
+    fun isTalentError(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
         if (userInfo == null) {
-            ContextProvider.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
+            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return true
         }
         if (userInfo.talent.isNotEmpty()) {
-            ContextProvider.sendMsg("你已经选择过天赋了,请不要重复分配")
+            context.sendMsg("你已经选择过天赋了,请不要重复分配")
             return true
         }
         return false
@@ -127,22 +127,22 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @param realId 真实id
      */
-    fun handleGameStart(userInfo: LifeRestartUtil.UserInfo, realId: String) {
+    fun handleGameStart(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo, realId: String) {
         updateGameTime(userInfo)
         userList.add(userInfo)
 
         val randomTalent = restartUtil.talentRandomInit(userInfo = userInfo)
         userInfo.randomTalentTemp = randomTalent
 
-        ContextProvider.sendMsg("游戏账号创建成功，请使用如「天赋 1 2 3」来选择图片中的天赋")
+        context.sendMsg("游戏账号创建成功，请使用如「天赋 1 2 3」来选择图片中的天赋")
 
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
         )
 
-        webImgUtil.sendNewImage(imageData)
-        ContextProvider.sendMsg("请在5分钟内开始游戏")
+        webImgUtil.sendNewImage(context, imageData)
+        context.sendMsg("请在5分钟内开始游戏")
         webImgUtil.deleteImg(imageData)
     }
 
@@ -152,7 +152,7 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @param message 待发送的消息
      */
-    fun updateAndSend(userInfo: LifeRestartUtil.UserInfo, message: String? = null) {
+    fun updateAndSend(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo, message: String? = null) {
         updateGameTime(userInfo)
 
         val sendStr = restartUtil.trajectory(userInfo)
@@ -163,8 +163,8 @@ class LifeRestartMain(
             url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
 
-        webImgUtil.sendNewImage(imageData)
-        if (message != null) ContextProvider.sendMsg(message)
+        webImgUtil.sendNewImage(context, imageData)
+        if (message != null) context.sendMsg(message)
         webImgUtil.deleteImg(imageData)
     }
 
@@ -173,27 +173,29 @@ class LifeRestartMain(
      *
      * @param userInfo 用户信息
      */
-    fun sendGameEnd(userInfo: LifeRestartUtil.UserInfo) {
+    fun sendGameEnd(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
         )
-        webImgUtil.sendNewImage(imageData)
-        ContextProvider.sendMsg("游戏结束")
+        webImgUtil.sendNewImage(context, imageData)
+        context.sendMsg("游戏结束")
         userList.remove(userInfo)
         webImgUtil.deleteImg(imageData)
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "重开")
-    fun startRestart(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "重开")
+    fun startRestart(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventData == null || restartUtil.ageData == null) {
             if (!restartUtil.fetchDataAndUpdateLists()) {
-                ContextProvider.sendMsg("人生重开数据缺失，请使用「更新资源」指令来下载缺失数据")
+                context.sendMsg("人生重开数据缺失，请使用「更新资源」指令来下载缺失数据")
                 return
             }
         }
@@ -214,121 +216,131 @@ class LifeRestartMain(
             achievement = userGameInfo?.cachv ?: 0,
         )
 
-        handleGameStart(userInfo, realId)
+        handleGameStart(context, userInfo, realId)
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "天赋 (.*)")
-    fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "天赋 (.*)")
+    fun getTalent(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
         val userInfo = findUserInfo(realId)
 
-        if (isTalentError(userInfo)) return
+        if (isTalentError(context, userInfo)) return
 
         val talentInput = matcher.group(1)
         if (!isTalentFormatValid(talentInput)) {
-            ContextProvider.sendMsg("你分配的天赋格式错误或范围不正确，请重新分配")
+            context.sendMsg("你分配的天赋格式错误或范围不正确，请重新分配")
             return
         }
         userInfo?.let {
             when (restartUtil.talentCheck(talentInput, userInfo)) {
-                TALENT_SELECT_NOT_COMPLETE -> ContextProvider.sendMsg("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
+                TALENT_SELECT_NOT_COMPLETE -> context.sendMsg("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
 
-                TALENT_SELECT_Limit -> ContextProvider.sendMsg("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
+                TALENT_SELECT_Limit -> context.sendMsg("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
 
                 else -> {
                     updateGameTime(userInfo)
                     restartUtil.getChoiceTalent(talentInput, userInfo)
                     restartUtil.getTalentAllocationAddition(userInfo)
 
-                    ContextProvider.sendMsg("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
+                    context.sendMsg("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
                 }
             }
         }
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "随机")
-    fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "随机")
+    fun randomAttribute(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
         val userInfo = findUserInfo(realId)
 
         if (userInfo == null) {
-            ContextProvider.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
+            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return
         }
 
         userInfo.let {
             lifeRestartService.insertTimesByRealId(realId)
             it.property = restartUtil.randomAttributes(it)
-            updateAndSend(it, "请发送「继续 继续的步数」来进行游戏")
+            updateAndSend(context, it, "请发送「继续 继续的步数」来进行游戏")
             it.propertyDistribution = true
         }
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "分配 (.*)")
-    fun dealAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "分配 (.*)")
+    fun dealAttribute(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
         val userInfo = findUserInfo(realId)
 
         if (userInfo == null) {
-            ContextProvider.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
+            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return
         }
         if (userInfo.talent.isEmpty()) {
-            ContextProvider.sendMsg("你还没有选择天赋,请先选择天赋")
+            context.sendMsg("你还没有选择天赋,请先选择天赋")
             return
         }
         if (userInfo.propertyDistribution == true) {
-            ContextProvider.sendMsg("你已经分配过属性了，请不要重复分配")
+            context.sendMsg("你已经分配过属性了，请不要重复分配")
             return
         }
 
         userInfo.let {
             if (!Regex("^\\d+( \\d+)*\$").matches(matcher.group(1))) {
-                ContextProvider.sendMsg("你分配的属性格式错误，请重新分配")
+                context.sendMsg("你分配的属性格式错误，请重新分配")
                 return
             }
 
             when (restartUtil.assignAttributes(it, matcher)) {
                 SIZE_OUT -> {
-                    ContextProvider.sendMsg("注意分配的5个属性值的和不能超过${it.status}哦")
+                    context.sendMsg("注意分配的5个属性值的和不能超过${it.status}哦")
                     return
                 }
 
                 VALUE_OUT -> {
-                    ContextProvider.sendMsg("单项属性值不能大于10")
+                    context.sendMsg("单项属性值不能大于10")
                     return
                 }
             }
 
             lifeRestartService.insertTimesByRealId(realId)
-            updateAndSend(it, "请发送「继续 继续的步数」来进行游戏")
+            updateAndSend(context, it, "请发送「继续 继续的步数」来进行游戏")
 
             it.propertyDistribution = true
         }
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "继续(.*)")
-    fun continueGame(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "继续(.*)")
+    fun continueGame(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
         val userInfo = findUserInfo(realId)
 
-        if (isErrorState(userInfo)) return
+        if (isErrorState(context, userInfo)) return
 
         userInfo?.let {
             val stepNext = matcher.group(1).trim().toIntOrNull() ?: 1 // 默认为1步
@@ -341,12 +353,12 @@ class LifeRestartMain(
                 sendStrList.find { sendMap -> sendMap["userId"] == realId }?.set("sendStr", strList)
 
                 if (it.isEnd == true) {
-                    sendGameEnd(it)
+                    sendGameEnd(context, it)
                     return
                 }
             }
 
-            updateAndSend(it)
+            updateAndSend(context, it)
         }
     }
 }

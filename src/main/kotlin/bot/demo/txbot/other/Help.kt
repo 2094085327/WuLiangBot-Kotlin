@@ -3,10 +3,10 @@ package bot.demo.txbot.other
 import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import com.fasterxml.jackson.databind.JsonNode
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,15 +18,16 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import java.util.*
 
-@Shiro
 @Component
 @Controller
+@ActionService
 class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "(help|帮助|菜单)")
-    fun help(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(帮助|菜单|help)\\b")
+    fun help(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
         val imageData = WebImgUtil.ImgData(
@@ -34,21 +35,22 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/help"
         )
-        webImgUtil.sendNewImage(imageData)
+        webImgUtil.sendNewImage(context, imageData)
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "日活")
-    fun daily(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "日活")
+    fun daily(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
         totalDistribution.saveActiveLog()
         val imageData = WebImgUtil.ImgData(
             imgName = "dailyActive-${UUID.randomUUID()}",
             element = "body",
             url = "http://localhost:${webImgUtil.usePort}/dailyActive"
         )
-        webImgUtil.sendNewImage(imageData)
+        webImgUtil.sendNewImage(context, imageData)
         webImgUtil.deleteImg(imageData)
     }
 
@@ -62,7 +64,6 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
     @GetMapping("/dailyJson")
     fun dailyJson(): JsonNode {
         val helpJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
-
         return helpJson
     }
 

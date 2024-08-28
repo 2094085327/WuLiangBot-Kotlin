@@ -36,7 +36,7 @@ class WfUtil @Autowired constructor(
      * @param item 物品
      * @param modLevel 模组等级
      */
-    fun sendMarketItemInfo(item: WfLexiconEntity, modLevel: Any? = null) {
+    fun sendMarketItemInfo(context: ContextProvider.Context, item: WfLexiconEntity, modLevel: Any? = null) {
         val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
@@ -90,7 +90,7 @@ class WfUtil @Autowired constructor(
             else -> ""
         }
 
-        ContextProvider.sendMsg("你查询的物品是 $modLevelString「${item.zhItemName}」\n$orderString")
+        context.sendMsg("你查询的物品是 $modLevelString「${item.zhItemName}」\n$orderString")
     }
 
     /**
@@ -98,7 +98,7 @@ class WfUtil @Autowired constructor(
      *
      * @param itemNameKey 物品名称关键字
      */
-    fun handleFuzzySearch(itemNameKey: String) {
+    fun handleFuzzySearch(context: ContextProvider.Context, itemNameKey: String) {
         val fuzzyList = mutableSetOf<String>()
         itemNameKey.forEach { char ->
             wfRivenService.superFuzzyQuery(char.toString())
@@ -107,10 +107,10 @@ class WfUtil @Autowired constructor(
 
         if (fuzzyList.isNotEmpty()) {
             otherUtil.findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
-                ContextProvider.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
+                context.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
             }
         } else {
-            ContextProvider.sendMsg("未找到任何匹配项。")
+            context.sendMsg("未找到任何匹配项。")
         }
     }
 

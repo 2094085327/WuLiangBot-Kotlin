@@ -4,13 +4,13 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import bot.demo.txbot.warframe.WfMarketController.WfMarket.lichOrderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,8 +24,8 @@ import java.util.regex.Matcher
  * @author Nature Zero
  * @date 2024/5/20 上午9:03
  */
-@Shiro
 @Component
+@ActionService
 class WfMarketController @Autowired constructor(
     private val wfUtil: WfUtil,
     private val webImgUtil: WebImgUtil,
@@ -37,11 +37,13 @@ class WfMarketController @Autowired constructor(
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
 
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "wm (.*)")
-    fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "wm (.*)")
+    fun getMarketItem(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)
         val regex = """(\d+)(?=级)|(满级)""".toRegex()
@@ -53,13 +55,13 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(cleanKey)
 
         if (itemEntity != null) {
-            wfUtil.sendMarketItemInfo(itemEntity, level)
+            wfUtil.sendMarketItemInfo(context, itemEntity, level)
             return
         }
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
         if (!keyList.isNullOrEmpty()) {
-            wfUtil.sendMarketItemInfo(keyList.first()!!, level)
+            wfUtil.sendMarketItemInfo(context, keyList.first()!!, level)
             return
         }
 
@@ -72,18 +74,21 @@ class WfMarketController @Autowired constructor(
 
         if (fuzzyList.isNotEmpty()) {
             OtherUtil().findMatchingStrings(key, fuzzyList).let {
-                ContextProvider.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
+                context.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
             }
         } else {
-            ContextProvider.sendMsg("未找到任何匹配项。")
+            context.sendMsg("未找到任何匹配项。")
         }
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "\\b(wr|wmr)\\s+(\\S+.*)\$")
-    fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "\\b(wr|wmr)\\s+(\\S+.*)\$")
+    fun getRiven(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(2)
         val parameterList = key.split(" ")
@@ -97,7 +102,7 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.searchByRivenLike(itemNameKey).firstOrNull()
             ?: run {
-                wfUtil.handleFuzzySearch(itemNameKey)
+                wfUtil.handleFuzzySearch(context, itemNameKey)
                 return
             }
 
@@ -108,14 +113,14 @@ class WfMarketController @Autowired constructor(
         )
 
         if (rivenJson == null) {
-            ContextProvider.sendMsg("查询失败，请稍后重试")
+            context.sendMsg("查询失败，请稍后重试")
             return
         }
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
         if (!auctionInfo) {
-            ContextProvider.sendMsg("当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}")
+            context.sendMsg("当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}")
             return
         }
 
@@ -125,16 +130,19 @@ class WfMarketController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
 
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "wl (.*)")
-    fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "wl (.*)")
+    fun getLich(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)
         val parameterList = key.split(" ")
@@ -148,7 +156,7 @@ class WfMarketController @Autowired constructor(
             ?: wfRivenService.turnKeyToUrlNameByLichLike(itemNameKey).firstOrNull()
             ?: run {
                 // 如果没有找到匹配项
-                wfUtil.handleFuzzySearch(itemNameKey)
+                wfUtil.handleFuzzySearch(context, itemNameKey)
                 return
             }
 
@@ -168,7 +176,7 @@ class WfMarketController @Autowired constructor(
         )
 
         if (lichJson == null) {
-            ContextProvider.sendMsg("查询失败，请稍后重试")
+            context.sendMsg("查询失败，请稍后重试")
             return
         }
 
@@ -199,18 +207,21 @@ class WfMarketController @Autowired constructor(
             element = "body"
         )
 
-        webImgUtil.sendNewImage(imgData)
+        webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "wiki (.*)")
-    fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "wiki (.*)")
+    fun getWikiUrl(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+        @AParameter("matcher") matcher: Matcher
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
-        ContextProvider.sendMsg("你查询的物品的wiki地址可能是:$wikiUrl")
+        context.sendMsg("你查询的物品的wiki地址可能是:$wikiUrl")
     }
 }

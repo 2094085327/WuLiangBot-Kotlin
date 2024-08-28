@@ -3,7 +3,7 @@ package bot.demo.txbot.common.utils
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import com.mikuac.shiro.dto.event.message.MessageEvent
 import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -54,7 +54,7 @@ class OtherUtil {
      * @param event 任意消息事件
      * @return 真实ID
      */
-    fun getRealId(event: AnyMessageEvent): String {
+    fun getRealId(event: MessageEvent): String {
         val fictitiousId = event.userId
         return HttpUtil.doGetJson("http://localhost:$gskPort/getid?type=2&id=$fictitiousId")["id"].textValue()
     }

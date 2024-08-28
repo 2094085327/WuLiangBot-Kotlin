@@ -4,13 +4,13 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -26,8 +26,8 @@ import org.springframework.stereotype.Component
  * @author Nature Zero
  * @date 2024/5/20 下午11:38
  */
-@Shiro
 @Component
+@ActionService
 class WfTranslateLexicon {
     @Autowired
     lateinit var wfLexiconService: WfLexiconService
@@ -249,10 +249,12 @@ class WfTranslateLexicon {
 
 
     @OptIn(DelicateCoroutinesApi::class)
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "更新词库")
-    fun upDataWfTranslateLexicon(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "更新词库")
+    fun upDataWfTranslateLexicon(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
         val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
@@ -261,7 +263,7 @@ class WfTranslateLexicon {
         GlobalScope.launch {
             try {
                 // 获取中英文JSON数据并解析
-                ContextProvider.sendMsg("因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待")
+                context.sendMsg("因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待")
 
                 // 使用async并行执行插入操作
                 val lexiconJob = async {
@@ -286,7 +288,7 @@ class WfTranslateLexicon {
                 lichJob.await()
 
 
-                ContextProvider.sendMsg("词库更新完成")
+                context.sendMsg("词库更新完成")
             } finally {
                 // 显式地将变量置空
                 lexiconMap.clear()

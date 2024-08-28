@@ -1,27 +1,28 @@
 package bot.demo.txbot.other
 
 import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
-import java.util.regex.Matcher
+import java.util.*
 
-@Shiro
 @Component
+@ActionService
 class Restart {
-    
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "重启")
-    fun allPool(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+    @Executor(action = "重启")
+    fun restart(
+        @AParameter("bot") bot: Bot,
+        @AParameter("event") event: AnyMessageEvent,
+    ) {
+        val context = ContextProvider.initialize(event, bot)
 
-        ContextProvider.sendMsg("正在重启中，请稍后")
+        context.sendMsg("正在重启中，请稍后")
         // 获取操作系统类型
-        val osName = System.getProperty("os.name").toLowerCase()
+        val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
 
         val jarDirectory = System.getProperty("user.dir")
         // 根据操作系统类型选择相应的脚本

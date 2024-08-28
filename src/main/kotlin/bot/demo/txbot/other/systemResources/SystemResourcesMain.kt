@@ -182,11 +182,11 @@ class SystemResourcesMain {
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "无量姬状态")
     fun sendSystemResources(bot: Bot, event: AnyMessageEvent) {
-        ContextProvider.initialize(event, bot)
+        val context = ContextProvider.initialize(event, bot)
 
         val (cpuData, ramData, sysData, jvmData, sysFileData) = resourcesMain()
 
-        ContextProvider.sendMsg("系统状态计算中，请稍后...")
+        context.sendMsg("系统状态计算中，请稍后...")
         val sysFileString: String = sysFileData.joinToString(separator = "\n") {
             "盘符: ${it.dirName}\n" +
                     "盘符类型: ${it.sysTypeName}\n" +
@@ -197,7 +197,7 @@ class SystemResourcesMain {
                     "空间使用率: ${it.fileUsage}%\n"
         }
 
-        ContextProvider.sendMsg(
+        context.sendMsg(
 
             "Cpu总使用率: ${cpuData.getTotal()}%\n" +
                     "Cpu核心数: ${cpuData.cpuNum}\n" +
