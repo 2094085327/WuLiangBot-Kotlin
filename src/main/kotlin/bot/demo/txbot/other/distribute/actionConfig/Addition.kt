@@ -2,12 +2,14 @@ package bot.demo.txbot.other.distribute.actionConfig
 
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import com.mikuac.shiro.core.Bot
+import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import com.mikuac.shiro.dto.event.message.GroupMessageEvent
 import com.mikuac.shiro.dto.event.message.MessageEvent
+import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.lang.reflect.Method
-import java.lang.reflect.Parameter
 import java.util.regex.Matcher
 
 
@@ -21,7 +23,7 @@ class Addition(
     @Autowired private var applicationContext: ApplicationContext,
     @Autowired private val actionFactory: ActionFactory
 ) {
-    @Throws(Exception::class)
+
     fun doRequest(action: String, bot: Bot, event: MessageEvent): String {
         val ad: ActionDefinition = actionFactory.newInstance().getActionDefinition(action)
             ?: throw IllegalAccessException("方法 $action 未定义")
@@ -29,9 +31,12 @@ class Addition(
         val `object`: Any = ad.getObject()
         val method: Method = ad.getMethod()
 
-        // 获取原有的参数列表
-        val matcher = ad.getMatched()
-        val parameters = getParameterArr(bot, event, matcher, ad.getParameterList())
+        // 检查方法上是否有 @AParameter 注解
+        val parameters = if (method.isAnnotationPresent(AParameter::class.java)) {
+            getParameterArr(bot, event, ad.getMatched(), method)
+        } else {
+            throw IllegalAccessException("参数注解 ${AParameter::class.java.name} 缺失")
+        }
 
         val result = method.invoke(`object`, *parameters)
         return result?.toString() ?: ""
@@ -41,17 +46,16 @@ class Addition(
         bot: Bot,
         event: MessageEvent,
         matcher: Matcher?,
-        parameterList: List<Parameter>
+        method: Method
     ): Array<Any?> {
-        val results = arrayOfNulls<Any>(parameterList.size)
+        val parameters = method.parameters
+        val results = arrayOfNulls<Any>(parameters.size)
 
-        parameterList.forEachIndexed { index, parameter ->
-            val key = parameter.getAnnotation(AParameter::class.java).name
-            results[index] = when (key) {
-                "bot" -> bot
-                "event" -> event
-                "matcher" -> matcher
-
+        parameters.forEachIndexed { index, parameter ->
+            results[index] = when (parameter.type) {
+                Bot::class.java -> bot
+                MessageEvent::class.java, AnyMessageEvent::class.java, PrivateMessageEvent::class.java, GroupMessageEvent::class.java -> event
+                Matcher::class.java -> matcher
                 else -> null
             }
         }

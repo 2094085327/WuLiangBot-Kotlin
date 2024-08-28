@@ -20,17 +20,7 @@ import org.springframework.stereotype.Component
 @Component
 class BotUtils {
     object ContextProvider {
-//        var currentEvent: MessageEvent? = null
-//        private var currentBot: Bot? = null
-
-        /*        fun <T : MessageEvent> initialize(event: T, bot: Bot) {
-                    currentEvent = event
-                    currentBot = bot
-                }*/
-
         fun <T : MessageEvent> initialize(event: T, bot: Bot): Context {
-            println(event)
-            println(bot)
             return Context(event, bot)
         }
 
@@ -55,49 +45,12 @@ class BotUtils {
                         if (event.groupId != null) bot.deleteMsg(event.groupId, bot.selfId, messageId)
                         bot.deleteMsg(event.userId, bot.selfId, messageId)
                     }
+
                     is PrivateMessageEvent -> bot.deleteMsg(messageId)
                     else -> bot.deleteMsg(messageId)
                 }
             }
         }
 
-        /*        private fun getBotAndEvent(): Pair<Bot, MessageEvent> {
-                    val event = currentEvent ?: throw IllegalStateException("Event 未设置")
-                    val bot = currentBot ?: throw IllegalStateException("Bot 未设置")
-                    return Pair(bot, event)
-                }
-
-                fun sendMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId>? {
-                    val (bot, event) = getBotAndEvent()
-                    return when (event.messageType) {
-                        "private" -> bot.sendPrivateMsg(event.userId, message, autoEscape)
-                        "group" -> {
-                            event as GroupMessageEvent
-                            bot.sendGroupMsg(event.groupId, message, autoEscape)
-                        }
-
-                        else -> null
-                    }
-
-                }
-
-                fun sendPrivateMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
-                    val (bot, event) = getBotAndEvent()
-                    return bot.sendPrivateMsg(event.userId, message, autoEscape)
-                }
-
-                fun sendGroupMsg(message: String, autoEscape: Boolean = false): ActionData<MsgId> {
-                    val (bot, event) = getBotAndEvent()
-                    return bot.sendGroupMsg((event as GroupMessageEvent).groupId, message, autoEscape)
-                }
-
-                fun deleteMsg(messageId: Int): ActionRaw? {
-                    val (bot, event) = getBotAndEvent()
-                    return when (event) {
-                        is GroupMessageEvent -> bot.deleteMsg(event.groupId, bot.selfId, messageId)
-                        is PrivateMessageEvent -> bot.deleteMsg(messageId)
-                        else -> bot.deleteMsg(messageId)
-                    }
-                }*/
     }
 }

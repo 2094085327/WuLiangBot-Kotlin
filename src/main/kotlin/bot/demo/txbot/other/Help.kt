@@ -22,11 +22,9 @@ import java.util.*
 @Controller
 @ActionService
 class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
+    @AParameter
     @Executor(action = "\\b(帮助|菜单|help)\\b")
-    fun help(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun help(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
@@ -38,11 +36,9 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
         webImgUtil.sendNewImage(context, imageData)
     }
 
+    @AParameter
     @Executor(action = "日活")
-    fun daily(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun daily(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
         totalDistribution.saveActiveLog()
         val imageData = WebImgUtil.ImgData(

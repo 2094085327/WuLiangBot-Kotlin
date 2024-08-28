@@ -111,11 +111,9 @@ class UpdateResources {
         }
     }
 
+    @AParameter
     @Executor(action = "更新资源")
-    fun updateAll(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun updateAll(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("正在更新资源，请稍后")
@@ -146,11 +144,9 @@ class UpdateResources {
         }
     }
 
+    @AParameter
     @Executor(action = "清除缓存")
-    fun deleteCache(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun deleteCache(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         forceDeleteCache("resources/imageCache")

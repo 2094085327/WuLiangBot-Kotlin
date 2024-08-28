@@ -16,12 +16,9 @@ import java.util.regex.Matcher
 @Component
 @ActionService
 class Gacha {
-
+    @AParameter
     @Executor(action = "全部卡池")
-    fun allPool(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun allPool(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         UpdateGachaResources().getDataMain()
@@ -59,13 +56,9 @@ class Gacha {
         return Triple("", "", "")
     }
 
-
+    @AParameter
     @Executor(action = "启用卡池 (.*)")
-    fun setOpenPool(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun setOpenPool(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val poolData = matcher.group(1) ?: ""
@@ -97,12 +90,9 @@ class Gacha {
         InitGenShinData.initGachaLogData()
     }
 
-
+    @AParameter
     @Executor(action = "十连")
-    fun gacha(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun gacha(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val detailPoolInfo = poolData

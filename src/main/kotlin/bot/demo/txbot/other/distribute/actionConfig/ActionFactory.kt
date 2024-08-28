@@ -65,16 +65,14 @@ class ActionFactory(@Autowired private var applicationContext: ApplicationContex
             val executor: Executor = method.getAnnotation(Executor::class.java)
             val action: String = executor.action
 
-//            // 允许覆盖现有定义
+            // 允许覆盖现有定义
 //            if (actionDefinitionMap[action] != null) logInfo("覆盖式生成方法 $action")
 
-            val parameters = method.parameters
             val parameterList: MutableList<Parameter> = ArrayList()
-            parameters.forEachIndexed { index, parameter ->
-                if (!parameter.isAnnotationPresent(AParameter::class.java)) {
-                    throw IllegalAccessException("第" + (index + 1) + "个参数未定义！")
-                }
-                parameterList.add(parameter)
+            // 检查方法上是否有 @AParameter 注解
+            if (method.isAnnotationPresent(AParameter::class.java)) {
+                // 如果方法上有 @AParameter 注解，则直接添加所有参数
+                parameterList.addAll(method.parameters)
             }
 
             addActionDefinition(action, klass, `object`, method, parameterList)

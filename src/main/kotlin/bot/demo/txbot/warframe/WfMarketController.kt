@@ -37,12 +37,9 @@ class WfMarketController @Autowired constructor(
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
 
+    @AParameter
     @Executor(action = "wm (.*)")
-    fun getMarketItem(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)
@@ -81,13 +78,9 @@ class WfMarketController @Autowired constructor(
         }
     }
 
-
+    @AParameter
     @Executor(action = "\\b(wr|wmr)\\s+(\\S+.*)\$")
-    fun getRiven(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(2)
@@ -135,13 +128,9 @@ class WfMarketController @Autowired constructor(
 
     }
 
-
+    @AParameter
     @Executor(action = "wl (.*)")
-    fun getLich(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)
@@ -211,13 +200,9 @@ class WfMarketController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-
+    @AParameter
     @Executor(action = "wiki (.*)")
-    fun getWikiUrl(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val key = matcher.group(1)

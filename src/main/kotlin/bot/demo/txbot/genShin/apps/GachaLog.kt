@@ -222,13 +222,9 @@ class GachaLog(
 //            Thread.sleep(500)
 //        }
 //    }
-
+    @AParameter
     @Executor(action = "新增角色(.*)")
-    fun updateNewItem(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun updateNewItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
 
         // TODO 新增角色功能已实现自动更新 此方法可以移除
         val context = ContextProvider.initialize(event, bot)
@@ -243,12 +239,9 @@ class GachaLog(
         context.sendMsg(response)
     }
 
+    @AParameter
     @Executor(action = "历史记录(.*)")
-    fun recordQuery(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun recordQuery(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("正在查询历史数据，请稍等")
@@ -276,11 +269,9 @@ class GachaLog(
         System.gc()
     }
 
+    @AParameter
     @Executor(action = "删除记录")
-    fun deleteGachaLog(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun deleteGachaLog(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
@@ -304,11 +295,9 @@ class GachaLog(
 
 
     @OptIn(DelicateCoroutinesApi::class)
+    @AParameter
     @Executor(action = "\\b抽卡记录\\b")
-    fun getGachaLog(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun getGachaLog(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
@@ -370,12 +359,9 @@ class GachaLog(
 
     }
 
+    @AParameter
     @Executor(action = "抽卡记录\\s*(\\S.*)")
-    fun getGachaLogByUrlGroup(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getGachaLogByUrlGroup(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         if (event.groupId != null) {
@@ -471,11 +457,9 @@ class GachaLog(
         }
     }
 
+    @AParameter
     @Executor(action = "导入记录")
-    fun getGachaLogByUrlGroup(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun getGachaLogByUrlGroup(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val importState = importGachaLog()
@@ -488,11 +472,9 @@ class GachaLog(
         }
     }
 
+    @AParameter
     @Executor(action = "抽卡链接")
-    fun getGachaLogUrl(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun getGachaLogUrl(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")

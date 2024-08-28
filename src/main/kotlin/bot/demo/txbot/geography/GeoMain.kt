@@ -25,13 +25,9 @@ class GeoMain(
     @Autowired private val geoApi: GetGeoApi,
     @Autowired val webImgUtil: WebImgUtil
 ) {
-
+    @AParameter
     @Executor(action = "\\b^天气\\s(\\S+)")
-    fun getWeatherImg(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getWeatherImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("正在查询信息，请耐心等待")
@@ -56,12 +52,9 @@ class GeoMain(
         System.gc()
     }
 
+    @AParameter
     @Executor(action = "\\b^地理\\s(\\S+)")
-    fun getGeoImg(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getGeoImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("正在查询信息，请耐心等待")

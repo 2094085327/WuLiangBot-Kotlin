@@ -249,11 +249,9 @@ class WfTranslateLexicon {
 
 
     @OptIn(DelicateCoroutinesApi::class)
+    @AParameter
     @Executor(action = "更新词库")
-    fun upDataWfTranslateLexicon(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun upDataWfTranslateLexicon(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()

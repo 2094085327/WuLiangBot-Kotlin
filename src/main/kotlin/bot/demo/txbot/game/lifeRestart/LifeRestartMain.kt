@@ -184,12 +184,9 @@ class LifeRestartMain(
         webImgUtil.deleteImg(imageData)
     }
 
-
+    @AParameter
     @Executor(action = "重开")
-    fun startRestart(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun startRestart(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         val currentTime = System.currentTimeMillis()
@@ -219,13 +216,9 @@ class LifeRestartMain(
         handleGameStart(context, userInfo, realId)
     }
 
-
+    @AParameter
     @Executor(action = "天赋 (.*)")
-    fun getTalent(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
@@ -255,13 +248,9 @@ class LifeRestartMain(
         }
     }
 
-
+    @AParameter
     @Executor(action = "随机")
-    fun randomAttribute(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
@@ -280,12 +269,9 @@ class LifeRestartMain(
         }
     }
 
+    @AParameter
     @Executor(action = "分配 (.*)")
-    fun dealAttribute(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun dealAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)
@@ -329,12 +315,9 @@ class LifeRestartMain(
         }
     }
 
+    @AParameter
     @Executor(action = "继续(.*)")
-    fun continueGame(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-        @AParameter("matcher") matcher: Matcher
-    ) {
+    fun continueGame(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
         val realId = OtherUtil().getRealId(event)

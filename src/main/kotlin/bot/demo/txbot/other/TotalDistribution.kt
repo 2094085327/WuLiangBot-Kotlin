@@ -187,15 +187,9 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-
-    //    @AnyMessageHandler
-//    @MessageHandlerFilter(cmd = "重载指令")
-//    fun reloadConfig(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    @AParameter
     @Executor(action = "重载指令")
-    fun reloadConfig(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun reloadConfig(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         CommandList.reloadCommands()
@@ -218,7 +212,6 @@ class TotalDistribution(
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        logInfo("Initializing with event: $event, bot: $bot")
         val context = ContextProvider.initialize(event, bot)
 
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
@@ -267,17 +260,8 @@ class TotalDistribution(
             return
         }
 
-
-//        val match = matcher.group(1)
         // 扫描包，这里直接扫描Demo所在的包
         actionFactory.newInstance().scanAction(TencentBotKotlinApplication::class.java)
-
-        //        addition.doRequest("test", new ArgumentMaker().add("1", "1").toOgnl());
-//    ArgumentMaker().add("1", "帮助方法").toOgnl()?.let { addition.doRequest("帮助", it) }
-        println("match:$match")
-//        ArgumentMaker().add("bot", bot).add("event", event).toOgnl()?.let {
-//            addition.doRequest(match, bot, event)
-//        }
         addition.doRequest(match, bot, event)
     }
 }

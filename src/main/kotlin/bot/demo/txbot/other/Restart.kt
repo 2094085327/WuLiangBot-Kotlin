@@ -13,11 +13,9 @@ import java.util.*
 @Component
 @ActionService
 class Restart {
+    @AParameter
     @Executor(action = "重启")
-    fun restart(
-        @AParameter("bot") bot: Bot,
-        @AParameter("event") event: AnyMessageEvent,
-    ) {
+    fun restart(bot: Bot, event: AnyMessageEvent) {
         val context = ContextProvider.initialize(event, bot)
 
         context.sendMsg("正在重启中，请稍后")
