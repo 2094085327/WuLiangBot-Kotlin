@@ -113,18 +113,20 @@ class WfStatusController @Autowired constructor(
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    private fun getSendFissureList(context: ContextProvider.Context, filteredFissures: List<JsonNode>) {
+    private fun getSendFissureList(context: ContextProvider.Context, filteredFissures: List<JsonNode>, type: String) {
         val thisFissureList = WfStatusVo.FissureList()
-
-        filteredFissures.forEach {
+        val filteredFissuresActive = filteredFissures.filter { fissures ->
+            fissures["active"].asBoolean()
+        }
+        filteredFissuresActive.forEach { fissures ->
             val fissureDetail = WfStatusVo.FissureDetail(
-                eta = it["eta"].textValue().replaceTime(),
-                node = it["node"].textValue().turnZhHans(),
-                missionType = it["missionType"].textValue().turnZhHans(),
-                enemyKey = it["enemyKey"].textValue().replaceFaction()
+                eta = fissures["eta"].textValue().replaceTime(),
+                node = fissures["node"].textValue().turnZhHans(),
+                missionType = fissures["missionType"].textValue().turnZhHans(),
+                enemyKey = fissures["enemyKey"].textValue().replaceFaction()
             )
 
-            when (it["tierNum"].intValue()) {
+            when (fissures["tierNum"].intValue()) {
                 1 -> thisFissureList.tierLich.add(fissureDetail)
                 2 -> thisFissureList.tierMeso.add(fissureDetail)
                 3 -> thisFissureList.tierNeo.add(fissureDetail)
@@ -134,6 +136,7 @@ class WfStatusController @Autowired constructor(
             }
         }
         fissureList = thisFissureList
+        thisFissureList.fissureType = type
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:${webImgUtil.usePort}/warframe/fissureList",
@@ -154,7 +157,7 @@ class WfStatusController @Autowired constructor(
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(context, filteredFissures)
+        getSendFissureList(context, filteredFissures, "普通裂缝")
     }
 
     @AParameter
@@ -166,7 +169,7 @@ class WfStatusController @Autowired constructor(
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(context, filteredFissures)
+        getSendFissureList(context, filteredFissures, "钢铁裂缝")
     }
 
     @AParameter
@@ -178,7 +181,7 @@ class WfStatusController @Autowired constructor(
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        getSendFissureList(context, filteredFissures)
+        getSendFissureList(context, filteredFissures, "九重天")
     }
 
     @AParameter

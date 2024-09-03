@@ -26,6 +26,7 @@ class WfStatusVo {
         var tierAxi: MutableList<FissureDetail> = mutableListOf(),
         var tierRequiem: MutableList<FissureDetail> = mutableListOf(),
         var tierOmnia: MutableList<FissureDetail> = mutableListOf(),
+        var fissureType: String = ""
     )
 
     /**

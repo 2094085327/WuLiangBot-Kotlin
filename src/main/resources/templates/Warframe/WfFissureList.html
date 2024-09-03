@@ -19,7 +19,7 @@
                 width: 480px;
             }
 
-            .warframeFissure{
+            .warframeFissure {
                 margin: 10px;
             }
 
@@ -35,6 +35,12 @@
     <body>
         <div class="frame">
             <div class="warframeFissure" th:object="${fissureList}">
+                <div class="fissureType">
+                    <span>你查询的</span>
+                    <span class="purpleText" th:text="${fissureList.fissureType}"></span>
+                    <span>的当前信息是这样的~</span>
+                </div>
+                <br>
                 <div class="tierLich" th:if="${(fissureList.tierLich.size()!=0)}">
                     <span>古纪(T1)</span>
                     <div class="fissureItem" th:each="fissure: ${fissureList.tierLich}">
