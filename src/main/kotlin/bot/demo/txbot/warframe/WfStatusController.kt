@@ -375,22 +375,28 @@ class WfStatusController @Autowired constructor(
         // 将时间字符串解析为 LocalDateTime 对象
         val nowTime = LocalDateTime.now()
         val endTime = LocalDateTime.parse(expiryString, formatter)
-
-        // 计算时间差
-        val duration: Duration = Duration.between(nowTime, endTime)
-
         val timeDifference = StringBuilder()
 
+        // 计算月份
         val months = ChronoUnit.MONTHS.between(nowTime, endTime)
+        var tempTime = nowTime.plusMonths(months) // 临时时间用于计算剩余的天数
+
         if (months > 0) timeDifference.append("${months}个月")
 
-        val days = duration.toDays()
+        // 计算剩余的天数（减去已计算的月份）
+        val days = ChronoUnit.DAYS.between(tempTime, endTime)
+        tempTime = tempTime.plusDays(days) // 更新临时时间，用于计算剩余的小时数
+
         if (days > 0) timeDifference.append("${days}天")
 
-        val hours = duration.toHours() % 24
+        // 计算小时
+        val hours = ChronoUnit.HOURS.between(tempTime, endTime)
+        tempTime = tempTime.plusHours(hours)
+
         if (hours > 0) timeDifference.append("${hours}小时")
 
-        val minutes = duration.toMinutes() % 60
+        // 计算分钟
+        val minutes = ChronoUnit.MINUTES.between(tempTime, endTime)
         if (minutes > 0) timeDifference.append("${minutes}分钟")
 
         nightWaveEntity = WfStatusVo.NightWaveEntity(
