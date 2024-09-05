@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse
 
 
 @Controller
-class ImageController {
+class GenshinImageController {
     @GetMapping("/images/permanents/{imageName}")
     @Throws(IOException::class)
     fun getPermanentsImage(@PathVariable imageName: String, response: HttpServletResponse) {

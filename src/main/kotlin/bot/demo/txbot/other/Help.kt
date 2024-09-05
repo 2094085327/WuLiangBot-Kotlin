@@ -3,6 +3,7 @@ package bot.demo.txbot.other
 import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
@@ -51,8 +52,8 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
     }
 
     @RequestMapping("/help")
-    fun helpWeb(model: Model): String {
-        model.addAttribute("helpList", TotalDistribution.CommandList.helpList)
+    fun helpWeb2(model: Model): String {
+        model.addAttribute("commandConfig", commandConfig)
         return "Other/Help"
     }
 

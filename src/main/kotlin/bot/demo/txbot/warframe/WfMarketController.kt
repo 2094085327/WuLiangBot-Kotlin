@@ -14,6 +14,7 @@ import bot.demo.txbot.warframe.vo.WfMarketVo
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.regex.Matcher
@@ -30,7 +31,8 @@ class WfMarketController @Autowired constructor(
     private val wfUtil: WfUtil,
     private val webImgUtil: WebImgUtil,
     private val wfLexiconService: WfLexiconService,
-    private val wfRivenService: WfRivenService
+    private val wfRivenService: WfRivenService,
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
     object WfMarket {
         var lichOrderEntity: WfMarketVo.LichEntity? = null
@@ -38,7 +40,7 @@ class WfMarketController @Autowired constructor(
     }
 
     @AParameter
-    @Executor(action = "wm (.*)")
+    @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
     fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
@@ -70,7 +72,7 @@ class WfMarketController @Autowired constructor(
         }
 
         if (fuzzyList.isNotEmpty()) {
-            OtherUtil().findMatchingStrings(key, fuzzyList).let {
+            otherUtil.findMatchingStrings(key, fuzzyList).let {
                 context.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
             }
         } else {
@@ -79,7 +81,7 @@ class WfMarketController @Autowired constructor(
     }
 
     @AParameter
-    @Executor(action = "\\b(wr|wmr)\\s+(\\S+.*)\$")
+    @Executor(action = "(?i)\\b(wr|wmr)\\s*(\\S+.*)$")
     fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 
@@ -129,7 +131,7 @@ class WfMarketController @Autowired constructor(
     }
 
     @AParameter
-    @Executor(action = "wl (.*)")
+    @Executor(action = "(?i)\\bwl\\s*(\\S+.*)$")
     fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val context = ContextProvider.initialize(event, bot)
 

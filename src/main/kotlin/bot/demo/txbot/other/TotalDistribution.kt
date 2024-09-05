@@ -8,6 +8,7 @@ import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
 import bot.demo.txbot.other.TotalDistribution.CommandList.dailyActiveJson
 import bot.demo.txbot.other.TotalDistribution.CommandList.helpMd5
 import bot.demo.txbot.other.TotalDistribution.CommandList.lastHelpMd5
@@ -16,9 +17,11 @@ import bot.demo.txbot.other.distribute.actionConfig.Addition
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
+import bot.demo.txbot.other.vo.HelpVo.CommandConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
@@ -30,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
@@ -54,82 +58,47 @@ class TotalDistribution(
     @Autowired private val templateService: TemplateService,
     @Autowired private val webImgUtil: WebImgUtil,
     @Autowired private val actionFactory: ActionFactory,
-    @Autowired private val addition: Addition
+    @Autowired private val addition: Addition,
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
 
     object CommandList {
-        private val _commandList = mutableListOf<String>()
-        private val _commands = mutableListOf<String>()
-        private val _commandDescription = mutableListOf<String>()
-        var CHECK_COMMAND = true
-        var helpList = listOf<HelpData>()
-            private set
+        private val jacksonMapper = jacksonObjectMapper()
+
+        var commandConfig: CommandConfig =
+            jacksonMapper.readValue(File(HELP_JSON))
         var helpMd5: String? = null
-        var lastHelpMd5: String? = null
 
+        // 是否启用命令检查
+        private var CHECK_COMMAND = commandConfig.checkCmd
 
-        val commandList: List<String> get() = _commandList.toList()
-        val commands: List<String> get() = _commands.toList()
+        // 上次更新help.json的Md5
+        var lastHelpMd5: String? = commandConfig.updateMd5
 
         var dailyActiveJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
-
-        data class HelpData(
-            var command: String? = null,
-            var description: String? = null
-        )
 
         init {
             reloadCommands()
         }
 
         fun reloadCommands() {
-            _commandList.clear()
-            _commands.clear()
-            _commandDescription.clear()
+            commandConfig = jacksonMapper.readValue(File(HELP_JSON))
+            CHECK_COMMAND = commandConfig.checkCmd
 
-            val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
-            val commands = helpJson["commendList"].first()
-            CHECK_COMMAND = helpJson["checkCmd"].booleanValue()
-
-            // 遍历 help.json 中的指令列表和正则匹配
-            commands.fieldNames().forEach { fieldName ->
-                _commandList.add(commands[fieldName]["regex"].textValue())
-                _commands.add(commands[fieldName]["command"].textValue())
-                _commandDescription.add(commands[fieldName]["description"].textValue())
-            }
-
-            helpList = List(_commandList.size) { index ->
-                HelpData(command = _commands[index], description = _commandDescription[index])
-            }
-            lastHelpMd5 = helpJson["updateMd5"].textValue()
-            helpMd5 = helpJson["commendList"].toString().toMd5()
+            // 根据Md5判断是否更新help.json
+            lastHelpMd5 = commandConfig.updateMd5
+            helpMd5 = commandConfig.allCmd.toString().toMd5()
             if (helpMd5 != lastHelpMd5) {
-                helpJson as ObjectNode
-                helpJson.put("updateMd5", helpMd5)
+                commandConfig.updateMd5 = helpMd5 as String
+                jacksonMapper.writeValue(
+                    File(HELP_JSON),
+                    commandConfig
+                )
             }
-            val mapper = ObjectMapper()
-            mapper.writeValue(File(HELP_JSON), helpJson)
         }
-    }
-
-    fun getDescriptionsForCommands(commands: List<String>, helpList: List<CommandList.HelpData>): List<String> {
-        return commands.map { command ->
-            helpList.find { it.command == command }?.description
-                ?: "这个指令没有什么描述呢"
-        }
-    }
-
-    private fun updateParam(param: ObjectNode, key: String, matchedCommands: List<String>, descriptions: List<String>) {
-        val index = key.last().digitToIntOrNull()?.minus(1) ?: return
-        val value = when {
-            key.startsWith("data") -> matchedCommands.getOrNull(index)
-            key.startsWith("description") -> descriptions.getOrNull(index)
-            else -> null
-        }
-        value?.let { param.putArray("values").add(it) }
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
@@ -187,6 +156,12 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
+    @AnyMessageHandler
+    @MessageHandlerFilter(cmd = "重载指令2")
+    fun reloadConfig2(bot: Bot, event: AnyMessageEvent) {
+        CommandList.reloadCommands()
+    }
+
     @AParameter
     @Executor(action = "重载指令")
     fun reloadConfig(bot: Bot, event: AnyMessageEvent) {
@@ -233,32 +208,41 @@ class TotalDistribution(
         (dailyActiveJson as ObjectNode).replace("users", updatedUsersNode)
 
         val match = matcher.group(1)
-        val matchedCommand = CommandList.commandList.firstOrNull { it.toRegex().matches(match) }
-        if (matchedCommand == null) {
-            val matchedCommands = OtherUtil().findMatchingStrings(match, CommandList.commands)
-            val descriptions = getDescriptionsForCommands(matchedCommands, CommandList.helpList)
 
-            // 检查帮助配置文件中的 checkCmd 配置，true 则开启未知指令拦截并发送帮助信息
-            val template = templateService.searchByBotIdAndTemplateName(bot.selfId, "help")
+        // 这部分代码为Md帮助信息发送，目前无法使用
+        /*        // 检查帮助配置文件中的 checkCmd 配置，true 则开启未知指令拦截并发送帮助信息
+                val template = templateService.searchByBotIdAndTemplateName(bot.selfId, "help")
+                if (!CommandList.CHECK_COMMAND && template == null) return
+                val templateJson = template!!.content?.let { JacksonUtil.readTree(it) } as ObjectNode
+                val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
+                paramsArray.forEach { param ->
+                    param as ObjectNode
+                    val key = param.get("key").asText()
+                    updateParam(param, key, matchedCommands, descriptions)
+                    //            val encodedInputBase64 =
+//                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
+//            context.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
+                }*/
 
-            if (!CommandList.CHECK_COMMAND && template == null) return
-            val templateJson = template!!.content?.let { JacksonUtil.readTree(it) } as ObjectNode
-            val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
+        if (!commandConfig.enableAll) {
+            context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
+            return
+        }
+        val foundMatch = commandConfig.allCmd.any { command ->
+            command.value.commendList
+                .filter { it.enable } // 只过滤出启用的命令
+                .any { it.regex.toRegex().matches(match) }
+        }
 
-            paramsArray.forEach { param ->
-                param as ObjectNode
-                val key = param.get("key").asText()
-                updateParam(param, key, matchedCommands, descriptions)
-            }
-
-            //            val encodedInputBase64 =
-            //                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
-            //            context.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
-
-            // TODO 临时补丁，被动Md被修复 先直发一下进行兜底回复 未来增加md开关
+        if (!foundMatch) {
+            val commandList: List<String> = commandConfig.allCmd
+                .flatMap { it.value.commendList } // 扁平化 commendList 列表
+                .map { it.command } // 提取 command 字段
+            val matchedCommands = otherUtil.findMatchingStrings(match, commandList)
             context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
             return
         }
+
 
         // 扫描包，这里直接扫描Demo所在的包
         actionFactory.newInstance().scanAction(TencentBotKotlinApplication::class.java)
