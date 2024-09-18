@@ -7,6 +7,8 @@ import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
+import bot.demo.txbot.genShin.genshinResp.GenshinRespBean
+import bot.demo.txbot.genShin.genshinResp.GenshinRespEnum
 import bot.demo.txbot.genShin.util.*
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
@@ -224,7 +226,7 @@ class GachaLog(
     @AParameter
     @Executor(action = "历史记录(.*)")
     fun recordQuery(context: Context, matcher: Matcher) {
-        context.sendMsg("正在查询历史数据，请稍等")
+        context.sendMsg(GenshinRespEnum.SEARCH_HISTORY.message)
         updateGachaResources.getDataMain()
         val realId = OtherUtil().getRealId(context.getEvent())
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
@@ -232,7 +234,7 @@ class GachaLog(
             ?: userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            context.sendMsg("Uid还没有绑定，请发送 抽卡记录 进行绑定")
+            context.sendMsg(GenshinRespEnum.BIND_NOTFOUND.message)
             return
         }
 
@@ -256,7 +258,7 @@ class GachaLog(
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            context.sendMsg("Uid还没有绑定，请发送 抽卡记录 进行绑定")
+            context.sendMsg(GenshinRespEnum.BIND_NOTFOUND.message)
             return
         }
 
@@ -268,7 +270,7 @@ class GachaLog(
             val message =
                 if (deleted) "抽卡记录${prefix}删除成功" else "抽卡记录${prefix}删除失败，记录可能正在使用，请稍后再试"
             context.sendMsg(message)
-        } ?: context.sendMsg("当前账户下无抽卡记录")
+        } ?: context.sendMsg(GenshinRespEnum.NO_USER_RECORD.message)
     }
 
 
@@ -279,14 +281,8 @@ class GachaLog(
         val realId = OtherUtil().getRealId(context.getEvent())
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
-        val disclaimer = """
-            免责声明:您将通过扫码完成获取米游社sk以及ck。
-            本Bot将不会保存您的登录状态。
-            我方仅提供米游社查询及相关游戏内容服务,若您的账号封禁、被盗等处罚与我方无关。
-            害怕风险请勿扫码~
-        """.trimIndent()
 
-        context.sendMsg(disclaimer)
+        context.sendMsg(GenshinRespEnum.DISCLAIMER.message)
         val sendMsg = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
         val qrImageMsg = context.sendMsg(sendMsg)
 
@@ -304,7 +300,7 @@ class GachaLog(
             context.sendMsg(qrCodeStatus["message"].textValue())
             return
         }
-        context.sendMsg("登录成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待")
+        context.sendMsg(GenshinRespEnum.LOGIN_SUCCESS.message)
 
         MysDataUtil().deleteDataCache()
         val stoken = qrLogin.getStoken(qrCodeStatus)
@@ -339,7 +335,7 @@ class GachaLog(
     @Executor(action = "抽卡记录\\s*(\\S.*)")
     fun getGachaLogByUrlGroup(context: Context, matcher: Matcher) {
         if ((context.getEvent() as AnyMessageEvent).groupId != null) {
-            context.sendMsg("请通过私聊无量姬发送链接，避免信息泄露，请及时撤回消息")
+            context.sendMsg(GenshinRespEnum.SEND_LINK_FAIL.message)
             return
         }
 
@@ -348,7 +344,7 @@ class GachaLog(
 
         if (gachaUrl.isEmpty()) return
 
-        context.sendMsg("收到链接，正在处理中，请耐心等待")
+        context.sendMsg(GenshinRespEnum.GET_LINK.message)
 
         // 更新卡池数据
         updateGachaResources.getDataMain()
@@ -357,17 +353,17 @@ class GachaLog(
         val checkUrl = gachaLogUtil.checkApi(processingUrl)
         when (checkUrl.first) {
             "-100" -> {
-                context.sendMsg("链接不完整，请复制全部内容（可能输入法复制限制），或者复制的不是历史记录页面链接")
+                context.sendMsg(GenshinRespEnum.LINK_INCOMPLETE.message)
                 return
             }
 
             "-101" -> {
-                context.sendMsg("链接已过期，请重新获取")
+                context.sendMsg(GenshinRespEnum.LINK_EXPIRED.message)
                 return
             }
 
             "0" -> {
-                context.sendMsg("链接验证成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待")
+                context.sendMsg(GenshinRespEnum.LINK_SUCCESS.message)
                 val realId = OtherUtil().getRealId(context.getEvent())
                 MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
 
@@ -384,7 +380,7 @@ class GachaLog(
                 userService.insertGenUidByRealId(realId, gameUid)
             }
 
-            else -> context.sendMsg("抽卡链接格式不正确，请仔细检查或联系管理员")
+            else -> context.sendMsg(GenshinRespEnum.LINK_FAIL.message)
         }
     }
 
@@ -394,7 +390,7 @@ class GachaLog(
      *
      * @return 导入状态
      */
-    fun importGachaLog(): String {
+    fun importGachaLog(): GenshinRespBean {
         try {
             val folder = File(GACHA_LOG_IMPORT)
             if (!folder.exists()) {
@@ -402,45 +398,37 @@ class GachaLog(
             }
             val foldList = folder.listFiles()!!
             if (foldList.isEmpty()) {
-                return "empty"
-            } else {
-                foldList.forEach { file ->
-                    if (file.name.endsWith(".json")) {
-                        val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_IMPORT/${file.name}")
-                        gaChaLogService.insertByJson(gachaData)
-                        logInfo("抽卡记录导入完成")
-                        file.delete()
-                    }
+                return GenshinRespBean.error(GenshinRespEnum.IMPORT_HISTORY_EMPTY)
+            }
+
+            // 遍历文件
+            foldList.forEach { file ->
+                if (file.name.endsWith(".json")) {
+                    val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_IMPORT/${file.name}")
+                    gaChaLogService.insertByJson(gachaData)
+                    logInfo(GenshinRespEnum.IMPORT_HISTORY_SUCCESS.message)
+                    file.delete()
                 }
             }
-            return "success"
+            return GenshinRespBean.error(GenshinRespEnum.IMPORT_HISTORY_SUCCESS)
         } catch (e: Exception) {
             e.printStackTrace()
             logError("读取gachaLog失败:$e")
-            return "false"
+            return GenshinRespBean.error(GenshinRespEnum.IMPORT_HISTORY_FAIL)
         }
     }
 
     @AParameter
     @Executor(action = "导入记录")
     fun getGachaLogByUrlGroup(context: Context) {
-
-
+        context.sendMsg(GenshinRespEnum.IMPORT_HISTORY.message)
         val importState = importGachaLog()
-        context.sendMsg("正在导入记录，请稍等")
-        when (importState) {
-            "success" -> context.sendMsg("记录导入完成")
-            // 受腾讯机器人API限制，无法通过群聊获取文件，暂时只能由开发者手动将文件放入导入文件夹
-            "empty" -> context.sendMsg("没有可以导入的记录")
-            "false" -> context.sendMsg("记录导入失败，请检查记录格式是否符合UIGF标准")
-        }
+        context.sendMsg(importState.message)
     }
 
     @AParameter
     @Executor(action = "抽卡链接")
     fun getGachaLogUrl(context: Context) {
-
-
         context.sendMsg("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")
     }
 }

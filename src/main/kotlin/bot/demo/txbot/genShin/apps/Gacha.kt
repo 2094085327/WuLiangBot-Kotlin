@@ -1,6 +1,7 @@
 package bot.demo.txbot.genShin.apps
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.genShin.genshinResp.GenshinRespEnum
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -58,7 +59,7 @@ class Gacha {
         // 解析输入
         val (poolName, poolId, poolType) = parsePoolData(matcher.group(1))
         if (poolName.isEmpty() || poolId.isEmpty()) {
-            context.sendMsg("你输入的格式似乎不正确哦,请使用指令「全部卡池」查看可以启用的卡池")
+            context.sendMsg(GenshinRespEnum.POOL_FORMAT_ERROR.message)
             return
         }
 
@@ -67,7 +68,7 @@ class Gacha {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            context.sendMsg("未找到你查询的卡池呢,请使用指令「全部卡池」查看可以启用的卡池")
+            context.sendMsg(GenshinRespEnum.POOL_NOTFOUND.message)
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
