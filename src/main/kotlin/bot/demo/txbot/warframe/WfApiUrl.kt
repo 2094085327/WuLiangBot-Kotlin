@@ -95,6 +95,11 @@ const val WARFRAME_STATUS_NIGHT_WAVE = "$WARFRAME_STATUS_BASE_URL/pc/nightwave"
 const val WARFRAME_STATUS_PHOBOS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cambionCycle"
 
 /**
+ * 金星平原状态
+ */
+const val WARFRAME_STATUS_VENUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/vallisCycle"
+
+/**
  * 希图斯状态
  */
 const val WARFRAME_STATUS_CETUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cetusCycle"

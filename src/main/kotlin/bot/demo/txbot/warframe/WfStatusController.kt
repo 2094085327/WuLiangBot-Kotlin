@@ -442,6 +442,24 @@ class WfStatusController @Autowired constructor(
     }
 
     @AParameter
+    @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
+    fun venusStatus(context: Context) {
+        val venusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_VENUS_STATUS, params = mapOf("language" to "zh"))
+        val activation = venusStatusJson["activation"].textValue().toEastEightTimeZone()
+        val expiry = venusStatusJson["expiry"].textValue().toEastEightTimeZone()
+        val timeLeft = venusStatusJson["timeLeft"].textValue().replaceTime()
+        val state = venusStatusJson["state"].textValue()
+        val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
+
+        context.sendMsg(
+            "当前金星平原为 ${stateMap[state]} \n" +
+                    "开始时间:${activation}\n" +
+                    "结束时间:${expiry}\n" +
+                    "剩余:${timeLeft}"
+        )
+    }
+
+    @AParameter
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: Context) {
         invasionsEntity.clear()
@@ -631,4 +649,10 @@ class WfStatusController @Autowired constructor(
         System.gc()
     }
 
+    @AParameter
+    @Executor(action = "\\b(平原|全部平原)\\b")
+    fun allPlain(context: Context) {
+        // TODO 全部平原的整合
+        return
+    }
 }
