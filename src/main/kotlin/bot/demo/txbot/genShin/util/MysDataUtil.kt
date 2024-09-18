@@ -5,15 +5,12 @@ import bot.demo.txbot.common.utils.JacksonUtil.objectMapper
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.upPoolData
 import bot.demo.txbot.other.IMG_CACHE_PATH
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.util.*
 import java.util.logging.Logger
@@ -59,45 +56,6 @@ class MysDataUtil {
                 logger.info("删除缓存：${file.name}")
                 file.delete()
             }
-        }
-    }
-
-
-    /**
-     * 新角色添加属性
-     *
-     * @param itemName 角色名
-     * @param attribute 角色属性
-     * @return 返回添加状态
-     */
-    fun insertAttribute(itemName: String, attribute: String): String {
-        val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
-        val file = File(ROLE_YAML)
-
-        try {
-            val characterMap: LinkedHashMap<String, String> =
-                objectMapper.readValue(file, object : TypeReference<LinkedHashMap<String, String>>() {})
-
-            // 检查配置文件中是否已经存在角色
-            if (characterMap.containsKey(itemName)) return "201"
-
-            val lastEntryWithValueOne = characterMap.entries.lastOrNull { it.value == attribute }
-
-            return if (lastEntryWithValueOne != null) {
-                val newCharacterMap = characterMap.toMutableMap()
-
-                for ((key, value) in characterMap) {
-                    newCharacterMap[key] = value
-                    if (key == lastEntryWithValueOne.key) newCharacterMap[itemName] = attribute
-                }
-
-                objectMapper.writeValue(file, newCharacterMap)
-                "200"
-            } else "404"
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return e.toString()
         }
     }
 
@@ -162,7 +120,7 @@ class MysDataUtil {
         objRoot.put("openPool", name)
         objRoot.put("poolName", poolFormat)
         objRoot.put("poolType", poolType)
-        objectMapper.writeValue(File( GACHA_JSON), poolDataChange)
+        objectMapper.writeValue(File(GACHA_JSON), poolDataChange)
     }
 
     data class PoolData(
@@ -210,7 +168,10 @@ class MysDataUtil {
         val currentIndex = versions.indexOf(version).takeIf { it >= 0 } ?: (versions.size - 1)
         // 获取前一个版本的索引
         val previousIndex = (currentIndex - 1).takeIf { it >= 0 } ?: currentIndex
-        val previousVersion = versions.getOrNull(previousIndex) ?: return Pair(ArrayNode(JsonNodeFactory.instance), ArrayNode(JsonNodeFactory.instance))
+        val previousVersion = versions.getOrNull(previousIndex) ?: return Pair(
+            ArrayNode(JsonNodeFactory.instance),
+            ArrayNode(JsonNodeFactory.instance)
+        )
 
         val role4Base = poolData["role4_base"] as? ArrayNode ?: ArrayNode(JsonNodeFactory.instance)
         val role5Base = poolData["role5_base"] as? ArrayNode ?: ArrayNode(JsonNodeFactory.instance)

@@ -1,6 +1,6 @@
 package bot.demo.txbot.warframe
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.OtherUtil
@@ -36,7 +36,7 @@ class WfUtil @Autowired constructor(
      * @param item 物品
      * @param modLevel 模组等级
      */
-    fun sendMarketItemInfo(context: ContextProvider.Context, item: WfLexiconEntity, modLevel: Any? = null) {
+    fun sendMarketItemInfo(context: Context, item: WfLexiconEntity, modLevel: Any? = null) {
         val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
@@ -98,7 +98,7 @@ class WfUtil @Autowired constructor(
      *
      * @param itemNameKey 物品名称关键字
      */
-    fun handleFuzzySearch(context: ContextProvider.Context, itemNameKey: String) {
+    fun handleFuzzySearch(context: Context, itemNameKey: String) {
         val fuzzyList = mutableSetOf<String>()
         itemNameKey.forEach { char ->
             wfRivenService.superFuzzyQuery(char.toString())

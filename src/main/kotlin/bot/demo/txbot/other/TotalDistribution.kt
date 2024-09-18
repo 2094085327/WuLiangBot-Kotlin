@@ -1,7 +1,8 @@
 package bot.demo.txbot.other
 
 import bot.demo.txbot.TencentBotKotlinApplication
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
@@ -152,21 +153,12 @@ class TotalDistribution(
     fun endEventListenerShutdown(event: ContextClosedEvent) {
         // 保存日活日志
         saveActiveLog()
-        webImgUtil.shutdown()
         logInfo("程序关闭...进行关键信息保存")
-    }
-
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "重载指令2")
-    fun reloadConfig2(bot: Bot, event: AnyMessageEvent) {
-        CommandList.reloadCommands()
     }
 
     @AParameter
     @Executor(action = "重载指令")
-    fun reloadConfig(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun reloadConfig(context: Context) {
         CommandList.reloadCommands()
         context.sendMsg("指令列表已重载")
         logInfo("指令列表已重载")
@@ -187,11 +179,10 @@ class TotalDistribution(
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+        val context = BotUtils().initialize(event, bot)
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
         todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
-        val realId = OtherUtil().getRealId(event)
+        val realId = OtherUtil().getRealId(context.getEvent())
 
         // 将 usersNode 转换为一个可变列表
         val usersNode = dailyActiveJson["users"] as ArrayNode
@@ -246,6 +237,6 @@ class TotalDistribution(
 
         // 扫描包，这里直接扫描Demo所在的包
         actionFactory.newInstance().scanAction(TencentBotKotlinApplication::class.java)
-        addition.doRequest(match, bot, event)
+        addition.doRequest(match, context)
     }
 }

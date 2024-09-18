@@ -1,14 +1,12 @@
 package bot.demo.txbot.game.lifeRestart
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.game.lifeRestart.datebase.LifeRestartService
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -77,7 +75,7 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @return
      */
-    fun isErrorState(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
+    fun isErrorState(context: Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
         if (userInfo == null) {
             context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return true
@@ -99,7 +97,7 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @return Boolean
      */
-    fun isTalentError(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
+    fun isTalentError(context: Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
         if (userInfo == null) {
             context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
             return true
@@ -127,7 +125,7 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @param realId 真实id
      */
-    fun handleGameStart(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo, realId: String) {
+    fun handleGameStart(context: Context, userInfo: LifeRestartUtil.UserInfo, realId: String) {
         updateGameTime(userInfo)
         userList.add(userInfo)
 
@@ -152,7 +150,7 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @param message 待发送的消息
      */
-    fun updateAndSend(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo, message: String? = null) {
+    fun updateAndSend(context: Context, userInfo: LifeRestartUtil.UserInfo, message: String? = null) {
         updateGameTime(userInfo)
 
         val sendStr = restartUtil.trajectory(userInfo)
@@ -173,7 +171,7 @@ class LifeRestartMain(
      *
      * @param userInfo 用户信息
      */
-    fun sendGameEnd(context: ContextProvider.Context, userInfo: LifeRestartUtil.UserInfo) {
+    fun sendGameEnd(context: Context, userInfo: LifeRestartUtil.UserInfo) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
@@ -186,8 +184,8 @@ class LifeRestartMain(
 
     @AParameter
     @Executor(action = "重开")
-    fun startRestart(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
+    fun startRestart(context: Context) {
+
 
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventData == null || restartUtil.ageData == null) {
@@ -197,7 +195,7 @@ class LifeRestartMain(
             }
         }
 
-        val realId = OtherUtil().getRealId(event)
+        val realId = OtherUtil().getRealId(context.getEvent())
 
         userList.removeIf { it.userId == realId }
         sendStrList.removeIf { it["userId"] == realId }
@@ -218,10 +216,10 @@ class LifeRestartMain(
 
     @AParameter
     @Executor(action = "天赋 (.*)")
-    fun getTalent(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
+    fun getTalent(context: Context, matcher: Matcher) {
 
-        val realId = OtherUtil().getRealId(event)
+
+        val realId = OtherUtil().getRealId(context.getEvent())
         val userInfo = findUserInfo(realId)
 
         if (isTalentError(context, userInfo)) return
@@ -250,10 +248,10 @@ class LifeRestartMain(
 
     @AParameter
     @Executor(action = "随机")
-    fun randomAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
+    fun randomAttribute(context: Context, matcher: Matcher) {
 
-        val realId = OtherUtil().getRealId(event)
+
+        val realId = OtherUtil().getRealId(context.getEvent())
         val userInfo = findUserInfo(realId)
 
         if (userInfo == null) {
@@ -271,10 +269,10 @@ class LifeRestartMain(
 
     @AParameter
     @Executor(action = "分配 (.*)")
-    fun dealAttribute(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
+    fun dealAttribute(context: Context, matcher: Matcher) {
 
-        val realId = OtherUtil().getRealId(event)
+
+        val realId = OtherUtil().getRealId(context.getEvent())
         val userInfo = findUserInfo(realId)
 
         if (userInfo == null) {
@@ -317,10 +315,10 @@ class LifeRestartMain(
 
     @AParameter
     @Executor(action = "继续(.*)")
-    fun continueGame(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
+    fun continueGame(context: Context, matcher: Matcher) {
 
-        val realId = OtherUtil().getRealId(event)
+
+        val realId = OtherUtil().getRealId(context.getEvent())
         val userInfo = findUserInfo(realId)
 
         if (isErrorState(context, userInfo)) return

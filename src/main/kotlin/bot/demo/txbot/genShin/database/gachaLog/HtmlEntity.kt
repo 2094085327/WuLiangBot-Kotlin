@@ -8,5 +8,5 @@ data class HtmlEntity(
     val getTime: String?,
     val times: Int?,
     val isEmpty: Boolean?,
-    var isUp:Boolean?
+    var isUp: Boolean?
 )

@@ -1,12 +1,10 @@
 package bot.demo.txbot.geography
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.*
@@ -27,9 +25,7 @@ class GeoMain(
 ) {
     @AParameter
     @Executor(action = "\\b^天气\\s(\\S+)")
-    fun getWeatherImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getWeatherImg(context: Context, matcher: Matcher) {
         context.sendMsg("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 
@@ -54,9 +50,7 @@ class GeoMain(
 
     @AParameter
     @Executor(action = "\\b^地理\\s(\\S+)")
-    fun getGeoImg(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getGeoImg(context: Context, matcher: Matcher) {
         context.sendMsg("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 

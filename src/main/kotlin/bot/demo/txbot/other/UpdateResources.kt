@@ -1,6 +1,6 @@
 package bot.demo.txbot.other
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.LoggerUtils.logWarn
@@ -10,8 +10,6 @@ import bot.demo.txbot.genShin.util.UpdateGachaResources
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -113,9 +111,7 @@ class UpdateResources {
 
     @AParameter
     @Executor(action = "更新资源")
-    fun updateAll(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun updateAll(context: Context) {
         context.sendMsg("正在更新资源，请稍后")
 
         val folderPath = RESOURCES_PATH
@@ -146,9 +142,7 @@ class UpdateResources {
 
     @AParameter
     @Executor(action = "清除缓存")
-    fun deleteCache(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun deleteCache(context: Context) {
         forceDeleteCache("resources/imageCache")
         context.sendMsg("已完成缓存清理")
     }
@@ -159,9 +153,12 @@ class UpdateResources {
      */
     @PostConstruct
     fun resourcesCheck() {
-        scope.launch {
-            val folderPath = RESOURCES_PATH
-            repeat(10) { attempt -> // 重试10次
+        val helpFile = File(HELP_JSON)
+
+        if (!helpFile.exists()) {
+            // 文件不存在时，使用阻塞方式下载资源
+            runBlocking {
+                val folderPath = RESOURCES_PATH
                 val (success, updatedCount) = otherUtil.downloadFolderFromGitHub(
                     owner,
                     repoName,
@@ -172,13 +169,32 @@ class UpdateResources {
                 if (success) {
                     logInfo("资源初始化更新完成，本次共更新${updatedCount}个资源")
                     OtherUtil.fileCount = 0
-                    return@launch // 下载成功，结束协程
-                } else if (attempt < 9) { // 未到最后一次尝试，记录日志
-                    logWarn("资源更新失败,进行自动重试...")
-                }
+                } else logError("资源更新失败")
             }
-            // 10次尝试均失败，记录错误日志
-            logError("资源更新失败，已达最大重试次数")
+        } else {
+            // 文件存在时，使用协程异步方式下载资源
+            scope.launch {
+                val folderPath = RESOURCES_PATH
+                repeat(10) { attempt -> // 重试10次
+                    val (success, updatedCount) = otherUtil.downloadFolderFromGitHub(
+                        owner,
+                        repoName,
+                        folderPath,
+                        folderPath,
+                        accessToken
+                    )
+                    if (success) {
+                        logInfo("资源初始化更新完成，本次共更新${updatedCount}个资源")
+                        OtherUtil.fileCount = 0
+                        return@launch // 下载成功，结束协程
+                    } else if (attempt < 9) { // 未到最后一次尝试，记录日志
+                        logWarn("资源更新失败,进行自动重试...")
+                    }
+                }
+                // 10次尝试均失败，记录错误日志
+                logError("资源更新失败，已达最大重试次数")
+            }
         }
     }
+
 }

@@ -1,6 +1,6 @@
 package bot.demo.txbot.warframe
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.WebImgUtil
@@ -24,8 +24,6 @@ import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -113,7 +111,7 @@ class WfStatusController @Autowired constructor(
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    private fun getSendFissureList(context: ContextProvider.Context, filteredFissures: List<JsonNode>, type: String) {
+    private fun getSendFissureList(context: Context, filteredFissures: List<JsonNode>, type: String) {
         val thisFissureList = WfStatusVo.FissureList()
         val filteredFissuresActive = filteredFissures.filter { fissures ->
             fissures["active"].asBoolean()
@@ -150,9 +148,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙)\\b")
-    fun getOrdinaryFissures(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getOrdinaryFissures(context: Context) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
@@ -162,9 +158,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
-    fun getHardFissures(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getHardFissures(context: Context) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
@@ -174,9 +168,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "九重天")
-    fun getEmpyreanFissures(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getEmpyreanFissures(context: Context) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
@@ -186,9 +178,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "奸商")
-    fun findVoidTrader(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun findVoidTrader(context: Context) {
         val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
 
         val startString = traderJson["startString"].asText().replaceTime()
@@ -234,9 +224,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "钢铁")
-    fun getSteelPath(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getSteelPath(context: Context) {
         val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
 
         val currentReward = steelPath["currentReward"]
@@ -278,9 +266,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "突击")
-    fun getSortie(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getSortie(context: Context) {
         val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
 
         val variantsList = sortieJson["variants"]
@@ -315,9 +301,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "执(?:行|刑)官")
-    fun getArchonHunt(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getArchonHunt(context: Context) {
         val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
 
         val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
@@ -361,9 +345,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
-    fun getNightWave(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getNightWave(context: Context) {
         val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
 
         val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
@@ -426,9 +408,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
-    fun phobosStatus(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun phobosStatus(context: Context) {
         val phobosStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_PHOBOS_STATUS, params = mapOf("language" to "zh"))
         val activation = phobosStatusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = phobosStatusJson["expiry"].textValue().toEastEightTimeZone()
@@ -445,9 +425,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
-    fun cetusCycle(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun cetusCycle(context: Context) {
         val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
         val activation = cetusStatusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = cetusStatusJson["expiry"].textValue().toEastEightTimeZone()
@@ -465,9 +443,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b入侵\\b")
-    fun invasions(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun invasions(context: Context) {
         invasionsEntity.clear()
         val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
         invasionsArray.forEach { invasionsJson ->
@@ -506,9 +482,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
-    fun incarnon(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun incarnon(context: Context) {
         val mapper = jacksonObjectMapper()
         val newJsonFile = File(WARFRAME_NEW_INCARNON)
         val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_INCARNON)
@@ -576,9 +550,7 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
-    fun moodSpirals(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun moodSpirals(context: Context) {
         val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
         val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
         val mapper = jacksonObjectMapper()

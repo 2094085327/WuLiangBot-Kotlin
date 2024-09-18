@@ -38,7 +38,7 @@ class GenshinImageController {
     @Throws(IOException::class)
     private fun serveImage(folderName: String, imageName: String, response: HttpServletResponse) {
         // 读取图片并写入响应
-        if (imageName=="null.png") return
+        if (imageName == "null.png") return
         val file = File(EXTERNAL_FOLDER_PATH + File.separator + folderName + File.separator + imageName)
         FileInputStream(file).use { fis ->
             response.outputStream.use { os ->

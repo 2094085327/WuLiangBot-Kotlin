@@ -1,11 +1,9 @@
 package bot.demo.txbot.other.systemResources
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Shiro
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.stereotype.Component
 import oshi.SystemInfo
 import oshi.hardware.CentralProcessor
@@ -16,7 +14,6 @@ import oshi.software.os.FileSystem
 import oshi.software.os.OSFileStore
 import oshi.software.os.OperatingSystem
 import oshi.util.Util
-import java.util.regex.Matcher
 
 
 /**
@@ -178,12 +175,10 @@ class SystemResourcesMain {
         }
     }
 
-    
+
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "无量姬状态")
-    fun sendSystemResources(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun sendSystemResources(context: Context) {
         val (cpuData, ramData, sysData, jvmData, sysFileData) = resourcesMain()
 
         context.sendMsg("系统状态计算中，请稍后...")

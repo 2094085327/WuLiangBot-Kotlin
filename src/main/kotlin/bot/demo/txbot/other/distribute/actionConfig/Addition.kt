@@ -1,11 +1,7 @@
 package bot.demo.txbot.other.distribute.actionConfig
 
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.other.distribute.annotation.AParameter
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
-import com.mikuac.shiro.dto.event.message.GroupMessageEvent
-import com.mikuac.shiro.dto.event.message.MessageEvent
-import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
@@ -24,7 +20,8 @@ class Addition(
     @Autowired private val actionFactory: ActionFactory
 ) {
 
-    fun doRequest(action: String, bot: Bot, event: MessageEvent): String {
+    //    fun doRequest(action: String, bot: Bot, event: MessageEvent): String {
+    fun doRequest(action: String, context: Context): String {
         val ad: ActionDefinition = actionFactory.newInstance().getActionDefinition(action)
             ?: throw IllegalAccessException("方法 $action 未定义")
 
@@ -33,7 +30,8 @@ class Addition(
 
         // 检查方法上是否有 @AParameter 注解
         val parameters = if (method.isAnnotationPresent(AParameter::class.java)) {
-            getParameterArr(bot, event, ad.getMatched(), method)
+//            getParameterArr(bot, event, ad.getMatched(), method)
+            getParameterArr(context, ad.getMatched(), method)
         } else {
             throw IllegalAccessException("参数注解 ${AParameter::class.java.name} 缺失")
         }
@@ -43,8 +41,9 @@ class Addition(
     }
 
     private fun getParameterArr(
-        bot: Bot,
-        event: MessageEvent,
+//        bot: Bot,
+//        event: MessageEvent,
+        context: Context,
         matcher: Matcher?,
         method: Method
     ): Array<Any?> {
@@ -53,8 +52,10 @@ class Addition(
 
         parameters.forEachIndexed { index, parameter ->
             results[index] = when (parameter.type) {
-                Bot::class.java -> bot
-                MessageEvent::class.java, AnyMessageEvent::class.java, PrivateMessageEvent::class.java, GroupMessageEvent::class.java -> event
+//                Bot::class.java -> bot
+//                MessageEvent::class.java, AnyMessageEvent::class.java, PrivateMessageEvent::class.java, GroupMessageEvent::class.java -> event
+
+                Context::class.java -> context
                 Matcher::class.java -> matcher
                 else -> null
             }

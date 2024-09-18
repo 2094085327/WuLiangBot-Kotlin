@@ -1,6 +1,6 @@
 package bot.demo.txbot.genShin.util
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
 import bot.demo.txbot.common.tencentCos.ICosFileService
 import bot.demo.txbot.common.utils.HttpUtil
@@ -354,7 +354,7 @@ class GachaLogUtil(
      * @param imgData 图片数据
      */
     fun getGachaLog(
-        context: ContextProvider.Context,
+        context: Context,
         gameUid: String,
         imgData: WebImgUtil.ImgData,
     ) {

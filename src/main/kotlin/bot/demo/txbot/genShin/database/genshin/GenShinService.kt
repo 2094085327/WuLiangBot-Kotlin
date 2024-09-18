@@ -17,7 +17,7 @@ interface GenShinService : IService<GenShinEntity?> {
     /**
      *根据Uid获取数据
      */
-    fun selectByUid(uid: String):String
+    fun selectByUid(uid: String): String
 
     /**
      * 根据QQ号查询数据

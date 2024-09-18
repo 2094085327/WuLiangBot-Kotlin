@@ -1,6 +1,6 @@
 package bot.demo.txbot.other
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
@@ -8,8 +8,6 @@ import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
 import com.fasterxml.jackson.databind.JsonNode
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
@@ -25,9 +23,7 @@ import java.util.*
 class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
     @AParameter
     @Executor(action = "\\b(帮助|菜单|help)\\b")
-    fun help(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun help(context: Context) {
         val helpJson = JacksonUtil.getJsonNode(HELP_JSON)
         val imageData = WebImgUtil.ImgData(
             imgName = "help-${helpJson["updateMd5"].textValue()}",
@@ -39,8 +35,7 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
 
     @AParameter
     @Executor(action = "日活")
-    fun daily(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
+    fun daily(context: Context) {
         totalDistribution.saveActiveLog()
         val imageData = WebImgUtil.ImgData(
             imgName = "dailyActive-${UUID.randomUUID()}",

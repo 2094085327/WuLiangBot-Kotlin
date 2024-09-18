@@ -1,11 +1,9 @@
 package bot.demo.txbot.other
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import java.util.*
@@ -15,9 +13,7 @@ import java.util.*
 class Restart {
     @AParameter
     @Executor(action = "重启")
-    fun restart(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun restart(context: Context) {
         context.sendMsg("正在重启中，请稍后")
         // 获取操作系统类型
         val osName = System.getProperty("os.name").lowercase(Locale.getDefault())

@@ -1,6 +1,6 @@
 package bot.demo.txbot.common.utils
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.qiNiuCos.QiNiuService
 import bot.demo.txbot.common.tencentCos.ICosFileService
 import bot.demo.txbot.common.utils.LoggerUtils.logError
@@ -8,7 +8,6 @@ import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.other.IMG_CACHE_PATH
 import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
-import com.microsoft.playwright.Browser
 import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
@@ -22,7 +21,6 @@ import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
-import javax.annotation.PostConstruct
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
@@ -43,23 +41,6 @@ class WebImgUtil(
     @Value("\${web_config.port}") var usePort: String,
     @Value("\${web_config.img_bed_path}") var imgBedPath: String
 ) {
-    private lateinit var playwright: Playwright
-    private lateinit var browser: Browser
-
-    @PostConstruct
-    fun init() {
-        playwright = Playwright.create()
-        browser = playwright.chromium().launch()
-        logInfo("PlaywrightManager初始化成功")
-    }
-
-    fun shutdown() {
-        browser.close()
-        playwright.close()
-        logInfo("PlaywrightManager关闭成功")
-    }
-
-
     /**
      * 图片相关数据
      *
@@ -215,7 +196,8 @@ class WebImgUtil(
     }
 
     fun getImgByte(imgData: ImgData): ByteArray {
-        if (!browser.isConnected) browser = playwright.chromium().launch()
+        val playwright = Playwright.create()
+        val browser = playwright.chromium().launch()
         val page: Page = browser.newPage()
         page.use { thisPage ->
             thisPage.navigate(imgData.url)
@@ -324,7 +306,7 @@ class WebImgUtil(
         return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
     }
 
-    fun sendNewImage(context: ContextProvider.Context, imgData: ImgData) {
+    fun sendNewImage(context: Context, imgData: ImgData) {
 //        val imgUrl: String? = checkCacheImg(imgData)
         val imgUrl: String? = returnUrlImgByTxCos(imgData)
         val sendMsg = MsgUtils.builder().img(imgUrl).build()

@@ -1,6 +1,6 @@
 package bot.demo.txbot.genShin.apps
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
 import bot.demo.txbot.genShin.util.MysDataUtil
@@ -8,8 +8,6 @@ import bot.demo.txbot.genShin.util.UpdateGachaResources
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.stereotype.Component
 import java.util.regex.Matcher
 
@@ -18,9 +16,7 @@ import java.util.regex.Matcher
 class Gacha {
     @AParameter
     @Executor(action = "全部卡池")
-    fun allPool(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun allPool(context: Context) {
         UpdateGachaResources().getDataMain()
         val poolList = MysDataUtil().findEachPoolName()
         context.sendMsg(poolList.joinToString("\n"))
@@ -58,9 +54,7 @@ class Gacha {
 
     @AParameter
     @Executor(action = "启用卡池 (.*)")
-    fun setOpenPool(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun setOpenPool(context: Context, matcher: Matcher) {
         val poolData = matcher.group(1) ?: ""
         if (poolData == "") {
             context.sendMsg("请输入正确的卡池")
@@ -80,8 +74,7 @@ class Gacha {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            context.sendMsg("未找到卡池「$poolData」")
-            context.sendMsg("请使用指令 全部卡池 查看可以启用的卡池")
+            context.sendMsg("未找到你查询的卡池呢，请使用指令「全部卡池」查看可以启用的卡池")
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
@@ -92,9 +85,7 @@ class Gacha {
 
     @AParameter
     @Executor(action = "十连")
-    fun gacha(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun gacha(context: Context) {
         val detailPoolInfo = poolData
 
         val itemListData = MysDataUtil().runGacha()

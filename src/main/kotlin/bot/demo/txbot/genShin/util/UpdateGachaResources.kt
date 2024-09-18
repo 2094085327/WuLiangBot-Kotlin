@@ -1,6 +1,8 @@
 package bot.demo.txbot.genShin.util
 
 import bot.demo.txbot.common.utils.HttpUtil
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
@@ -9,8 +11,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import bot.demo.txbot.common.utils.LoggerUtils.logError
-import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

@@ -1,6 +1,6 @@
 package bot.demo.txbot.warframe
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.common.utils.WebImgUtil
@@ -11,8 +11,6 @@ import bot.demo.txbot.warframe.WfMarketController.WfMarket.lichOrderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -41,9 +39,7 @@ class WfMarketController @Autowired constructor(
 
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
-    fun getMarketItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getMarketItem(context: Context, matcher: Matcher) {
         val key = matcher.group(1)
         val regex = """(\d+)(?=级)|(满级)""".toRegex()
         val matchResult = regex.find(key)
@@ -82,9 +78,7 @@ class WfMarketController @Autowired constructor(
 
     @AParameter
     @Executor(action = "(?i)\\b(wr|wmr)\\s*(\\S+.*)$")
-    fun getRiven(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getRiven(context: Context, matcher: Matcher) {
         val key = matcher.group(2)
         val parameterList = key.split(" ")
 
@@ -132,9 +126,7 @@ class WfMarketController @Autowired constructor(
 
     @AParameter
     @Executor(action = "(?i)\\bwl\\s*(\\S+.*)$")
-    fun getLich(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getLich(context: Context, matcher: Matcher) {
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
@@ -204,9 +196,7 @@ class WfMarketController @Autowired constructor(
 
     @AParameter
     @Executor(action = "wiki (.*)")
-    fun getWikiUrl(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun getWikiUrl(context: Context, matcher: Matcher) {
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
         context.sendMsg("你查询的物品的wiki地址可能是:$wikiUrl")

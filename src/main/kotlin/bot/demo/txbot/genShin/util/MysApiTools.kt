@@ -175,7 +175,7 @@ class MysApiTools @Autowired constructor(
         val r = (1..6)
             .map { chars[random.nextInt(chars.size)] }
             .joinToString("")
-        val ds = "salt=${n}&t=${t}&r=${ r}".toMd5()
+        val ds = "salt=${n}&t=${t}&r=${r}".toMd5()
         return "${t},${r},${ds}"
     }
 

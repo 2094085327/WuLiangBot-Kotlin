@@ -1,6 +1,6 @@
 package bot.demo.txbot.warframe
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
@@ -11,8 +11,6 @@ import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -251,9 +249,7 @@ class WfTranslateLexicon {
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "更新词库")
-    fun upDataWfTranslateLexicon(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun upDataWfTranslateLexicon(context: Context) {
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
         val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
         val lichMap: MutableMap<String, WfRivenEntity> = mutableMapOf()

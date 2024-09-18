@@ -4,7 +4,6 @@ import bot.demo.txbot.common.utils.LoggerUtils.logError
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
 import com.mikuac.shiro.dto.event.message.MessageEvent
-import com.mikuac.shiro.dto.event.message.PrivateMessageEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -60,17 +59,6 @@ class OtherUtil {
     }
 
     /**
-     * 获取真实ID
-     *
-     * @param event 私聊消息事件
-     * @return 真实ID
-     */
-    fun getRealId(event: PrivateMessageEvent): String {
-        val fictitiousId = event.userId
-        return HttpUtil.doGetJson("http://localhost:$gskPort/getid?type=2&id=$fictitiousId")["id"].textValue()
-    }
-
-    /**
      * 从GitHub下载或更新资源
      *
      * @param repoOwner 仓库所有者
@@ -89,11 +77,10 @@ class OtherUtil {
         targetFolderPath: String,
         accessToken: String? = null,
         downloadUrlPrefix: String = "raw.githubusercontent.com",
-        mirrorUrlPrefix: String = "raw.gitmirror.com"
+        mirrorUrlPrefix: String = "https://gh-proxy.com/"
     ): Pair<Boolean, Int> {
         val apiUrl =
             "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
-
         return withContext(Dispatchers.IO) { // 切换到IO线程
             var fileCount = 0 // 计数器
             try {
@@ -126,7 +113,7 @@ class OtherUtil {
                                 fileCount += count // 累加文件计数
                             } else {
                                 // 文件，使用国内镜像下载
-                                fileDownloadUrl = fileDownloadUrl.replace(downloadUrlPrefix, mirrorUrlPrefix)
+                                fileDownloadUrl = fileDownloadUrl.replace("https://", mirrorUrlPrefix)
 
                                 val targetFilePath = Paths.get(folderPath, fileName).toString()
 

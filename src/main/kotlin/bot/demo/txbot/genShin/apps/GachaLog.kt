@@ -1,6 +1,6 @@
 package bot.demo.txbot.genShin.apps
 
-import bot.demo.txbot.common.botUtil.BotUtils.ContextProvider
+import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.database.user.UserService
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
@@ -13,7 +13,6 @@ import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
 import com.fasterxml.jackson.databind.JsonNode
 import com.mikuac.shiro.common.utils.MsgUtils
-import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.event.message.AnyMessageEvent
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -223,30 +222,11 @@ class GachaLog(
 //        }
 //    }
     @AParameter
-    @Executor(action = "新增角色(.*)")
-    fun updateNewItem(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-
-        // TODO 新增角色功能已实现自动更新 此方法可以移除
-        val context = ContextProvider.initialize(event, bot)
-
-        val (newItemName, newItemType) = matcher.group(1)?.split(" ") ?: return
-        val response = when (MysDataUtil().insertAttribute(newItemName, newItemType)) {
-            "200" -> "角色更新成功"
-            "201" -> "这个角色已经存在了哦"
-            "404" -> "属性中没有 $newItemType 类型的属性哦"
-            else -> "未知错误，请联系管理员查看"
-        }
-        context.sendMsg(response)
-    }
-
-    @AParameter
     @Executor(action = "历史记录(.*)")
-    fun recordQuery(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
+    fun recordQuery(context: Context, matcher: Matcher) {
         context.sendMsg("正在查询历史数据，请稍等")
         updateGachaResources.getDataMain()
-        val realId = OtherUtil().getRealId(event)
+        val realId = OtherUtil().getRealId(context.getEvent())
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
         val gameUid = gameUidFromMatcher.takeIf { it?.isNotEmpty() == true }
             ?: userService.selectGenUidByRealId(realId)
@@ -271,10 +251,8 @@ class GachaLog(
 
     @AParameter
     @Executor(action = "删除记录")
-    fun deleteGachaLog(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
-        val realId = OtherUtil().getRealId(event)
+    fun deleteGachaLog(context: Context) {
+        val realId = OtherUtil().getRealId(context.getEvent())
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
@@ -297,10 +275,8 @@ class GachaLog(
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "\\b抽卡记录\\b")
-    fun getGachaLog(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
-
-        val realId = OtherUtil().getRealId(event)
+    fun getGachaLog(context: Context) {
+        val realId = OtherUtil().getRealId(context.getEvent())
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
         val disclaimer = """
@@ -361,10 +337,8 @@ class GachaLog(
 
     @AParameter
     @Executor(action = "抽卡记录\\s*(\\S.*)")
-    fun getGachaLogByUrlGroup(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
-        val context = ContextProvider.initialize(event, bot)
-
-        if (event.groupId != null) {
+    fun getGachaLogByUrlGroup(context: Context, matcher: Matcher) {
+        if ((context.getEvent() as AnyMessageEvent).groupId != null) {
             context.sendMsg("请通过私聊无量姬发送链接，避免信息泄露，请及时撤回消息")
             return
         }
@@ -374,7 +348,7 @@ class GachaLog(
 
         if (gachaUrl.isEmpty()) return
 
-        bot.sendPrivateMsg(event.userId, "收到链接，正在处理中，请耐心等待", false)
+        context.sendMsg("收到链接，正在处理中，请耐心等待")
 
         // 更新卡池数据
         updateGachaResources.getDataMain()
@@ -383,26 +357,18 @@ class GachaLog(
         val checkUrl = gachaLogUtil.checkApi(processingUrl)
         when (checkUrl.first) {
             "-100" -> {
-                bot.sendPrivateMsg(
-                    event.userId,
-                    "链接不完整，请复制全部内容（可能输入法复制限制），或者复制的不是历史记录页面链接",
-                    false
-                )
+                context.sendMsg("链接不完整，请复制全部内容（可能输入法复制限制），或者复制的不是历史记录页面链接")
                 return
             }
 
             "-101" -> {
-                bot.sendPrivateMsg(event.userId, "链接已过期，请重新获取", false)
+                context.sendMsg("链接已过期，请重新获取")
                 return
             }
 
             "0" -> {
-                bot.sendPrivateMsg(
-                    event.userId,
-                    "链接验证成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待",
-                    false
-                )
-                val realId = OtherUtil().getRealId(event)
+                context.sendMsg("链接验证成功,正在获取抽卡数据，时间根据抽卡次数不同需花费30秒至1分钟不等，请耐心等待")
+                val realId = OtherUtil().getRealId(context.getEvent())
                 MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
 
                 getData(processingUrl)
@@ -418,9 +384,7 @@ class GachaLog(
                 userService.insertGenUidByRealId(realId, gameUid)
             }
 
-            else -> {
-                bot.sendPrivateMsg(event.userId, "抽卡链接格式不正确，请仔细检查或联系管理员", false)
-            }
+            else -> context.sendMsg("抽卡链接格式不正确，请仔细检查或联系管理员")
         }
     }
 
@@ -459,8 +423,8 @@ class GachaLog(
 
     @AParameter
     @Executor(action = "导入记录")
-    fun getGachaLogByUrlGroup(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
+    fun getGachaLogByUrlGroup(context: Context) {
+
 
         val importState = importGachaLog()
         context.sendMsg("正在导入记录，请稍等")
@@ -474,8 +438,8 @@ class GachaLog(
 
     @AParameter
     @Executor(action = "抽卡链接")
-    fun getGachaLogUrl(bot: Bot, event: AnyMessageEvent) {
-        val context = ContextProvider.initialize(event, bot)
+    fun getGachaLogUrl(context: Context) {
+
 
         context.sendMsg("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")
     }
