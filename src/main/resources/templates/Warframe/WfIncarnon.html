@@ -104,10 +104,16 @@
             const rivenValue = parseFloat(element.getAttribute('data-riven'));
             let fullCircleCount;
 
-            if (rivenValue >= 1.2) {
+            if (rivenValue >= 1.3) {
                 fullCircleCount = 5;
+            } else if (rivenValue >= 1.15) {
+                fullCircleCount = 4;
+            } else if (rivenValue >= 0.9) {
+                fullCircleCount = 3;
+            } else if (rivenValue >= 0.7) {
+                fullCircleCount = 2;
             } else {
-                fullCircleCount = Math.floor(rivenValue / 0.3) + 1;
+                fullCircleCount = 1;
             }
 
             const emptyCircleCount = 5 - fullCircleCount;
