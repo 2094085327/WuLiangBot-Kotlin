@@ -1,9 +1,9 @@
 package bot.demo.txbot.other.systemResources
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Shiro
+import bot.demo.txbot.other.distribute.annotation.AParameter
+import bot.demo.txbot.other.distribute.annotation.ActionService
+import bot.demo.txbot.other.distribute.annotation.Executor
 import org.springframework.stereotype.Component
 import oshi.SystemInfo
 import oshi.hardware.CentralProcessor
@@ -21,7 +21,7 @@ import oshi.util.Util
  * @author Nature Zero
  * @date 2024/5/19 下午3:58
  */
-@Shiro
+@ActionService
 @Component
 class SystemResourcesMain {
     data class SystemResources(
@@ -176,8 +176,8 @@ class SystemResourcesMain {
     }
 
 
-    @AnyMessageHandler
-    @MessageHandlerFilter(cmd = "无量姬状态")
+    @AParameter
+    @Executor(action = "无量姬状态")
     fun sendSystemResources(context: Context) {
         val (cpuData, ramData, sysData, jvmData, sysFileData) = resourcesMain()
 

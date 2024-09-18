@@ -20,7 +20,6 @@ class Addition(
     @Autowired private val actionFactory: ActionFactory
 ) {
 
-    //    fun doRequest(action: String, bot: Bot, event: MessageEvent): String {
     fun doRequest(action: String, context: Context): String {
         val ad: ActionDefinition = actionFactory.newInstance().getActionDefinition(action)
             ?: throw IllegalAccessException("方法 $action 未定义")
@@ -30,7 +29,6 @@ class Addition(
 
         // 检查方法上是否有 @AParameter 注解
         val parameters = if (method.isAnnotationPresent(AParameter::class.java)) {
-//            getParameterArr(bot, event, ad.getMatched(), method)
             getParameterArr(context, ad.getMatched(), method)
         } else {
             throw IllegalAccessException("参数注解 ${AParameter::class.java.name} 缺失")
@@ -41,8 +39,6 @@ class Addition(
     }
 
     private fun getParameterArr(
-//        bot: Bot,
-//        event: MessageEvent,
         context: Context,
         matcher: Matcher?,
         method: Method
@@ -52,9 +48,6 @@ class Addition(
 
         parameters.forEachIndexed { index, parameter ->
             results[index] = when (parameter.type) {
-//                Bot::class.java -> bot
-//                MessageEvent::class.java, AnyMessageEvent::class.java, PrivateMessageEvent::class.java, GroupMessageEvent::class.java -> event
-
                 Context::class.java -> context
                 Matcher::class.java -> matcher
                 else -> null
