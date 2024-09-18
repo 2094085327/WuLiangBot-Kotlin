@@ -5,6 +5,8 @@ import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.warframe.WfMarketController.WfMarket
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
+import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
@@ -552,5 +554,18 @@ class WfUtil @Autowired constructor(
         }
 
         return Pair(excludePlaceList, noExcludePlaceList)
+    }
+
+
+    // 格式化地球的平原和自转信息
+    fun sendCycleInfo(statusJson: JsonNode): String {
+        val activation = statusJson["activation"].textValue().toEastEightTimeZone()
+        val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
+        val timeLeft = statusJson["timeLeft"].textValue().replaceTime()
+        val state = statusJson["state"].textValue()
+        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+
+        return "当前状态为 ${stateMap[state]} \n开始时间:${activation}\n结束时间:${expiry}\n剩余:${timeLeft}"
+
     }
 }

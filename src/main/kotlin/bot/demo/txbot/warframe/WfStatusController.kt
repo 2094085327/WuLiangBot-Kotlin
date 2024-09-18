@@ -424,21 +424,21 @@ class WfStatusController @Autowired constructor(
     }
 
     @AParameter
-    @Executor(action = "\\b(地球状态|地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
+    @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(context: Context) {
         val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
-        val activation = cetusStatusJson["activation"].textValue().toEastEightTimeZone()
-        val expiry = cetusStatusJson["expiry"].textValue().toEastEightTimeZone()
-        val timeLeft = cetusStatusJson["timeLeft"].textValue().replaceTime()
-        val state = cetusStatusJson["state"].textValue()
-        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+        val sendCycleInfo = wfUtil.sendCycleInfo(cetusStatusJson)
 
-        context.sendMsg(
-            "当前地球平原为 ${stateMap[state]} \n" +
-                    "开始时间:${activation}\n" +
-                    "结束时间:${expiry}\n" +
-                    "剩余:${timeLeft}"
-        )
+        context.sendMsg(sendCycleInfo)
+    }
+
+    @AParameter
+    @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
+    fun earthCycle(context: Context) {
+        val earthStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_EARTH_STATUS, params = mapOf("language" to "zh"))
+        val sendCycleInfo = wfUtil.sendCycleInfo(earthStatusJson)
+
+        context.sendMsg(sendCycleInfo)
     }
 
     @AParameter

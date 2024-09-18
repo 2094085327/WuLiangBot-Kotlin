@@ -105,6 +105,11 @@ const val WARFRAME_STATUS_VENUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/vallisCyc
 const val WARFRAME_STATUS_CETUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cetusCycle"
 
 /**
+ * 地球状态
+ */
+const val WARFRAME_STATUS_EARTH_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/earthCycle"
+
+/**
  * 入侵信息
  */
 const val WARFRAME_STATUS_INVASIONS = "$WARFRAME_STATUS_BASE_URL/pc/invasions"
