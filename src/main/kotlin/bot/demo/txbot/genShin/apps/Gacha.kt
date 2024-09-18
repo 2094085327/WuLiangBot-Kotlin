@@ -53,19 +53,12 @@ class Gacha {
     }
 
     @AParameter
-    @Executor(action = "启用卡池 (.*)")
+    @Executor(action = "\\b^启用卡池\\s*(\\S+)")
     fun setOpenPool(context: Context, matcher: Matcher) {
-        val poolData = matcher.group(1) ?: ""
-        if (poolData == "") {
-            context.sendMsg("请输入正确的卡池")
-            return
-        }
-
         // 解析输入
-        val (poolName, poolId, poolType) = parsePoolData(poolData)
+        val (poolName, poolId, poolType) = parsePoolData(matcher.group(1))
         if (poolName.isEmpty() || poolId.isEmpty()) {
-            context.sendMsg("你输入的格式似乎不正确哦")
-            context.sendMsg("请使用指令 全部卡池 查看可以启用的卡池")
+            context.sendMsg("你输入的格式似乎不正确哦,请使用指令「全部卡池」查看可以启用的卡池")
             return
         }
 
@@ -74,7 +67,7 @@ class Gacha {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            context.sendMsg("未找到你查询的卡池呢，请使用指令「全部卡池」查看可以启用的卡池")
+            context.sendMsg("未找到你查询的卡池呢,请使用指令「全部卡池」查看可以启用的卡池")
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
