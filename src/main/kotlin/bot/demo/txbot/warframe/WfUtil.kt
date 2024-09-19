@@ -556,16 +556,18 @@ class WfUtil @Autowired constructor(
         return Pair(excludePlaceList, noExcludePlaceList)
     }
 
-
-    // 格式化地球的平原和自转信息
-    fun sendCycleInfo(statusJson: JsonNode): String {
+    // 获取几个平原的状态
+    fun getStatus(
+        url: String,
+        stateMap: Map<String, String>? = null
+    ): String {
+        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "zh"))
         val activation = statusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
         val timeLeft = statusJson["timeLeft"].textValue().replaceTime()
         val state = statusJson["state"].textValue()
-        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
 
-        return "当前状态为 ${stateMap[state]} \n开始时间:${activation}\n结束时间:${expiry}\n剩余:${timeLeft}"
-
+        val displayState = stateMap?.get(state) ?: state
+        return "状态为: $displayState \n开始时间:${activation}\n结束时间:${expiry}\n剩余:${timeLeft}"
     }
 }

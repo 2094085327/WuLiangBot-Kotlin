@@ -18,7 +18,6 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
-import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
@@ -408,55 +407,63 @@ class WfStatusController @Autowired constructor(
 
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
-    fun phobosStatus(context: Context) {
-        val phobosStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_PHOBOS_STATUS, params = mapOf("language" to "zh"))
-        val activation = phobosStatusJson["activation"].textValue().toEastEightTimeZone()
-        val expiry = phobosStatusJson["expiry"].textValue().toEastEightTimeZone()
-        val timeLeft = phobosStatusJson["timeLeft"].textValue().replaceTime()
-        val state = phobosStatusJson["state"].textValue()
-
-        context.sendMsg(
-            "当前火卫二平原的状态为:${state}\n" +
-                    "开始时间:${activation}\n" +
-                    "结束时间:${expiry}\n" +
-                    "剩余:${timeLeft}"
-        )
+    fun phobosStatus(context: Context?): String {
+        val sendMsg = "当前火卫二平原的${wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)}"
+        return if (context != null) {
+            context.sendMsg(sendMsg)
+            sendMsg
+        } else sendMsg
     }
 
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
-    fun cetusCycle(context: Context) {
-        val cetusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_CETUS_STATUS, params = mapOf("language" to "zh"))
-        val sendCycleInfo = wfUtil.sendCycleInfo(cetusStatusJson)
-
-        context.sendMsg(sendCycleInfo)
+    fun cetusCycle(context: Context?): String {
+        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+        val sendMsg = "当前希图斯平原的${wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)}"
+        return if (context != null) {
+            context.sendMsg(sendMsg)
+            sendMsg
+        } else sendMsg
     }
 
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
-    fun earthCycle(context: Context) {
-        val earthStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_EARTH_STATUS, params = mapOf("language" to "zh"))
-        val sendCycleInfo = wfUtil.sendCycleInfo(earthStatusJson)
-
-        context.sendMsg(sendCycleInfo)
+    fun earthCycle(context: Context?): String {
+        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+        val sendMsg = "当前地球昼夜的${wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)}"
+        return if (context != null) {
+            context.sendMsg(sendMsg)
+            sendMsg
+        } else sendMsg
     }
 
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
-    fun venusStatus(context: Context) {
-        val venusStatusJson = HttpUtil.doGetJson(WARFRAME_STATUS_VENUS_STATUS, params = mapOf("language" to "zh"))
-        val activation = venusStatusJson["activation"].textValue().toEastEightTimeZone()
-        val expiry = venusStatusJson["expiry"].textValue().toEastEightTimeZone()
-        val timeLeft = venusStatusJson["timeLeft"].textValue().replaceTime()
-        val state = venusStatusJson["state"].textValue()
+    fun venusStatus(context: Context?): String {
         val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
+        val sendMsg = "当前金星平原的${wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)}"
+        return if (context != null) {
+            context.sendMsg(sendMsg)
+            sendMsg
+        } else sendMsg
+    }
 
-        context.sendMsg(
-            "当前金星平原为 ${stateMap[state]} \n" +
-                    "开始时间:${activation}\n" +
-                    "结束时间:${expiry}\n" +
-                    "剩余:${timeLeft}"
-        )
+    @AParameter
+    @Executor(action = "\\b(平原|全部平原|平原时间)\\b")
+    fun allPlain(context: Context) {
+        val phobosDeferred = phobosStatus(null)
+        val cetusDeferred = cetusCycle(null)
+        val earthDeferred = earthCycle(null)
+        val venusDeferred = venusStatus(null)
+
+        // 整合所有状态信息
+        val allStatus = "$phobosDeferred\n\n" +
+                "\n$cetusDeferred\n\n" +
+                "\n$earthDeferred\n\n" +
+                "\n$venusDeferred"
+
+        // 发送消息
+        context.sendMsg(allStatus)
     }
 
     @AParameter
@@ -647,12 +654,5 @@ class WfStatusController @Autowired constructor(
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
-    }
-
-    @AParameter
-    @Executor(action = "\\b(平原|全部平原)\\b")
-    fun allPlain(context: Context) {
-        // TODO 全部平原的整合
-        return
     }
 }
