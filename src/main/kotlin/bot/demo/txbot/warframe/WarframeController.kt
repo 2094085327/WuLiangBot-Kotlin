@@ -5,6 +5,8 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
+import bot.demo.txbot.warframe.vo.WfMarketVo
+import bot.demo.txbot.warframe.vo.WfStatusVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Controller
@@ -53,89 +55,68 @@ class WarframeController(
     }
 
     @RequestMapping("/archonHunt")
-    fun archonHunt(model: Model): String {
-        val archonHuntEntity = archonHuntEntity
-        if (archonHuntEntity != null) {
-            model.addAttribute("archonHuntEntity", archonHuntEntity)
-        }
-        return "Warframe/WfArchonHunt"
+    @ResponseBody
+    fun archonHunt(): WfStatusVo.ArchonHuntEntity? {
+        return archonHuntEntity
     }
 
     @RequestMapping("/sortie")
-    fun sortie(model: Model): String {
-        val sortieEntity = sortieEntity
-        if (sortieEntity != null) {
-            model.addAttribute("sortieEntity", sortieEntity)
-        }
-        return "Warframe/WfSortie"
+    @ResponseBody
+    fun sortie(): WfStatusVo.SortieEntity? {
+        return sortieEntity
     }
 
     @RequestMapping("/steelPath")
-    fun steelPath(model: Model): String {
-        val sortieEntity = steelPathEntity
-        if (sortieEntity != null) {
-            model.addAttribute("steelPathEntity", steelPathEntity)
-        }
-        return "Warframe/WfSteelPath"
+    @ResponseBody
+    fun steelPath(): WfStatusVo.SteelPathEntity? {
+        return steelPathEntity
     }
 
     @RequestMapping("/fissureList")
-    fun fissureList(model: Model): String {
-        val fissure = WfStatus.fissureList
-        if (fissure != null) {
-            model.addAttribute("fissureList", fissure)
-        }
-        return "Warframe/WfFissureList"
+    @ResponseBody
+    fun fissureList(): WfStatusVo.FissureList? {
+        return WfStatus.fissureList
     }
 
     @RequestMapping("/voidTrader")
-    fun voidTrader(model: Model): String {
-        val voidTrader = WfStatus.voidTraderEntity
-        if (voidTrader != null) {
-            model.addAttribute("voidTrader", voidTrader)
-        }
-        return "Warframe/WfVoidTrader"
+    @ResponseBody
+    fun voidTrader(): WfStatusVo.VoidTraderEntity? {
+        return WfStatus.voidTraderEntity
     }
 
     @RequestMapping("/lich")
-    fun lich(model: Model): String {
-        val lichOrderEntity = WfMarketController.WfMarket.lichOrderEntity
-        lichOrderEntity?.let { model.addAttribute("lichOrderEntity", lichOrderEntity) }
-        return "Warframe/WfLich"
+    @ResponseBody
+    fun lich(): WfMarketVo.LichEntity? {
+        return WfMarketController.WfMarket.lichOrderEntity
     }
 
     @RequestMapping("/riven")
-    fun riven(model: Model): String {
-        val rivenOrderList = WfMarketController.WfMarket.rivenOrderList
-        rivenOrderList.let { model.addAttribute("rivenOrderList", rivenOrderList) }
-        return "Warframe/WfRiven"
+    @ResponseBody
+    fun riven(): WfMarketVo.RivenOrderList? {
+        return WfMarketController.WfMarket.rivenOrderList
     }
 
     @RequestMapping("/nightWave")
-    fun nightWave(model: Model): String {
-        val nightWaveEntity = WfStatus.nightWaveEntity
-        nightWaveEntity.let { model.addAttribute("nightWaveEntity", nightWaveEntity) }
-        return "Warframe/WfNightWave"
+    @ResponseBody
+    fun nightWave(): WfStatusVo.NightWaveEntity? {
+        return WfStatus.nightWaveEntity
     }
 
     @RequestMapping("/invasions")
-    fun invasions(model: Model): String {
-        val invasionsEntity = WfStatus.invasionsEntity
-        invasionsEntity.let { model.addAttribute("invasionsEntity", invasionsEntity) }
-        return "Warframe/WfInvasions"
+    @ResponseBody
+    fun invasions(): MutableList<WfStatusVo.InvasionsEntity> {
+        return WfStatus.invasionsEntity
     }
 
     @RequestMapping("/incarnon")
-    fun incarnon(model: Model): String {
-        val incarnonEntity = WfStatus.incarnonEntity
-        incarnonEntity.let { model.addAttribute("incarnonEntity", incarnonEntity) }
-        return "Warframe/WfIncarnon"
+    @ResponseBody
+    fun incarnon(): WfStatusVo.IncarnonEntity? {
+        return WfStatus.incarnonEntity
     }
 
     @RequestMapping("/spirals")
-    fun spirals(model: Model): String {
-        val moodSpiralsEntity = WfStatus.moodSpiralsEntity
-        moodSpiralsEntity.let { model.addAttribute("moodSpiralsEntity", moodSpiralsEntity) }
-        return "Warframe/WfMoodSpirals"
+    @ResponseBody
+    fun spirals(): WfStatusVo.MoodSpiralsEntity? {
+        return WfStatus.moodSpiralsEntity
     }
 }

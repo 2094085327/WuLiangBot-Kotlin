@@ -114,7 +114,7 @@ class WfMarketController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/riven",
+            url = "http://localhost:16666/riven",
             imgName = "riven-${UUID.randomUUID()}",
             element = "body"
         )
@@ -185,7 +185,7 @@ class WfMarketController @Autowired constructor(
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/lich",
+            url = "http://localhost:16666/lich",
             imgName = "lich-${UUID.randomUUID()}",
             element = "body"
         )

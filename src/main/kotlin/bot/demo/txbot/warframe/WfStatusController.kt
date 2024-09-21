@@ -136,7 +136,7 @@ class WfStatusController @Autowired constructor(
         thisFissureList.fissureType = type
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/fissureList",
+            url = "http://localhost:16666/fissureList",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
@@ -211,7 +211,7 @@ class WfStatusController @Autowired constructor(
             )
 
             val imgData = WebImgUtil.ImgData(
-                url = "http://localhost:${webImgUtil.usePort}/warframe/voidTrader",
+                url = "http://localhost:16666/voidTrader",
                 imgName = "voidTrader-${UUID.randomUUID()}",
                 element = "body"
             )
@@ -254,7 +254,7 @@ class WfStatusController @Autowired constructor(
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/steelPath",
+            url = "http://localhost:16666/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
             element = "body"
         )
@@ -289,7 +289,7 @@ class WfStatusController @Autowired constructor(
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/sortie",
+            url = "http://localhost:16666/sortie",
             imgName = "sortie-${UUID.randomUUID()}",
             element = "body"
         )
@@ -332,8 +332,10 @@ class WfStatusController @Autowired constructor(
             nextRewardItem = nextRewardItem
         )
 
+        // TODO 使用Redis缓存数据，以每周一早上8点-当前时间作为Redis过期时间，没过期直接拿Redis数据然后修改剩余时间为获取到的过期剩余时间，直接返回给前端
+
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/archonHunt",
+            url = "http://localhost:16666/archonHunt",
             imgName = "archonHuntInfo-${UUID.randomUUID()}",
             element = "body"
         )
@@ -396,7 +398,7 @@ class WfStatusController @Autowired constructor(
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/nightWave",
+            url = "http://localhost:16666/nightWave",
             imgName = "nightWave-${UUID.randomUUID()}",
             element = "body"
         )
@@ -495,7 +497,7 @@ class WfStatusController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/invasions",
+            url = "http://localhost:16666/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
             element = "body"
         )
@@ -563,7 +565,7 @@ class WfStatusController @Autowired constructor(
         )
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/incarnon",
+            url = "http://localhost:16666/incarono",
             imgName = "incarnon-${UUID.randomUUID()}",
             element = "body"
         )
@@ -646,7 +648,7 @@ class WfStatusController @Autowired constructor(
 
         // 生成和发送图像
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:${webImgUtil.usePort}/warframe/spirals",
+            url = "http://localhost:16666/spirals",
             imgName = "spirals-${UUID.randomUUID()}",
             element = "body"
         )
