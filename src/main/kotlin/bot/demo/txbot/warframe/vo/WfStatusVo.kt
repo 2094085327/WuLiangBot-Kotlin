@@ -52,9 +52,9 @@ class WfStatusVo {
      * @property credits 现金
      */
     data class VoidTraderItem(
-        val item: String,
-        val ducats: Int,
-        val credits: String
+        val item: String? = null,
+        val ducats: Int? = null,
+        val credits: String? = null
     )
 
     /**
@@ -140,9 +140,9 @@ class WfStatusVo {
      * @property items 带来的物品
      */
     data class VoidTraderEntity(
-        val location: String,
-        val time: String,
-        val items: List<VoidTraderItem>
+        val location: String? = null,
+        var time: String? = null,
+        val items: List<VoidTraderItem>? = null
     )
 
     /**

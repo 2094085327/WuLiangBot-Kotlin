@@ -3,6 +3,7 @@ package bot.demo.txbot.warframe
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
@@ -13,11 +14,11 @@ import bot.demo.txbot.warframe.WfStatusController.WfStatus.incarnonEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.moodSpiralsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
+import bot.demo.txbot.warframe.WfStatusController.WfStatus.parseDuration
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.voidTraderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
@@ -28,9 +29,9 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 
@@ -44,7 +45,8 @@ import java.util.regex.Pattern
 class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
-    private val wfLexiconService: WfLexiconService
+    private val wfLexiconService: WfLexiconService,
+    private val redisService: RedisService
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
@@ -85,6 +87,29 @@ class WfStatusController @Autowired constructor(
             }
         }
 
+        fun String.parseDuration(): Long {
+            // 定义正则表达式，匹配天数、小时数、分钟数和秒数
+            val regex = Regex("(?:(\\d+)天)?(?:(\\d+)小时)?(?:(\\d+)分)?(?:(\\d+)秒)?")
+
+            // 使用正则表达式进行匹配
+            val matchResult = regex.find(this) ?: return 0L
+
+            // 提取匹配结果
+            val (days, hours, minutes, seconds) = matchResult.destructured
+
+            // 将提取的字符串转换为整数，并处理可能的空字符串情况
+            val day = days.toIntOrNull() ?: 0
+            val hour = hours.toIntOrNull() ?: 0
+            val minute = minutes.toIntOrNull() ?: 0
+            val second = seconds.toIntOrNull() ?: 0
+
+            // 计算总秒数
+            return day * TimeUnit.DAYS.toSeconds(1) +
+                    hour * TimeUnit.HOURS.toSeconds(1) +
+                    minute * TimeUnit.MINUTES.toSeconds(1) +
+                    second * TimeUnit.SECONDS.toSeconds(1)
+        }
+
         var archonHuntEntity: WfStatusVo.ArchonHuntEntity? = null
 
         var sortieEntity: WfStatusVo.SortieEntity? = null
@@ -92,8 +117,6 @@ class WfStatusController @Autowired constructor(
         var steelPathEntity: WfStatusVo.SteelPathEntity? = null
 
         var fissureList: WfStatusVo.FissureList? = null
-
-        var voidTraderEntity: WfStatusVo.VoidTraderEntity? = null
 
         var nightWaveEntity: WfStatusVo.NightWaveEntity? = null
 
@@ -178,47 +201,74 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "奸商")
     fun findVoidTrader(context: Context) {
-        val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
+        // 先从Redis中判断商人是否还未到来
+        val (expiry, getLocation) = redisService.getExpireAndValue("warframe:voidTraderCome")
+        if (expiry != -2L) {
+            // 根据缓存过期时间更新提示
+            val startString = wfUtil.formatTimeBySecond(expiry!!)
+            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $getLocation")
+            return
+        }
 
-        val startString = traderJson["startString"].asText().replaceTime()
-        val endString = traderJson["endString"].asText().replaceTime()
-        val location = traderJson["location"].asText().turnZhHans()
+        // 当Redis中商人到来的缓存不存在时可以判断商人已经回归，尝试通过Redis获取缓存
+        // 当Redis中商人的缓存不存在时，尝试通过API获取数据
+        if (!redisService.hasKey("warframe:voidTrader")) {
+            val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
 
-        if (traderJson["inventory"].isEmpty) {
-            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
-        } else {
-            // 定义一个正则表达式用于匹配中文字符
-            val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
+            val startString = traderJson["startString"].asText().replaceTime()
+            val endString = traderJson["endString"].asText().replaceTime()
+            val location = traderJson["location"].asText().turnZhHans()
 
-            val itemList = traderJson["inventory"].map { item ->
-                val regex = Regex("000$")
-                WfStatusVo.VoidTraderItem(
-                    item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
-                    ducats = item["ducats"].asInt(),
-                    credits = regex.replace(item["credits"].asText(), "k")
+            if (traderJson["inventory"].isEmpty) {
+                context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
+                // 向Redis中写入缓存，用于提示
+                redisService.setValueWithExpiry(
+                    "warframe:voidTraderCome",
+                    location,
+                    startString.parseDuration(),
+                    TimeUnit.SECONDS
+                )
+            } else {
+                // 定义一个正则表达式用于匹配中文字符
+                val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
+
+                val itemList = traderJson["inventory"].map { item ->
+                    val regex = Regex("000$")
+                    WfStatusVo.VoidTraderItem(
+                        item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
+                        ducats = item["ducats"].asInt(),
+                        credits = regex.replace(item["credits"].asText(), "k")
+                    )
+                }
+
+                // 使用sortedWith根据item是否包含中文进行排序
+                val sortedItemList = itemList.sortedWith(compareByDescending {
+                    it.item?.let { it1 -> chinesePattern.matcher(it1).find() }
+                })
+                val voidTraderEntity1 = WfStatusVo.VoidTraderEntity(
+                    time = endString,
+                    location = location,
+                    items = sortedItemList
+                )
+
+                redisService.setValueWithExpiry(
+                    "warframe:voidTrader",
+                    voidTraderEntity1,
+                    endString.parseDuration(),
+                    TimeUnit.SECONDS
                 )
             }
-
-            // 使用sortedWith根据item是否包含中文进行排序
-            val sortedItemList = itemList.sortedWith(compareByDescending {
-                chinesePattern.matcher(it.item).find()
-            })
-
-            voidTraderEntity = WfStatusVo.VoidTraderEntity(
-                time = endString,
-                location = location,
-                items = sortedItemList
-            )
-
-            val imgData = WebImgUtil.ImgData(
-                url = "http://localhost:16666/voidTrader",
-                imgName = "voidTrader-${UUID.randomUUID()}",
-                element = "body"
-            )
-
-            webImgUtil.sendNewImage(context, imgData)
-            webImgUtil.deleteImg(imgData = imgData)
         }
+
+        // 当Redis中商人的缓存存在时，直接发送图片
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:16666/voidTrader",
+            imgName = "voidTrader-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AParameter
@@ -355,38 +405,14 @@ class WfStatusController @Autowired constructor(
         // 定义时间格式化器
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-        // 将时间字符串解析为 LocalDateTime 对象
-        val nowTime = LocalDateTime.now()
-        val endTime = LocalDateTime.parse(expiryString, formatter)
-        val timeDifference = StringBuilder()
-
-        // 计算月份
-        val months = ChronoUnit.MONTHS.between(nowTime, endTime)
-        var tempTime = nowTime.plusMonths(months) // 临时时间用于计算剩余的天数
-
-        if (months > 0) timeDifference.append("${months}个月")
-
-        // 计算剩余的天数（减去已计算的月份）
-        val days = ChronoUnit.DAYS.between(tempTime, endTime)
-        tempTime = tempTime.plusDays(days) // 更新临时时间，用于计算剩余的小时数
-
-        if (days > 0) timeDifference.append("${days}天")
-
-        // 计算小时
-        val hours = ChronoUnit.HOURS.between(tempTime, endTime)
-        tempTime = tempTime.plusHours(hours)
-
-        if (hours > 0) timeDifference.append("${hours}小时")
-
-        // 计算分钟
-        val minutes = ChronoUnit.MINUTES.between(tempTime, endTime)
-        if (minutes > 0) timeDifference.append("${minutes}分钟")
+        val timeDifference =
+            wfUtil.formatTimeDifference(LocalDateTime.now(), LocalDateTime.parse(expiryString, formatter))
 
         nightWaveEntity = WfStatusVo.NightWaveEntity(
             activation = activation,
             startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
             expiry = expiryString,
-            expiryString = timeDifference.toString(),
+            expiryString = timeDifference,
             activeChallenges = nightWaveJson["activeChallenges"].map { item ->
                 WfStatusVo.NightWaveChallenges(
                     title = item["title"].textValue().turnZhHans(),

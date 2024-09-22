@@ -570,4 +570,49 @@ class WfUtil @Autowired constructor(
         val displayState = stateMap?.get(state) ?: state
         return "状态为: $displayState \n开始时间:${activation}\n结束时间:${expiry}\n剩余:${timeLeft}"
     }
+
+    // 计算时间差并格式化为字符串
+    fun formatTimeDifference(nowTime: LocalDateTime, endTime: LocalDateTime): String {
+        val timeDifference = StringBuilder()
+
+        // 计算各个时间单位
+        val units = listOf(
+            ChronoUnit.MONTHS to "个月",
+            ChronoUnit.DAYS to "天",
+            ChronoUnit.HOURS to "小时",
+            ChronoUnit.MINUTES to "分",
+        )
+
+        var tempTime = nowTime
+
+        for ((unit, unitName) in units) {
+            val amount = unit.between(tempTime, endTime)
+            if (amount > 0) {
+                timeDifference.append("$amount$unitName")
+                tempTime = tempTime.plus(amount, unit) // 更新临时时间
+            }
+        }
+
+        return timeDifference.toString()
+    }
+
+    fun formatTimeBySecond(seconds: Long): String {
+        val timeDifference = StringBuilder()
+
+        val days = seconds / (24 * 60 * 60)
+        var remainingSeconds = seconds % (24 * 60 * 60)
+
+        val hours = remainingSeconds / (60 * 60)
+        remainingSeconds %= (60 * 60)
+
+        val minutes = remainingSeconds / 60
+        val secondsLeft = remainingSeconds % 60
+
+        if (days > 0) timeDifference.append("${days}天")
+        if (hours > 0) timeDifference.append("${hours}小时")
+        if (minutes > 0) timeDifference.append("${minutes}分钟")
+        timeDifference.append("${secondsLeft}秒")
+
+        return timeDifference.toString()
+    }
 }

@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.WfStatusController.WfStatus
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -27,7 +29,9 @@ import org.springframework.web.bind.annotation.ResponseBody
 class WarframeController(
     @Value("\${wuLiang.config.userName}") val manageUserName: String,
     @Value("\${wuLiang.config.password}") val managePassword: String,
-    @Autowired val wfLexiconService: WfLexiconService
+    @Autowired val wfLexiconService: WfLexiconService,
+    @Autowired private val redisService: RedisService,
+    @Autowired private val wfUtil: WfUtil
 ) {
     /**
      * 临时的别名管理页面
@@ -81,7 +85,21 @@ class WarframeController(
     @RequestMapping("/voidTrader")
     @ResponseBody
     fun voidTrader(): WfStatusVo.VoidTraderEntity? {
-        return WfStatus.voidTraderEntity
+        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
+
+        var (expiry, voidTraderEntity) = redisService.getExpireAndValue("warframe:voidTrader")
+        if (expiry == null) expiry = -1L
+        voidTraderEntity as WfStatusVo.VoidTraderEntity
+        // 更新时间为当前时间（秒）
+        voidTraderEntity.time = wfUtil.formatTimeBySecond(expiry)
+
+        redisService.setValueWithExpiry(
+            "warframe:voidTrader",
+            voidTraderEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
+        return voidTraderEntity
     }
 
     @RequestMapping("/lich")
