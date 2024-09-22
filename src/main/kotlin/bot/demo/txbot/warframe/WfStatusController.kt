@@ -8,17 +8,11 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.fissureList
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.incarnonEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.moodSpiralsEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.parseDuration
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
@@ -110,21 +104,9 @@ class WfStatusController @Autowired constructor(
                     second * TimeUnit.SECONDS.toSeconds(1)
         }
 
-        var archonHuntEntity: WfStatusVo.ArchonHuntEntity? = null
-
-        var sortieEntity: WfStatusVo.SortieEntity? = null
-
-        var steelPathEntity: WfStatusVo.SteelPathEntity? = null
-
-        var fissureList: WfStatusVo.FissureList? = null
-
         var nightWaveEntity: WfStatusVo.NightWaveEntity? = null
 
         var invasionsEntity = mutableListOf<WfStatusVo.InvasionsEntity>()
-
-        var incarnonEntity: WfStatusVo.IncarnonEntity? = null
-
-        var moodSpiralsEntity: WfStatusVo.MoodSpiralsEntity? = null
     }
 
     /**
@@ -133,7 +115,7 @@ class WfStatusController @Autowired constructor(
      * @param filteredFissures 筛选后的裂缝信息
      * @return 发送内容
      */
-    private fun getSendFissureList(context: Context, filteredFissures: List<JsonNode>, type: String) {
+    private fun getSendFissureList(filteredFissures: List<JsonNode>, type: String) {
         val thisFissureList = WfStatusVo.FissureList()
         val filteredFissuresActive = filteredFissures.filter { fissures ->
             fissures["active"].asBoolean()
@@ -155,9 +137,18 @@ class WfStatusController @Autowired constructor(
                 6 -> thisFissureList.tierOmnia.add(fissureDetail)
             }
         }
-        fissureList = thisFissureList
         thisFissureList.fissureType = type
+        redisService.setValueWithExpiry("warframe:fissureList", thisFissureList, 10L, TimeUnit.SECONDS)
+    }
 
+    @AParameter
+    @Executor(action = "\\b(裂缝|裂隙)\\b")
+    fun getOrdinaryFissures(context: Context) {
+        val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+        val filteredFissures = fissuresJson.filter { eachJson ->
+            !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
+        }
+        getSendFissureList(filteredFissures, "普通裂缝")
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/fissureList",
             imgName = "fissureList-${UUID.randomUUID()}",
@@ -169,23 +160,21 @@ class WfStatusController @Autowired constructor(
     }
 
     @AParameter
-    @Executor(action = "\\b(裂缝|裂隙)\\b")
-    fun getOrdinaryFissures(context: Context) {
-        val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
-        val filteredFissures = fissuresJson.filter { eachJson ->
-            !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
-        }
-        getSendFissureList(context, filteredFissures, "普通裂缝")
-    }
-
-    @AParameter
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(context: Context) {
         val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
         val filteredFissures = fissuresJson.filter { eachJson ->
             !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
         }
-        getSendFissureList(context, filteredFissures, "钢铁裂缝")
+        getSendFissureList(filteredFissures, "钢铁裂缝")
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:16666/fissureList",
+            imgName = "fissureList-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AParameter
@@ -195,7 +184,15 @@ class WfStatusController @Autowired constructor(
         val filteredFissures = fissuresJson.filter { eachJson ->
             eachJson["isStorm"].booleanValue()
         }
-        getSendFissureList(context, filteredFissures, "九重天")
+        getSendFissureList(filteredFissures, "九重天")
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:16666/fissureList",
+            imgName = "fissureList-${UUID.randomUUID()}",
+            element = "body"
+        )
+
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @AParameter
@@ -245,7 +242,7 @@ class WfStatusController @Autowired constructor(
                 val sortedItemList = itemList.sortedWith(compareByDescending {
                     it.item?.let { it1 -> chinesePattern.matcher(it1).find() }
                 })
-                val voidTraderEntity1 = WfStatusVo.VoidTraderEntity(
+                val voidTraderEntity = WfStatusVo.VoidTraderEntity(
                     time = endString,
                     location = location,
                     items = sortedItemList
@@ -253,7 +250,7 @@ class WfStatusController @Autowired constructor(
 
                 redisService.setValueWithExpiry(
                     "warframe:voidTrader",
-                    voidTraderEntity1,
+                    voidTraderEntity,
                     endString.parseDuration(),
                     TimeUnit.SECONDS
                 )
@@ -274,34 +271,42 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "钢铁")
     fun getSteelPath(context: Context) {
-        val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
+        if (!redisService.hasKey("warframe:steelPath")) {
 
-        val currentReward = steelPath["currentReward"]
-        val currentName = currentReward["name"].asText()
-        val currentCost = currentReward["cost"].asInt()
+            val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
 
-        // 寻找下一个奖励
-        val rotation = steelPath["rotation"]
-        val currentIndex = rotation.indexOfFirst { it["name"].asText() == currentName }
-        val nextReward = if (currentIndex != -1 && currentIndex < rotation.size() - 1) {
-            rotation[currentIndex + 1]
-        } else {
-            rotation[0]
+            val currentReward = steelPath["currentReward"]
+            val currentName = currentReward["name"].asText()
+            val currentCost = currentReward["cost"].asInt()
+
+            // 寻找下一个奖励
+            val rotation = steelPath["rotation"]
+            val currentIndex = rotation.indexOfFirst { it["name"].asText() == currentName }
+            val nextReward = if (currentIndex != -1 && currentIndex < rotation.size() - 1) {
+                rotation[currentIndex + 1]
+            } else rotation[0]
+
+            // 获取下一个奖励
+            val nextName = nextReward["name"].asText()
+            val nextCost = nextReward["cost"].asInt()
+
+            val remaining = steelPath["remaining"].asText().replaceTime()
+
+            val steelPathEntity = WfStatusVo.SteelPathEntity(
+                currentName = currentName,
+                currentCost = currentCost,
+                nextName = nextName,
+                nextCost = nextCost,
+                remaining = remaining
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:steelPath",
+                steelPathEntity,
+                remaining.parseDuration(),
+                TimeUnit.SECONDS
+            )
         }
-
-        // 获取下一个奖励
-        val nextName = nextReward["name"].asText()
-        val nextCost = nextReward["cost"].asInt()
-
-        val remaining = steelPath["remaining"].asText().replaceTime()
-
-        steelPathEntity = WfStatusVo.SteelPathEntity(
-            currentName = currentName,
-            currentCost = currentCost,
-            nextName = nextName,
-            nextCost = nextCost,
-            remaining = remaining
-        )
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/steelPath",
@@ -316,28 +321,36 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "突击")
     fun getSortie(context: Context) {
-        val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
+        if (!redisService.hasKey("warframe:sortie")) {
+            val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
 
-        val variantsList = sortieJson["variants"]
-        val taskList = variantsList.map { item ->
-            WfStatusVo.Variants(
-                missionType = item["missionType"].asText().turnZhHans(),
-                modifier = item["modifier"].asText().turnZhHans(),
-                node = item["node"].asText().turnZhHans()
+            val variantsList = sortieJson["variants"]
+            val taskList = variantsList.map { item ->
+                WfStatusVo.Variants(
+                    missionType = item["missionType"].asText().turnZhHans(),
+                    modifier = item["modifier"].asText().turnZhHans(),
+                    node = item["node"].asText().turnZhHans()
+                )
+            }
+
+            val faction = sortieJson["factionKey"].asText().replaceFaction()
+            val boss = sortieJson["boss"].asText()
+            val eta = sortieJson["eta"].asText().replaceTime()
+
+            val sortieEntity = WfStatusVo.SortieEntity(
+                faction = faction,
+                boss = boss,
+                eta = eta,
+                taskList = taskList
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:sortie",
+                sortieEntity,
+                eta.parseDuration(),
+                TimeUnit.SECONDS
             )
         }
-
-        val faction = sortieJson["factionKey"].asText().replaceFaction()
-        val boss = sortieJson["boss"].asText()
-        val eta = sortieJson["eta"].asText().replaceTime()
-
-        sortieEntity = WfStatusVo.SortieEntity(
-            faction = faction,
-            boss = boss,
-            eta = eta,
-            taskList = taskList
-        )
-
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/sortie",
             imgName = "sortie-${UUID.randomUUID()}",
@@ -351,38 +364,45 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: Context) {
-        val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
+        if (!redisService.hasKey("warframe:archonHunt")) {
+            val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
 
-        val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
-        val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
+            val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
+            val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
 
-        val bossIndex = bosses.indexOf(archonHuntJson["boss"].asText().replaceFaction())
-        val boss = if (bossIndex != -1) bosses[bossIndex] else "未知"
-        val rewardItem = if (bossIndex != -1) rewards[bossIndex] else "未知"
-        val nextBoss = if (bossIndex != -1) bosses[(bossIndex + 1) % bosses.size] else "未知"
-        val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
+            val bossIndex = bosses.indexOf(archonHuntJson["boss"].asText().replaceFaction())
+            val boss = if (bossIndex != -1) bosses[bossIndex] else "未知"
+            val rewardItem = if (bossIndex != -1) rewards[bossIndex] else "未知"
+            val nextBoss = if (bossIndex != -1) bosses[(bossIndex + 1) % bosses.size] else "未知"
+            val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
 
-        val taskList = archonHuntJson["missions"].map { item ->
-            WfStatusVo.Missions(
-                node = item["node"].asText().turnZhHans(),
-                type = item["type"].asText().turnZhHans()
+            val taskList = archonHuntJson["missions"].map { item ->
+                WfStatusVo.Missions(
+                    node = item["node"].asText().turnZhHans(),
+                    type = item["type"].asText().turnZhHans()
+                )
+            }
+
+            val faction = archonHuntJson["factionKey"].asText().replaceFaction()
+            val eta = archonHuntJson["eta"].asText().replaceTime()
+
+            val archonHuntEntity = WfStatusVo.ArchonHuntEntity(
+                faction = faction,
+                boss = boss,
+                eta = eta,
+                taskList = taskList,
+                rewardItem = rewardItem,
+                nextBoss = nextBoss,
+                nextRewardItem = nextRewardItem
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:archonHunt",
+                archonHuntEntity,
+                eta.parseDuration(),
+                TimeUnit.SECONDS
             )
         }
-
-        val faction = archonHuntJson["factionKey"].asText().replaceFaction()
-        val eta = archonHuntJson["eta"].asText().replaceTime()
-
-        archonHuntEntity = WfStatusVo.ArchonHuntEntity(
-            faction = faction,
-            boss = boss,
-            eta = eta,
-            taskList = taskList,
-            rewardItem = rewardItem,
-            nextBoss = nextBoss,
-            nextRewardItem = nextRewardItem
-        )
-
-        // TODO 使用Redis缓存数据，以每周一早上8点-当前时间作为Redis过期时间，没过期直接拿Redis数据然后修改剩余时间为获取到的过期剩余时间，直接返回给前端
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/archonHunt",
@@ -436,7 +456,19 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     fun phobosStatus(context: Context?): String {
-        val sendMsg = "当前火卫二平原的${wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)}"
+        var wordStatus = redisService.getValue("warframe:phobosStatus", WfStatusVo.WordStatus::class.java)
+        if (wordStatus == null) {
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
+            redisService.setValueWithExpiry(
+                "warframe:phobosStatus",
+                wordStatus,
+                wordStatus.timeLeft!!.parseDuration(),
+                TimeUnit.SECONDS
+            )
+        }
+
+        val sendMsg =
+            "当前火卫二平原的状态为: ${wordStatus.displayState} \n开始时间:${wordStatus.activation}\n结束时间:${wordStatus.expiry}\n剩余:${wordStatus.timeLeft}"
         return if (context != null) {
             context.sendMsg(sendMsg)
             sendMsg
@@ -446,8 +478,22 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(context: Context?): String {
-        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
-        val sendMsg = "当前希图斯平原的${wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)}"
+        var wordStatus = redisService.getValue("warframe:cetusCycle", WfStatusVo.WordStatus::class.java)
+        if (wordStatus == null) {
+            val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)
+            redisService.setValueWithExpiry(
+                "warframe:cetusCycle",
+                wordStatus,
+                wordStatus.timeLeft!!.parseDuration(),
+                TimeUnit.SECONDS
+            )
+        }
+        val sendMsg = "当前希图斯平原的状态为 ${wordStatus.displayState} \n" +
+                "开始时间:${wordStatus.activation}\n" +
+                "结束时间:${wordStatus.expiry}\n" +
+                "剩余:${wordStatus.timeLeft}"
+
         return if (context != null) {
             context.sendMsg(sendMsg)
             sendMsg
@@ -457,8 +503,22 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
     fun earthCycle(context: Context?): String {
-        val stateMap = mapOf("night" to "夜晚", "day" to "白天")
-        val sendMsg = "当前地球昼夜的${wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)}"
+        var wordStatus = redisService.getValue("warframe:earthCycle", WfStatusVo.WordStatus::class.java)
+        if (wordStatus == null) {
+            val stateMap = mapOf("night" to "夜晚", "day" to "白天")
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)
+            redisService.setValueWithExpiry(
+                "warframe:earthCycle",
+                wordStatus,
+                wordStatus.timeLeft!!.parseDuration(),
+                TimeUnit.SECONDS
+            )
+        }
+        val sendMsg = "当前地球昼夜的状态为 ${wordStatus.displayState} \n" +
+                "开始时间:${wordStatus.activation}\n" +
+                "结束时间:${wordStatus.expiry}\n" +
+                "剩余:${wordStatus.timeLeft}"
+
         return if (context != null) {
             context.sendMsg(sendMsg)
             sendMsg
@@ -468,8 +528,21 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
     fun venusStatus(context: Context?): String {
-        val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
-        val sendMsg = "当前金星平原的${wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)}"
+        var wordStatus = redisService.getValue("warframe:venusStatus", WfStatusVo.WordStatus::class.java)
+        if (wordStatus == null) {
+            val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)
+            redisService.setValueWithExpiry(
+                "warframe:venusStatus",
+                wordStatus,
+                wordStatus.timeLeft!!.parseDuration(),
+                TimeUnit.SECONDS
+            )
+        }
+        val sendMsg = "当前金星平原的状态为 ${wordStatus.displayState} \n" +
+                "开始时间:${wordStatus.activation}\n" +
+                "结束时间:${wordStatus.expiry}\n" +
+                "剩余:${wordStatus.timeLeft}"
         return if (context != null) {
             context.sendMsg(sendMsg)
             sendMsg
@@ -536,59 +609,68 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: Context) {
-        val mapper = jacksonObjectMapper()
-        val newJsonFile = File(WARFRAME_NEW_INCARNON)
-        val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_INCARNON)
+        if (!redisService.hasKey("warframe:incarnon")) {
+            val mapper = jacksonObjectMapper()
+            val newJsonFile = File(WARFRAME_NEW_INCARNON)
+            val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_INCARNON)
 
-        // 读取并解析 JSON 文件
-        val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
-        val beforeData = mapper.readValue(jsonFile, WfUtil.Data::class.java)
-        // 当前日期
-        val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
+            // 读取并解析 JSON 文件
+            val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
+            val beforeData = mapper.readValue(jsonFile, WfUtil.Data::class.java)
+            // 当前日期
+            val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
-        val oneWeekLater = currentTime.plusWeeks(1)
+            val oneWeekLater = currentTime.plusWeeks(1)
 
-        // 更新 week 的 startTime
-        val updatedOrdinaryWeeks = wfUtil.updateWeeks(data, currentTime)
-        if (beforeData != updatedOrdinaryWeeks) mapper.writeValue(newJsonFile, updatedOrdinaryWeeks)
+            // 更新 week 的 startTime
+            val updatedOrdinaryWeeks = wfUtil.updateWeeks(data, currentTime)
+            if (beforeData != updatedOrdinaryWeeks) mapper.writeValue(newJsonFile, updatedOrdinaryWeeks)
 
-        // 查找当前周的数据
-        val currentOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, currentTime)
-        val currentSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, currentTime)
+            // 查找当前周的数据
+            val currentOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, currentTime)
+            val currentSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, currentTime)
 
-        val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, oneWeekLater)
-        val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
+            val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, oneWeekLater)
+            val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
 
-        if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
-            context.sendMsg("啊哦~本周灵化数据不见了")
-            return
+            if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
+                context.sendMsg("啊哦~本周灵化数据不见了")
+                return
+            }
+
+            // 获取下周一的日期
+            val nextMonday = currentTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
+
+            // 设置时间为下周一早上8点
+            val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
+
+            // 计算时间差
+            val duration = Duration.between(currentTime, nextMondayAt8)
+
+            val days = duration.toDays()
+            val hours = duration.toHours() % 24
+            val minutes = duration.toMinutes() % 60
+            val seconds = duration.toSeconds() % 60
+
+            val incarnonEntity = WfStatusVo.IncarnonEntity(
+                thisWeekData = WfUtil.Data(
+                    ordinary = listOf(currentOrdinaryWeek),
+                    steel = listOf(currentSteelWeek)
+                ),
+                nextWeekData = WfUtil.Data(
+                    ordinary = listOf(nextOrdinaryWeek),
+                    steel = listOf(nextSteelWeek)
+                ),
+                remainTime = "$days 天 $hours 小时 $minutes 分钟 $seconds 秒"
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:incarnon",
+                incarnonEntity,
+                incarnonEntity.remainTime!!.replace(" ", "").parseDuration(),
+                TimeUnit.SECONDS
+            )
         }
-
-        // 获取下周一的日期
-        val nextMonday = currentTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
-
-        // 设置时间为下周一早上8点
-        val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
-
-        // 计算时间差
-        val duration = Duration.between(currentTime, nextMondayAt8)
-
-        val days = duration.toDays()
-        val hours = duration.toHours() % 24
-        val minutes = duration.toMinutes() % 60
-        val seconds = duration.toSeconds() % 60
-
-        incarnonEntity = WfStatusVo.IncarnonEntity(
-            thisWeekData = WfUtil.Data(
-                ordinary = listOf(currentOrdinaryWeek),
-                steel = listOf(currentSteelWeek)
-            ),
-            nextWeekData = WfUtil.Data(
-                ordinary = listOf(nextOrdinaryWeek),
-                steel = listOf(nextSteelWeek)
-            ),
-            remainTime = "$days 天 $hours 小时 $minutes 分钟 $seconds 秒"
-        )
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/incarono",
@@ -604,74 +686,82 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
     fun moodSpirals(context: Context) {
-        val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
-        val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
-        val mapper = jacksonObjectMapper()
-        var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
-        val weatherDataAfter: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
-        val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
+        if (!redisService.hasKey("warframe:moodSpirals")) {
+            val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
+            val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
+            val mapper = jacksonObjectMapper()
+            var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
+            val weatherDataAfter: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
+            val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
-        weatherData = wfUtil.updateWeathers(weatherData, currentTime)
-        val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
+            weatherData = wfUtil.updateWeathers(weatherData, currentTime)
+            val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
 
-        if (currentWeatherData == null) {
-            context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
-            return
+            if (currentWeatherData == null) {
+                context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+                return
+            }
+            if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
+
+
+            val hoursLater = OffsetDateTime.parse(currentWeatherData.startTime, dateTimeFormatter)
+                .toLocalDateTime()
+                .plusHours(2)
+                .plusMinutes(1)
+
+            weatherData = wfUtil.updateWeathers(weatherData, hoursLater)
+            val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
+
+            if (hoursLaterWeatherData == null) {
+                context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+                return
+            }
+
+            // 获取当前和下一个天气的状态
+            val currentWeatherState = weatherData.weatherStates[currentWeatherData.stateId]
+            val damageType = weatherData.damageTypes[currentWeatherData.dmgStateId]
+            val nextWeatherState = weatherData.weatherStates[hoursLaterWeatherData.stateId]
+
+            // 确保状态不为null
+            if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
+                context.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
+                return
+            }
+
+            // 计算到下一个天气的剩余时间
+            val timeUntilNextWeather = Duration.between(
+                currentTime,
+                OffsetDateTime.parse(hoursLaterWeatherData.startTime, dateTimeFormatter).toLocalDateTime()
+            )
+            val timeUntilNextWeatherFormatted = wfUtil.formatDuration(timeUntilNextWeather)
+
+            // 获取当前和下一个天气的 NPC 和排除场所信息
+            val (npcList, excludeNpcList) = wfUtil.getNpcLists(weatherData, currentWeatherData.stateId)
+            val (excludePlaceList, noExcludePlaceList) = wfUtil.getPlaceLists(weatherData, currentWeatherData.stateId)
+            val nextExcludePlaceList =
+                weatherData.excludePlaces.filter { it.excludeIds.contains(hoursLaterWeatherData.stateId) }
+                    .map { it.name }
+
+            // 创建 MoodSpiralsEntity 实例
+            val moodSpiralsEntity = WfStatusVo.MoodSpiralsEntity(
+                currentState = currentWeatherState,
+                damageType = damageType,
+                npc = npcList,
+                excludeNpc = excludeNpcList,
+                excludePlace = excludePlaceList,
+                noExcludePlace = noExcludePlaceList,
+                remainTime = timeUntilNextWeatherFormatted,
+                nextState = nextWeatherState,
+                nextExcludePlace = nextExcludePlaceList
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:moodSpirals",
+                moodSpiralsEntity,
+                moodSpiralsEntity.remainTime!!.replace(" ", "").parseDuration(),
+                TimeUnit.SECONDS
+            )
         }
-        if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
-
-
-        val hoursLater = OffsetDateTime.parse(currentWeatherData.startTime, dateTimeFormatter)
-            .toLocalDateTime()
-            .plusHours(2)
-            .plusMinutes(1)
-
-        weatherData = wfUtil.updateWeathers(weatherData, hoursLater)
-        val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
-
-        if (hoursLaterWeatherData == null) {
-            context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
-            return
-        }
-
-        // 获取当前和下一个天气的状态
-        val currentWeatherState = weatherData.weatherStates[currentWeatherData.stateId]
-        val damageType = weatherData.damageTypes[currentWeatherData.dmgStateId]
-        val nextWeatherState = weatherData.weatherStates[hoursLaterWeatherData.stateId]
-
-        // 确保状态不为null
-        if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
-            context.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
-            return
-        }
-
-        // 计算到下一个天气的剩余时间
-        val timeUntilNextWeather = Duration.between(
-            currentTime,
-            OffsetDateTime.parse(hoursLaterWeatherData.startTime, dateTimeFormatter).toLocalDateTime()
-        )
-        val timeUntilNextWeatherFormatted = wfUtil.formatDuration(timeUntilNextWeather)
-
-        // 获取当前和下一个天气的 NPC 和排除场所信息
-        val (npcList, excludeNpcList) = wfUtil.getNpcLists(weatherData, currentWeatherData.stateId)
-        val (excludePlaceList, noExcludePlaceList) = wfUtil.getPlaceLists(weatherData, currentWeatherData.stateId)
-        val nextExcludePlaceList =
-            weatherData.excludePlaces.filter { it.excludeIds.contains(hoursLaterWeatherData.stateId) }
-                .map { it.name }
-
-        // 创建 MoodSpiralsEntity 实例
-        moodSpiralsEntity = WfStatusVo.MoodSpiralsEntity(
-            currentState = currentWeatherState,
-            damageType = damageType,
-            npc = npcList,
-            excludeNpc = excludeNpcList,
-            excludePlace = excludePlaceList,
-            noExcludePlace = noExcludePlaceList,
-            remainTime = timeUntilNextWeatherFormatted,
-            nextState = nextWeatherState,
-            nextExcludePlace = nextExcludePlaceList
-        )
-
         // 生成和发送图像
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/spirals",

@@ -26,7 +26,7 @@ class WfStatusVo {
         var tierAxi: MutableList<FissureDetail> = mutableListOf(),
         var tierRequiem: MutableList<FissureDetail> = mutableListOf(),
         var tierOmnia: MutableList<FissureDetail> = mutableListOf(),
-        var fissureType: String = ""
+        var fissureType: String? = ""
     )
 
     /**
@@ -38,10 +38,10 @@ class WfStatusVo {
      * @property enemyKey 敌人类型
      */
     data class FissureDetail(
-        val eta: String,
-        val node: String,
-        val missionType: String,
-        val enemyKey: String,
+        val eta: String? = null,
+        val node: String? = null,
+        val missionType: String? = null,
+        val enemyKey: String? = null,
     )
 
     /**
@@ -65,9 +65,9 @@ class WfStatusVo {
      * @property node 任务地点
      */
     data class Variants(
-        val missionType: String,
-        val modifier: String,
-        val node: String,
+        val missionType: String? = null,
+        val modifier: String? = null,
+        val node: String? = null,
     )
 
     /**
@@ -77,8 +77,8 @@ class WfStatusVo {
      * @property type 任务类型
      */
     data class Missions(
-        val node: String,
-        val type: String,
+        val node: String? = null,
+        val type: String? = null,
     )
 
     /**
@@ -91,13 +91,13 @@ class WfStatusVo {
      * @property eta 剩余时间
      */
     data class ArchonHuntEntity(
-        val faction: String,
-        val boss: String,
-        val rewardItem: String,
-        val taskList: List<Missions>,
-        val eta: String,
-        val nextBoss: String,
-        val nextRewardItem: String
+        val faction: String? = null,
+        val boss: String? = null,
+        val rewardItem: String? = null,
+        val taskList: List<Missions>? = null,
+        var eta: String? = null,
+        val nextBoss: String? = null,
+        val nextRewardItem: String? = null
     )
 
     /**
@@ -109,10 +109,10 @@ class WfStatusVo {
      * @property eta 剩余时间
      */
     data class SortieEntity(
-        val faction: String,
-        val boss: String,
-        val taskList: List<Variants>,
-        val eta: String
+        val faction: String? = null,
+        val boss: String? = null,
+        val taskList: List<Variants>? = null,
+        var eta: String? = null
     )
 
     /**
@@ -125,11 +125,11 @@ class WfStatusVo {
      * @property nextCost 下一个可兑换物品价格
      */
     data class SteelPathEntity(
-        val currentName: String,
-        val currentCost: Int,
-        val remaining: String,
-        val nextName: String,
-        val nextCost: Int
+        val currentName: String? = null,
+        val currentCost: Int? = null,
+        var remaining: String? = null,
+        val nextName: String? = null,
+        val nextCost: Int? = null
     )
 
     /**
@@ -209,9 +209,9 @@ class WfStatusVo {
      * @property remainTime 剩余时间
      */
     data class IncarnonEntity(
-        val thisWeekData: WfUtil.Data,
-        val nextWeekData: WfUtil.Data,
-        val remainTime: String
+        val thisWeekData: WfUtil.Data? = null,
+        val nextWeekData: WfUtil.Data? = null,
+        var remainTime: String? = null
     )
 
     /**
@@ -228,14 +228,29 @@ class WfStatusVo {
      * @property nextExcludePlace 下个状态不出现的地点列表
      */
     data class MoodSpiralsEntity(
-        val currentState: String,
-        val damageType: String,
-        val npc: List<Map<String, String>>,
-        val excludeNpc: List<Map<String, String>>,
-        val excludePlace: List<String>,
-        val noExcludePlace: List<String>,
-        val remainTime: String,
-        val nextState: String,
-        val nextExcludePlace: List<String>,
+        val currentState: String? = null,
+        val damageType: String? = null,
+        val npc: List<Map<String, String>>? = null,
+        val excludeNpc: List<Map<String, String>>? = null,
+        val excludePlace: List<String>? = null,
+        val noExcludePlace: List<String>? = null,
+        var remainTime: String? = null,
+        val nextState: String? = null,
+        val nextExcludePlace: List<String>? = null,
+    )
+
+    /**
+     * 世界状态信息
+     *
+     * @property displayState 状态
+     * @property activation 开始时间
+     * @property expiry 结束时间
+     * @property timeLeft 剩余时间
+     */
+    data class WordStatus(
+        val displayState: String? = null,
+        val activation: String? = null,
+        val expiry: String? = null,
+        val timeLeft: String? = null
     )
 }

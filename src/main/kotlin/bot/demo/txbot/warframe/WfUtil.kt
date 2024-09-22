@@ -11,6 +11,7 @@ import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
+import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +30,7 @@ import java.time.temporal.ChronoUnit
 @Component
 class WfUtil @Autowired constructor(
     private val wfRivenService: WfRivenService,
-    @Qualifier("otherUtil") private val otherUtil: OtherUtil
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil,
 ) {
 
     /**
@@ -351,31 +352,39 @@ class WfUtil @Autowired constructor(
     }
 
     interface Week {
-        val week: Int
+        val week: Int?
         var startTime: String?
         fun copyWithNewStartTime(newStartTime: String?): Week
     }
 
-    data class OrdinaryWeek(override val week: Int, val items: List<String>, override var startTime: String?) : Week {
+    data class OrdinaryWeek(
+        override val week: Int? = null,
+        val items: List<String>? = null,
+        override var startTime: String? = null
+    ) : Week {
         override fun copyWithNewStartTime(newStartTime: String?): OrdinaryWeek {
             return copy(startTime = newStartTime)
         }
     }
 
-    data class SteelItem(val name: String, val riven: Double?)
-    data class SteelWeek(override val week: Int, val items: List<SteelItem>, override var startTime: String?) : Week {
+    data class SteelItem(val name: String? = null, val riven: Double? = null)
+    data class SteelWeek(
+        override val week: Int? = null,
+        val items: List<SteelItem>? = null,
+        override var startTime: String? = null
+    ) : Week {
         override fun copyWithNewStartTime(newStartTime: String?): SteelWeek {
             return copy(startTime = newStartTime)
         }
     }
 
-    data class Data(val ordinary: List<OrdinaryWeek>, val steel: List<SteelWeek>)
+    data class Data(val ordinary: List<OrdinaryWeek>? = null, val steel: List<SteelWeek>? = null)
 
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-    fun <T : Week> findCurrentWeek(weeks: List<T>, currentDate: LocalDateTime): T? {
-        return weeks
+    fun <T : Week> findCurrentWeek(weeks: List<T>?, currentDate: LocalDateTime): T? {
+        return weeks!!
             .sortedBy { it.startTime }
             .asSequence() // 使用序列，以便更高效地处理过滤和获取最后一项
             .filter { week ->
@@ -389,9 +398,9 @@ class WfUtil @Autowired constructor(
 
     fun updateWeeks(data: Data, currentDate: LocalDateTime): Data {
         // 获取 steel 列表中最晚的开始时间及其索引
-        val (maxSteelIndex, maxSteelStartTime) = findLatestWeekAndIndex(data.steel)
+        val (maxSteelIndex, maxSteelStartTime) = findLatestWeekAndIndex(data.steel!!)
         // 获取 ordinary 列表中最晚的开始时间及其索引
-        val (maxOrdinaryIndex, maxOrdinaryStartTime) = findLatestWeekAndIndex(data.ordinary)
+        val (maxOrdinaryIndex, maxOrdinaryStartTime) = findLatestWeekAndIndex(data.ordinary!!)
 
         // 更新数据中的 steel 和 ordinary 列表
         return data.copy(
@@ -560,7 +569,7 @@ class WfUtil @Autowired constructor(
     fun getStatus(
         url: String,
         stateMap: Map<String, String>? = null
-    ): String {
+    ): WfStatusVo.WordStatus {
         val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "zh"))
         val activation = statusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
@@ -568,7 +577,12 @@ class WfUtil @Autowired constructor(
         val state = statusJson["state"].textValue()
 
         val displayState = stateMap?.get(state) ?: state
-        return "状态为: $displayState \n开始时间:${activation}\n结束时间:${expiry}\n剩余:${timeLeft}"
+        return WfStatusVo.WordStatus(
+            displayState = displayState,
+            activation = activation,
+            expiry = expiry,
+            timeLeft = timeLeft
+        )
     }
 
     // 计算时间差并格式化为字符串

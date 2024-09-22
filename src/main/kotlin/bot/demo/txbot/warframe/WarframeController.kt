@@ -2,9 +2,6 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.WfStatusController.WfStatus
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.archonHuntEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.sortieEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.steelPathEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
@@ -61,32 +58,68 @@ class WarframeController(
     @RequestMapping("/archonHunt")
     @ResponseBody
     fun archonHunt(): WfStatusVo.ArchonHuntEntity? {
+        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
+        var (expiry, archonHuntEntity) = redisService.getExpireAndValue("warframe:archonHunt")
+        if (expiry == null) expiry = -1L
+        archonHuntEntity as WfStatusVo.ArchonHuntEntity
+        // 更新时间为当前时间（秒）
+        archonHuntEntity.eta = wfUtil.formatTimeBySecond(expiry)
+        redisService.setValueWithExpiry(
+            "warframe:archonHunt",
+            archonHuntEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
         return archonHuntEntity
     }
 
     @RequestMapping("/sortie")
     @ResponseBody
     fun sortie(): WfStatusVo.SortieEntity? {
+        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
+        var (expiry, sortieEntity) = redisService.getExpireAndValue("warframe:sortie")
+        if (expiry == null) expiry = -1L
+        sortieEntity as WfStatusVo.SortieEntity
+        // 更新时间为当前时间（秒）
+        sortieEntity.eta = wfUtil.formatTimeBySecond(expiry)
+
+        redisService.setValueWithExpiry(
+            "warframe:sortie",
+            sortieEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
         return sortieEntity
     }
 
     @RequestMapping("/steelPath")
     @ResponseBody
     fun steelPath(): WfStatusVo.SteelPathEntity? {
+        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
+        var (expiry, steelPathEntity) = redisService.getExpireAndValue("warframe:steelPath")
+        if (expiry == null) expiry = -1L
+        steelPathEntity as WfStatusVo.SteelPathEntity
+        // 更新时间为当前时间（秒）
+        steelPathEntity.remaining = wfUtil.formatTimeBySecond(expiry)
+        redisService.setValueWithExpiry(
+            "warframe:steelPath",
+            steelPathEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
         return steelPathEntity
     }
 
     @RequestMapping("/fissureList")
     @ResponseBody
     fun fissureList(): WfStatusVo.FissureList? {
-        return WfStatus.fissureList
+        return redisService.getValue("warframe:fissureList", WfStatusVo.FissureList::class.java)
     }
 
     @RequestMapping("/voidTrader")
     @ResponseBody
     fun voidTrader(): WfStatusVo.VoidTraderEntity? {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-
         var (expiry, voidTraderEntity) = redisService.getExpireAndValue("warframe:voidTrader")
         if (expiry == null) expiry = -1L
         voidTraderEntity as WfStatusVo.VoidTraderEntity
@@ -129,12 +162,34 @@ class WarframeController(
     @RequestMapping("/incarnon")
     @ResponseBody
     fun incarnon(): WfStatusVo.IncarnonEntity? {
-        return WfStatus.incarnonEntity
+        var (expiry, incarnonEntity) = redisService.getExpireAndValue("warframe:incarnon")
+        if (expiry == null) expiry = -1L
+        incarnonEntity as WfStatusVo.IncarnonEntity
+        // 更新时间为当前时间（秒）
+        incarnonEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
+        redisService.setValueWithExpiry(
+            "warframe:incarnon",
+            incarnonEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
+        return incarnonEntity
     }
 
     @RequestMapping("/spirals")
     @ResponseBody
     fun spirals(): WfStatusVo.MoodSpiralsEntity? {
-        return WfStatus.moodSpiralsEntity
+        var (expiry, moodSpiralsEntity) = redisService.getExpireAndValue("warframe:moodSpirals")
+        if (expiry == null) expiry = -1L
+        moodSpiralsEntity as WfStatusVo.MoodSpiralsEntity
+        // 更新时间为当前时间（秒）
+        moodSpiralsEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
+        redisService.setValueWithExpiry(
+            "warframe:moodSpirals",
+            moodSpiralsEntity,
+            expiry,
+            TimeUnit.SECONDS
+        )
+        return moodSpiralsEntity
     }
 }
