@@ -1,7 +1,6 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.RedisService
-import bot.demo.txbot.warframe.WfStatusController.WfStatus
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
@@ -112,8 +111,8 @@ class WarframeController(
 
     @RequestMapping("/fissureList")
     @ResponseBody
-    fun fissureList(): WfStatusVo.FissureList? {
-        return redisService.getValue("warframe:fissureList", WfStatusVo.FissureList::class.java)
+    fun fissureList(@RequestParam("type") type: String): WfStatusVo.FissureList? {
+        return redisService.getValue("warframe:${type}", WfStatusVo.FissureList::class.java)
     }
 
     @RequestMapping("/voidTrader")
@@ -150,13 +149,13 @@ class WarframeController(
     @RequestMapping("/nightWave")
     @ResponseBody
     fun nightWave(): WfStatusVo.NightWaveEntity? {
-        return WfStatus.nightWaveEntity
+        return redisService.getValue("warframe:nightWave", WfStatusVo.NightWaveEntity::class.java)
     }
 
     @RequestMapping("/invasions")
     @ResponseBody
-    fun invasions(): MutableList<WfStatusVo.InvasionsEntity> {
-        return WfStatus.invasionsEntity
+    fun invasions(): List<*> {
+        return redisService.getValue("warframe:invasions") as List<*>
     }
 
     @RequestMapping("/incarnon")

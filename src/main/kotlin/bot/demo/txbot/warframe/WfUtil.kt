@@ -435,19 +435,19 @@ class WfUtil @Autowired constructor(
         val daysSinceMax = Duration.between(maxTime, currentDate).toDays().toInt() // 计算从最晚时间到当前时间的天数
         if (daysSinceMax < 0) return weeks // 如果天数为负，不需要更新，直接返回原始列表
 
-        val isWithinCurrentWeek = daysSinceMax in 0 until 7 // 判断是否在当前周内
         val weekCount = weeks.size
-        val weeksToUpdate = if (isWithinCurrentWeek) 0 else daysSinceMax / 7 // 计算需要增加的周数
+        // 一次性计算需要更新的所有周数
+        val weeksToUpdate = daysSinceMax / 7 // 计算总共需要推进的周数
+        val offsetDays = daysSinceMax % 7 // 计算剩余的天数
 
-        val initialWeekIndex = if (isWithinCurrentWeek) (maxIndex + 1) % weekCount
-        else (maxIndex + weeksToUpdate) % weekCount // 初始的周索引
+        // 当前时间所在的周索引
+        val nowWeekIndex = (maxIndex + weeksToUpdate) % weekCount
 
         return weeks.mapIndexed { i, week ->
-            val actualIndex = (initialWeekIndex + i) % weekCount // 计算实际的索引
-            if (actualIndex == maxIndex % weekCount) return@mapIndexed week // 如果是原始索引，跳过更新
-
-            // 根据天数选择不同的时间更新逻辑
-            val updatedDateTime = maxTime.plusWeeks(weeksToUpdate + i + if (isWithinCurrentWeek) 1 else 0L)
+            // 计算每个周的时间偏移量，确保每个周的时间一次性推进所有周数
+            val offsetWeeks = i - nowWeekIndex
+            val totalWeeksOffset = weeksToUpdate + offsetWeeks // 一次性推进所有周数
+            val updatedDateTime = maxTime.plusWeeks(totalWeeksOffset.toLong()).plusDays(offsetDays.toLong())
 
             // 更新 startTime 并返回新的 week 对象
             week.startTime = formatDateTime(updatedDateTime)
@@ -595,6 +595,7 @@ class WfUtil @Autowired constructor(
             ChronoUnit.DAYS to "天",
             ChronoUnit.HOURS to "小时",
             ChronoUnit.MINUTES to "分",
+            ChronoUnit.SECONDS to "秒",
         )
 
         var tempTime = nowTime

@@ -8,14 +8,13 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.invasionsEntity
-import bot.demo.txbot.warframe.WfStatusController.WfStatus.nightWaveEntity
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.parseDuration
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceFaction
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
+import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -103,10 +103,6 @@ class WfStatusController @Autowired constructor(
                     minute * TimeUnit.MINUTES.toSeconds(1) +
                     second * TimeUnit.SECONDS.toSeconds(1)
         }
-
-        var nightWaveEntity: WfStatusVo.NightWaveEntity? = null
-
-        var invasionsEntity = mutableListOf<WfStatusVo.InvasionsEntity>()
     }
 
     /**
@@ -138,19 +134,22 @@ class WfStatusController @Autowired constructor(
             }
         }
         thisFissureList.fissureType = type
-        redisService.setValueWithExpiry("warframe:fissureList", thisFissureList, 10L, TimeUnit.SECONDS)
+        val typeMap = mapOf("普通裂缝" to "ordinary", "钢铁裂缝" to "hard", "九重天" to "empyrean")
+        redisService.setValueWithExpiry("warframe:${typeMap[type]}", thisFissureList, 1L, TimeUnit.MINUTES)
     }
 
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(context: Context) {
-        val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
-        val filteredFissures = fissuresJson.filter { eachJson ->
-            !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
+        if (!redisService.hasKey("warframe:ordinary")) {
+            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val filteredFissures = fissuresJson.filter { eachJson ->
+                !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
+            }
+            getSendFissureList(filteredFissures, "普通裂缝")
         }
-        getSendFissureList(filteredFissures, "普通裂缝")
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList",
+            url = "http://localhost:16666/fissureList?type=ordinary",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
@@ -162,13 +161,15 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(context: Context) {
-        val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
-        val filteredFissures = fissuresJson.filter { eachJson ->
-            !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
+        if (!redisService.hasKey("warframe:hard")) {
+            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val filteredFissures = fissuresJson.filter { eachJson ->
+                !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
+            }
+            getSendFissureList(filteredFissures, "钢铁裂缝")
         }
-        getSendFissureList(filteredFissures, "钢铁裂缝")
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList",
+            url = "http://localhost:16666/fissureList?type=hard",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
@@ -180,13 +181,15 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "九重天")
     fun getEmpyreanFissures(context: Context) {
-        val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
-        val filteredFissures = fissuresJson.filter { eachJson ->
-            eachJson["isStorm"].booleanValue()
+        if (!redisService.hasKey("warframe:empyrean")) {
+            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val filteredFissures = fissuresJson.filter { eachJson ->
+                eachJson["isStorm"].booleanValue()
+            }
+            getSendFissureList(filteredFissures, "九重天")
         }
-        getSendFissureList(filteredFissures, "九重天")
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList",
+            url = "http://localhost:16666/fissureList?type=empyrean",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
@@ -417,31 +420,40 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
     fun getNightWave(context: Context) {
-        val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
+        if (!redisService.hasKey("warframe:nightWave")) {
+            val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
 
-        val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
-        val expiryString = nightWaveJson["expiry"].textValue().replace("T", " ").replace(".000Z", "")
+            val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
+            val expiryString = nightWaveJson["expiry"].textValue().replace("T", " ").replace(".000Z", "")
 
-        // 定义时间格式化器
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            // 定义时间格式化器
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            val nowTime = LocalDateTime.now()
+            val tomorrow: LocalDate = nowTime.toLocalDate().plus(1, ChronoUnit.DAYS)  // 明天的日期
+            val tomorrowMorning: LocalDateTime = LocalDateTime.of(tomorrow, LocalTime.of(8, 0))  // 明天早上8点
 
-        val timeDifference =
-            wfUtil.formatTimeDifference(LocalDateTime.now(), LocalDateTime.parse(expiryString, formatter))
 
-        nightWaveEntity = WfStatusVo.NightWaveEntity(
-            activation = activation,
-            startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
-            expiry = expiryString,
-            expiryString = timeDifference,
-            activeChallenges = nightWaveJson["activeChallenges"].map { item ->
-                WfStatusVo.NightWaveChallenges(
-                    title = item["title"].textValue().turnZhHans(),
-                    desc = item["desc"].textValue().turnZhHans(),
-                    reputation = item["reputation"].intValue(),
-                    isDaily = item["isDaily"].booleanValue()
-                )
-            }
-        )
+            val timeDifference = wfUtil.formatTimeDifference(nowTime, LocalDateTime.parse(expiryString, formatter))
+
+            // 以当前时间到第二天早上的时间为Redis过期时间
+            val expiryTime = ChronoUnit.SECONDS.between(nowTime, tomorrowMorning)
+            val nightWaveEntity = WfStatusVo.NightWaveEntity(
+                activation = activation,
+                startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
+                expiry = expiryString,
+                expiryString = timeDifference,
+                activeChallenges = nightWaveJson["activeChallenges"].map { item ->
+                    WfStatusVo.NightWaveChallenges(
+                        title = item["title"].textValue().turnZhHans(),
+                        desc = item["desc"].textValue().turnZhHans(),
+                        reputation = item["reputation"].intValue(),
+                        daily = item["isDaily"].booleanValue()
+                    )
+                }
+            )
+
+            redisService.setValueWithExpiry("warframe:nightWave", nightWaveEntity, expiryTime, TimeUnit.SECONDS)
+        }
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/nightWave",
@@ -570,12 +582,12 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: Context) {
-        invasionsEntity.clear()
-        val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
-        invasionsArray.forEach { invasionsJson ->
-            if (!invasionsJson["completed"].booleanValue()) {
-                invasionsEntity.add(
-                    WfStatusVo.InvasionsEntity(
+        if (!redisService.hasKey("warframe:invasions")) {
+            val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
+            val invasionsList = mutableListOf<WfStatusVo.InvasionsEntity>()
+            invasionsArray.forEach { invasionsJson ->
+                if (!invasionsJson["completed"].booleanValue()) {
+                    val entity = WfStatusVo.InvasionsEntity(
                         node = invasionsJson["node"].textValue().turnZhHans(),
                         invasionsDetail = listOf(
                             WfStatusVo.Invasions(
@@ -591,10 +603,11 @@ class WfStatusController @Autowired constructor(
                         ),
                         completion = invasionsJson["completion"].doubleValue()
                     )
-                )
+                    invasionsList.add(entity)
+                }
             }
+            redisService.setValueWithExpiry("warframe:invasions", invasionsList, 3L, TimeUnit.MINUTES)
         }
-
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
@@ -634,7 +647,7 @@ class WfStatusController @Autowired constructor(
             val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
 
             if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
-                context.sendMsg("啊哦~本周灵化数据不见了")
+                context.sendMsg(WarframeRespEnum.INCARNON_ERROR.message)
                 return
             }
 
@@ -644,14 +657,7 @@ class WfStatusController @Autowired constructor(
             // 设置时间为下周一早上8点
             val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
 
-            // 计算时间差
-            val duration = Duration.between(currentTime, nextMondayAt8)
-
-            val days = duration.toDays()
-            val hours = duration.toHours() % 24
-            val minutes = duration.toMinutes() % 60
-            val seconds = duration.toSeconds() % 60
-
+            val remainTime = wfUtil.formatTimeDifference(currentTime, nextMondayAt8)
             val incarnonEntity = WfStatusVo.IncarnonEntity(
                 thisWeekData = WfUtil.Data(
                     ordinary = listOf(currentOrdinaryWeek),
@@ -661,13 +667,13 @@ class WfStatusController @Autowired constructor(
                     ordinary = listOf(nextOrdinaryWeek),
                     steel = listOf(nextSteelWeek)
                 ),
-                remainTime = "$days 天 $hours 小时 $minutes 分钟 $seconds 秒"
+                remainTime = remainTime
             )
 
             redisService.setValueWithExpiry(
                 "warframe:incarnon",
                 incarnonEntity,
-                incarnonEntity.remainTime!!.replace(" ", "").parseDuration(),
+                incarnonEntity.remainTime!!.parseDuration(),
                 TimeUnit.SECONDS
             )
         }
@@ -698,7 +704,7 @@ class WfStatusController @Autowired constructor(
             val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
 
             if (currentWeatherData == null) {
-                context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+                context.sendMsg(WarframeRespEnum.SPIRALS_ERROR.message)
                 return
             }
             if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
@@ -713,7 +719,7 @@ class WfStatusController @Autowired constructor(
             val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
 
             if (hoursLaterWeatherData == null) {
-                context.sendMsg("啊哦~当前时间没有双衍平原数据，请联系开发者检查")
+                context.sendMsg(WarframeRespEnum.SPIRALS_ERROR.message)
                 return
             }
 
@@ -724,7 +730,7 @@ class WfStatusController @Autowired constructor(
 
             // 确保状态不为null
             if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
-                context.sendMsg("啊哦~双衍平原天气数据出现异常，请联系开发者检查")
+                context.sendMsg(WarframeRespEnum.SPIRALS_ABNORMAL_ERROR.message)
                 return
             }
 

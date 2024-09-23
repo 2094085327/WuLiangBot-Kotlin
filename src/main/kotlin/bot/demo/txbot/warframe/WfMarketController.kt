@@ -4,6 +4,7 @@ import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.common.utils.WebImgUtil
+import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
@@ -69,11 +70,9 @@ class WfMarketController @Autowired constructor(
 
         if (fuzzyList.isNotEmpty()) {
             otherUtil.findMatchingStrings(key, fuzzyList).let {
-                context.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
+                context.sendMsg(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
             }
-        } else {
-            context.sendMsg("未找到任何匹配项。")
-        }
+        } else context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
     }
 
     @AParameter
@@ -102,14 +101,14 @@ class WfMarketController @Autowired constructor(
         )
 
         if (rivenJson == null) {
-            context.sendMsg("查询失败，请稍后重试")
+            context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
             return
         }
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
         if (!auctionInfo) {
-            context.sendMsg("当前没有任何在线的玩家出售这种词条的${itemEntity.zhName}")
+            context.sendMsg(WarframeRespEnum.SEARCH_RIVEN_NOT_FOUND.message + itemEntity.zhName)
             return
         }
 
@@ -159,7 +158,7 @@ class WfMarketController @Autowired constructor(
         )
 
         if (lichJson == null) {
-            context.sendMsg("查询失败，请稍后重试")
+            context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
             return
         }
 
@@ -199,6 +198,6 @@ class WfMarketController @Autowired constructor(
     fun getWikiUrl(context: Context, matcher: Matcher) {
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
-        context.sendMsg("你查询的物品的wiki地址可能是:$wikiUrl")
+        context.sendMsg(WarframeRespEnum.SEARCH_WIKI.message + wikiUrl)
     }
 }

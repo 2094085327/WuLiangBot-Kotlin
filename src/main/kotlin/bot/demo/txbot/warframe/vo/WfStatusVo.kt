@@ -151,13 +151,13 @@ class WfStatusVo {
      * @property title 任务名称
      * @property desc 任务描述
      * @property reputation 声望
-     * @property isDaily 是否为日常任务
+     * @property daily 是否为日常任务
      */
     data class NightWaveChallenges(
-        val title: String,
-        val desc: String,
-        val reputation: Int,
-        val isDaily: Boolean
+        val title: String? = null,
+        val desc: String? = null,
+        val reputation: Int? = null,
+        val daily: Boolean? = null
     )
 
     /**
@@ -170,11 +170,11 @@ class WfStatusVo {
      * @property activeChallenges 任务列表
      */
     data class NightWaveEntity(
-        val activation: String,
-        val startString: String,
-        val expiry: String,
-        val expiryString: String,
-        val activeChallenges: List<NightWaveChallenges>
+        val activation: String? = null,
+        val startString: String? = null,
+        val expiry: String? = null,
+        val expiryString: String? = null,
+        val activeChallenges: List<NightWaveChallenges>? = null
     )
 
     /**
@@ -184,8 +184,8 @@ class WfStatusVo {
      * @property factions 阵营
      */
     data class Invasions(
-        val itemString: String,
-        val factions: String,
+        val itemString: String? = null,
+        val factions: String? = null,
     )
 
     /**
@@ -196,9 +196,9 @@ class WfStatusVo {
      * @property completion 入侵完成度
      */
     data class InvasionsEntity(
-        val node: String,
-        val invasionsDetail: List<Invasions>,
-        val completion: Double
+        val node: String? = null,
+        val invasionsDetail: List<Invasions>? = null,
+        val completion: Double? = null
     )
 
     /**
