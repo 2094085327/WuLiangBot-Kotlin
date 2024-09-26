@@ -3,6 +3,7 @@ package bot.demo.txbot.game.lifeRestart
 const val AGE_JSONPATH: String = "resources/lifeRestart/age.json"
 const val EVENT_JSONPATH: String = "resources/lifeRestart/events.json"
 const val TALENT_JSONPATH: String = "resources/lifeRestart/talents.json"
+const val GRADE_JSONPATH: String = "resources/lifeRestart/grade.json"
 
 const val TYPE_AGE = "age"
 const val TYPE_EVENT = "event"
@@ -12,6 +13,7 @@ const val AGE_JSON_MISS: String = "age.json文件缺失，尝试切换age.xlsx"
 const val EVENT_JSON_MISS: String = "events.json文件缺失，尝试切换events.xlsx"
 const val TALENT_JSON_MISS: String = "talents.json文件缺失，尝试切换talents.xlsx"
 
+const val SUM: String = "SUM" // 总评
 const val CHR: String = "CHR" // 颜值
 const val INT: String = "INT" // 智力
 const val STR: String = "STR" // 体质
@@ -20,12 +22,10 @@ const val EVT: String = "EVT" // 事件
 const val LIF: String = "LIF" // 生命
 const val SPR: String = "SPR" // 快乐
 const val AGE: String = "AGE" // 年龄
+const val TLT: String = "TLT" // 天赋
 const val RDM: String = "RDM" // 随机属性
 const val TMS: String = "TMS" // 游戏次数
 const val CACHV: String = "CACHV" // 成就达成数 Count Achievement
-
-const val SIZE_OUT: String = "sizeOut"
-const val VALUE_OUT: String = "valueOut"
 
 const val TALENT_SELECT_NOT_COMPLETE: String = "sizeNotComplete" // 天赋选择不足
 const val TALENT_SELECT_Limit: String = "sizeOut" // 天赋选择过多

@@ -1,11 +1,21 @@
 package bot.demo.txbot.game.lifeRestart
 
-import bot.demo.txbot.common.utils.ExcelReader
 import bot.demo.txbot.common.utils.JacksonUtil
+import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.RedisService
+import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespBean
+import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespEnum
+import bot.demo.txbot.game.lifeRestart.vo.AgeDataVO
+import bot.demo.txbot.game.lifeRestart.vo.EventDataVO
 import com.fasterxml.jackson.databind.JsonNode
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.io.File
-import java.util.logging.Logger
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
+import kotlin.math.floor
 import kotlin.random.Random
 
 
@@ -14,42 +24,68 @@ import kotlin.random.Random
  * @author Nature Zero
  * @date 2024/2/16 13:24
  */
-class LifeRestartUtil {
-    private val logger: Logger = Logger.getLogger(ExcelReader::class.java.getName()) // 日志打印类
-
+@Component
+class LifeRestartUtil @Autowired constructor(
+    private val redisService: RedisService
+) {
     data class UserInfo(
-        val userId: String,
+        val userId: String? = null,
         var attributes: Map<*, *>? = null,
-        var age: Int,
-        var events: MutableList<Any> = mutableListOf(),
-        var property: MutableMap<String, Any>? = null,
-        var propertyDistribution: Boolean? = false,
-        var talent: MutableList<Any> = mutableListOf(),
+        var age: Int = 0,
+        var events: MutableList<String> = mutableListOf(),
+        var property: MutableMap<String, Int> = mutableMapOf(),
+        var propertyDistribution: Boolean = false,
+        var talent: MutableList<TalentDataVo> = mutableListOf(),
         var isEnd: Boolean? = false,
         var gameTimes: Int = 0,
         var achievement: Int = 0,
         var randomTalentTemp: MutableList<Any>? = mutableListOf(),
         var status: Int = 20,
         var talentSelectLimit: Int = 3,
-        var activeGameTime: Long = System.currentTimeMillis()
+        var maxProperty: MutableMap<String, Int> = mutableMapOf(
+            CHR to 0,
+            MNY to 0,
+            SPR to 0,
+            INT to 0,
+            STR to 0,
+            SUM to 0,
+        )
     )
 
-    var ageData: JsonNode? = null
-    var eventData: JsonNode? = null
-    private var talentData: JsonNode? = null
+
+    /**
+     * 更新Redis用户信息
+     *
+     * @param userInfo 用户信息
+     */
+    fun updateUserInfo(userInfo: UserInfo) {
+        redisService.setValueWithExpiry("lifeRestart:userInfo:${userInfo.userId}", userInfo, 5L, TimeUnit.MINUTES)
+    }
+
+    /**
+     * 查找用户信息
+     *
+     * @param realId 真实id
+     * @return 找到的用户信息
+     */
+    fun findUserInfo(realId: String): UserInfo? {
+        redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.MINUTES))
+        return redisService.getValue("lifeRestart:userInfo:${realId}", UserInfo::class.java)
+    }
+
 
     /**
      * 获取并更新数据
      *
      * @return 判断是否有文件缺失
      */
-    fun fetchDataAndUpdateLists(): Boolean {
+    fun fetchDataAndUpdateLists(): RestartRespBean {
 
         fun readData(filePath: String, missingMessage: String): JsonNode? {
             return if (File(filePath).exists()) {
                 JacksonUtil.getJsonNode(filePath)
             } else {
-                logger.warning(missingMessage)
+                logError(missingMessage)
                 null
             }
         }
@@ -58,13 +94,28 @@ class LifeRestartUtil {
         val eventData = readData(EVENT_JSONPATH, EVENT_JSON_MISS)
         val talentData = readData(TALENT_JSONPATH, TALENT_JSON_MISS)
 
-        if (ageData == null || eventData == null || talentData == null) return false
+        if (ageData == null || eventData == null || talentData == null) return RestartRespBean.error(RestartRespEnum.DATA_MISSING)
 
-        // 更新列表数据
-        this.ageData = ageData
-        this.eventData = eventData
-        this.talentData = talentData
-        return true
+        // 将数据写入redis
+        redisService.setValueWithExpiry("lifeRestart:ageData", ageData.toString(), 10L, TimeUnit.MINUTES)
+        redisService.setValueWithExpiry("lifeRestart:eventData", eventData.toString(), 10L, TimeUnit.MINUTES)
+        redisService.setValueWithExpiry("lifeRestart:talentData", talentData.toString(), 10L, TimeUnit.MINUTES)
+
+        return RestartRespBean.success()
+    }
+
+    /**
+     * 初始化数据
+     *
+     * @return 响应
+     */
+    fun getFetchData(): RestartRespBean {
+        val ageDataBoolean = redisService.setExpire("lifeRestart:ageData", Duration.of(10L, ChronoUnit.MINUTES))
+        val eventDataBoolean = redisService.setExpire("lifeRestart:eventData", Duration.of(10L, ChronoUnit.MINUTES))
+        val talentDataBoolean = redisService.setExpire("lifeRestart:talentData", Duration.of(10L, ChronoUnit.MINUTES))
+
+        return if (!ageDataBoolean || !eventDataBoolean || !talentDataBoolean) fetchDataAndUpdateLists()
+        else RestartRespBean.success()
     }
 
     /**
@@ -78,19 +129,21 @@ class LifeRestartUtil {
     private fun additionalAttributes(
         userInfo: UserInfo,
         attributeNames: List<String>,
-        mutableProperty: MutableMap<String, Any>
-    ): MutableMap<String, Any>? {
-        mutableProperty[EVT] = mutableListOf<String>()
-        mutableProperty[LIF] = 1.plus((userInfo.property!![LIF] ?: 0) as Int)
-        mutableProperty[SPR] = 5.plus((userInfo.property!![SPR] ?: 0) as Int)
-        if (userInfo.property!![RDM] != null) {
-            val randomAttributes = attributeNames.random()
-            mutableProperty[randomAttributes] =
-                (mutableProperty[randomAttributes] as Int).plus(userInfo.property!![RDM] as Int)
-            return mutableProperty
+        mutableProperty: MutableMap<String, Int>
+    ): MutableMap<String, Int> {
+        // 初始化快乐和生命
+        mutableProperty[LIF] = (userInfo.property[LIF] ?: 0) + 1
+        mutableProperty[SPR] = (userInfo.property[SPR] ?: 0) + 5
+
+        // 如果存在随机属性，则将其加到随机的对应属性上
+        userInfo.property[RDM]?.let { rdmValue ->
+            val randomAttribute = attributeNames.random()
+            mutableProperty[randomAttribute] = (mutableProperty[randomAttribute] ?: 0) + rdmValue
         }
-        return null
+
+        return mutableProperty
     }
+
 
     /**
      * 随机生成属性
@@ -98,36 +151,44 @@ class LifeRestartUtil {
      * @param userInfo 用户信息
      * @return 属性
      */
-    fun randomAttributes(userInfo: UserInfo): MutableMap<String, Any> {
-        // 如果property为null，初始化为一个新的MutableMap
-        if (userInfo.property == null) {
-            userInfo.property = mutableMapOf()
-        }
+    fun randomAttributes(userInfo: UserInfo): MutableMap<String, Int> {
+        var mutableProperty = userInfo.property
+        val userMaxProperty = userInfo.maxProperty
 
-        var mutableProperty = userInfo.property as MutableMap<String, Any>
-
-        // 随机选择第一个字段，给定0-10之间的随机值
+        // 随机选择第一个字段并赋值
         val attributeNames = listOf(CHR, INT, STR, MNY)
         val firstAttributeName = attributeNames.shuffled().first()
-        val firstValue = (0..10).random()
-        mutableProperty[firstAttributeName] = firstValue
+        mutableProperty[firstAttributeName] = (0..10).random()
 
-        // 随机选择剩下的字段，给定0到（20-第一个值）之间的随机值
+        // 随机选择剩下的字段
         val remainingAttributes = attributeNames - firstAttributeName
-        var remainingSum = userInfo.status - firstValue
+        var remainingSum = userInfo.status - (mutableProperty[firstAttributeName] ?: 0)
 
-        for (attributeName in remainingAttributes.shuffled()) {
-            val maxPossibleValue = minOf(remainingSum, 10) // 确保属性最大值为10
-            val value = if (remainingAttributes.last() == attributeName) maxPossibleValue
+        remainingAttributes.shuffled().forEachIndexed { index, attributeName ->
+            val maxPossibleValue = minOf(remainingSum, 10)
+            val value = if (index == remainingAttributes.lastIndex) maxPossibleValue
             else (0..maxPossibleValue).random()
 
-            mutableProperty[attributeName] = ((mutableProperty[attributeName] ?: 0) as Int).plus(value)
+            mutableProperty[attributeName] = (mutableProperty[attributeName] ?: 0) + value
             remainingSum -= value
         }
+        // 调用 additionalAttributes 更新属性
+        mutableProperty = additionalAttributes(userInfo, attributeNames, mutableProperty)
 
-        mutableProperty = additionalAttributes(userInfo, attributeNames, mutableProperty) ?: mutableProperty
+        // 初始化最大属性值
+        attributeNames.forEach { key ->
+            userMaxProperty[key] = mutableProperty[key] ?: 0
+        }
+
+        // 计算总评
+        userMaxProperty[SUM] = floor(
+            (userMaxProperty.filterKeys { it != SUM }.values.sum() * 2 + userInfo.age / 2).toDouble()
+        ).toInt()
+
+        updateUserInfo(userInfo)
         return mutableProperty
     }
+
 
     /**
      * 手动分配属性
@@ -135,29 +196,38 @@ class LifeRestartUtil {
      * @param match 匹配
      * @return 属性
      */
-    fun assignAttributes(userInfo: UserInfo, match: Matcher): Any {
+    fun assignAttributes(userInfo: UserInfo, match: Matcher): RestartRespEnum {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
-        if (total > userInfo.status) return SIZE_OUT
-        for (value in attributeValues) if (value > 10) return VALUE_OUT
 
-        // 如果property为null，初始化为一个新的MutableMap
-        userInfo.property = userInfo.property ?: mutableMapOf()
+        // 检查输入的总和是否超过角色的剩余点数
+        if (total > userInfo.status) return RestartRespEnum.SIZE_OUT_ERROR
+        // 属性值分配最大为10
+        if (attributeValues.any { it > 10 }) return RestartRespEnum.VALUE_OUT_ERROR
 
-        var mutableProperty = userInfo.property as MutableMap<String, Any>
+        val mutableProperty = userInfo.property
         val attributeNames = listOf(CHR, INT, STR, MNY)
 
         attributeNames.forEachIndexed { index, attributeName ->
-            if (mutableProperty[attributeName] != null) {
-                mutableProperty[attributeName] = (mutableProperty[attributeName] as Int).plus(attributeValues[index])
-            } else {
-                mutableProperty[attributeName] = attributeValues[index]
-            }
+            mutableProperty[attributeName] = (mutableProperty[attributeName] ?: 0) + attributeValues[index]
         }
-        mutableProperty = additionalAttributes(userInfo, attributeNames, mutableProperty) ?: mutableProperty
-        userInfo.property = mutableProperty
-        return true
+
+        additionalAttributes(userInfo, attributeNames, mutableProperty)
+
+        // 初始化最大属性值
+        attributeNames.forEach { key ->
+            userInfo.maxProperty[key] = mutableProperty[key] ?: 0
+        }
+
+        // 计算总评
+        userInfo.maxProperty[SUM] = floor(
+            (userInfo.maxProperty.values.sum() * 2 + userInfo.age / 2).toDouble()
+        ).toInt()
+
+        updateUserInfo(userInfo)
+        return RestartRespEnum.SUCCESS
     }
+
 
     /**
      * 使用游戏购买额外属性
@@ -171,35 +241,66 @@ class LifeRestartUtil {
     /**
      * 判断属性是否满足条件
      *
-     * @param property 属性
+     * @param userInfo 用户信息
      * @param condition 条件
      * @return 是否满足条件
      */
-    private fun checkProp(property: Map<String, Any>, condition: String): Boolean {
+    private fun checkProp(userInfo: UserInfo, condition: String): Boolean {
+        val property = userInfo.property
+        val events = userInfo.events
         val length = condition.length
-        var i = condition.indexOfFirst { it == '>' || it == '<' || it == '!' || it == '?' || it == '=' }
+        var i = condition.indexOfFirst { it in listOf('>', '<', '!', '?', '=') }
 
         // 要求的属性
         val prop = condition.substring(0, i)
-        val symbol = condition.substring(i, if (condition[i + 1] == '=') i++ + 2 else i++ + 1)
-        val d = condition.substring(i, length)
+        val symbol =
+            if (condition[i + 1] == '=') condition.substring(i, i + 2).also { i++ } else condition[i].toString()
+        val d = condition.substring(i + 1, length)
 
-        val propData = property[prop]
 
         // 如果是列表，就转换成列表，否则转换成整数
-        val conditionData: Any =
-            if (d.startsWith("[")) d.substring(1, d.length - 1).split(",").map { it.trim() } else d.toInt()
+        val propData = property[prop]
+        val conditionData: Any = if (d.startsWith("[")) {
+            d.substring(1, d.length - 1).split(",").map { it.trim() }
+        } else d.toInt()
 
-        return when (symbol) {
-            ">" -> (propData as Int) > conditionData as Int
-            "<" -> (propData as Int) < conditionData as Int
-            ">=" -> propData as Int >= conditionData as Int
-            "<=" -> propData as Int <= conditionData as Int
-            "=" -> if (propData is List<*>) propData.contains(conditionData) else propData == conditionData
-            "!=" -> if (propData is List<*>) !propData.contains(conditionData) else propData != conditionData
-            "?" -> if (propData is List<*>) propData.any { it in conditionData as List<*> } else conditionData is List<*> && propData in conditionData
-            "!" -> if (propData is List<*>) propData.none { it in conditionData as List<*> } else conditionData is List<*> && propData !in conditionData
-            else -> false
+
+        return when (prop) {
+            EVT -> {
+                conditionData as List<*>
+                when (symbol) {
+                    "?" -> events.any { it in conditionData }
+                    "!" -> events.none { it in conditionData }
+                    else -> false
+                }
+            }
+
+            AGE -> {
+                conditionData as List<*>
+                when (symbol) {
+                    "!" -> conditionData.none { it.toString().toInt() == userInfo.age }
+                    "?" -> conditionData.all { it.toString().toInt() == userInfo.age }
+                    else -> false
+                }
+            }
+
+            TLT -> {
+                conditionData as List<*>
+                when (symbol) {
+                    "?" -> userInfo.talent.map { it.id }.any { it in conditionData }
+                    "!" -> userInfo.talent.map { it.id }.none { it in conditionData }
+                    else -> false
+                }
+            }
+
+            else -> {
+                conditionData as Int
+                when (symbol) {
+                    ">" -> (propData ?: 0) > conditionData
+                    "<" -> (propData ?: 0) < conditionData
+                    else -> false
+                }
+            }
         }
     }
 
@@ -259,32 +360,28 @@ class LifeRestartUtil {
     /**
      * 检查分析的条件
      *
-     * @param property 属性
+     * @param userInfo 用户信息
      * @param conditions 条件
      * @return 是否满足条件
      */
-    private fun checkParsedConditions(property: Map<String, Any>, conditions: Any): Boolean {
+    private fun checkParsedConditions(userInfo: UserInfo, conditions: Any): Boolean {
         if (conditions !is List<*>) {
             conditions as String
-            return checkProp(property, conditions)
+            return checkProp(userInfo, conditions)
         }
-        if (conditions.isEmpty())
-            return true
-        if (conditions.size == 1)
-            return checkParsedConditions(property, conditions[0]!!)
+        if (conditions.isEmpty()) return true
+        if (conditions.size == 1) return checkParsedConditions(userInfo, conditions[0]!!)
 
-        var ret = checkParsedConditions(property, conditions[0]!!)
+        var ret = checkParsedConditions(userInfo, conditions[0]!!)
         for (i in 1 until conditions.size step 2) {
             when (conditions[i] as String) {
                 "&" ->
                     if (ret)
-                        ret = checkParsedConditions(property, conditions[i + 1]!!)
+                        ret = checkParsedConditions(userInfo, conditions[i + 1]!!)
 
                 "|" ->
-                    if (ret)
-                        return true
-                    else
-                        ret = checkParsedConditions(property, conditions[i + 1]!!)
+                    if (ret) return true
+                    else ret = checkParsedConditions(userInfo, conditions[i + 1]!!)
 
                 else -> return false
             }
@@ -296,13 +393,13 @@ class LifeRestartUtil {
     /**
      * 检查条件
      *
-     * @param property 所有物
+     * @param userInfo 用户信息
      * @param condition 条件
      * @return
      */
-    private fun checkCondition(property: Map<String, Any>, condition: String): Boolean {
+    private fun checkCondition(userInfo: UserInfo, condition: String): Boolean {
         val parsedCondition = parseCondition(condition)
-        return checkParsedConditions(property, parsedCondition)
+        return checkParsedConditions(userInfo, parsedCondition)
     }
 
     /**
@@ -312,13 +409,17 @@ class LifeRestartUtil {
      * @param ageDataVO 年龄列表
      * @return 符合条件的事件列表
      */
-    private fun generateValidEvent(userInfo: UserInfo, ageDataVO: AgeDataVO): List<Map<String, Double>> {
+    private fun generateValidEvent(
+        userInfo: UserInfo,
+        ageDataVO: AgeDataVO,
+        eventData: JsonNode
+    ): List<Map<String, Double>> {
         return ageDataVO.eventList?.mapNotNull { event ->
             event?.let {
                 val splitEvent = it.toString().split("*").map(String::toDouble)
                 val eventId = splitEvent[0].toInt().toString()
                 val weight = if (splitEvent.size == 1) 1.0 else splitEvent[1]
-                if (eventCheck(userInfo = userInfo, eventId = eventId)) {
+                if (eventCheck(userInfo = userInfo, eventId = eventId, eventData = eventData)) {
                     mapOf(eventId to weight)
                 } else null
             }
@@ -350,15 +451,17 @@ class LifeRestartUtil {
      * @param userInfo 用户信息
      * @return 随机事件ID
      */
-    private fun getRandom(userInfo: UserInfo): String {
-        val ageList = (ageData as JsonNode).get(userInfo.age.toString())
+    private fun getRandom(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): String {
+
+        val ageList = ageData.get(userInfo.age.toString())
         val age: Int = userInfo.age
         val eventList: MutableList<Any?> = mutableListOf()
         for (element in ageList[TYPE_EVENT]) eventList.add(element.textValue())
 
         val ageDataVO = AgeDataVO(age = age, eventList = eventList)
 
-        val eventListCheck = generateValidEvent(userInfo, ageDataVO)
+        // 当前年龄下所有符合条件的事件
+        val eventListCheck = generateValidEvent(userInfo, ageDataVO, eventData)
         return weightRandom(eventListCheck)
     }
 
@@ -369,7 +472,7 @@ class LifeRestartUtil {
      * @return 是否结束
      */
     private fun isEnd(userInfo: UserInfo) {
-        val lif = userInfo.property?.get(LIF) as Int
+        val lif = userInfo.property[LIF] ?: 1
         if (lif < 1) userInfo.isEnd = true
     }
 
@@ -389,12 +492,10 @@ class LifeRestartUtil {
      * @param eventId 事件ID
      * @return 事件
      */
-    private fun getDo(userInfo: UserInfo, eventId: String): List<Any?> {
-        val branchItem: String?
-        val event: EventDataVO?
-        val eventDataJson = eventData!!.get(eventId)
+    private fun getDo(userInfo: UserInfo, eventId: String, eventData: JsonNode): List<Any?> {
+        val eventDataJson = eventData.get(eventId)
         val eventEffect = eventDataJson["effect"]
-        event = EventDataVO(
+        val event = EventDataVO(
             id = eventId,
             event = eventDataJson[TYPE_EVENT].textValue(),
             grade = eventDataJson["grade"]?.intValue(),
@@ -411,9 +512,9 @@ class LifeRestartUtil {
             exclude = eventDataJson["exclude"]?.textValue(),
             branch = eventDataJson["branch"]?.mapNotNull { it?.textValue() }?.toMutableList()
         )
-        branchItem = eventDataJson["branch"]?.filterNotNull()?.firstOrNull { branch ->
+        val branchItem = eventDataJson["branch"]?.filterNotNull()?.firstOrNull { branch ->
             val cond = branch.textValue().split(":").firstOrNull()
-            cond?.let { thisCond -> checkCondition(userInfo.property ?: emptyMap(), thisCond) } == true
+            cond?.let { thisCond -> checkCondition(userInfo, thisCond) } == true
         }?.textValue()
 
         return if (branchItem != null) {
@@ -423,7 +524,6 @@ class LifeRestartUtil {
         }
     }
 
-
     /**
      * 执行事件
      *
@@ -431,59 +531,68 @@ class LifeRestartUtil {
      * @param eventId
      * @return 事件内容
      */
-    @Suppress("UNCHECKED_CAST")
-    private fun doEvent(userInfo: UserInfo, eventId: String): List<Any?> {
-        val eventData = getDo(userInfo, eventId)
-        val eventSize = eventData.size
+    private fun doEvent(userInfo: UserInfo, eventId: String, eventDataJson: JsonNode): List<Any?> {
+        val eventData = getDo(userInfo, eventId, eventDataJson)
         val event = eventData[0] as EventDataVO
-        val property = userInfo.property as MutableMap<String, Any>
-        val effectStr = StringBuilder()
+        val property = userInfo.property
 
+        // 修改生命值和游戏年龄
+        event.effectLif?.let { property[LIF] = property[LIF]?.plus(it) ?: it }
+        event.effectAge?.let { userInfo.age += it }
+
+        // 激活天赋
+        event.activeTalent = launchTalent(userInfo)
+
+        // 更新属性和计算总评
         listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
             val value = when (key) {
-                CHR -> event.effectChr
-                INT -> event.effectInt
-                STR -> event.effectStr
-                MNY -> event.effectMny
-                SPR -> event.effectSpr
-                else -> null
+                CHR -> event.effectChr ?: 0
+                INT -> event.effectInt ?: 0
+                STR -> event.effectStr ?: 0
+                MNY -> event.effectMny ?: 0
+                SPR -> event.effectSpr ?: 0
+                else -> 0
             }
-            value?.let {
-                property[key] = (property[key] as Int?)?.plus(it) ?: it
-                when (key) {
-                    CHR -> effectStr.append("颜值:$value\n")
-                    INT -> effectStr.append("智力:$value\n")
-                    STR -> effectStr.append("体质:$value\n")
-                    MNY -> effectStr.append("家境:$value\n")
-                    SPR -> effectStr.append("快乐:$value\n")
-                }
-            }
+            // 更新用户属性
+            property[key] = property[key]?.plus(value) ?: value
+            // 更新最大属性
+            val userMaxProperty = userInfo.maxProperty
+            userMaxProperty[key] = (property[key] as Int).coerceAtLeast(userMaxProperty[key] as Int)
+
+            // 计算总评
+            userMaxProperty[SUM] = floor(
+                (userMaxProperty.filterKeys { it != SUM }.values.sum() * 2 + userInfo.age / 2).toDouble()
+            ).toInt()
+
+
+            event.eachChange[key] = property[key] as Int
         }
 
-        event.effectLif?.let { property[LIF] = (property[LIF] as Int?)?.plus(it) ?: it }
-        event.effectAge?.let { userInfo.age += it }
-        property[EVT] = (property[EVT] as MutableList<String>) + event.id
+        // 记录事件
+        event.id?.let { userInfo.events.add(it) }
 
-        val contentMap = mapOf("event" to event, "effect" to effectStr.toString(), "age" to userInfo.age)
+        val contentMap = mapOf("event" to event, "age" to userInfo.age)
 
-        return if (eventSize == 1) {
-            mutableListOf(contentMap)
+        return if (eventData.size == 1) {
+            listOf(contentMap)
         } else {
-            val getEventId = eventData[1] as String
-            mutableListOf(contentMap) + doEvent(userInfo, getEventId)
+            val nextEventId = eventData[1] as String
+            listOf(contentMap) + doEvent(userInfo, nextEventId, eventDataJson)
         }
     }
+
 
     /**
      * 下一步
      *
      * @param userInfo 用户信息
      */
-    fun next(userInfo: UserInfo): MutableMap<String, Any> {
+    fun next(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): List<Any?> {
         ageNext(userInfo)
-        val eventContent = doEvent(userInfo, getRandom(userInfo))
+
+        val eventContent = doEvent(userInfo, getRandom(userInfo, ageData, eventData), eventData)
         isEnd(userInfo)
-        return mutableMapOf("eventContent" to eventContent)
+        return eventContent
     }
 
     /**
@@ -492,9 +601,10 @@ class LifeRestartUtil {
      * @param userInfo 用户信息
      * @return 事件内容
      */
-    fun trajectory(userInfo: UserInfo): Any? {
-        val trajectory = next(userInfo)
-        return trajectory["eventContent"]
+    fun trajectory(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): Any? {
+        val trajectory = next(userInfo, ageData, eventData)
+        updateUserInfo(userInfo)
+        return trajectory
     }
 
     /**
@@ -504,16 +614,17 @@ class LifeRestartUtil {
      * @param eventId 事件ID
      * @return 是否满足条件
      */
-    private fun eventCheck(userInfo: UserInfo, eventId: String): Boolean {
-        val eventList = (eventData as JsonNode).get(eventId)
-        if (eventList.get("noRandom") != null) return false
-        if (eventList.get("exclude") != null && checkCondition(
-                userInfo.property!!,
-                eventList.get("exclude").textValue()
+    private fun eventCheck(userInfo: UserInfo, eventId: String, eventData: JsonNode): Boolean {
+        val eventList = eventData.get(eventId)
+
+        if (eventList["noRandom"] != null) return false
+        if (eventList["exclude"] != null && checkCondition(
+                userInfo,
+                eventList["exclude"].textValue()
             )
         ) return false
         if (eventList.get("include") != null) return checkCondition(
-            userInfo.property!!,
+            userInfo,
             eventList.get("include").textValue()
         )
 
@@ -529,8 +640,13 @@ class LifeRestartUtil {
      * @return 天赋列表
      */
     fun talentRandomInit(userInfo: UserInfo): MutableList<Any> {
+        // 继承的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
+        userInfo.randomTalentTemp = talentRandom
+        // 更新用户信息
+        updateUserInfo(userInfo)
+
         return talentRandom
     }
 
@@ -547,27 +663,52 @@ class LifeRestartUtil {
 
         fun randomGrade(): Int {
             val randomNumber = (0 until rate["total"]!!).random()
-            return if ((randomNumber - rate[3]!!) < 0) {
-                3
-            } else if ((randomNumber - rate[2]!!) < 0) {
-                2
-            } else if ((randomNumber - rate[1]!!) < 0) {
-                1
-            } else 0
+            return if ((randomNumber - rate[3]!!) < 0) 3
+            else if ((randomNumber - rate[2]!!) < 0) 2
+            else if ((randomNumber - rate[1]!!) < 0) 1
+            else 0
         }
+
+        // 从缓存获取天赋数据
+        val talentData = JacksonUtil.readTree(redisService.getValue("lifeRestart:talentData").toString())
 
         val talentList = mutableMapOf<Int, MutableList<TalentDataVo>>()
 
-        val talentListJson = talentData as JsonNode
-        for (talent in talentListJson) {
+        for (talent in talentData) {
             val talentId = talent.get("id").asInt().toString()
             val grade = talent.get("grade").intValue()
             val name = talent.get("name").textValue()
             val description = talent.get("description").textValue()
+            // 天赋排除条件
+            val exclude = if (talent.has("exclude")) {
+                if (talent.get("exclude").isArray) talent.get("exclude").map { it.asText() }
+                else listOf()
+            } else listOf()
+
+            // 天赋影响的属性
+            val effect: Map<String, Int> =
+                if (talent.has("effect")) JacksonUtil.jsonNodeToMap(talent.get("effect")) else mapOf()
+
+            // 天赋发动的条件
+            val condition = if (talent.has("condition")) talent.get("condition").textValue() else null
+
+            // 被替换的天赋条件
+            val replacement: Map<String, List<Any>> =
+                if (talent.has("replacement")) JacksonUtil.jsonNodeToMap(talent.get("replacement")) else mapOf()
+
             val exclusive = talent.get("exclusive")?.booleanValue() ?: true
             if (!exclusive) continue
 
-            val talentDataVo = TalentDataVo(grade, name, description, talentId)
+            val talentDataVo = TalentDataVo(
+                id = talentId,
+                grade = grade,
+                name = name,
+                description = description,
+                exclude = exclude,
+                effect = effect,
+                condition = condition,
+                replacement = replacement
+            )
             if (talentList[grade] == null) talentList[grade] = mutableListOf(talentDataVo)
             else talentList[grade]?.add(talentDataVo)
         }
@@ -645,8 +786,6 @@ class LifeRestartUtil {
                 talentIdList.add(talentDataVo.id!!)
             }
         }
-        userInfo.property = userInfo.property ?: mutableMapOf()
-        userInfo.property?.plusAssign(mutableMapOf("TLT" to talentIdList))
     }
 
     /**
@@ -668,31 +807,51 @@ class LifeRestartUtil {
         }
     }
 
+    fun launchTalent(userInfo: UserInfo): MutableList<TalentDataVo> {
+        // 天赋已经全部激活，直接返回空
+        if (userInfo.talent.isEmpty()) return mutableListOf()
+        // 存储已经发动过的天赋
+        val activatedTalents = mutableListOf<TalentDataVo>()
+        // 使用迭代器来遍历并移除符合条件的 talent
+        val iterator = userInfo.talent.iterator()
+        while (iterator.hasNext()) {
+            val talent = iterator.next()
+            if (talent.condition != null && checkCondition(
+                    userInfo = userInfo,
+                    condition = talent.condition
+                )
+            ) {
+                listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
+                    userInfo.property[key] = userInfo.property[key]?.plus(talent.effect[key] ?: 0) ?: 0
+                }
+                activatedTalents.add(talent)
+                iterator.remove()  // 移除当前 talent
+            }
+        }
+        updateUserInfo(userInfo)
+        return activatedTalents
+    }
+
 
     /**
      *  获取天赋加成，分配初始属性
      *
      * @param userInfo 用户信息
      */
-    @Suppress("UNCHECKED_CAST")
-    fun getTalentAllocationAddition(userInfo: UserInfo) {
-        val talent: MutableList<String> = userInfo.property?.get("TLT") as MutableList<String>
-        val userProperty = userInfo.property as MutableMap<String, Any>
-        talent.forEach { talentId ->
-            val talentDataJson = talentData as JsonNode
-            val talentData = talentDataJson.get(talentId)
-            val status = talentData.get("status")?.intValue() ?: 0
-            userInfo.status += status
-            val effect = talentData.get("effect") ?: null
-            effect?.let {
+    fun getTalentAllocationAddition(userInfo: UserInfo): MutableList<TalentDataVo> {
+        val talents = userInfo.talent
+
+        // 初始化无条件天赋的属性
+        talents.forEach { talent ->
+            if (talent.condition == null && talent.effect.isNotEmpty()) {
                 listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
-                    val value = effect.get(key)?.intValue()
-                    value?.let {
-                        userProperty[key] = (userProperty[key] as Int?)?.plus(value) ?: value
-                    }
+                    if (talent.effect[key] != null) userInfo.property[key] = talent.effect[key]!!
                 }
+                if (talent.effect[RDM] != null) userInfo.status += talent.effect[RDM]!!
             }
         }
+        // 选择天赋后先进行一次判断，符合条件的直接改变属性
+        return launchTalent(userInfo)
     }
 
 

@@ -1,16 +1,27 @@
 package bot.demo.txbot.game.lifeRestart
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.game.lifeRestart.datebase.LifeRestartService
+import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespBean
+import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespEnum
+import bot.demo.txbot.game.lifeRestart.vo.JudgeItemVO
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.io.File
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 
 
@@ -23,25 +34,10 @@ import java.util.regex.Matcher
 @ActionService
 class LifeRestartMain(
     @Autowired private var lifeRestartService: LifeRestartService,
-    @Autowired private val webImgUtil: WebImgUtil
+    @Autowired private val webImgUtil: WebImgUtil,
+    @Autowired private val restartUtil: LifeRestartUtil,
+    @Autowired private val redisService: RedisService
 ) {
-    companion object {
-        val restartUtil = LifeRestartUtil()
-        var userList = mutableListOf<LifeRestartUtil.UserInfo>()
-        var lastFetchTime: Long = 0
-        var sendStrList: MutableList<MutableMap<String, Any>> = mutableListOf()
-    }
-
-    /**
-     * 更新游戏时间
-     *
-     * @param userInfo 用户信息
-     */
-    fun updateGameTime(userInfo: LifeRestartUtil.UserInfo) {
-        val currentTime = System.currentTimeMillis()
-        lastFetchTime = currentTime
-        userInfo.activeGameTime = currentTime
-    }
 
     /**
      * 天赋格式正则
@@ -53,96 +49,64 @@ class LifeRestartMain(
         return Regex("""^(?:[1-9]|10)(?:\s(?:[1-9]|10))*$""").matches(talent)
     }
 
-    /**
-     * 清理缓存
-     *
-     */
-    @Scheduled(fixedDelay = 1 * 60 * 1000)
-    fun clearCacheIfExpired() {
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastFetchTime > 5 * 60 * 1000) {
-            restartUtil.eventData = null
-            restartUtil.ageData = null
-            userList.removeAll { currentTime - it.activeGameTime > 5 * 60 * 1000 }
-            System.gc()
-        }
+
+    enum class OperationType {
+        CHOOSE_TALENT, ALREADY_CHOSE_TALENT, UNALLOCATED, ASSIGNED, CONTINUE
     }
 
-
     /**
-     * 错误状态判断
+     * 判断游戏状态
      *
      * @param userInfo 用户信息
+     * @param operation 类型
      * @return
      */
-    fun isErrorState(context: Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
-        if (userInfo == null) {
-            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
-            return true
+    fun errorState(userInfo: LifeRestartUtil.UserInfo?, operation: OperationType): RestartRespBean {
+        if (userInfo == null) return RestartRespBean.error(RestartRespEnum.GAME_NOT_START)
+
+        fun checkTalentAssigned(): RestartRespBean {
+            return when {
+                userInfo.talent.isEmpty() -> RestartRespBean.error(RestartRespEnum.TALENT_NOT_CHOSE)
+                !userInfo.propertyDistribution -> RestartRespBean.error(RestartRespEnum.NO_ASSIGN_ATTRIBUTES)
+                else -> RestartRespBean.success()
+            }
         }
-        if (userInfo.talent.isEmpty()) {
-            context.sendMsg("你还没有选择天赋,请先选择天赋")
-            return true
+
+        return when (operation) {
+            OperationType.CHOOSE_TALENT -> {
+                if (userInfo.talent.isNotEmpty())
+                    RestartRespBean.error(RestartRespEnum.ALL_READY_CHOSE_TALENT)
+                else
+                    RestartRespBean.success()
+            }
+
+            OperationType.ALREADY_CHOSE_TALENT -> {
+                if (userInfo.talent.isEmpty())
+                    RestartRespBean.error(RestartRespEnum.TALENT_NOT_CHOSE)
+                else
+                    RestartRespBean.success()
+            }
+
+            OperationType.UNALLOCATED -> {
+                if (userInfo.talent.isEmpty())
+                    RestartRespBean.error(RestartRespEnum.TALENT_NOT_CHOSE)
+                else if (userInfo.propertyDistribution)
+                    RestartRespBean.error(RestartRespEnum.ASSIGNED_ATTRIBUTES)
+                else
+                    RestartRespBean.success()
+            }
+
+            OperationType.ASSIGNED -> {
+                if (!userInfo.propertyDistribution)
+                    RestartRespBean.error(RestartRespEnum.NO_ASSIGN_ATTRIBUTES)
+                else
+                    RestartRespBean.success()
+            }
+
+            OperationType.CONTINUE -> checkTalentAssigned()
         }
-        if (!userInfo.propertyDistribution!!) {
-            context.sendMsg("你还没有分配属性，请先分配属性")
-            return true
-        }
-        return false
     }
 
-    /**
-     * 是否选择过天赋判断
-     *
-     * @param userInfo 用户信息
-     * @return Boolean
-     */
-    fun isTalentError(context: Context, userInfo: LifeRestartUtil.UserInfo?): Boolean {
-        if (userInfo == null) {
-            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
-            return true
-        }
-        if (userInfo.talent.isNotEmpty()) {
-            context.sendMsg("你已经选择过天赋了,请不要重复分配")
-            return true
-        }
-        return false
-    }
-
-    /**
-     * 查找用户信息
-     *
-     * @param realId 真实id
-     * @return 找到的用户信息
-     */
-    fun findUserInfo(realId: String): LifeRestartUtil.UserInfo? {
-        return userList.find { it.userId == realId }
-    }
-
-    /**
-     * 处理游戏开始事件
-     *
-     * @param userInfo 用户信息
-     * @param realId 真实id
-     */
-    fun handleGameStart(context: Context, userInfo: LifeRestartUtil.UserInfo, realId: String) {
-        updateGameTime(userInfo)
-        userList.add(userInfo)
-
-        val randomTalent = restartUtil.talentRandomInit(userInfo = userInfo)
-        userInfo.randomTalentTemp = randomTalent
-
-        context.sendMsg("游戏账号创建成功，请使用如「天赋 1 2 3」来选择图片中的天赋")
-
-        val imageData = WebImgUtil.ImgData(
-            imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
-            url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
-        )
-
-        webImgUtil.sendNewImage(context, imageData)
-        context.sendMsg("请在5分钟内开始游戏")
-        webImgUtil.deleteImg(imageData)
-    }
 
     /**
      * 更新时间并发送图片
@@ -150,20 +114,59 @@ class LifeRestartMain(
      * @param userInfo 用户信息
      * @param message 待发送的消息
      */
-    fun updateAndSend(context: Context, userInfo: LifeRestartUtil.UserInfo, message: String? = null) {
-        updateGameTime(userInfo)
-
-        val sendStr = restartUtil.trajectory(userInfo)
-        sendStrList.add(mutableMapOf("userId" to userInfo.userId, "sendStr" to listOf(sendStr)))
-
+    fun updateAndSend(context: Context, userInfo: LifeRestartUtil.UserInfo, realId: String, message: String? = null) {
         val imageData = WebImgUtil.ImgData(
-            imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
-            url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
+            imgName = "${realId}-LifeStart-${UUID.randomUUID()}",
+            url = "http://localhost:16666/game/lifeRestart?game_userId=${realId}"
         )
 
         webImgUtil.sendNewImage(context, imageData)
         if (message != null) context.sendMsg(message)
         webImgUtil.deleteImg(imageData)
+
+        // 更新用户缓存时间
+        redisService.setValueWithExpiry("lifeRestart:userInfo:${realId}", userInfo, 5L, TimeUnit.MINUTES)
+    }
+
+
+    /**
+     * 查找与输入值匹配的判定
+     *
+     * @param input 输入
+     * @param judgeList 列表
+     * @return 符合的判定
+     */
+    fun findJudgeForValue(input: Int, judgeList: List<JudgeItemVO>): JudgeItemVO? {
+        // 检查列表是否为空
+        if (judgeList.isEmpty()) {
+            return null
+        }
+
+        for (i in judgeList.indices) {
+            val current = judgeList[i]
+
+            // 检查当前项的min是否为null
+            val currentMin = current.min ?: continue
+
+            // 如果是最后一项，只需要判断 input 是否大于等于当前 min
+            if (i == judgeList.size - 1) {
+                if (input >= currentMin) {
+                    return current
+                }
+            } else {
+                val next = judgeList[i + 1]
+                // 检查下一项的min是否为null
+                val nextMin = next.min ?: continue
+
+                // 判断 input 是否在当前 min 和下一项 min 之间
+                if (input in currentMin..<nextMin) {
+                    return current
+                }
+            }
+        }
+
+        // 如果没有匹配到任何项，返回 null
+        return null
     }
 
     /**
@@ -174,74 +177,176 @@ class LifeRestartMain(
     fun sendGameEnd(context: Context, userInfo: LifeRestartUtil.UserInfo) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
-            url = "http://localhost:${webImgUtil.usePort}/lifeRestart?userId=${userInfo.userId}"
+            url = "http://localhost:16666/game/lifeRestart?game_userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(context, imageData)
-        context.sendMsg("游戏结束")
-        userList.remove(userInfo)
+
+        val effectStr = StringBuilder()
+        listOf(CHR, INT, STR, MNY, SPR, AGE, SUM).forEach { key ->
+
+            val mapper = jacksonObjectMapper()
+            val rootNode: JsonNode = mapper.readValue(File(GRADE_JSONPATH))
+            val judgeChrNode: JsonNode? = rootNode.path("judge").path(key)
+
+            // 将特定部分转换为 List<JudgeItemVO>
+            val propertyList: List<JudgeItemVO> = mapper.readValue(judgeChrNode.toString())
+
+            when (key) {
+                CHR -> effectStr.append(
+                    "颜值:${userInfo.maxProperty[key]}  ${
+                        rootNode["grade"]["judge_level"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                INT -> effectStr.append(
+                    "智力:${userInfo.maxProperty[key]}  ${
+                        if (findJudgeForValue(
+                                userInfo.maxProperty[key]!!,
+                                propertyList
+                            )!!.judge!! < 7
+                        ) rootNode["grade"]["judge_level"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue() else rootNode["grade"]["intelligence_judge"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                STR -> effectStr.append(
+                    "体质:${userInfo.maxProperty[key]}  ${
+                        if (findJudgeForValue(
+                                userInfo.maxProperty[key]!!,
+                                propertyList
+                            )!!.judge!! < 7
+                        ) rootNode["grade"]["judge_level"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue() else rootNode["grade"]["strength_judge"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                MNY -> effectStr.append(
+                    "家境:${userInfo.maxProperty[key]}  ${
+                        rootNode["grade"]["judge_level"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                SPR -> effectStr.append(
+                    "快乐:${userInfo.maxProperty[key]}  ${
+                        rootNode["grade"]["judge_level_color"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                AGE -> effectStr.append(
+                    "年龄:${userInfo.age}  ${
+                        rootNode["grade"]["age_judge"][(findJudgeForValue(
+                            userInfo.age,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+
+                SUM -> effectStr.append(
+                    "总评:${userInfo.maxProperty[key]}  ${
+                        rootNode["grade"]["judge_level"][(findJudgeForValue(
+                            userInfo.maxProperty[key]!!,
+                            propertyList
+                        )!!.judge!!).toString()].textValue()
+                    }\n"
+                )
+            }
+        }
+        context.sendMsg("游戏结束\n$effectStr")
+
         webImgUtil.deleteImg(imageData)
     }
 
     @AParameter
     @Executor(action = "重开")
     fun startRestart(context: Context) {
-
-
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastFetchTime > 5 * 60 * 1000 || restartUtil.eventData == null || restartUtil.ageData == null) {
-            if (!restartUtil.fetchDataAndUpdateLists()) {
-                context.sendMsg("人生重开数据缺失，请使用「更新资源」指令来下载缺失数据")
-                return
-            }
+        // 初始化游戏数据
+        val fetchResp = restartUtil.getFetchData()
+        if (fetchResp.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(fetchResp.message)
+            return
         }
 
         val realId = OtherUtil().getRealId(context.getEvent())
-
-        userList.removeIf { it.userId == realId }
-        sendStrList.removeIf { it["userId"] == realId }
 
         val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
         val userInfo = LifeRestartUtil.UserInfo(
             userId = realId,
             attributes = null,
             age = -1,
-            events = mutableListOf(),
-            property = null,
             gameTimes = userGameInfo?.times ?: 0,
             achievement = userGameInfo?.cachv ?: 0,
         )
 
-        handleGameStart(context, userInfo, realId)
+        redisService.deleteKey("lifeRestart:sendMessage:${realId}")
+        redisService.setValueWithExpiry("lifeRestart:userInfo:${realId}", userInfo, 5L, TimeUnit.MINUTES)
+
+        // 抽取天赋
+        restartUtil.talentRandomInit(userInfo = userInfo)
+
+
+        val imageData = WebImgUtil.ImgData(
+            imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
+            url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
+        )
+        webImgUtil.sendNewImage(context, imageData)
+
+        context.sendMsg(RestartRespEnum.GAME_START_SUCCESS.message)
+        webImgUtil.deleteImg(imageData)
     }
 
     @AParameter
     @Executor(action = "天赋 (.*)")
     fun getTalent(context: Context, matcher: Matcher) {
-
-
         val realId = OtherUtil().getRealId(context.getEvent())
-        val userInfo = findUserInfo(realId)
+        val userInfo = restartUtil.findUserInfo(realId)
 
-        if (isTalentError(context, userInfo)) return
+        val errorState = errorState(userInfo, OperationType.CHOOSE_TALENT)
+        if (errorState.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(errorState.message)
+            return
+        }
 
         val talentInput = matcher.group(1)
         if (!isTalentFormatValid(talentInput)) {
-            context.sendMsg("你分配的天赋格式错误或范围不正确，请重新分配")
+            context.sendMsg(RestartRespEnum.TALENT_FORMAT_ERROR.message)
             return
         }
-        userInfo?.let {
-            when (restartUtil.talentCheck(talentInput, userInfo)) {
-                TALENT_SELECT_NOT_COMPLETE -> context.sendMsg("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
+        when (restartUtil.talentCheck(talentInput, userInfo!!)) {
+            TALENT_SELECT_NOT_COMPLETE -> context.sendMsg("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
 
-                TALENT_SELECT_Limit -> context.sendMsg("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
+            TALENT_SELECT_Limit -> context.sendMsg("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
 
-                else -> {
-                    updateGameTime(userInfo)
-                    restartUtil.getChoiceTalent(talentInput, userInfo)
-                    restartUtil.getTalentAllocationAddition(userInfo)
+            else -> {
+                restartUtil.getChoiceTalent(talentInput, userInfo)
 
-                    context.sendMsg("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
-                }
+                // 发送已经激活的天赋
+                val activatedTalents = restartUtil.getTalentAllocationAddition(userInfo)
+                activatedTalents.forEach { context.sendMsg("天赋「${it.name}」发动 -- ${it.description}") }
+
+                // 清空临时天赋列表并更新缓存
+                userInfo.randomTalentTemp = mutableListOf()
+                restartUtil.updateUserInfo(userInfo)
+
+                context.sendMsg("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
             }
         }
     }
@@ -249,97 +354,136 @@ class LifeRestartMain(
     @AParameter
     @Executor(action = "随机")
     fun randomAttribute(context: Context, matcher: Matcher) {
-
-
         val realId = OtherUtil().getRealId(context.getEvent())
-        val userInfo = findUserInfo(realId)
+        val userInfo = restartUtil.findUserInfo(realId)
 
-        if (userInfo == null) {
-            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
+        val errorState = errorState(userInfo, OperationType.UNALLOCATED)
+        if (errorState.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(errorState.message)
             return
         }
 
-        userInfo.let {
-            lifeRestartService.insertTimesByRealId(realId)
-            it.property = restartUtil.randomAttributes(it)
-            updateAndSend(context, it, "请发送「继续 继续的步数」来进行游戏")
-            it.propertyDistribution = true
+        lifeRestartService.insertTimesByRealId(realId)
+        restartUtil.randomAttributes(userInfo!!)
+
+        val ageData = JacksonUtil.readTree(redisService.getValue("lifeRestart:ageData").toString())
+        val eventData = JacksonUtil.readTree(redisService.getValue("lifeRestart:eventData").toString())
+        val sendMsg = restartUtil.trajectory(userInfo, ageData, eventData)
+
+
+        val sendMsgList =
+            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
+        sendMsgList.add(sendMsg)
+        redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
+
+        // 胎死腹中 直接结束游戏
+        if (userInfo.isEnd == true) {
+            sendGameEnd(context, userInfo)
+            redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.SECONDS))
+            return
         }
+
+        userInfo.propertyDistribution = true
+        updateAndSend(context, userInfo, realId, RestartRespEnum.CONTINUER_SUCCESS.message)
     }
 
     @AParameter
     @Executor(action = "分配 (.*)")
     fun dealAttribute(context: Context, matcher: Matcher) {
-
-
         val realId = OtherUtil().getRealId(context.getEvent())
-        val userInfo = findUserInfo(realId)
+        val userInfo = restartUtil.findUserInfo(realId)
 
-        if (userInfo == null) {
-            context.sendMsg("你还没有开始游戏，请发送「重开」进行游戏")
-            return
-        }
-        if (userInfo.talent.isEmpty()) {
-            context.sendMsg("你还没有选择天赋,请先选择天赋")
-            return
-        }
-        if (userInfo.propertyDistribution == true) {
-            context.sendMsg("你已经分配过属性了，请不要重复分配")
+
+        if (!Regex("^\\d+( \\d+)*\$").matches(matcher.group(1))) {
+            context.sendMsg(RestartRespEnum.ASSIGN_ATTRIBUTES_ERROR.message)
             return
         }
 
-        userInfo.let {
-            if (!Regex("^\\d+( \\d+)*\$").matches(matcher.group(1))) {
-                context.sendMsg("你分配的属性格式错误，请重新分配")
-                return
-            }
-
-            when (restartUtil.assignAttributes(it, matcher)) {
-                SIZE_OUT -> {
-                    context.sendMsg("注意分配的5个属性值的和不能超过${it.status}哦")
-                    return
-                }
-
-                VALUE_OUT -> {
-                    context.sendMsg("单项属性值不能大于10")
-                    return
-                }
-            }
-
-            lifeRestartService.insertTimesByRealId(realId)
-            updateAndSend(context, it, "请发送「继续 继续的步数」来进行游戏")
-
-            it.propertyDistribution = true
+        // 检查其他状态是否正确
+        val errorState = errorState(userInfo, OperationType.UNALLOCATED)
+        if (errorState.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(errorState.message)
+            return
         }
+
+        // 检查分配属性是否正确
+        val assignState = restartUtil.assignAttributes(userInfo!!, matcher)
+        if (assignState.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(assignState.message)
+        }
+        userInfo.propertyDistribution = true
+
+        val ageData = JacksonUtil.readTree(redisService.getValue("lifeRestart:ageData").toString())
+        val eventData = JacksonUtil.readTree(redisService.getValue("lifeRestart:eventData").toString())
+        val sendMsg = restartUtil.trajectory(userInfo, ageData, eventData)
+
+        lifeRestartService.insertTimesByRealId(realId)
+
+        val sendMsgList =
+            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
+        sendMsgList.add(sendMsg)
+        redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
+
+        if (userInfo.isEnd == true) {
+            sendGameEnd(context, userInfo)
+            redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.SECONDS))
+            redisService.deleteKey("lifeRestart:sendMessage:${realId}")
+            System.gc()
+            return
+        }
+
+        updateAndSend(context, userInfo, realId, RestartRespEnum.CONTINUER_SUCCESS.message)
     }
 
     @AParameter
     @Executor(action = "继续(.*)")
     fun continueGame(context: Context, matcher: Matcher) {
-
-
         val realId = OtherUtil().getRealId(context.getEvent())
-        val userInfo = findUserInfo(realId)
+        val userInfo = restartUtil.findUserInfo(realId)
 
-        if (isErrorState(context, userInfo)) return
-
-        userInfo?.let {
-            val stepNext = matcher.group(1).trim().toIntOrNull() ?: 1 // 默认为1步
-
-            val strList = mutableListOf<Any?>()
-            for (i in 1..stepNext) {
-                val sendStr = restartUtil.trajectory(it)
-                strList.add(sendStr)
-
-                sendStrList.find { sendMap -> sendMap["userId"] == realId }?.set("sendStr", strList)
-
-                if (it.isEnd == true) {
-                    sendGameEnd(context, it)
-                    return
-                }
-            }
-
-            updateAndSend(context, it)
+        // 判断错误状态
+        val errorState = errorState(userInfo, OperationType.CONTINUE)
+        if (errorState.code != RestartRespEnum.SUCCESS.code) {
+            context.sendMsg(errorState.message)
+            return
         }
+
+        val ageData = JacksonUtil.readTree(redisService.getValue("lifeRestart:ageData").toString())
+        val eventData = JacksonUtil.readTree(redisService.getValue("lifeRestart:eventData").toString())
+
+        val stepNext = matcher.group(1).trim().toIntOrNull() ?: 1 // 默认为1步
+
+        val strList = mutableListOf<Any?>()
+        for (i in 1..stepNext) {
+            val sendMessage = restartUtil.trajectory(userInfo!!, ageData, eventData)
+            strList.add(sendMessage)
+
+            // 判断是否结束游戏
+            if (userInfo.isEnd == true) {
+                val sendMsgList =
+                    redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?>
+                        ?: mutableListOf()
+                sendMsgList.addAll(strList)
+                redisService.setValueWithExpiry(
+                    "lifeRestart:sendMessage:${realId}",
+                    sendMsgList,
+                    5L,
+                    TimeUnit.MINUTES
+                )
+
+                sendGameEnd(context, userInfo)
+                redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.SECONDS))
+                redisService.deleteKey("lifeRestart:sendMessage:${realId}")
+                System.gc()
+                return
+            }
+        }
+
+        val sendMsgList =
+            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
+        sendMsgList.addAll(strList)
+        redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
+
+        updateAndSend(context, userInfo!!, realId)
     }
 }

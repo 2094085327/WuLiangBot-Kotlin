@@ -92,6 +92,12 @@ object JacksonUtil {
         val objectMapper = ObjectMapper()
         return objectMapper.readTree(file)
     }
+
+    fun <T,Y>jsonNodeToMap(jsonNode: JsonNode): Map<T, Y> {
+        val objectMapper = ObjectMapper()
+        @Suppress("UNCHECKED_CAST")
+        return objectMapper.convertValue(jsonNode, Map::class.java) as Map<T, Y>
+    }
 }
 
 

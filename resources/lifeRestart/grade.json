@@ -1,0 +1,380 @@
+{
+  "grade": {
+    "judge_level": {
+      "0": "菜逼",
+      "1": "折磨",
+      "2": "不佳",
+      "3": "普通",
+      "4": "优秀",
+      "5": "罕见",
+      "6": "逆天",
+      "7": "神仙！"
+    },
+    "judge_level_color": {
+      "0": "苦逼",
+      "1": "折磨",
+      "2": "不幸",
+      "3": "普通",
+      "4": "幸福",
+      "5": "极乐",
+      "6": "天命"
+    },
+    "age_judge": {
+      "0": "胎死腹中",
+      "1": "早夭",
+      "2": "少年",
+      "3": "盛年",
+      "4": "中年",
+      "5": "花甲",
+      "6": "古稀",
+      "7": "杖朝",
+      "8": "南山",
+      "9": "不老",
+      "10": "修仙",
+      "11": "仙寿"
+    },
+    "intelligence_judge": {
+      "7": "识海",
+      "8": "元神",
+      "9": "仙魂"
+    },
+    "strength_judge": {
+      "7": "凝气",
+      "8": "筑基",
+      "9": "金丹",
+      "10": "元婴",
+      "11": "仙体"
+    }
+  },
+  "judge": {
+    "CHR": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 2,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 4,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 7,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 9,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 11,
+        "grade": 3,
+        "judge": 6
+      }
+    ],
+    "MNY": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 2,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 4,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 7,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 9,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 11,
+        "grade": 3,
+        "judge": 6
+      }
+    ],
+    "SPR": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 2,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 4,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 7,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 9,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 11,
+        "grade": 3,
+        "judge": 6
+      }
+    ],
+    "INT": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 2,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 4,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 7,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 9,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 11,
+        "grade": 3,
+        "judge": 6
+      },
+      {
+        "min": 21,
+        "grade": 4,
+        "judge": 7
+      },
+      {
+        "min": 131,
+        "grade": 4,
+        "judge": 8
+      },
+      {
+        "min": 501,
+        "grade": 4,
+        "judge": 9
+      }
+    ],
+    "STR": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 2,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 4,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 7,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 9,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 11,
+        "grade": 3,
+        "judge": 6
+      },
+      {
+        "min": 21,
+        "grade": 3,
+        "judge": 7
+      },
+      {
+        "min": 101,
+        "grade": 4,
+        "judge": 8
+      },
+      {
+        "min": 401,
+        "grade": 4,
+        "judge": 9
+      },
+      {
+        "min": 1001,
+        "grade": 4,
+        "judge": 10
+      },
+      {
+        "min": 2001,
+        "grade": 4,
+        "judge": 11
+      }
+    ],
+    "AGE": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 1,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 10,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 18,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 40,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 60,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 70,
+        "grade": 3,
+        "judge": 6
+      },
+      {
+        "min": 80,
+        "grade": 3,
+        "judge": 7
+      },
+      {
+        "min": 90,
+        "grade": 3,
+        "judge": 8
+      },
+      {
+        "min": 95,
+        "grade": 4,
+        "judge": 9
+      },
+      {
+        "min": 100,
+        "grade": 4,
+        "judge": 10
+      },
+      {
+        "min": 500,
+        "grade": 4,
+        "judge": 11
+      }
+    ],
+    "SUM": [
+      {
+        "min": 0,
+        "grade": 0,
+        "judge": 0
+      },
+      {
+        "min": 41,
+        "grade": 0,
+        "judge": 1
+      },
+      {
+        "min": 50,
+        "grade": 0,
+        "judge": 2
+      },
+      {
+        "min": 60,
+        "grade": 0,
+        "judge": 3
+      },
+      {
+        "min": 80,
+        "grade": 1,
+        "judge": 4
+      },
+      {
+        "min": 100,
+        "grade": 2,
+        "judge": 5
+      },
+      {
+        "min": 110,
+        "grade": 3,
+        "judge": 6
+      },
+      {
+        "min": 120,
+        "grade": 4,
+        "judge": 7
+      }
+    ]
+  }
+}

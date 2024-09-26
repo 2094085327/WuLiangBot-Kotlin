@@ -1,8 +1,11 @@
 package bot.demo.txbot.common.utils
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
+import java.time.Duration
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -15,6 +18,10 @@ import java.util.concurrent.TimeUnit
 @Service
 @Suppress("unused")
 class RedisService {
+    @Qualifier("reactiveRedisTemplate")
+    @Autowired
+    private lateinit var reactiveRedisTemplate: ReactiveRedisTemplate<Any, Any>
+
     @Autowired
     private lateinit var redisTemplate: RedisTemplate<String, Any>
 
@@ -39,6 +46,7 @@ class RedisService {
     @Suppress("UNCHECKED_CAST")
     fun <T> getValue(key: String, clazz: Class<T>): T? {
         if (key == "") return null
+        if (!hasKey(key)) return null
         try {
             return redisTemplate.opsForValue().get(key) as T
         } catch (e: Exception) {
@@ -89,5 +97,17 @@ class RedisService {
 
     fun hasKey(key: String): Boolean {
         return redisTemplate.hasKey(key)
+    }
+
+    fun setExpire(key: String, expire: Duration): Boolean {
+        if (hasKey(key)) {
+            redisTemplate.expire(key, expire)
+            return true
+        }
+        return false
+    }
+
+    fun deleteKey(key: String) {
+        redisTemplate.delete(key)
     }
 }

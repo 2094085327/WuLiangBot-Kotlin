@@ -1,4 +1,6 @@
-package bot.demo.txbot.game.lifeRestart
+package bot.demo.txbot.game.lifeRestart.vo
+
+import bot.demo.txbot.game.lifeRestart.TalentDataVo
 
 
 /**
@@ -6,7 +8,7 @@ package bot.demo.txbot.game.lifeRestart
  * @author Nature Zero
  * @date 2024/2/14 20:18
  */
-data class EventDataVO (
+data class EventDataVO(
     /**
      * id
      */
@@ -80,6 +82,16 @@ data class EventDataVO (
     /**
      * 优先分支数组，第一个为优先分支，第二个为次优先，第三个为普通分支
      */
-    var branch: MutableList<String?>? = null
+    var branch: MutableList<String?>? = null,
+
+    /**
+     * 每个事件的改变的属性变化
+     */
+    var eachChange: MutableMap<String, Int> = mutableMapOf(),
+
+    /**
+     * 当前事件触发的天赋
+     */
+    var activeTalent: List<TalentDataVo> = mutableListOf()
 
 )
