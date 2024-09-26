@@ -228,6 +228,7 @@ class WfStatusController @Autowired constructor(
                     startString.parseDuration(),
                     TimeUnit.SECONDS
                 )
+                return
             } else {
                 // 定义一个正则表达式用于匹配中文字符
                 val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
