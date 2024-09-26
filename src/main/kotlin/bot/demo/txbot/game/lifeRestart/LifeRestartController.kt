@@ -20,10 +20,10 @@ class LifeRestartController @Autowired constructor(
 ) {
     @RequestMapping("/lifeRestart")
     @ResponseBody
-    fun lifeRestart(@RequestParam("game_userId") userId: String): Pair<LifeRestartUtil.UserInfo?, Any?> {
+    fun lifeRestart(@RequestParam("game_userId") userId: String): Pair<MutableMap<String, Int>, Any?> {
         val userInfo = redisService.getValue("lifeRestart:userInfo:${userId}", LifeRestartUtil.UserInfo::class.java)
         val sendMessage = redisService.getValue("lifeRestart:sendMessage:${userId}")
-        return Pair(userInfo, sendMessage)
+        return Pair(userInfo?.property ?: mutableMapOf(), sendMessage)
     }
 
     @RequestMapping("/lifeRestartTalent")

@@ -144,28 +144,32 @@ class LifeRestartMain(
 
         for (i in judgeList.indices) {
             val current = judgeList[i]
-
-            // 检查当前项的min是否为null
             val currentMin = current.min ?: continue
 
-            // 如果是最后一项，只需要判断 input 是否大于等于当前 min
+            // 处理负数输入的情况
+            if (input < 0) {
+                // 如果第一个项的 min 也是负数或 0，直接返回
+                if (i == 0 && currentMin <= 0) {
+                    return current
+                }
+                // 如果不是第一个项，直接跳过
+                continue
+            }
+
             if (i == judgeList.size - 1) {
                 if (input >= currentMin) {
                     return current
                 }
             } else {
                 val next = judgeList[i + 1]
-                // 检查下一项的min是否为null
                 val nextMin = next.min ?: continue
 
-                // 判断 input 是否在当前 min 和下一项 min 之间
                 if (input in currentMin..<nextMin) {
                     return current
                 }
             }
         }
 
-        // 如果没有匹配到任何项，返回 null
         return null
     }
 
@@ -226,7 +230,7 @@ class LifeRestartMain(
         propertyList: List<JudgeItemVO>,
         rootNode: JsonNode
     ): Evaluate {
-        val maxPropertyValue = userInfo.maxProperty[key] ?: if (key!= AGE) return Evaluate(0, "") else 0
+        val maxPropertyValue = userInfo.maxProperty[key] ?: if (key != AGE) return Evaluate(0, "") else 0
 
         val getProperty = findJudgeForValue(maxPropertyValue, propertyList)!!
         val judgeValue = getProperty.judge!!
@@ -263,7 +267,10 @@ class LifeRestartMain(
 
             AGE -> Evaluate(
                 value = userInfo.age,
-                desc = rootNode["age_judge"][(findJudgeForValue(userInfo.age, propertyList)!!.judge!!).toString()].textValue(),
+                desc = rootNode["age_judge"][(findJudgeForValue(
+                    userInfo.age,
+                    propertyList
+                )!!.judge!!).toString()].textValue(),
                 grade = getProperty.grade!!
             )
 
