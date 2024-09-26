@@ -5,9 +5,7 @@ const val EVENT_JSONPATH: String = "resources/lifeRestart/events.json"
 const val TALENT_JSONPATH: String = "resources/lifeRestart/talents.json"
 const val GRADE_JSONPATH: String = "resources/lifeRestart/grade.json"
 
-const val TYPE_AGE = "age"
 const val TYPE_EVENT = "event"
-const val TYPE_TALENT = "talent"
 
 const val AGE_JSON_MISS: String = "age.json文件缺失，尝试切换age.xlsx"
 const val EVENT_JSON_MISS: String = "events.json文件缺失，尝试切换events.xlsx"

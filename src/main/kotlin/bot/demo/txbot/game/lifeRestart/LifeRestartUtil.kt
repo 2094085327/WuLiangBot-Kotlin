@@ -7,6 +7,7 @@ import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespBean
 import bot.demo.txbot.game.lifeRestart.restartResp.RestartRespEnum
 import bot.demo.txbot.game.lifeRestart.vo.AgeDataVO
 import bot.demo.txbot.game.lifeRestart.vo.EventDataVO
+import bot.demo.txbot.game.lifeRestart.vo.TalentDataVo
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -39,7 +40,7 @@ class LifeRestartUtil @Autowired constructor(
         var isEnd: Boolean? = false,
         var gameTimes: Int = 0,
         var achievement: Int = 0,
-        var randomTalentTemp: MutableList<Any>? = mutableListOf(),
+        var randomTalentTemp: MutableList<TalentDataVo> = mutableListOf(),
         var status: Int = 20,
         var talentSelectLimit: Int = 3,
         var maxProperty: MutableMap<String, Int> = mutableMapOf(
@@ -454,11 +455,9 @@ class LifeRestartUtil @Autowired constructor(
     private fun getRandom(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): String {
 
         val ageList = ageData.get(userInfo.age.toString())
-        val age: Int = userInfo.age
         val eventList: MutableList<Any?> = mutableListOf()
-        for (element in ageList[TYPE_EVENT]) eventList.add(element.textValue())
-
-        val ageDataVO = AgeDataVO(age = age, eventList = eventList)
+        for (element in ageList[TYPE_EVENT]) eventList.add(element.asText()) // 使用 asText() 方法
+        val ageDataVO = AgeDataVO(age = userInfo.age, eventList = eventList)
 
         // 当前年龄下所有符合条件的事件
         val eventListCheck = generateValidEvent(userInfo, ageDataVO, eventData)
@@ -524,6 +523,11 @@ class LifeRestartUtil @Autowired constructor(
         }
     }
 
+    data class SendListEntity(
+        val event: EventDataVO? = null,
+        val age: Int? = 0,
+    )
+
     /**
      * 执行事件
      *
@@ -531,7 +535,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param eventId
      * @return 事件内容
      */
-    private fun doEvent(userInfo: UserInfo, eventId: String, eventDataJson: JsonNode): List<Any?> {
+    private fun doEvent(userInfo: UserInfo, eventId: String, eventDataJson: JsonNode): List<SendListEntity> {
         val eventData = getDo(userInfo, eventId, eventDataJson)
         val event = eventData[0] as EventDataVO
         val property = userInfo.property
@@ -571,13 +575,13 @@ class LifeRestartUtil @Autowired constructor(
         // 记录事件
         event.id?.let { userInfo.events.add(it) }
 
-        val contentMap = mapOf("event" to event, "age" to userInfo.age)
+        val sendListEntity = SendListEntity(event = event, age = userInfo.age)
 
         return if (eventData.size == 1) {
-            listOf(contentMap)
+            listOf(sendListEntity)
         } else {
             val nextEventId = eventData[1] as String
-            listOf(contentMap) + doEvent(userInfo, nextEventId, eventDataJson)
+            listOf(sendListEntity) + doEvent(userInfo, nextEventId, eventDataJson)
         }
     }
 
@@ -587,7 +591,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    fun next(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): List<Any?> {
+    fun next(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): List<SendListEntity> {
         ageNext(userInfo)
 
         val eventContent = doEvent(userInfo, getRandom(userInfo, ageData, eventData), eventData)
@@ -601,7 +605,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 事件内容
      */
-    fun trajectory(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): Any? {
+    fun trajectory(userInfo: UserInfo, ageData: JsonNode, eventData: JsonNode): List<SendListEntity> {
         val trajectory = next(userInfo, ageData, eventData)
         updateUserInfo(userInfo)
         return trajectory
@@ -639,7 +643,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 天赋列表
      */
-    fun talentRandomInit(userInfo: UserInfo): MutableList<Any> {
+    fun talentRandomInit(userInfo: UserInfo): MutableList<TalentDataVo> {
         // 继承的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
@@ -658,7 +662,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 天赋列表
      */
-    private fun talentRandom(include: Any?, userInfo: UserInfo): MutableList<Any> {
+    private fun talentRandom(include: TalentDataVo?, userInfo: UserInfo): MutableList<TalentDataVo> {
         val rate = getRate(userInfo)
 
         fun randomGrade(): Int {
@@ -713,7 +717,7 @@ class LifeRestartUtil @Autowired constructor(
             else talentList[grade]?.add(talentDataVo)
         }
 
-        val result = mutableListOf<Any>()
+        val result = mutableListOf<TalentDataVo>()
         repeat(talentConfig.talentPullCount) { i ->
             if (i == 0 && include != null) {
                 result.add(include)
@@ -722,7 +726,7 @@ class LifeRestartUtil @Autowired constructor(
                 while (talentList[grade]?.isEmpty() == true) grade--
                 val length = talentList[grade]?.size ?: 0
                 val random = (Math.random() * length).toInt() % length
-                result.add(talentList[grade]?.removeAt(random) ?: "")
+                talentList[grade]?.removeAt(random)?.let { result.add(it) }
             }
         }
         return result
@@ -780,8 +784,7 @@ class LifeRestartUtil @Autowired constructor(
         val talentIdList = mutableListOf<String>()
         val matchList = match.split(" ")
         matchList.forEach { index ->
-            userInfo.randomTalentTemp?.get(index.toInt() - 1)?.let { talentDataVo ->
-                talentDataVo as TalentDataVo
+            userInfo.randomTalentTemp[index.toInt() - 1].let { talentDataVo ->
                 userInfo.talent.add(talentDataVo)
                 talentIdList.add(talentDataVo.id!!)
             }
@@ -833,12 +836,29 @@ class LifeRestartUtil @Autowired constructor(
     }
 
 
+//    fun getTalentAllocationAddition(userInfo: UserInfo): MutableList<TalentDataVo> {
+//        val talents = userInfo.talent
+//
+//        // 初始化无条件天赋的属性
+//        talents.forEach { talent ->
+//            if (talent.condition == null && talent.effect.isNotEmpty()) {
+//                listOf(CHR, INT, STR, MNY, SPR).forEach { key ->
+//                    if (talent.effect[key] != null) userInfo.property[key] = talent.effect[key]!!
+//                }
+//                if (talent.effect[RDM] != null) userInfo.status += talent.effect[RDM]!!
+//            }
+//        }
+//        // 选择天赋后先进行一次判断，符合条件的直接改变属性
+//        return launchTalent(userInfo)
+//    }
+
+
     /**
      *  获取天赋加成，分配初始属性
      *
      * @param userInfo 用户信息
      */
-    fun getTalentAllocationAddition(userInfo: UserInfo): MutableList<TalentDataVo> {
+    fun getTalentAllocationAddition(userInfo: UserInfo) {
         val talents = userInfo.talent
 
         // 初始化无条件天赋的属性
@@ -851,7 +871,6 @@ class LifeRestartUtil @Autowired constructor(
             }
         }
         // 选择天赋后先进行一次判断，符合条件的直接改变属性
-        return launchTalent(userInfo)
     }
 
 

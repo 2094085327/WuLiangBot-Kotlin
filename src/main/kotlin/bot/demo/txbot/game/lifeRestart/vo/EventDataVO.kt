@@ -1,7 +1,5 @@
 package bot.demo.txbot.game.lifeRestart.vo
 
-import bot.demo.txbot.game.lifeRestart.TalentDataVo
-
 
 /**
  * @description: 读取Excel时，封装读取的每一行的数据

@@ -1,4 +1,4 @@
-package bot.demo.txbot.game.lifeRestart
+package bot.demo.txbot.game.lifeRestart.vo
 
 
 /**

@@ -170,6 +170,18 @@ class LifeRestartMain(
     }
 
     /**
+     * 每条总评
+     *
+     * @property value 值
+     * @property desc 评价
+     */
+    data class Evaluate(
+        val value: Int? = 0,
+        val desc: String? = null,
+        val grade: Int = 0
+    )
+
+    /**
      * 发送游戏结束信息
      *
      * @param userInfo 用户信息
@@ -181,98 +193,82 @@ class LifeRestartMain(
         )
         webImgUtil.sendNewImage(context, imageData)
 
-        val effectStr = StringBuilder()
-        listOf(CHR, INT, STR, MNY, SPR, AGE, SUM).forEach { key ->
+        val mapper = jacksonObjectMapper()
+        val rootNode: JsonNode = mapper.readValue(File(GRADE_JSONPATH))
 
-            val mapper = jacksonObjectMapper()
-            val rootNode: JsonNode = mapper.readValue(File(GRADE_JSONPATH))
+        val grade = rootNode["grade"]
+
+        val evaluateMap = mutableMapOf<String, Evaluate>()
+        listOf(CHR, INT, STR, MNY, SPR, AGE, SUM).forEach { key ->
             val judgeChrNode: JsonNode? = rootNode.path("judge").path(key)
 
             // 将特定部分转换为 List<JudgeItemVO>
             val propertyList: List<JudgeItemVO> = mapper.readValue(judgeChrNode.toString())
 
-            when (key) {
-                CHR -> effectStr.append(
-                    "颜值:${userInfo.maxProperty[key]}  ${
-                        rootNode["grade"]["judge_level"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                INT -> effectStr.append(
-                    "智力:${userInfo.maxProperty[key]}  ${
-                        if (findJudgeForValue(
-                                userInfo.maxProperty[key]!!,
-                                propertyList
-                            )!!.judge!! < 7
-                        ) rootNode["grade"]["judge_level"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue() else rootNode["grade"]["intelligence_judge"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                STR -> effectStr.append(
-                    "体质:${userInfo.maxProperty[key]}  ${
-                        if (findJudgeForValue(
-                                userInfo.maxProperty[key]!!,
-                                propertyList
-                            )!!.judge!! < 7
-                        ) rootNode["grade"]["judge_level"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue() else rootNode["grade"]["strength_judge"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                MNY -> effectStr.append(
-                    "家境:${userInfo.maxProperty[key]}  ${
-                        rootNode["grade"]["judge_level"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                SPR -> effectStr.append(
-                    "快乐:${userInfo.maxProperty[key]}  ${
-                        rootNode["grade"]["judge_level_color"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                AGE -> effectStr.append(
-                    "年龄:${userInfo.age}  ${
-                        rootNode["grade"]["age_judge"][(findJudgeForValue(
-                            userInfo.age,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-
-                SUM -> effectStr.append(
-                    "总评:${userInfo.maxProperty[key]}  ${
-                        rootNode["grade"]["judge_level"][(findJudgeForValue(
-                            userInfo.maxProperty[key]!!,
-                            propertyList
-                        )!!.judge!!).toString()].textValue()
-                    }\n"
-                )
-            }
+            evaluateMap[key] = generateEvaluate(key, userInfo, propertyList, grade)
         }
-        context.sendMsg("游戏结束\n$effectStr")
+
+        redisService.setValueWithExpiry("lifeRestart:endGame:${userInfo.userId}", evaluateMap, 5L, TimeUnit.SECONDS)
+
+        val gameOverImgData = WebImgUtil.ImgData(
+            imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
+            url = "http://localhost:16666/game/lifeRestartEndGame?game_userId=${userInfo.userId}"
+        )
+        webImgUtil.sendNewImage(context, gameOverImgData)
 
         webImgUtil.deleteImg(imageData)
+    }
+
+
+    private fun generateEvaluate(
+        key: String,
+        userInfo: LifeRestartUtil.UserInfo,
+        propertyList: List<JudgeItemVO>,
+        rootNode: JsonNode
+    ): Evaluate {
+        val maxPropertyValue = userInfo.maxProperty[key] ?: if (key!= AGE) return Evaluate(0, "") else 0
+
+        val getProperty = findJudgeForValue(maxPropertyValue, propertyList)!!
+        val judgeValue = getProperty.judge!!
+
+        return when (key) {
+            CHR, MNY, SUM -> Evaluate(
+                value = maxPropertyValue,
+                desc = rootNode["judge_level"][judgeValue.toString()].textValue(),
+                grade = getProperty.grade!!
+            )
+
+            INT -> {
+                val desc = if (judgeValue < 7) {
+                    rootNode["judge_level"][judgeValue.toString()].textValue()
+                } else {
+                    rootNode["intelligence_judge"][judgeValue.toString()].textValue()
+                }
+                Evaluate(value = maxPropertyValue, desc = desc, grade = getProperty.grade!!)
+            }
+
+            STR -> {
+                val desc = if (judgeValue < 7) {
+                    rootNode["judge_level"][judgeValue.toString()].textValue()
+                } else {
+                    rootNode["strength_judge"][judgeValue.toString()].textValue()
+                }
+                Evaluate(value = maxPropertyValue, desc = desc, grade = getProperty.grade!!)
+            }
+
+            SPR -> Evaluate(
+                value = maxPropertyValue,
+                desc = rootNode["judge_level_color"][judgeValue.toString()].textValue(), grade = getProperty.grade!!
+            )
+
+            AGE -> Evaluate(
+                value = userInfo.age,
+                desc = rootNode["age_judge"][(findJudgeForValue(userInfo.age, propertyList)!!.judge!!).toString()].textValue(),
+                grade = getProperty.grade!!
+            )
+
+            else -> Evaluate(0, "", 0)
+        }
     }
 
     @AParameter
@@ -305,7 +301,7 @@ class LifeRestartMain(
 
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
-            url = "http://localhost:${webImgUtil.usePort}/lifeRestartTalent?userId=${userInfo.userId}"
+            url = "http://localhost:16666/game/lifeRestartTalent?game_userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(context, imageData)
 
@@ -337,10 +333,7 @@ class LifeRestartMain(
 
             else -> {
                 restartUtil.getChoiceTalent(talentInput, userInfo)
-
-                // 发送已经激活的天赋
-                val activatedTalents = restartUtil.getTalentAllocationAddition(userInfo)
-                activatedTalents.forEach { context.sendMsg("天赋「${it.name}」发动 -- ${it.description}") }
+                restartUtil.getTalentAllocationAddition(userInfo)
 
                 // 清空临时天赋列表并更新缓存
                 userInfo.randomTalentTemp = mutableListOf()
@@ -370,10 +363,9 @@ class LifeRestartMain(
         val eventData = JacksonUtil.readTree(redisService.getValue("lifeRestart:eventData").toString())
         val sendMsg = restartUtil.trajectory(userInfo, ageData, eventData)
 
+        val sendMsgList = listOf(sendMsg)
 
-        val sendMsgList =
-            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
-        sendMsgList.add(sendMsg)
+        // 将发送消息缓存
         redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
 
         // 胎死腹中 直接结束游戏
@@ -419,9 +411,7 @@ class LifeRestartMain(
 
         lifeRestartService.insertTimesByRealId(realId)
 
-        val sendMsgList =
-            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
-        sendMsgList.add(sendMsg)
+        val sendMsgList = listOf(sendMsg)
         redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
 
         if (userInfo.isEnd == true) {
@@ -450,40 +440,53 @@ class LifeRestartMain(
 
         val ageData = JacksonUtil.readTree(redisService.getValue("lifeRestart:ageData").toString())
         val eventData = JacksonUtil.readTree(redisService.getValue("lifeRestart:eventData").toString())
-
         val stepNext = matcher.group(1).trim().toIntOrNull() ?: 1 // 默认为1步
 
-        val strList = mutableListOf<Any?>()
+        val strList = mutableListOf<List<LifeRestartUtil.SendListEntity>>()
         for (i in 1..stepNext) {
             val sendMessage = restartUtil.trajectory(userInfo!!, ageData, eventData)
             strList.add(sendMessage)
 
             // 判断是否结束游戏
             if (userInfo.isEnd == true) {
-                val sendMsgList =
-                    redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?>
-                        ?: mutableListOf()
-                sendMsgList.addAll(strList)
-                redisService.setValueWithExpiry(
-                    "lifeRestart:sendMessage:${realId}",
-                    sendMsgList,
-                    5L,
-                    TimeUnit.MINUTES
-                )
-
-                sendGameEnd(context, userInfo)
-                redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.SECONDS))
-                redisService.deleteKey("lifeRestart:sendMessage:${realId}")
-                System.gc()
+                handleGameEnd(context, userInfo, realId, strList)
                 return
             }
         }
 
-        val sendMsgList =
-            redisService.getValue("lifeRestart:sendMessage:${realId}") as? MutableList<Any?> ?: mutableListOf()
-        sendMsgList.addAll(strList)
-        redisService.setValueWithExpiry("lifeRestart:sendMessage:${realId}", sendMsgList, 5L, TimeUnit.MINUTES)
-
+        updateSendMessages(realId, strList)
         updateAndSend(context, userInfo!!, realId)
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun handleGameEnd(
+        context: Context,
+        userInfo: LifeRestartUtil.UserInfo,
+        realId: String,
+        strList: List<List<LifeRestartUtil.SendListEntity>>
+    ) {
+        val currentMsgList = redisService.getValue("lifeRestart:sendMessage:$realId")
+        val sendMsgList =
+            (currentMsgList as? MutableList<List<LifeRestartUtil.SendListEntity>>)?.toMutableList() ?: mutableListOf()
+
+        sendMsgList.addAll(strList)
+
+        redisService.setValueWithExpiry("lifeRestart:sendMessage:$realId", sendMsgList, 5L, TimeUnit.MINUTES)
+        sendGameEnd(context, userInfo)
+        redisService.setExpire("lifeRestart:userInfo:$realId", Duration.of(5L, ChronoUnit.SECONDS))
+        redisService.deleteKey("lifeRestart:sendMessage:$realId")
+        System.gc()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun updateSendMessages(realId: String, strList: List<List<LifeRestartUtil.SendListEntity>>) {
+        val currentMsgList = redisService.getValue("lifeRestart:sendMessage:$realId")
+        val sendMsgList =
+            (currentMsgList as? MutableList<List<LifeRestartUtil.SendListEntity>>)?.toMutableList() ?: mutableListOf()
+
+        sendMsgList.addAll(strList)
+        redisService.setValueWithExpiry("lifeRestart:sendMessage:$realId", sendMsgList, 5L, TimeUnit.MINUTES)
+    }
+
+
 }
