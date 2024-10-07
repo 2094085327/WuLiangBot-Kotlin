@@ -41,5 +41,13 @@ class WarframeRespBean(
         fun error(warframeRespEnum: WarframeRespEnum, obj: Any?): WarframeRespBean {
             return WarframeRespBean(warframeRespEnum.code, warframeRespEnum.message, obj)
         }
+
+        fun info(warframeRespEnum: WarframeRespEnum): WarframeRespBean {
+            return WarframeRespBean(warframeRespEnum.code, warframeRespEnum.message, null)
+        }
+
+        fun info(warframeRespEnum: WarframeRespEnum, obj: Any?): WarframeRespBean {
+            return WarframeRespBean(warframeRespEnum.code, warframeRespEnum.message, obj)
+        }
     }
 }

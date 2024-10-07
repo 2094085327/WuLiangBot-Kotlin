@@ -625,12 +625,13 @@ class WfStatusController @Autowired constructor(
     fun incarnon(context: Context) {
         if (!redisService.hasKey("warframe:incarnon")) {
             val mapper = jacksonObjectMapper()
-            val newJsonFile = File(WARFRAME_NEW_INCARNON)
-            val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_INCARNON)
+            // 使用redis缓存后只需要每周从原始数据更新一次数据至当前时间即可
+            // 原代码也同样需要更新一次数据，所以可以省略
+            val jsonFile = File(WARFRAME_INCARNON)
 
             // 读取并解析 JSON 文件
             val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
-            val beforeData = mapper.readValue(jsonFile, WfUtil.Data::class.java)
+
             // 当前日期
             val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
@@ -638,14 +639,17 @@ class WfStatusController @Autowired constructor(
 
             // 更新 week 的 startTime
             val updatedOrdinaryWeeks = wfUtil.updateWeeks(data, currentTime)
-            if (beforeData != updatedOrdinaryWeeks) mapper.writeValue(newJsonFile, updatedOrdinaryWeeks)
 
             // 查找当前周的数据
             val currentOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, currentTime)
             val currentSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, currentTime)
 
-            val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, oneWeekLater)
-            val nextSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, oneWeekLater)
+            // 更新 下周 的 startTime
+            val updatedNextWeeks = wfUtil.updateWeeks(data, oneWeekLater)
+
+            // 查找下周的数据
+            val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedNextWeeks.ordinary, oneWeekLater)
+            val nextSteelWeek = wfUtil.findCurrentWeek(updatedNextWeeks.steel, oneWeekLater)
 
             if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
                 context.sendMsg(WarframeRespEnum.INCARNON_ERROR.message)
@@ -694,11 +698,9 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
     fun moodSpirals(context: Context) {
         if (!redisService.hasKey("warframe:moodSpirals")) {
-            val newJsonFile = File(WARFRAME_NEW_MOOD_SPIRALS)
-            val jsonFile = if (newJsonFile.exists()) newJsonFile else File(WARFRAME_MOOD_SPIRALS)
+            val jsonFile = File(WARFRAME_MOOD_SPIRALS)
             val mapper = jacksonObjectMapper()
             var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
-            val weatherDataAfter: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
             val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
 
             weatherData = wfUtil.updateWeathers(weatherData, currentTime)
@@ -708,8 +710,6 @@ class WfStatusController @Autowired constructor(
                 context.sendMsg(WarframeRespEnum.SPIRALS_ERROR.message)
                 return
             }
-            if (weatherDataAfter != weatherData) mapper.writeValue(newJsonFile, weatherData)
-
 
             val hoursLater = OffsetDateTime.parse(currentWeatherData.startTime, dateTimeFormatter)
                 .toLocalDateTime()

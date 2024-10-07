@@ -437,6 +437,7 @@ class WfUtil @Autowired constructor(
 
         val weekCount = weeks.size
         // 一次性计算需要更新的所有周数
+        // 每周7天
         val weeksToUpdate = daysSinceMax / 7 // 计算总共需要推进的周数
         val offsetDays = daysSinceMax % 7 // 计算剩余的天数
 

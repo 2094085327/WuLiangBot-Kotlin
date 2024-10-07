@@ -4,10 +4,11 @@ import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
+import bot.demo.txbot.warframe.warframeResp.WarframeRespBean
+import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -32,14 +33,6 @@ class WarframeController(
     /**
      * 临时的别名管理页面
      */
-    @RequestMapping("/wfManage/page")
-    fun index(model: Model): String {
-        return "Warframe/WfManage"
-    }
-
-    /**
-     * 临时的别名管理页面
-     */
     @ResponseBody
     @PostMapping("/wfManage/login")
     fun login(
@@ -47,11 +40,11 @@ class WarframeController(
         @RequestParam("password") password: String,
         @RequestParam("itemName") itemName: String,
         @RequestParam("otherName") otherName: String,
-    ): String {
+    ): WarframeRespBean {
         if (username == manageUserName && password == managePassword) {
             wfLexiconService.insertOtherName(itemName, otherName)
-            return "success"
-        } else return "error"
+            return WarframeRespBean.info(WarframeRespEnum.SUBMIT_SUCCESS)
+        } else return WarframeRespBean.error(WarframeRespEnum.SUBMIT_ERROR)
     }
 
     @RequestMapping("/archonHunt")

@@ -12,7 +12,6 @@ const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
-const val WARFRAME_NEW_INCARNON = "$WARFRAME_RESOURCES/new_incarnon.json"
 const val WARFRAME_MOOD_SPIRALS = "$WARFRAME_RESOURCES/mood_spirals.json"
 const val WARFRAME_NEW_MOOD_SPIRALS = "$WARFRAME_RESOURCES/new_mood_spirals.json"
 
