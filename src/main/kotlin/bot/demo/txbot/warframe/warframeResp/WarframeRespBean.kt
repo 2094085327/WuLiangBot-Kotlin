@@ -31,7 +31,7 @@ class WarframeRespBean(
         /**
          * 失败返回结果
          *
-         * @param WarframeRespBean 错误信息
+         * @param warframeRespEnum 错误信息
          * @return respBean
          */
         fun error(warframeRespEnum: WarframeRespEnum): WarframeRespBean {

@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.utils
 
 import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
 import com.mikuac.shiro.dto.event.message.MessageEvent
@@ -22,7 +23,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
-import java.util.logging.Logger
 
 
 /**
@@ -33,8 +33,6 @@ import java.util.logging.Logger
 @Component
 @Configuration
 class OtherUtil {
-    private val logger: Logger = Logger.getLogger(ExcelReader::class.java.getName())
-
     companion object {
         var gskPort: String = ""
 
@@ -132,7 +130,7 @@ class OtherUtil {
 
             } catch (e: IOException) {
                 e.printStackTrace()
-                logger.logError("文件下载异常:", e)
+                logError("文件下载异常:", e)
                 Pair(false, fileCount)
             }
         }
@@ -178,7 +176,7 @@ class OtherUtil {
                     val targetPath = Paths.get(targetFilePath)
                     if (!Files.exists(targetPath.parent)) {
                         Files.createDirectories(targetPath.parent)
-                        logger.info("创建文件夹：${targetPath.parent}")
+                        logInfo("创建文件夹：${targetPath.parent}")
                     }
 
                     FileOutputStream(targetFilePath).use { out ->
@@ -187,7 +185,7 @@ class OtherUtil {
                         while (`in`.read(buffer).also { bytesRead = it } != -1) {
                             out.write(buffer, 0, bytesRead)
                         }
-                        logger.info("文件下载成功：$targetFilePath")
+                        logInfo("文件下载成功：$targetFilePath")
                     }
                 }
             } catch (e: IOException) {

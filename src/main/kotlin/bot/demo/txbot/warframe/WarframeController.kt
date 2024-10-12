@@ -7,7 +7,6 @@ import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.warframeResp.WarframeRespBean
 import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,8 +23,6 @@ import java.util.concurrent.TimeUnit
 @Controller
 @RequestMapping("/warframe")
 class WarframeController(
-    @Value("\${wuLiang.config.userName}") val manageUserName: String,
-    @Value("\${wuLiang.config.password}") val managePassword: String,
     @Autowired val wfLexiconService: WfLexiconService,
     @Autowired private val redisService: RedisService,
     @Autowired private val wfUtil: WfUtil
@@ -36,15 +33,11 @@ class WarframeController(
     @ResponseBody
     @PostMapping("/wfManage/login")
     fun login(
-        @RequestParam("username") username: String,
-        @RequestParam("password") password: String,
         @RequestParam("itemName") itemName: String,
         @RequestParam("otherName") otherName: String,
     ): WarframeRespBean {
-        if (username == manageUserName && password == managePassword) {
-            wfLexiconService.insertOtherName(itemName, otherName)
-            return WarframeRespBean.info(WarframeRespEnum.SUBMIT_SUCCESS)
-        } else return WarframeRespBean.error(WarframeRespEnum.SUBMIT_ERROR)
+        wfLexiconService.insertOtherName(itemName, otherName)
+        return WarframeRespBean.info(WarframeRespEnum.SUBMIT_SUCCESS)
     }
 
     @RequestMapping("/archonHunt")
