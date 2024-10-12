@@ -67,7 +67,7 @@ QQ官方机器人Api Kotlin 实现 ✨_
    port:  # 端口
    img_bed_path:  #图床地址 无图床可以使用Telegraph-Image（自行搜索搭建，无需服务器），若使用其他图床需要修改 WebImgUtil.kt 中的代码
 
- # 七牛云对象存储配置（七牛云速度较快且有免费额度，如需使用腾讯云等请自行实现配置或联系作者）
+ # 七牛云对象存储配置
  qi_niu:
    cos:
      access_key: "" # 七牛云的AK
@@ -76,6 +76,19 @@ QQ官方机器人Api Kotlin 实现 ✨_
      url: "" # 域名
      path: "" # 路径前缀，如图片在 'img' 文件夹下，则填写 'img/'
      policy_expire: 3600 # token过期时间
+
+# 腾讯云对象存储配置     
+ tencent:
+   cos:
+     secret_id: ""
+     secret_key: ""
+     region: ""
+     bucket: "" # 存储桶
+     url: "" # 域名
+     path: "img/" # 路径前缀
+     policy_expire: 3600
+     code_format: "UTF-8"
+
 
 
  #gensokyo链接配置 可前往gensokyo 官方文档查看配置教程
@@ -95,6 +108,11 @@ QQ官方机器人Api Kotlin 实现 ✨_
 
  ##配置数据源
  spring:
+   # redis配置
+   redis:
+     host: localhost
+     port: 6379
+     password: ""
    thymeleaf:
      prefix: classpath:/templates/
      encoding: UTF-8
@@ -124,7 +142,7 @@ QQ官方机器人Api Kotlin 实现 ✨_
        wall:
          config:
            show-allow: true
-     #3.基础监控配置
+     # 基础监控配置
      web-stat-filter:
        enabled: true
        url-pattern: /*
@@ -141,10 +159,6 @@ QQ官方机器人Api Kotlin 实现 ✨_
        login-password: admin
        allow: 127.0.0.1
 
-     # redis配置
-     redis:
-       host: 127.0.0.1
-       port: 6379
 
 
  # mybatis-plus相关配置
