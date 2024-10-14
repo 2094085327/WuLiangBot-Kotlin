@@ -161,6 +161,13 @@ class WarframeController(
         return incarnonEntity
     }
 
+    @RequestMapping("/incarnonRiven")
+    @ResponseBody
+    @Suppress("UNCHECKED_CAST")
+    fun incarnonRiven(): Map<String, String>? {
+        return redisService.getValue("warframe:incarnonRiven") as Map<String, String>?
+    }
+
     @RequestMapping("/spirals")
     @ResponseBody
     fun spirals(): WfStatusVo.MoodSpiralsEntity? {

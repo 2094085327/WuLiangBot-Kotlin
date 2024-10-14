@@ -623,7 +623,9 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: Context) {
-        if (!redisService.hasKey("warframe:incarnon")) {
+        var incarnon = redisService.getValue("warframe:incarnon", WfStatusVo.IncarnonEntity::class.java)
+
+        if (incarnon == null) {
             val mapper = jacksonObjectMapper()
             // 使用redis缓存后只需要每周从原始数据更新一次数据至当前时间即可
             // 原代码也同样需要更新一次数据，所以可以省略
@@ -681,6 +683,20 @@ class WfStatusController @Autowired constructor(
                 incarnonEntity.remainTime!!.parseDuration(),
                 TimeUnit.SECONDS
             )
+
+            incarnon = incarnonEntity
+        }
+
+        if (!redisService.hasKey("warframe:incarnonRiven")) {
+            // 根据 灵化武器紫卡价格 给出每周推荐武器
+            var incarnonRiven = wfUtil.getIncarnonRiven(incarnon.thisWeekData?.steel)
+            if (incarnonRiven == null) incarnonRiven = mapOf()
+            redisService.setValueWithExpiry(
+                "warframe:incarnonRiven",
+                incarnonRiven,
+                30L,
+                TimeUnit.MINUTES
+            )
         }
 
         val imgData = WebImgUtil.ImgData(
@@ -693,6 +709,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }
+
 
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")

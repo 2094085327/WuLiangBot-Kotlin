@@ -96,7 +96,7 @@ class WfMarketController @Autowired constructor(
 
         val rivenJson = wfUtil.getAuctionsJson(
             parameterList = parameterList,
-            itemEntity = itemEntity,
+            itemEntityUrlName = itemEntity.urlName,
             auctionType = "riven",
         )
 
@@ -152,7 +152,7 @@ class WfMarketController @Autowired constructor(
         val lichJson = wfUtil.getAuctionsJson(
             element = urlElement,
             ephemera = ephemera,
-            itemEntity = itemEntity,
+            itemEntityUrlName = itemEntity.urlName,
             auctionType = "lich",
             lichType = lichType
         )

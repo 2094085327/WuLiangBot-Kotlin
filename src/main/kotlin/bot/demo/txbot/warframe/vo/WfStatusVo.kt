@@ -253,11 +253,4 @@ class WfStatusVo {
         val expiry: String? = null,
         val timeLeft: String? = null
     )
-
-    data class WfManageEntity(
-        val username: String,
-        val password: String,
-        val itemName: String,
-        val otherName: String,
-    )
 }

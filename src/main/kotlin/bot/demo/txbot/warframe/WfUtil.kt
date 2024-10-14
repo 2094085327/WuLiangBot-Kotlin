@@ -8,12 +8,13 @@ import bot.demo.txbot.warframe.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconEntity
-import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -305,7 +306,7 @@ class WfUtil @Autowired constructor(
      * @param parameterList 紫卡参数列表
      * @param element 武器元素
      * @param ephemera 是否有幻纹
-     * @param itemEntity 物品实体类
+     * @param itemEntityUrlName 物品Url名称
      * @param auctionType 拍卖类型
      * @param lichType 玄骸类型
      * @return Json数据
@@ -314,7 +315,7 @@ class WfUtil @Autowired constructor(
         parameterList: List<String>? = null,
         element: String? = null,
         ephemera: String? = null,
-        itemEntity: WfRivenEntity,
+        itemEntityUrlName: String,
         auctionType: String,
         lichType: String? = null
     ): JsonNode? {
@@ -323,13 +324,13 @@ class WfUtil @Autowired constructor(
 
         val queryParams = when (auctionType) {
             "riven" -> {
-                processParameters(parameterList!!.drop(1), positiveStats, negativeStat)
-                createQueryParams(itemEntity.urlName, positiveStats, negativeStat)
+                parameterList?.let { processParameters(it.drop(1), positiveStats, negativeStat) }
+                createQueryParams(itemEntityUrlName, positiveStats, negativeStat)
             }
 
             "lich" -> {
                 val ephemeraBoolean = ephemera?.contains("有")
-                createLichQueryParams(itemEntity.urlName, element = element, ephemera = ephemeraBoolean)
+                createLichQueryParams(itemEntityUrlName, element = element, ephemera = ephemeraBoolean)
             }
 
             else -> return null
@@ -367,7 +368,12 @@ class WfUtil @Autowired constructor(
         }
     }
 
-    data class SteelItem(val name: String? = null, val riven: Double? = null)
+    data class SteelItem(
+        @JsonProperty("name") val name: String? = null,
+        @JsonProperty("riven") val riven: Double? = null,
+        @JsonProperty("url_name") val urlName: String? = null
+    )
+
     data class SteelWeek(
         override val week: Int? = null,
         val items: List<SteelItem>? = null,
@@ -631,4 +637,42 @@ class WfUtil @Autowired constructor(
 
         return timeDifference.toString()
     }
+
+    /**
+     * 获取当前 灵化武器紫卡 的平均价格
+     *
+     * @param incarnonList 本周灵化武器列表
+     * @return Map<String, String>
+     */
+    fun getIncarnonRiven(incarnonList: List<SteelWeek>?): Map<String, String>? = runBlocking {
+        return@runBlocking incarnonList?.get(0)?.items?.map { item ->
+            async(Dispatchers.Default) { getAvg(item) }
+        }?.awaitAll()?.flatMap { it.entries } // 将每个 Map 的 entry 展开为 List<Entry>
+            ?.associate { it.toPair() } // 将 List<Entry> 转换为单一的 Map<String, String>
+    }
+
+    /**
+     * 获取指定物品的平均价格
+     *
+     * @param item 灵化武器
+     * @return Map<String, String>
+     */
+    suspend fun getAvg(item: SteelItem): Map<String, String> = withContext(Dispatchers.IO) {
+        val rivenJson = getAuctionsJson(
+            itemEntityUrlName = item.urlName!!,
+            auctionType = "riven",
+        )
+        // 筛选和格式化拍卖数据
+        rivenJson?.let { formatAuctionData(it, item.name!!) }
+        WfMarket.rivenOrderList
+        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
+            order.startPlatinum
+        } as MutableList
+        startPlatinumList.remove(startPlatinumList.max())
+        startPlatinumList.remove(startPlatinumList.min())
+        val avg = startPlatinumList.average()
+
+        return@withContext mapOf<String, String>((item.name ?: "未知") to String.format("%.2f", avg))
+    }
+
 }
