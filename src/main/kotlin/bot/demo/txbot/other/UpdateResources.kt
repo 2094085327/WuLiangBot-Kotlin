@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
 import javax.annotation.PostConstruct
@@ -194,6 +195,34 @@ class UpdateResources {
                 // 10次尝试均失败，记录错误日志
                 logError("资源更新失败，已达最大重试次数")
             }
+        }
+    }
+
+    @Scheduled(cron = "0 30 2 * * ?")
+    fun timingUpdateResources() {
+        logInfo("定时更新资源启动")
+        val folderPath = RESOURCES_PATH
+        runBlocking {
+            val downloadCheck = otherUtil.downloadFolderFromGitHub(
+                owner,
+                repoName,
+                folderPath,
+                folderPath,
+                accessToken
+            )
+
+            if (!downloadCheck.first) {
+                logWarn("资源更新失败,自动跳过此资源更新")
+                return@runBlocking
+            }
+            logInfo("资源更新完成，本次共更新${downloadCheck.second}个资源")
+            OtherUtil.fileCount = 0
+
+            // 尝试更新卡池数据
+            UpdateGachaResources().getDataMain()
+
+            // 重新初始化原神相关数据
+            InitGenShinData.initGachaLogData()
         }
     }
 
