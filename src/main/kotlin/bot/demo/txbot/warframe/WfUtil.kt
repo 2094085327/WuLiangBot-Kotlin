@@ -664,7 +664,6 @@ class WfUtil @Autowired constructor(
         )
         // 筛选和格式化拍卖数据
         rivenJson?.let { formatAuctionData(it, item.name!!) }
-        WfMarket.rivenOrderList
         val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
             order.startPlatinum
         } as MutableList

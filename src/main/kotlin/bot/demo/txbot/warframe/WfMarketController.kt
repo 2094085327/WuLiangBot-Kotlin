@@ -2,20 +2,21 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
 import bot.demo.txbot.common.utils.WebImgUtil
-import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import bot.demo.txbot.warframe.WfMarketController.WfMarket.lichOrderEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
+import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 
 
@@ -31,10 +32,10 @@ class WfMarketController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfLexiconService: WfLexiconService,
     private val wfRivenService: WfRivenService,
-    @Qualifier("otherUtil") private val otherUtil: OtherUtil
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil,
+    private val redisService: RedisService
 ) {
     object WfMarket {
-        var lichOrderEntity: WfMarketVo.LichEntity? = null
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
 
@@ -149,42 +150,51 @@ class WfMarketController @Autowired constructor(
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
         val lichType = if (itemEntity.urlName.contains("kuva")) "lich" else "sister"
 
-        val lichJson = wfUtil.getAuctionsJson(
-            element = urlElement,
-            ephemera = ephemera,
-            itemEntityUrlName = itemEntity.urlName,
-            auctionType = "lich",
-            lichType = lichType
-        )
+        if (!redisService.hasKey("warframe:lichOrderEntity:${itemEntity.urlName}${damage}${element}${ephemera}")) {
+            val lichJson = wfUtil.getAuctionsJson(
+                element = urlElement,
+                ephemera = ephemera,
+                itemEntityUrlName = itemEntity.urlName,
+                auctionType = "lich",
+                lichType = lichType
+            )
 
-        if (lichJson == null) {
-            context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
-            return
+            if (lichJson == null) {
+                context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
+                return
+            }
+
+            // 筛选和格式化拍卖数据
+            val orders = lichJson["payload"]["auctions"]
+
+            val rivenOrderList = orders.asSequence()
+                .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
+                .take(5)
+                .map { order ->
+                    WfMarketVo.LichOrderInfo(
+                        element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
+                        havingEphemera = order["item"]["having_ephemera"].booleanValue(),
+                        damage = order["item"]["damage"].intValue(),
+                        startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                        buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                    )
+                }.toList()
+
+            val lichOrderEntity = WfMarketVo.LichEntity(
+                lichName = itemEntity.zhName!!,
+                lichOrderInfoList = rivenOrderList,
+            )
+
+            redisService.setValueWithExpiry(
+                "warframe:lichOrderEntity:${itemEntity.urlName}${damage}${element}${ephemera}",
+                lichOrderEntity,
+                60L,
+                TimeUnit.SECONDS
+            )
         }
 
-        // 筛选和格式化拍卖数据
-        val orders = lichJson["payload"]["auctions"]
-
-        val rivenOrderList = orders.asSequence()
-            .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
-            .take(5)
-            .map { order ->
-                WfMarketVo.LichOrderInfo(
-                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
-                    havingEphemera = order["item"]["having_ephemera"].booleanValue(),
-                    damage = order["item"]["damage"].intValue(),
-                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
-                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                )
-            }.toList()
-
-        lichOrderEntity = WfMarketVo.LichEntity(
-            lichName = itemEntity.zhName!!,
-            lichOrderInfoList = rivenOrderList,
-        )
-
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/lich",
+            url = "http://localhost:16666/lich?url_name=${itemEntity.urlName}&damage=${damage}&element=${element}&ephemera=${ephemera}",
             imgName = "lich-${UUID.randomUUID()}",
             element = "body"
         )

@@ -69,11 +69,11 @@ class WfMarketVo {
      * @property buyOutPlatinum 一口价
      */
     data class LichOrderInfo(
-        val element: String,
-        val havingEphemera: Boolean,
-        val damage: Int,
-        val startPlatinum: Int,
-        val buyOutPlatinum: Int,
+        val element: String? = null,
+        val havingEphemera: Boolean? = null,
+        val damage: Int? = null,
+        val startPlatinum: Int? = null,
+        val buyOutPlatinum: Int? = null,
     )
 
     /**
@@ -83,8 +83,8 @@ class WfMarketVo {
      * @property lichOrderInfoList 玄骸武器订单列表
      */
     data class LichEntity(
-        val lichName: String,
-        val lichOrderInfoList: List<LichOrderInfo>
+        val lichName: String? = null,
+        val lichOrderInfoList: List<LichOrderInfo>? = listOf()
     )
 
     /**

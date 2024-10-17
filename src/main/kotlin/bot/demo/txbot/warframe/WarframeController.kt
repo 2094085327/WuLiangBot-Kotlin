@@ -122,8 +122,16 @@ class WarframeController(
 
     @RequestMapping("/lich")
     @ResponseBody
-    fun lich(): WfMarketVo.LichEntity? {
-        return WfMarketController.WfMarket.lichOrderEntity
+    fun lich(
+        @RequestParam("url_name") urlName: String?,
+        @RequestParam("damage") damage: String?,
+        @RequestParam("element") element: String?,
+        @RequestParam("ephemera") ephemera: String?
+    ): WfMarketVo.LichEntity? {
+        return redisService.getValue(
+            "warframe:lichOrderEntity:${urlName}${damage}${element}${ephemera}",
+            WfMarketVo.LichEntity::class.java
+        )
     }
 
     @RequestMapping("/riven")
