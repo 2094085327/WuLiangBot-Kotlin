@@ -253,20 +253,29 @@ class WfUtil @Autowired constructor(
      */
     fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): Boolean {
         val orders = rivenJson["payload"]["auctions"]
-        val allowedStatuses = setOf("online", "ingame", "offline")
         val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
 
         val rivenOrderList = orders.asSequence()
             // 筛选游戏状态为 在线 和 游戏中 的信息
             .filter {
-                it["owner"]["status"].textValue() in allowedStatuses
                 if (reRollTimes != null) it["item"]["re_rolls"].intValue() == reRollTimes else true
+            }
+            // 按照 status 排序，ingame -> online -> offline
+            .sortedBy {
+                when (it["owner"]["status"].textValue()) {
+                    "ingame" -> 0
+                    "online" -> 1
+                    "offline" -> 2
+                    else -> 3
+                }
             }
             .take(5)
             .map { order ->
+                val status = order["owner"]["status"].textValue()
+
                 WfMarketVo.RivenOrderInfo(
                     user = order["owner"]["ingame_name"].textValue(),
-                    userStatus = if (order["owner"]["status"].textValue() == "online") "游戏在线" else "游戏中",
+                    userStatus = if (status == "online") "游戏在线" else if (status == "ingame") "游戏中" else "离线",
                     modName = (order["item"]["weapon_url_name"].textValue() + " " + order["item"]["name"].textValue()).capitalizeSpecial(),
                     modRank = order["item"]["mod_rank"].intValue(),
                     reRolls = order["item"]["re_rolls"].intValue(),

@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.annotation.TableName
  * @author Nature Zero
  * @date 2024/5/21 下午11:23
  */
-@TableName("wfRiven")
+@TableName("wf_riven")
 data class WfRivenEntity(
     /***
      * 词条ID

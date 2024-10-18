@@ -87,7 +87,8 @@ class WfMarketController @Autowired constructor(
         val matchResult = pattern.find(key)
         val reRollTimes = matchResult?.value?.toInt()
 
-        val itemNameKey: String = parameterList.first()
+        val beforeItemNameKey: String = parameterList.first()
+        val itemNameKey = beforeItemNameKey.replace(Regex("信条·|赤毒·|信条|赤毒"), "")
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.searchByRivenLike(itemNameKey).firstOrNull()
             ?: run {
@@ -134,7 +135,8 @@ class WfMarketController @Autowired constructor(
         val matchResult = regex.find(key)
         val damage = matchResult?.value?.toInt()
 
-        val itemNameKey: String = parameterList.first()
+        val beforeItemNameKey: String = parameterList.first()
+        val itemNameKey = beforeItemNameKey.replace(Regex("信条·|赤毒·|信条|赤毒"), "")
         val itemEntity = wfRivenService.turnKeyToUrlNameByLich(itemNameKey)
             ?: wfRivenService.turnKeyToUrlNameByLichLike(itemNameKey).firstOrNull()
             ?: run {
