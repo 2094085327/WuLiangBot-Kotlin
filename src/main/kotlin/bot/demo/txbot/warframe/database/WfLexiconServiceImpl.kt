@@ -204,4 +204,15 @@ class WfLexiconServiceImpl @Autowired constructor(
         lexiconMapper.insertNewOtherName(enName, zhName)
     }
 
+    override fun selectAllOtherName(): List<WfOtherNameEntity> {
+        return lexiconMapper.selectAllOtherName()
+    }
+
+    override fun deleteOtherName(id: Int) {
+        lexiconMapper.deleteOtherNameById(id)
+    }
+
+    override fun updateOtherName(id: Int, otherName: String) {
+        lexiconMapper.updateOtherNameById(id, otherName)
+    }
 }

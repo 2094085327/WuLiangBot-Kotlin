@@ -34,9 +34,27 @@
                                 other_name   = VALUES(other_name);
     </insert>
 
-    <select id="selectEnFromOther" parameterType="java.lang.String"  resultType="java.lang.String">
+    <select id="selectEnFromOther" parameterType="java.lang.String" resultType="java.lang.String">
         select en_item_name
         from wf_other_name
         WHERE LOWER(en_item_name) = LOWER(#{key})
     </select>
+
+    <select id="selectAllOtherName" resultType="bot.demo.txbot.warframe.database.WfOtherNameEntity">
+        select id, en_item_name, other_name
+        from wf_other_name
+        ORDER BY en_item_name
+    </select>
+
+    <delete id="deleteOtherNameById" parameterType="java.lang.Integer">
+        delete
+        from wf_other_name
+        where #{id} = id
+    </delete>
+
+    <update id="updateOtherNameById">
+        update wf_other_name
+        set other_name = #{otherName}
+        where #{id} = id
+    </update>
 </mapper>

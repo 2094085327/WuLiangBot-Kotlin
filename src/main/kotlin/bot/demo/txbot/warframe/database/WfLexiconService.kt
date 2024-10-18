@@ -65,4 +65,25 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @param zhName 中文别名
      */
     fun insertOtherName(enName: String, zhName: String)
+
+    /**
+     * 查询全部的别名
+     *
+     */
+    fun selectAllOtherName(): List<WfOtherNameEntity>
+
+    /**
+     * 根据ID删除别名
+     *
+     * @param id 别名Id
+     */
+    fun deleteOtherName(id: Int)
+
+    /**
+     * 根据ID更新别名
+     *
+     * @param id 别名Id
+     * @param otherName 别名
+     */
+    fun updateOtherName(id: Int, otherName: String)
 }

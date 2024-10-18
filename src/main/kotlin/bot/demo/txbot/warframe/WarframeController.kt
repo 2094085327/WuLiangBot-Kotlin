@@ -2,6 +2,7 @@ package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.database.WfLexiconService
+import bot.demo.txbot.warframe.database.WfOtherNameEntity
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.warframeResp.WarframeRespBean
@@ -31,12 +32,13 @@ class WarframeController(
      * 临时的别名管理页面
      */
     @ResponseBody
-    @PostMapping("/wfManage/login")
+    @PostMapping("/wfManage/setOtherName")
     fun login(
         @RequestParam("itemName") itemName: String,
         @RequestParam("otherName") otherName: String,
     ): WarframeRespBean {
         wfLexiconService.insertOtherName(itemName, otherName)
+        redisService.deleteKey("warframe:allOtherName")
         return WarframeRespBean.info(WarframeRespEnum.SUBMIT_SUCCESS)
     }
 
@@ -191,5 +193,43 @@ class WarframeController(
             TimeUnit.SECONDS
         )
         return moodSpiralsEntity
+    }
+
+    @RequestMapping("/allOtherName")
+    @ResponseBody
+    @Suppress("UNCHECKED_CAST")
+    fun allOtherName(): List<WfOtherNameEntity> {
+        if (redisService.getValue("warframe:allOtherName") == null) {
+            val allOtherName = wfLexiconService.selectAllOtherName()
+            redisService.setValue("warframe:allOtherName", allOtherName)
+            return allOtherName
+        } else return redisService.getValue("warframe:allOtherName") as List<WfOtherNameEntity>
+    }
+
+    @RequestMapping("/deleteOtherName")
+    @ResponseBody
+    fun deleteOtherName(@RequestParam("other_name_id") id: Int): WarframeRespBean {
+        try {
+            wfLexiconService.deleteOtherName(id)
+            redisService.deleteKey("warframe:allOtherName")
+            return WarframeRespBean.success()
+        } catch (e: Exception) {
+            return WarframeRespBean.error(WarframeRespEnum.DELETE_OTHER_NAME_ERROR)
+        }
+    }
+
+    @RequestMapping("/updateOtherName")
+    @ResponseBody
+    fun updateOtherName(
+        @RequestParam("other_name_id") id: Int,
+        @RequestParam("other_name") otherName: String
+    ): WarframeRespBean {
+        try {
+            wfLexiconService.updateOtherName(id, otherName)
+            redisService.deleteKey("warframe:allOtherName")
+            return WarframeRespBean.success()
+        } catch (e: Exception) {
+            return WarframeRespBean.error(WarframeRespEnum.UPDATE_OTHER_NAME_ERROR)
+        }
     }
 }

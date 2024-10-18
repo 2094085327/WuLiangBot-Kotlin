@@ -15,4 +15,10 @@ interface WfLexiconMapper : BaseMapper<WfLexiconEntity?> {
     fun insertNewOtherName(@Param("enItemName") enItemName: String, @Param("otherName") otherName: String)
 
     fun selectEnFromOther(@Param("key") key: String): List<String>
+
+    fun selectAllOtherName(): List<WfOtherNameEntity>
+
+    fun deleteOtherNameById(@Param("id") id: Int)
+
+    fun updateOtherNameById(@Param("id") id: Int, @Param("otherName") zhName: String)
 }
