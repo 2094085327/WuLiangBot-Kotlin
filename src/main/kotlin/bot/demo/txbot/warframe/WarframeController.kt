@@ -3,6 +3,7 @@ package bot.demo.txbot.warframe
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfOtherNameEntity
+import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.warframeResp.WarframeRespBean
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit
 @RequestMapping("/warframe")
 class WarframeController(
     @Autowired val wfLexiconService: WfLexiconService,
+    @Autowired private val wfRivenService: WfRivenService,
     @Autowired private val redisService: RedisService,
     @Autowired private val wfUtil: WfUtil
 ) {
@@ -231,5 +233,13 @@ class WarframeController(
         } catch (e: Exception) {
             return WarframeRespBean.error(WarframeRespEnum.UPDATE_OTHER_NAME_ERROR)
         }
+    }
+
+
+    @RequestMapping("/allRivenPrice")
+    @ResponseBody
+    @Suppress("UNCHECKED_CAST")
+    fun test(): Any? {
+        return redisService.getValue("warframe:rivenRanking") as List<WfMarketVo.RivenRank>
     }
 }

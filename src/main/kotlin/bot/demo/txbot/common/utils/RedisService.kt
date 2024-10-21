@@ -110,4 +110,8 @@ class RedisService {
     fun deleteKey(key: String) {
         redisTemplate.delete(key)
     }
+
+    fun getListKey(prefix: String): MutableSet<String> {
+        return redisTemplate.keys(prefix)
+    }
 }

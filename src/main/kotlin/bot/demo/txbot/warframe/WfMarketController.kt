@@ -98,7 +98,7 @@ class WfMarketController @Autowired constructor(
 
         val rivenJson = wfUtil.getAuctionsJson(
             parameterList = parameterList,
-            itemEntityUrlName = itemEntity.urlName,
+            itemEntityUrlName = itemEntity.urlName!!,
             auctionType = "riven",
         )
 
@@ -150,7 +150,7 @@ class WfMarketController @Autowired constructor(
         val ephemera: String? = otherParams.firstOrNull { it.contains("无") || it.contains("有") }
 
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
-        val lichType = if (itemEntity.urlName.contains("kuva")) "lich" else "sister"
+        val lichType = if (itemEntity.urlName!!.contains("kuva")) "lich" else "sister"
 
         if (!redisService.hasKey("warframe:lichOrderEntity:${itemEntity.urlName}${damage}${element}${ephemera}")) {
             val lichJson = wfUtil.getAuctionsJson(
@@ -201,6 +201,19 @@ class WfMarketController @Autowired constructor(
             element = "body"
         )
 
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
+    }
+
+    @AParameter
+    @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)\\b")
+    fun getRivenRanking(context: Context, matcher: Matcher) {
+        wfUtil.getAllRivenPriceTiming()
+        val imgData = WebImgUtil.ImgData(
+            url = "http://localhost:16666/allRivenPrice",
+            imgName = "allRivenPrice-${UUID.randomUUID()}",
+            element = "body"
+        )
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }

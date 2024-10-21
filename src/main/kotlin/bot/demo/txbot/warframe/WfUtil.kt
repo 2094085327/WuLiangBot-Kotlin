@@ -3,11 +3,14 @@ package bot.demo.txbot.warframe
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logError
+import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconEntity
+import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
@@ -17,10 +20,17 @@ import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 
 /**
@@ -31,6 +41,7 @@ import java.time.temporal.ChronoUnit
 @Component
 class WfUtil @Autowired constructor(
     private val wfRivenService: WfRivenService,
+    private val redisService: RedisService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
 ) {
 
@@ -361,6 +372,26 @@ class WfUtil @Autowired constructor(
         }
     }
 
+
+    /**
+     * 获取紫卡的全部拍卖数据
+     *
+     * @param itemEntityUrlName 物品Url名称
+     */
+    fun getAllRivenJson(
+        itemEntityUrlName: String,
+    ): JsonNode? {
+        val positiveStats = mutableListOf<String>()
+        val negativeStat: String? = null
+
+        val queryParams = createQueryParams(itemEntityUrlName, positiveStats, negativeStat)
+        return HttpUtil.doGetJsonNoLog(
+            WARFRAME_MARKET_RIVEN_AUCTIONS,
+            params = queryParams,
+            headers = generateRandomHeaders()
+        )
+    }
+
     interface Week {
         val week: Int?
         var startTime: String?
@@ -683,4 +714,206 @@ class WfUtil @Autowired constructor(
         return@withContext mapOf<String, String>((item.name ?: "未知") to String.format("%.2f", avg))
     }
 
+
+    /**
+     * 获取全部武器紫卡的平均价格
+     *
+     * @param weaponList 所有武器的列表
+     * @return Map<String, String>
+     */
+//    fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
+//        // 启用线程池
+//        val dispatcher = Executors.newFixedThreadPool(20).asCoroutineDispatcher() // 限制并发数量
+//        val results = weaponList?.chunked((weaponList.size + 9) / 20) // 将列表分割为 20 个部分
+//            ?.map { sublist ->
+//                async(dispatcher) {
+//                    sublist.flatMap { getAvgWithRetry(it).entries }
+//                }
+//            }?.awaitAll()?.flatten() // 合并结果
+//
+//        // 关闭线程池
+//        (dispatcher.executor as? java.util.concurrent.ExecutorService)?.shutdown()
+//        return@runBlocking results?.associate { it.toPair() }
+//    }
+    fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
+        if (weaponList.isNullOrEmpty()) return@runBlocking null
+
+        // 启用线程池
+        val dispatcher = Executors.newFixedThreadPool(20).asCoroutineDispatcher()
+        val results = weaponList.chunked((weaponList.size + 19) / 20) // 将列表分割为 20 个部分
+            .map { sublist ->
+                async(dispatcher) {
+                    sublist.flatMap { getAvgWithRetry(it).entries }
+                }
+            }.awaitAll().flatten() // 合并结果
+
+        // 关闭线程池
+        dispatcher.close() // 直接关闭调度器
+
+        return@runBlocking results.associate { it.toPair() }
+    }
+
+    suspend fun getAvgWithRetry(item: String, retries: Int = 3): Map<String, String> {
+        repeat(retries) { attempt ->
+            try {
+                return getAvg(item) // 尝试获取平均价格
+            } catch (e: Exception) {
+                if (attempt < retries - 1) {
+                    delay(6000 + Random.nextLong(0, 1000)) // 添加随机延迟
+                } else {
+                    return emptyMap() // 如果所有尝试都失败了，返回一个空的 Map
+                }
+            }
+        }
+        return emptyMap() // 保险起见，应该有一个返回
+    }
+
+    /**
+     * 获取指定物品的平均价格
+     * 重写
+     *
+     * @param item 所有武器
+     * @return Map<String, String>
+     */
+    suspend fun getAvg(item: String): Map<String, String> = withContext(Dispatchers.IO) {
+        val rivenJson = getAllRivenJson(itemEntityUrlName = item)
+        rivenJson?.let { formatAuctionData(it, item) }
+        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
+            order.startPlatinum
+        } as MutableList
+        startPlatinumList.remove(startPlatinumList.maxOrNull())
+        startPlatinumList.remove(startPlatinumList.minOrNull())
+        val avg = startPlatinumList.average()
+        return@withContext mapOf(item to String.format("%.2f", avg))
+    }
+
+    /**
+     * 生成随机的请求头
+     *
+     * @return MutableMap<String, Any> 生成的请求头
+     */
+    fun generateRandomHeaders(): MutableMap<String, Any> {
+        val cookie = "JWT=${generateRandomJWT()}"
+        val userAgentRandom = "${
+            Random.nextInt(
+                90,
+                150
+            )
+        }.${Random.nextInt(0, 100)}"
+        val userAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${userAgentRandom}.0.0 Safari/537.36 Edg/${userAgentRandom}.0.0"
+        return mutableMapOf(
+            "Cookie" to cookie,
+            "User-Agent" to userAgent
+        )
+    }
+
+    /**
+     * 生成随机的 JWT
+     *
+     * @return String 生成的随机 JWT
+     */
+    fun generateRandomJWT(): String {
+        val header = """{"alg":"HS256","typ":"JWT"}"""
+        val payload = """{
+        "sub":"${UUID.randomUUID()}",
+        "iat":${System.currentTimeMillis() / 1000},
+        "exp":${(System.currentTimeMillis() / 1000) + 3600},
+        "iss":"your_issuer",
+        "aud":"your_audience"
+    }"""
+
+        val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
+        val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
+
+        val signature = sign("$encodedHeader.$encodedPayload", "your_secret_key")
+
+        return "$encodedHeader.$encodedPayload.$signature"
+    }
+
+    /**
+     * 对数据进行签名
+     *
+     * @param data 待前面数据
+     * @param secret 秘钥
+     * @return String 签名后的数据
+     */
+    fun sign(data: String, secret: String): String {
+        val hmacSha256 = Mac.getInstance("HmacSHA256")
+        val secretKey = SecretKeySpec(secret.toByteArray(), "HmacSHA256")
+        hmacSha256.init(secretKey)
+        val signature = hmacSha256.doFinal(data.toByteArray())
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(signature)
+    }
+
+    /**
+     * 定时更新紫卡数据
+     *
+     */
+    @Scheduled(cron = "0 0 12 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
+    fun getAllRivenPriceTiming() {
+        val isMidnight = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).hour == 0
+        val shouldUpdate = !redisService.hasKey("warframe:rivenRanking") || isMidnight
+        if (shouldUpdate) updateRivenData()
+    }
+
+    /**
+     * 更新紫卡数据
+     *
+     */
+    private fun updateRivenData() {
+        if (redisService.hasKey("warframe:rivenRanking")) return
+
+        val rivenData = wfRivenService.selectAllRivenData()
+        rivenData.forEach {
+            redisService.setValue("warframe:riven:${it.urlName}", it)
+        }
+
+        val urlNameList = redisService.getListKey("warframe:riven:*").map { it.split(":")[2] }
+        val rivenAvgList = redisService.getListKey("warframe:rivenAvg:*").map { it.split(":")[2] }
+        val newList = urlNameList.subtract(rivenAvgList.toSet()).toList()
+        logInfo("开始请求所有紫卡数据....")
+
+        val results = getAllRiven(newList)
+        results?.let { cacheRivenAvg(it) }
+
+        logInfo("全部紫卡数据请求完毕")
+        cacheSortedRivenRanking()
+        System.gc()
+    }
+
+    /**
+     * 缓存排序后的紫卡数据
+     *
+     */
+    private fun cacheSortedRivenRanking() {
+        val rivenAvgValueList = redisService.getListKey("warframe:rivenAvg:*").map { key ->
+            key.split(":")[2] to redisService.getValue(key)
+        }.sortedByDescending { (_, value) -> value.toString().toDouble() }
+
+        val result = rivenAvgValueList.map { (key, value) ->
+            val rivenEntity = redisService.getValue("warframe:riven:$key", WfRivenEntity::class.java)
+            WfMarketVo.RivenRank(
+                name = rivenEntity?.zhName,
+                value = value as String
+            )
+        }
+
+        redisService.setValueWithExpiry("warframe:rivenRanking", result, 60L, TimeUnit.MINUTES)
+    }
+
+    /**
+     *  缓存紫卡平均价格
+     *
+     * @param results 存入Redis的数据
+     */
+    private fun cacheRivenAvg(results: Map<String, Any>) {
+        val now = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
+        val expiryInSeconds = Duration.between(now, now.plusDays(1).withHour(12).withMinute(0).withSecond(0)).seconds
+
+        results.forEach { (key, value) ->
+            redisService.setValueWithExpiry("warframe:rivenAvg:$key", value, expiryInSeconds, TimeUnit.SECONDS)
+        }
+    }
 }

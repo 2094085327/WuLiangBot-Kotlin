@@ -51,13 +51,13 @@ class Restart {
         val (cpuData, ramData) = SystemResourcesMain().resourcesMain()
 
         // 当内存使用率大于80%时重启
-        if (ramData.getUsage() > 80.0) {
-            logInfo("内存使用率大于80%，正在重启...")
+        if (ramData.getUsage() > 70.0) {
+            logInfo("内存使用率大于70%，正在重启...")
             restartFunction()
         }
 
-        if (cpuData.getTotal() > 80.0) {
-            logInfo("cpu使用率大于80%，正在重启...")
+        if (cpuData.getTotal() > 70.0) {
+            logInfo("cpu使用率大于70%，正在重启...")
             restartFunction()
         }
     }

@@ -14,5 +14,10 @@
         url_name = VALUES(url_name)
     </insert>
 
-
+    <select id="selectAllRiven" resultType="bot.demo.txbot.warframe.database.WfRivenEntity">
+        Select id, url_name, en as enName, zh as zhName, r_group, attributes
+        from wf_riven
+        where attributes = 0
+        ORDER BY url_name
+    </select>
 </mapper>

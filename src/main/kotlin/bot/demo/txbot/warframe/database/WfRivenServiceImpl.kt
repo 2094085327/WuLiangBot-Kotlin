@@ -138,4 +138,9 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
         return getWfRivenEntityLike(queryWrapper, key)
     }
 
+
+    override fun selectAllRivenData(): List<WfRivenEntity> {
+        return rivenMapper.selectAllRiven()
+    }
+
 }

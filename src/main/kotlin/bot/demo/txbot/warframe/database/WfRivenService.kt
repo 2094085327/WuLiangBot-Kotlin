@@ -65,4 +65,11 @@ interface WfRivenService : IService<WfRivenEntity?> {
      * @return 查询结果
      */
     fun searchByRivenLike(key: String): List<WfRivenEntity?>
+
+    /**
+     * 获取所有紫卡信息
+     *
+     * @return
+     */
+    fun selectAllRivenData(): List<WfRivenEntity>
 }

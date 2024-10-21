@@ -97,4 +97,12 @@ class WfMarketVo {
         val itemName: String,
         val orderList: List<RivenOrderInfo>
     )
+
+    /**
+     * 全部紫卡价格排行
+     *
+     * @property name 紫卡名称
+     * @property value 价格
+     */
+    data class RivenRank(val name: String? = null, val value: String? = null)
 }
