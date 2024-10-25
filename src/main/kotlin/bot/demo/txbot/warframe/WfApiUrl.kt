@@ -34,13 +34,20 @@ const val WARFRAME_MARKET_RIVEN_ATTRIBUTES = "$WARFRAME_MARKET_BASE_URL/riven/at
 /**
  * Market 紫卡拍卖
  */
-const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=riven"
+const val WARFRAME_MARKET_RIVEN_AUCTIONS_BASE = "$WARFRAME_MARKET_BASE_URL/auctions"
+
+/**
+ * 热门紫卡
+ */
+const val WARFRAME_MARKET_RIVEN_AUCTIONS_HOT = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/popular"
+const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=riven"
+const val WARFRAME_WEEKLY_RIVEN = "https://www-static.warframe.com/repos/weeklyRivensPC.json"
 
 /**
  * Market 玄骸武器拍卖
  */
-const val WARFRAME_MARKET_LICH_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=lich"
-const val WARFRAME_MARKET_SISTER_AUCTIONS = "$WARFRAME_MARKET_BASE_URL/auctions/search?type=sister"
+const val WARFRAME_MARKET_LICH_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=lich"
+const val WARFRAME_MARKET_SISTER_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=sister"
 
 /**
  * 赤毒武器

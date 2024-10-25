@@ -379,17 +379,9 @@ class WfUtil @Autowired constructor(
      * @param itemEntityUrlName 物品Url名称
      */
     fun getAllRivenJson(
-        itemEntityUrlName: String,
+        itemEntityUrlName: String? = null,
     ): JsonNode? {
-        val positiveStats = mutableListOf<String>()
-        val negativeStat: String? = null
-
-        val queryParams = createQueryParams(itemEntityUrlName, positiveStats, negativeStat)
-        return HttpUtil.doGetJsonNoLog(
-            WARFRAME_MARKET_RIVEN_AUCTIONS,
-            params = queryParams,
-            headers = generateRandomHeaders()
-        )
+        return HttpUtil.doGetJsonNoLog(WARFRAME_MARKET_RIVEN_AUCTIONS_BASE)
     }
 
     interface Week {
@@ -721,20 +713,6 @@ class WfUtil @Autowired constructor(
      * @param weaponList 所有武器的列表
      * @return Map<String, String>
      */
-//    fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
-//        // 启用线程池
-//        val dispatcher = Executors.newFixedThreadPool(20).asCoroutineDispatcher() // 限制并发数量
-//        val results = weaponList?.chunked((weaponList.size + 9) / 20) // 将列表分割为 20 个部分
-//            ?.map { sublist ->
-//                async(dispatcher) {
-//                    sublist.flatMap { getAvgWithRetry(it).entries }
-//                }
-//            }?.awaitAll()?.flatten() // 合并结果
-//
-//        // 关闭线程池
-//        (dispatcher.executor as? java.util.concurrent.ExecutorService)?.shutdown()
-//        return@runBlocking results?.associate { it.toPair() }
-//    }
     fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
         if (weaponList.isNullOrEmpty()) return@runBlocking null
 
@@ -850,20 +828,20 @@ class WfUtil @Autowired constructor(
      * 定时更新紫卡数据
      *
      */
-    @Scheduled(cron = "0 0 12 * * ?")
+    @Scheduled(cron = "1 55 11 * * ?")
     @Scheduled(cron = "0 0 0 * * ?")
     fun getAllRivenPriceTiming() {
         val isMidnight = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).hour == 0
         val shouldUpdate = !redisService.hasKey("warframe:rivenRanking") || isMidnight
-        if (shouldUpdate) updateRivenData()
+        if (shouldUpdate) updateRivenData(isMidnight)
     }
 
     /**
      * 更新紫卡数据
      *
      */
-    private fun updateRivenData() {
-        if (redisService.hasKey("warframe:rivenRanking")) return
+    private fun updateRivenData(midnight: Boolean = false) {
+        if (redisService.hasKey("warframe:rivenRanking") && !midnight) return
 
         val rivenData = wfRivenService.selectAllRivenData()
         rivenData.forEach {
@@ -871,7 +849,8 @@ class WfUtil @Autowired constructor(
         }
 
         val urlNameList = redisService.getListKey("warframe:riven:*").map { it.split(":")[2] }
-        val rivenAvgList = redisService.getListKey("warframe:rivenAvg:*").map { it.split(":")[2] }
+        val rivenAvgList =
+            if (!midnight) redisService.getListKey("warframe:rivenAvg:*").map { it.split(":")[2] } else emptyList()
         val newList = urlNameList.subtract(rivenAvgList.toSet()).toList()
         logInfo("开始请求所有紫卡数据....")
 
@@ -910,7 +889,7 @@ class WfUtil @Autowired constructor(
      */
     private fun cacheRivenAvg(results: Map<String, Any>) {
         val now = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
-        val expiryInSeconds = Duration.between(now, now.plusDays(1).withHour(12).withMinute(0).withSecond(0)).seconds
+        val expiryInSeconds = Duration.between(now, now.plusDays(1).withHour(11).withMinute(55).withSecond(0)).seconds
 
         results.forEach { (key, value) ->
             redisService.setValueWithExpiry("warframe:rivenAvg:$key", value, expiryInSeconds, TimeUnit.SECONDS)
