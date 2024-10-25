@@ -9,7 +9,7 @@ package bot.demo.txbot.common.exception
 class RespBean(
     val code: Long = 0,
     var message: String? = null,
-    private val obj: Any? = null
+    val obj: Any? = null
 ) {
 
 
