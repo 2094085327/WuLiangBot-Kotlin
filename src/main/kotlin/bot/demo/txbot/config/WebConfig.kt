@@ -33,6 +33,6 @@ class WebConfig : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
         val interceptorRegistration = registry.addInterceptor(LoginHandlerInterceptor(redisService))
         interceptorRegistration.excludePathPatterns("/asserts/**", "/error/**", "/index.html", "/", "/login/toLogin")
-        interceptorRegistration.addPathPatterns("/restartManage","/warframe/wfManage/**")
+        interceptorRegistration.addPathPatterns("/restartManage","/warframe/wfManage/**","/restartManage","/dailyJson")
     }
 }

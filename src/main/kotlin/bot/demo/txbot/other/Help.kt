@@ -1,13 +1,13 @@
 package bot.demo.txbot.other
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.exception.RespBean
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
@@ -54,9 +54,9 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
 
     @ResponseBody
     @GetMapping("/dailyJson")
-    fun dailyJson(): JsonNode {
+    fun dailyJson(): RespBean {
         val helpJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
-        return helpJson
+        return RespBean.success(helpJson)
     }
 
     @RequestMapping("/dailyActive")
