@@ -18,7 +18,7 @@ data class WfLexiconEntity(
      * 词条ID
      */
     @TableId(value = "id")
-    val id: String,
+    val id: String? = null,
     /**
      * 英文词条名
      */
@@ -33,13 +33,13 @@ data class WfLexiconEntity(
      * 词条URL名
      */
     @TableField("url_name")
-    val urlName: String,
+    val urlName: String? = null,
 
     /**
      * 是否在市场中
      */
     @TableField("in_market")
-    val inMarket: Int,
+    val inMarket: Int? = null,
 
     /**
      * 被使用到的次数

@@ -66,7 +66,7 @@ class WfLexiconServiceImpl @Autowired constructor(
         } else null
     }
 
-    override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity?>? {
+    override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity>? {
         // 移除关键词中的"蓝图"字样以优化匹配
         val cleanZh = zh.replace("总图", "蓝图").replace("蓝图", "")
 
@@ -129,6 +129,7 @@ class WfLexiconServiceImpl @Autowired constructor(
 
         // 获取查询结果
         val resultList = lexiconMapper.selectList(queryWrapper)
+        if (resultList.isNullOrEmpty()) return null
 
         // 找到最大 useCount 用于归一化
         val maxUseCount = resultList.maxOfOrNull { it?.useCount ?: 0 }?.toDouble() ?: 1.0
@@ -143,8 +144,8 @@ class WfLexiconServiceImpl @Autowired constructor(
         // 检查所有finalQueryCoefficient是否相等
         val areAllCoefficientsEqual = coefficients.distinct().size == 1
 
-        val sortedResultList = resultList.sortedByDescending { item ->
-            item?.let {
+        val sortedResultList = resultList.filterNotNull().sortedByDescending { item ->
+            item.let {
                 val itemName = it.zhItemName ?: it.enItemName!!
                 if (itemName.contains("赋能·充沛")) {
                     return@sortedByDescending Double.MAX_VALUE
@@ -163,12 +164,11 @@ class WfLexiconServiceImpl @Autowired constructor(
                 val setBonus = if (itemName.contains("一套")) specialBonus + 2.0 else 0.0
 
                 0.8 * finalQueryCoefficient + 0.1 * specialBonus + 0.1 * setBonus
-            } ?: 0.0
+            }
         }
+        val updateEntity = sortedResultList.first()
 
-
-        val updateEntity = sortedResultList.firstOrNull()
-        updateEntity?.let {
+        updateEntity.let {
             it.useCount = it.useCount?.plus(1)
             lexiconMapper.updateById(it)
         }

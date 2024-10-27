@@ -498,7 +498,7 @@ class WfStatusController @Autowired constructor(
             redisService.setValueWithExpiry(
                 "warframe:cetusCycle",
                 wordStatus,
-                wordStatus.timeLeft!!.parseDuration(),
+                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),// 似乎在一定条件下剩余时间会变为负数产生报错
                 TimeUnit.SECONDS
             )
         }
@@ -523,7 +523,7 @@ class WfStatusController @Autowired constructor(
             redisService.setValueWithExpiry(
                 "warframe:earthCycle",
                 wordStatus,
-                wordStatus.timeLeft!!.parseDuration(),
+                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
             )
         }
@@ -548,7 +548,7 @@ class WfStatusController @Autowired constructor(
             redisService.setValueWithExpiry(
                 "warframe:venusStatus",
                 wordStatus,
-                wordStatus.timeLeft!!.parseDuration(),
+                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
             )
         }

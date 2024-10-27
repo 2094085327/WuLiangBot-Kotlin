@@ -8,6 +8,7 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
+import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
@@ -49,31 +50,31 @@ class WfMarketController @Autowired constructor(
 
         // 移除匹配到的部分并去除多余的空格
         val cleanKey = matchResult?.let { key.replace("${it.value}级", "").replace("满级", "").trim() } ?: key
-        val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(cleanKey)
+        val redisKey = "warframe:lexicon:$cleanKey"
 
-        if (itemEntity != null) {
-            wfUtil.sendMarketItemInfo(context, itemEntity, level)
+        // 尝试从Redis获取数据
+        val lexiconEntity = redisService.getValue(redisKey, WfLexiconEntity::class.java)
+        if (lexiconEntity != null) {
+            wfUtil.sendMarketItemInfo(context, lexiconEntity, level)
             return
         }
 
-        val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(cleanKey)
-        if (!keyList.isNullOrEmpty()) {
-            wfUtil.sendMarketItemInfo(context, keyList.first()!!, level)
-            return
-        }
-
-        val fuzzyList = mutableListOf<String>()
-        key.forEach { eachKey ->
-            wfLexiconService.fuzzyQuery(eachKey.toString())?.forEach {
-                it?.zhItemName?.let { name -> fuzzyList.add(name) }
+        // Redis中没有数据，从数据库中查询
+        val itemEntity = wfUtil.fetchItemEntity(cleanKey)
+            ?: run {
+                // 模糊查询
+                val fuzzyList = key.flatMap { eachKey ->
+                    wfLexiconService.fuzzyQuery(eachKey.toString())?.mapNotNull { it?.zhItemName } ?: emptyList()
+                }
+                if (fuzzyList.isNotEmpty()) {
+                    otherUtil.findMatchingStrings(key, fuzzyList).let {
+                        context.sendMsg(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
+                    }
+                } else context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                return
             }
-        }
-
-        if (fuzzyList.isNotEmpty()) {
-            otherUtil.findMatchingStrings(key, fuzzyList).let {
-                context.sendMsg(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
-            }
-        } else context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+        wfUtil.sendMarketItemInfo(context, itemEntity, level)
+        return
     }
 
     @AParameter

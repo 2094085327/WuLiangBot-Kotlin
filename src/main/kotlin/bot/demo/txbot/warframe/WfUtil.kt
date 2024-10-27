@@ -10,6 +10,7 @@ import bot.demo.txbot.warframe.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfLexiconEntity
+import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.vo.WfMarketVo
@@ -42,6 +43,7 @@ import kotlin.random.Random
 class WfUtil @Autowired constructor(
     private val wfRivenService: WfRivenService,
     private val redisService: RedisService,
+    private val wfLexiconService: WfLexiconService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
 ) {
 
@@ -894,5 +896,28 @@ class WfUtil @Autowired constructor(
         results.forEach { (key, value) ->
             redisService.setValueWithExpiry("warframe:rivenAvg:$key", value, expiryInSeconds, TimeUnit.SECONDS)
         }
+    }
+
+    /**
+     * 根据物品名称获取物品数据
+     *
+     * @param key
+     * @return WfLexiconEntity 查询到的物品数据
+     */
+    fun fetchItemEntity(key: String): WfLexiconEntity? {
+        val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(key)
+        if (itemEntity != null) {
+            redisService.setValueWithExpiry(key, itemEntity, 30L, TimeUnit.DAYS)
+            return itemEntity
+        }
+
+        val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(key)
+        if (!keyList.isNullOrEmpty()) {
+            val firstItemEntity = keyList.first()
+            redisService.setValueWithExpiry(key, firstItemEntity, 30L, TimeUnit.DAYS)
+            return firstItemEntity
+        }
+
+        return null
     }
 }
