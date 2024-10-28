@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import java.io.File
 import java.util.*
 
+
 @Controller
 @Component
 @ActionService
@@ -98,9 +99,9 @@ class Restart {
 
     @GetMapping("/getRestartConfig")
     @ResponseBody
-    fun getRestartConfig(): JsonNode {
+    fun getRestartConfig(): RespBean {
         val restartFile = File(RESTART_CONFIG)
-        return objectMapper.readTree(restartFile)
+        return RespBean.success(objectMapper.readTree(restartFile))
     }
 
     fun restartFunction() {
@@ -113,8 +114,7 @@ class Restart {
         val scriptPath = if (osName.contains("win")) System.getProperty("user.dir") + "\\restart.bat"
         else System.getProperty("user.dir") + "/restart.sh" // 如果是Linux系统
 
-        val restartConfig = getRestartConfig()
-
+        val restartConfig = getRestartConfig().obj as JsonNode
         val command = arrayOf(scriptPath, restartConfig["jar_file"].textValue(), "app.log")
         // 执行Shell脚本或批处理文件
         runBlocking {
@@ -147,7 +147,7 @@ class Restart {
         }
     }
 
-    @PostMapping("/restartManage")
+    @GetMapping("/restartManage")
     @ResponseBody
     fun restartManage(): RespBean {
         logInfo("手动重启程序")
@@ -155,11 +155,10 @@ class Restart {
         return RespBean.success()
     }
 
-    @PostMapping("/ping")
+    @GetMapping("/ping")
     @ResponseBody
     fun ping(): RespBean {
         // 服务器状态是否正常
         return RespBean.success()
     }
-
 }

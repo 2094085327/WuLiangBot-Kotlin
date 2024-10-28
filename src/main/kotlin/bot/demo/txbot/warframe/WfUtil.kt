@@ -907,14 +907,14 @@ class WfUtil @Autowired constructor(
     fun fetchItemEntity(key: String): WfLexiconEntity? {
         val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(key)
         if (itemEntity != null) {
-            redisService.setValueWithExpiry(key, itemEntity, 30L, TimeUnit.DAYS)
+            redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
             return itemEntity
         }
 
         val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(key)
         if (!keyList.isNullOrEmpty()) {
             val firstItemEntity = keyList.first()
-            redisService.setValueWithExpiry(key, firstItemEntity, 30L, TimeUnit.DAYS)
+            redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
             return firstItemEntity
         }
 

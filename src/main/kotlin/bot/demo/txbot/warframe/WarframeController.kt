@@ -1,5 +1,6 @@
 package bot.demo.txbot.warframe
 
+import bot.demo.txbot.common.exception.RespBean
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfOtherNameEntity
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
 @Controller
 @RequestMapping("/warframe")
 class WarframeController(
-    @Autowired val wfLexiconService: WfLexiconService,
+    @Autowired private val wfLexiconService: WfLexiconService,
     @Autowired private val wfRivenService: WfRivenService,
     @Autowired private val redisService: RedisService,
     @Autowired private val wfUtil: WfUtil
@@ -200,12 +201,12 @@ class WarframeController(
     @RequestMapping("/allOtherName")
     @ResponseBody
     @Suppress("UNCHECKED_CAST")
-    fun allOtherName(): List<WfOtherNameEntity> {
+    fun allOtherName(): RespBean {
         if (redisService.getValue("warframe:allOtherName") == null) {
             val allOtherName = wfLexiconService.selectAllOtherName()
             redisService.setValue("warframe:allOtherName", allOtherName)
-            return allOtherName
-        } else return redisService.getValue("warframe:allOtherName") as List<WfOtherNameEntity>
+            return RespBean.success(allOtherName)
+        } else return RespBean.success(redisService.getValue("warframe:allOtherName") as List<WfOtherNameEntity>)
     }
 
     @RequestMapping("/deleteOtherName")
