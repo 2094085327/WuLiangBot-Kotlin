@@ -3,6 +3,7 @@ package bot.demo.txbot.other
 const val RESOURCES_PATH = "resources" // 资源路径
 
 const val IMG_CACHE_PATH = "$RESOURCES_PATH/imageCache" // 图片缓存路径
+const val FILE_CACHE_PATH = "$RESOURCES_PATH/fileCache" // 文件缓存路径
 const val RESOURCES_OTHER = "$RESOURCES_PATH/others" // 其他资源路径
 const val HELP_JSON = "$RESOURCES_OTHER/help.json" // 帮助配置文件路径
 const val DAILY_ACTIVE_PATH = "$RESOURCES_OTHER/daily_active.json" // 日活数据路径

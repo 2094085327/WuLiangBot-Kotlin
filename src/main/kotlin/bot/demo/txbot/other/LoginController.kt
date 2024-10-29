@@ -41,16 +41,29 @@ class LoginController(
             val ticket = UUID.randomUUID().toString().replace("-", "")
 
             // 将ticket存储到cookie中
-            CookieUtil.setCookie(httpServletRequest, httpServletResponse!!, "userTicket", ticket)
+            CookieUtil.setCookie(
+                httpServletRequest,
+                httpServletResponse!!,
+                "userTicket",
+                ticket,
+                cookieMaxAge = 30 * 24 * 60 * 60
+            )
 
             val userVo = UserVo(
                 account = username,
                 password = password
             )
             // 将用户对象存储到redis中
-            redisService.setValueWithExpiry("users:$ticket", userVo,30,TimeUnit.DAYS)
+            redisService.setValueWithExpiry("users:$ticket", userVo, 30, TimeUnit.DAYS)
             return RespBean.success(ticket)
         } else return RespBean.error(RespBeanEnum.LOGIN_ERROR)
+    }
+
+    @PostMapping("/checkUserTicket")
+    @ResponseBody
+    fun checkUserTicket(@RequestParam("userTicket") userTicket: String): RespBean {
+       if (redisService.hasKey("users:$userTicket")) return RespBean.success()
+       return RespBean.error(RespBeanEnum.NO_USER)
     }
 
 }

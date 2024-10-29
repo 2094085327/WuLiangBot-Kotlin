@@ -17,11 +17,12 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.*
 
 
@@ -88,7 +89,6 @@ class Restart {
     @PostMapping("/choseJar")
     @ResponseBody
     fun choseJar(@RequestParam("jar_name") jarName: String): RespBean {
-        println(jarName)
         val restartFile = File(RESTART_CONFIG)
         val restartConfig = objectMapper.readTree(restartFile) as ObjectNode
         // 修改重启配置文件为 jarName
@@ -161,4 +161,88 @@ class Restart {
         // 服务器状态是否正常
         return RespBean.success()
     }
+
+    @PostMapping("/cancelUpload")
+    @ResponseBody
+    fun cancelUpload(@RequestBody params: Map<String, String>) {
+        // 处理取消上传,清理临时文件
+        val folder = params["folder"]
+        val folderDir = File(FILE_CACHE_PATH, folder!!)
+        folderDir.listFiles()?.forEach { chunkFile ->
+            chunkFile.delete() // 删除切片文件
+        }
+        folderDir.delete()
+    }
+
+    @PostMapping("/mergeUpload")
+    @ResponseBody
+    fun mergeUpload(@RequestBody params: Map<String, String>): RespBean {
+        val folder = params["folder"]
+        val folderDir = File(FILE_CACHE_PATH, folder!!)
+
+        // 获取完整文件的目标路径
+        val mergedFile = File(".", "$folder.jar") // 合并后的文件名可以自定义
+
+        try {
+            FileOutputStream(mergedFile).use { fos ->
+                // 列出目录下的所有切片文件
+                val chunkFiles = folderDir.listFiles { _, name -> name.endsWith(".part") } // 切片文件以 .part 结尾
+
+                // 检查切片文件是否存在
+                if (chunkFiles == null || chunkFiles.isEmpty()) {
+                    return RespBean.error(RespBeanEnum.FILE_MERGE_FAIL) // 返回未找到切片的错误
+                }
+
+                // 排序以确保按顺序合并
+                Arrays.sort(chunkFiles, Comparator.comparingInt { file ->
+                    val fileName = file.name
+                    fileName.substring(fileName.lastIndexOf('_') + 1, fileName.lastIndexOf('.')).toInt()
+                })
+
+                // 依次读取每个切片并写入合并文件
+                for (chunkFile in chunkFiles) {
+                    FileInputStream(chunkFile).use { fis ->
+                        fis.copyTo(fos) // 使用 copyTo 方法将内容写入合并文件
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            return RespBean.error(RespBeanEnum.FILE_MERGE_FAIL)
+        }
+
+        // 合并完成后，删除切片文件
+        folderDir.listFiles()?.forEach { chunkFile ->
+            chunkFile.delete() // 删除切片文件
+        }
+        folderDir.delete()
+
+        return RespBean.success()
+    }
+
+    @PostMapping("/uploadChunk")
+    @ResponseBody
+    fun uploadChunk(
+        @RequestParam file: MultipartFile,
+        @RequestParam fileName: String?,
+        @RequestParam folder: String,
+        @RequestParam(required = false) encrypt: String?
+    ): RespBean {
+        try {
+            // 创建切片存储目录
+            val folderDir = File(FILE_CACHE_PATH, folder)
+            if (!folderDir.exists()) {
+                folderDir.mkdirs()
+            }
+
+            // 保存切片文件
+            val chunkFile = File(folderDir, file.originalFilename!!)
+            FileOutputStream(chunkFile, true).use { fos ->
+                fos.write(file.bytes)
+            }
+            return RespBean.success()
+        } catch (e: IOException) {
+            return RespBean.error(RespBeanEnum.JAR_UPLOAD_FAIL)
+        }
+    }
+
 }
