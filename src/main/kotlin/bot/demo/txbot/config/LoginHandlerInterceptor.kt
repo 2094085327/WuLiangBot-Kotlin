@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse
 class LoginHandlerInterceptor(
     private var redisService: RedisService
 ) : HandlerInterceptor {
-    private     val objectMapper = ObjectMapper()
+    private val objectMapper = ObjectMapper()
 
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
         // 1、从请求头中获取token

@@ -1,5 +1,8 @@
 package bot.demo.txbot.common.botUtil
 
+import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealId
+import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealUserId
+import bot.demo.txbot.other.vo.ContextVo
 import com.mikuac.shiro.core.Bot
 import com.mikuac.shiro.dto.action.common.ActionData
 import com.mikuac.shiro.dto.action.common.ActionRaw
@@ -19,6 +22,27 @@ import org.springframework.stereotype.Component
 @Aspect
 @Component
 class BotUtils {
+    object ContextUtil {
+
+        /**
+         * Context解析
+         */
+        fun Context.createContextVo(): ContextVo {
+            val event = this.getEvent()
+
+            return ContextVo(
+                messageType = when (event.messageType) {
+                    "group" -> "群聊"
+                    "private" -> "私聊"
+                    else -> "未知"
+                },
+                groupId = event.getRealId(),
+                userId = event.getRealUserId(),
+                botId = this.getBot().selfId
+            )
+        }
+    }
+
     fun <T : MessageEvent> initialize(event: T, bot: Bot): Context {
         return Context(event, bot)
     }

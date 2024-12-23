@@ -6,11 +6,10 @@ import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.other.vo.UserVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.RestController
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.servlet.http.HttpServletRequest
@@ -22,7 +21,7 @@ import javax.servlet.http.HttpServletResponse
  * @author Nature Zero
  * @date 2024/10/11 23:08
  */
-@Controller
+@RestController
 @RequestMapping("/login")
 class LoginController(
     @Value("\${wuLiang.config.userName}") val manageUserName: String,
@@ -30,7 +29,6 @@ class LoginController(
     @Autowired val redisService: RedisService,
 ) {
     @PostMapping("/toLogin")
-    @ResponseBody
     fun toLogin(
         @RequestParam("username") username: String,
         @RequestParam("password") password: String,
@@ -60,10 +58,9 @@ class LoginController(
     }
 
     @PostMapping("/checkUserTicket")
-    @ResponseBody
     fun checkUserTicket(@RequestParam("userTicket") userTicket: String): RespBean {
-       if (redisService.hasKey("users:$userTicket")) return RespBean.success()
-       return RespBean.error(RespBeanEnum.NO_USER)
+        if (redisService.hasKey("users:$userTicket")) return RespBean.success()
+        return RespBean.error(RespBeanEnum.NO_USER)
     }
 
 }

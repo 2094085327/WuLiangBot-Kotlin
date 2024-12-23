@@ -1,6 +1,7 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.turnZhHans
 import bot.demo.txbot.common.utils.RedisService
@@ -138,6 +139,7 @@ class WfStatusController @Autowired constructor(
         redisService.setValueWithExpiry("warframe:${typeMap[type]}", thisFissureList, 1L, TimeUnit.MINUTES)
     }
 
+    @SystemLog(businessName = "获取普通裂缝信息")
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(context: Context) {
@@ -158,6 +160,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取钢铁裂缝信息")
     @AParameter
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(context: Context) {
@@ -178,6 +181,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取九重天裂缝信息")
     @AParameter
     @Executor(action = "九重天")
     fun getEmpyreanFissures(context: Context) {
@@ -198,6 +202,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取奸商信息")
     @AParameter
     @Executor(action = "奸商")
     fun findVoidTrader(context: Context) {
@@ -272,6 +277,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取钢铁之路兑换信息")
     @AParameter
     @Executor(action = "钢铁")
     fun getSteelPath(context: Context) {
@@ -322,6 +328,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取日突击信息")
     @AParameter
     @Executor(action = "突击")
     fun getSortie(context: Context) {
@@ -365,6 +372,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取执刑官信息")
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: Context) {
@@ -418,6 +426,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取午夜电波信息")
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
     fun getNightWave(context: Context) {
@@ -466,6 +475,7 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取火卫二循环信息")
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     fun phobosStatus(context: Context?): String {
@@ -488,6 +498,7 @@ class WfStatusController @Autowired constructor(
         } else sendMsg
     }
 
+    @SystemLog(businessName = "获取夜灵平原昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(context: Context?): String {
@@ -513,6 +524,7 @@ class WfStatusController @Autowired constructor(
         } else sendMsg
     }
 
+    @SystemLog(businessName = "获取地球昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
     fun earthCycle(context: Context?): String {
@@ -538,6 +550,7 @@ class WfStatusController @Autowired constructor(
         } else sendMsg
     }
 
+    @SystemLog(businessName = "获取金星冷热循环信息")
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
     fun venusStatus(context: Context?): String {
@@ -562,6 +575,7 @@ class WfStatusController @Autowired constructor(
         } else sendMsg
     }
 
+    @SystemLog(businessName = "获取全部平原循环信息")
     @AParameter
     @Executor(action = "\\b(平原|全部平原|平原时间)\\b")
     fun allPlain(context: Context) {
@@ -580,6 +594,7 @@ class WfStatusController @Autowired constructor(
         context.sendMsg(allStatus)
     }
 
+    @SystemLog(businessName = "获取入侵列表")
     @AParameter
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: Context) {
@@ -620,6 +635,7 @@ class WfStatusController @Autowired constructor(
         System.gc()
     }
 
+    @SystemLog(businessName = "获取本周灵化信息")
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: Context) {
@@ -710,7 +726,7 @@ class WfStatusController @Autowired constructor(
         System.gc()
     }
 
-
+    @SystemLog(businessName = "获取双衍平原状态信息")
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
     fun moodSpirals(context: Context) {

@@ -295,6 +295,18 @@
             <version>${kotlin.version}</version>
         </dependency>
 
+        <!--  MongoDB数据库  -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <!--mongodb Java驱动-->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.12.10</version>
+        </dependency>
+
     </dependencies>
 
     <build>

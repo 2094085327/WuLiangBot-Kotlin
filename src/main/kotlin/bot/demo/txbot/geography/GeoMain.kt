@@ -1,6 +1,7 @@
 package bot.demo.txbot.geography
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
@@ -23,6 +24,7 @@ class GeoMain(
     @Autowired private val geoApi: GetGeoApi,
     @Autowired val webImgUtil: WebImgUtil
 ) {
+    @SystemLog(businessName = "获取城市天气信息")
     @AParameter
     @Executor(action = "\\b^天气\\s(\\S+)")
     fun getWeatherImg(context: Context, matcher: Matcher) {
@@ -48,6 +50,7 @@ class GeoMain(
         System.gc()
     }
 
+    @SystemLog(businessName = "获取城市地理信息")
     @AParameter
     @Executor(action = "\\b^地理\\s(\\S+)")
     fun getGeoImg(context: Context, matcher: Matcher) {

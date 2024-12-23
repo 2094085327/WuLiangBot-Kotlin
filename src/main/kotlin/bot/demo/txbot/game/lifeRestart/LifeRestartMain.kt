@@ -1,8 +1,9 @@
 package bot.demo.txbot.game.lifeRestart
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.JacksonUtil
-import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealUserId
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.game.lifeRestart.datebase.LifeRestartService
@@ -278,6 +279,7 @@ class LifeRestartMain(
         }
     }
 
+    @SystemLog(businessName = "人生重开游戏开始")
     @AParameter
     @Executor(action = "重开")
     fun startRestart(context: Context) {
@@ -288,7 +290,7 @@ class LifeRestartMain(
             return
         }
 
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealUserId()
 
         val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
         val userInfo = LifeRestartUtil.UserInfo(
@@ -316,10 +318,11 @@ class LifeRestartMain(
         webImgUtil.deleteImg(imageData)
     }
 
+    @SystemLog(businessName = "选择人生重开游戏天赋")
     @AParameter
     @Executor(action = "天赋 (.*)")
     fun getTalent(context: Context, matcher: Matcher) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealUserId()
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = errorState(userInfo, OperationType.CHOOSE_TALENT)
@@ -351,10 +354,11 @@ class LifeRestartMain(
         }
     }
 
+    @SystemLog(businessName = "随机分配人生重开游戏属性")
     @AParameter
     @Executor(action = "随机")
     fun randomAttribute(context: Context, matcher: Matcher) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealUserId()
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = errorState(userInfo, OperationType.UNALLOCATED)
@@ -386,10 +390,11 @@ class LifeRestartMain(
         updateAndSend(context, userInfo, realId, RestartRespEnum.CONTINUER_SUCCESS.message)
     }
 
+    @SystemLog(businessName = "手动分配人生重开游戏属性")
     @AParameter
     @Executor(action = "分配 (.*)")
     fun dealAttribute(context: Context, matcher: Matcher) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealUserId()
         val userInfo = restartUtil.findUserInfo(realId)
 
 
@@ -432,10 +437,11 @@ class LifeRestartMain(
         updateAndSend(context, userInfo, realId, RestartRespEnum.CONTINUER_SUCCESS.message)
     }
 
+    @SystemLog(businessName = "继续下一步人生重开游戏")
     @AParameter
     @Executor(action = "继续(.*)")
     fun continueGame(context: Context, matcher: Matcher) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealUserId()
         val userInfo = restartUtil.findUserInfo(realId)
 
         // 判断错误状态

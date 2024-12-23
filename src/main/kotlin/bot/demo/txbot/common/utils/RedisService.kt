@@ -61,11 +61,6 @@ class RedisService {
         redisTemplate.opsForValue()[key, value, timeout] = timeUnit
     }
 
-    // 作用: 从 Redis 中删除指定键及其对应的值
-    fun deleteValue(key: String) {
-        redisTemplate.delete(key)
-    }
-
     fun incrementValue(key: String): Int? {
         return Objects.requireNonNull(redisTemplate.opsForValue().increment(key))?.toInt()
     }
@@ -107,6 +102,7 @@ class RedisService {
         return false
     }
 
+    // 作用: 从 Redis 中删除指定键及其对应的值
     fun deleteKey(key: String) {
         redisTemplate.delete(key)
     }

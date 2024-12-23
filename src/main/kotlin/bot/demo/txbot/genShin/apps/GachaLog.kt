@@ -2,9 +2,10 @@ package bot.demo.txbot.genShin.apps
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.database.user.UserService
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
-import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealId
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.genShin.database.gachaLog.GaChaLogService
 import bot.demo.txbot.genShin.genshinResp.GenshinRespBean
@@ -223,12 +224,14 @@ class GachaLog(
 //            Thread.sleep(500)
 //        }
 //    }
+
+    @SystemLog(businessName = "获取当前用户抽卡历史记录")
     @AParameter
     @Executor(action = "历史记录(.*)")
     fun recordQuery(context: Context, matcher: Matcher) {
         context.sendMsg(GenshinRespEnum.SEARCH_HISTORY.message)
         updateGachaResources.getDataMain()
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealId()
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
         val gameUid = gameUidFromMatcher.takeIf { it?.isNotEmpty() == true }
             ?: userService.selectGenUidByRealId(realId)
@@ -251,10 +254,11 @@ class GachaLog(
         System.gc()
     }
 
+    @SystemLog(businessName = "删除保存的历史记录")
     @AParameter
     @Executor(action = "删除记录")
     fun deleteGachaLog(context: Context) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealId()
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
@@ -273,12 +277,12 @@ class GachaLog(
         } ?: context.sendMsg(GenshinRespEnum.NO_USER_RECORD.message)
     }
 
-
+    @SystemLog(businessName = "通过二维码获取抽卡记录")
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "\\b抽卡记录\\b")
     fun getGachaLog(context: Context) {
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealId()
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
 
@@ -331,6 +335,7 @@ class GachaLog(
 
     }
 
+    @SystemLog(businessName = "向机器人发送抽卡连接获取抽卡记录")
     @AParameter
     @Executor(action = "抽卡记录\\s*(\\S.*)")
     fun getGachaLogByUrlGroup(context: Context, matcher: Matcher) {
@@ -364,7 +369,7 @@ class GachaLog(
 
             "0" -> {
                 context.sendMsg(GenshinRespEnum.LINK_SUCCESS.message)
-                val realId = OtherUtil().getRealId(context.getEvent())
+                val realId = context.getEvent().getRealId()
                 MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
 
                 getData(processingUrl)
@@ -418,6 +423,7 @@ class GachaLog(
         }
     }
 
+    @SystemLog(businessName = "导入通用抽卡记录数据")
     @AParameter
     @Executor(action = "导入记录")
     fun getGachaLogByUrlGroup(context: Context) {
@@ -426,6 +432,7 @@ class GachaLog(
         context.sendMsg(importState.message)
     }
 
+    @SystemLog(businessName = "获取抽卡链接指令")
     @AParameter
     @Executor(action = "抽卡链接")
     fun getGachaLogUrl(context: Context) {

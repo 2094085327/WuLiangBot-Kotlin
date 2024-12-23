@@ -3,7 +3,7 @@
 <mapper namespace="bot.demo.txbot.warframe.database.WfRivenMapper">
 
     <insert id="insertOrUpdateBatch" parameterType="java.util.List">
-        INSERT INTO wfRiven (id, url_name, en , zh, r_group,attributes) VALUES
+        INSERT INTO wf_riven (id, url_name, en , zh, r_group,attributes) VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.id}, #{item.urlName}, #{item.enName}, #{item.zhName}, #{item.rGroup}, #{item.attributesBool})
         </foreach>

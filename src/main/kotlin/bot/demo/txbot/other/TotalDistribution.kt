@@ -7,6 +7,7 @@ import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
+import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealId
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
@@ -192,7 +193,7 @@ class TotalDistribution(
         val context = BotUtils().initialize(event, bot)
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
         todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
-        val realId = OtherUtil().getRealId(context.getEvent())
+        val realId = context.getEvent().getRealId()
 
         // 将 usersNode 转换为一个可变列表
         val usersNode = dailyActiveJson["users"] as ArrayNode

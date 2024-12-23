@@ -830,8 +830,7 @@ class WfUtil @Autowired constructor(
      * 定时更新紫卡数据
      *
      */
-    @Scheduled(cron = "1 55 11 * * ?")
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 * * * ?")
     fun getAllRivenPriceTiming() {
         val isMidnight = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).hour == 0
         val shouldUpdate = !redisService.hasKey("warframe:rivenRanking") || isMidnight

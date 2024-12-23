@@ -1,6 +1,7 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
@@ -246,6 +247,7 @@ class WfTranslateLexicon {
     }
 
 
+    @SystemLog(businessName = "更新Warframe词库")
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "更新词库")

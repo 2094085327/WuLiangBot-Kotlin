@@ -4,6 +4,7 @@ import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.houbb.opencc4j.util.ZhConverterUtil
+import com.mikuac.shiro.dto.event.message.GroupMessageEvent
 import com.mikuac.shiro.dto.event.message.MessageEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -45,16 +46,29 @@ class OtherUtil {
         gskPort = gensokyoPort
     }
 
-    /**
-     * 获取真实ID
-     *
-     * @param event 任意消息事件
-     * @return 真实ID
-     */
-    fun getRealId(event: MessageEvent): String {
-        val fictitiousId = event.userId
-        return HttpUtil.doGetJson("http://localhost:$gskPort/getid?type=2&id=$fictitiousId")["id"].textValue()
+    object GensokyoUtil {
+        /**
+         * 根据事件类型获取真实ID
+         *
+         * @return 真实ID
+         */
+        fun MessageEvent.getRealId(): String {
+            val fictitiousId = if (this.messageType == "group") {
+                this as GroupMessageEvent
+                this.groupId
+            } else this.userId
+            return getRealIdFromServer(fictitiousId)
+        }
+
+        fun MessageEvent.getRealUserId(): String {
+            return getRealIdFromServer(this.userId)
+        }
+
+        private fun getRealIdFromServer(id: Long): String {
+            return HttpUtil.doGetJson("http://localhost:$gskPort/getid?type=2&id=$id")["id"].textValue()
+        }
     }
+
 
     /**
      * 从GitHub下载或更新资源

@@ -1,6 +1,7 @@
 package bot.demo.txbot.genShin.apps
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.genShin.genshinResp.GenshinRespEnum
 import bot.demo.txbot.genShin.util.InitGenShinData
 import bot.demo.txbot.genShin.util.InitGenShinData.Companion.poolData
@@ -15,6 +16,7 @@ import java.util.regex.Matcher
 @Component
 @ActionService
 class Gacha {
+    @SystemLog(businessName = "获取原神全部可用卡池")
     @AParameter
     @Executor(action = "全部卡池")
     fun allPool(context: Context) {
@@ -53,6 +55,7 @@ class Gacha {
         return Triple("", "", "")
     }
 
+    @SystemLog(businessName = "启用模拟抽卡卡池")
     @AParameter
     @Executor(action = "\\b^启用卡池\\s*(\\S+)")
     fun setOpenPool(context: Context, matcher: Matcher) {
@@ -77,6 +80,7 @@ class Gacha {
         InitGenShinData.initGachaLogData()
     }
 
+    @SystemLog(businessName = "模拟抽卡十连")
     @AParameter
     @Executor(action = "十连")
     fun gacha(context: Context) {

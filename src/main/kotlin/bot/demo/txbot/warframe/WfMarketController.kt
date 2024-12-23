@@ -1,6 +1,7 @@
 package bot.demo.txbot.warframe
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.common.utils.UrlUtil.urlEncode
@@ -40,6 +41,7 @@ class WfMarketController @Autowired constructor(
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
 
+    @SystemLog(businessName = "获取WM市场物品信息")
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
     fun getMarketItem(context: Context, matcher: Matcher) {
@@ -77,6 +79,7 @@ class WfMarketController @Autowired constructor(
         return
     }
 
+    @SystemLog(businessName = "获取WM市场紫卡信息")
     @AParameter
     @Executor(action = "(?i)\\b(wr|wmr)\\s*(\\S+.*)$")
     fun getRiven(context: Context, matcher: Matcher) {
@@ -126,6 +129,7 @@ class WfMarketController @Autowired constructor(
 
     }
 
+    @SystemLog(businessName = "获取WM市场玄骸武器信息")
     @AParameter
     @Executor(action = "(?i)\\bwl\\s*(\\S+.*)$")
     fun getLich(context: Context, matcher: Matcher) {
@@ -206,6 +210,7 @@ class WfMarketController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取WM市场紫卡均价")
     @AParameter
     @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)\\b")
     fun getRivenRanking(context: Context, matcher: Matcher) {
@@ -219,6 +224,7 @@ class WfMarketController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
+    @SystemLog(businessName = "获取物品Wiki链接")
     @AParameter
     @Executor(action = "wiki (.*)")
     fun getWikiUrl(context: Context, matcher: Matcher) {
