@@ -49,15 +49,14 @@ class WfLexiconServiceImpl @Autowired constructor(
         lexiconMapper.insertOrUpdateBatch(wfEnLexiconList)
     }
 
-    override fun turnKeyToUrlNameByLexicon(zh: String): WfLexiconEntity? {
-        val queryWrapper =
-            QueryWrapper<WfLexiconEntity>()
-                .eq("in_market", 1)
-                .eq("zh_item_name", zh)
-                .or()
-                .eq("en_item_name", zh)
-                .eq("in_market", 1)
-        val wfLexiconEntity = lexiconMapper.selectList(queryWrapper).firstOrNull()
+    /**
+     * 通过词库将中英文转换为 URL 名称
+     *
+     * @param zh 物品
+     * @return URL 名称
+     */
+    override fun selectItemByAccurateNature(zh: String): WfLexiconEntity? {
+        val wfLexiconEntity = lexiconMapper.turnKeyToUrlNameByLexicon(zh)
 
         return if (wfLexiconEntity != null) {
             wfLexiconEntity.useCount = wfLexiconEntity.useCount?.plus(1)
@@ -66,7 +65,13 @@ class WfLexiconServiceImpl @Autowired constructor(
         } else null
     }
 
-    override fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity>? {
+    /**
+     * 模糊匹配词库获取物品信息
+     *
+     * @param zh 输入的物品名
+     * @return 物品信息
+     */
+    override fun getItemByFuzzyMatching(zh: String): List<WfLexiconEntity>? {
         // 移除关键词中的"蓝图"字样以优化匹配
         val cleanZh = zh.replace("总图", "蓝图").replace("蓝图", "")
 
@@ -106,45 +111,30 @@ class WfLexiconServiceImpl @Autowired constructor(
         val finalQueryString =
             newEnName?.plus(addString) ?: (cleanZh + if (zh.contains("蓝图") || zh.contains("总图")) "蓝图" else "")
 
-        // 构造查询条件
-        val queryWrapper = QueryWrapper<WfLexiconEntity>().apply {
-            eq("in_market", 1)
-            like("url_name", "%${finalQueryString.replace(" ", "%_%")}%")
-            or()
-            eq("in_market", 1)
-            apply("zh_item_name REGEXP {0}", finalQueryString.replace("", ".*").drop(2).dropLast(2))
-            or()
-            eq("in_market", 1)
-            like("en_item_name", "%${finalQueryString.replace(" ", "%")}%")
-            or()
-            eq("in_market", 1)
-            apply("zh_item_name REGEXP {0}", zh.replace("", ".*").drop(2).dropLast(2))
-            or()
-            eq("in_market", 1)
-            like("en_item_name", "%${zh.replace(" ", "%")}%")
-            or()
-            eq("in_market", 1)
-            like("url_name", "%${zh.replace(" ", "%_%")}%")
-        }
-
+        val paramsMap = mapOf(
+            "finalQueryString" to finalQueryString.replace(" ", "%_%"),
+            "finalQueryStringRegex" to finalQueryString.replace("", ".*").drop(2).dropLast(2),
+            "zhRegex" to zh.replace("", ".*").drop(2).dropLast(2),
+            "zh" to zh.replace(" ", "%_%")
+        )
         // 获取查询结果
-        val resultList = lexiconMapper.selectList(queryWrapper)
+        val resultList = lexiconMapper.selectItemByFuzzyMatching(paramsMap)
         if (resultList.isNullOrEmpty()) return null
 
         // 找到最大 useCount 用于归一化
-        val maxUseCount = resultList.maxOfOrNull { it?.useCount ?: 0 }?.toDouble() ?: 1.0
+        val maxUseCount = resultList.maxOfOrNull { it.useCount ?: 0 }?.toDouble() ?: 1.0
 
 
         val coefficients = resultList.map {
-            it?.let { item ->
+            it.let { item ->
                 val itemName = item.zhItemName ?: item.enItemName!!
                 sorensenDiceCoefficient(finalQueryString, itemName)
-            } ?: 0.0
+            }
         }
         // 检查所有finalQueryCoefficient是否相等
         val areAllCoefficientsEqual = coefficients.distinct().size == 1
 
-        val sortedResultList = resultList.filterNotNull().sortedByDescending { item ->
+        val sortedResultList = resultList.sortedByDescending { item ->
             item.let {
                 val itemName = it.zhItemName ?: it.enItemName!!
                 if (itemName.contains("赋能·充沛")) {

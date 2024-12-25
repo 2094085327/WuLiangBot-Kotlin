@@ -11,12 +11,12 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
     fun insertLexicon(wfEnLexiconList: List<WfLexiconEntity>)
 
     /**
-     * 通过词库转换中文为英文
+     * 根据自然语言(中文/英文)查询物品信息
      *
-     * @param zh 中文物品
-     * @return 英文物品
+     * @param zh 中文/英文物品名
+     * @return 物品信息
      */
-    fun turnKeyToUrlNameByLexicon(zh: String): WfLexiconEntity?
+    fun selectItemByAccurateNature(zh: String): WfLexiconEntity?
 
     /**
      * 模糊匹配词库转换中文为英文
@@ -24,7 +24,7 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @param zh 中文物品
      * @return 英文物品
      */
-    fun turnKeyToUrlNameByLexiconLike(zh: String): List<WfLexiconEntity>?
+    fun getItemByFuzzyMatching(zh: String): List<WfLexiconEntity>?
 
     /**
      * 进行超模糊查询

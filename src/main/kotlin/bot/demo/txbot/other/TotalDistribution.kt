@@ -3,7 +3,10 @@ package bot.demo.txbot.other
 import bot.demo.txbot.TencentBotKotlinApplication
 import bot.demo.txbot.common.botUtil.BotUtils
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.botUtil.BotUtils.ContextUtil.createContextVo
 import bot.demo.txbot.common.database.template.TemplateService
+import bot.demo.txbot.common.logAop.LogEntity
+import bot.demo.txbot.common.logAop.database.LogServiceImpl
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
@@ -63,7 +66,8 @@ class TotalDistribution(
     @Autowired private val addition: Addition,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
-
+    @Autowired
+    private lateinit var logService: LogServiceImpl
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
 
@@ -190,6 +194,7 @@ class TotalDistribution(
     @AnyMessageHandler
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+        val startTime: Long = System.currentTimeMillis()
         val context = BotUtils().initialize(event, bot)
         val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
         todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
@@ -242,6 +247,21 @@ class TotalDistribution(
                 .map { it.command } // 提取 command 字段
             val matchedCommands = otherUtil.findMatchingStrings(match, commandList)
             context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
+            val endTime: Long = System.currentTimeMillis()
+            val contextVo = context.createContextVo()
+            val logEntity = LogEntity(
+                businessName = "未知指令",
+                classPath = "TotalDistribution",
+                methodName = "totalDistribution",
+                cmdText = match,
+                eventType = contextVo.messageType,
+                groupId = contextVo.groupId,
+                userId = contextVo.userId,
+                botId = contextVo.botId,
+                costTime = endTime - startTime,
+                createTime = LocalDateTime.now()
+            )
+            logService.insertLog(logEntity)
             return
         }
 

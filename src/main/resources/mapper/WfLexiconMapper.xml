@@ -46,15 +46,28 @@
         ORDER BY en_item_name
     </select>
 
-    <delete id="deleteOtherNameById" parameterType="java.lang.Integer">
-        delete
-        from wf_other_name
-        where #{id} = id
-    </delete>
-
     <update id="updateOtherNameById">
         update wf_other_name
         set other_name = #{otherName}
         where #{id} = id
     </update>
+
+    <select id="turnKeyToUrlNameByLexicon" parameterType="java.lang.String" resultType="bot.demo.txbot.warframe.database.WfLexiconEntity">
+        select * from wfLexicon
+        where in_market = 1 and (zh_item_name = #{zh} or en_item_name = #{zh})
+    </select>
+
+    <select id="selectItemByFuzzyMatching" parameterType="java.util.Map" resultType="bot.demo.txbot.warframe.database.WfLexiconEntity">
+        SELECT *
+        FROM wfLexicon
+        WHERE in_market = 1
+          AND (
+            url_name LIKE CONCAT('%', #{paramsMap.finalQueryString}, '%')
+                OR zh_item_name REGEXP #{paramsMap.finalQueryStringRegex}
+                OR en_item_name LIKE CONCAT('%', #{paramsMap.finalQueryString}, '%')
+                OR zh_item_name REGEXP #{paramsMap.zhRegex}
+                OR en_item_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
+                OR url_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
+            )
+    </select>
 </mapper>

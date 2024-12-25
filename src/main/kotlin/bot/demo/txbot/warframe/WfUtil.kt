@@ -904,13 +904,13 @@ class WfUtil @Autowired constructor(
      * @return WfLexiconEntity 查询到的物品数据
      */
     fun fetchItemEntity(key: String): WfLexiconEntity? {
-        val itemEntity = wfLexiconService.turnKeyToUrlNameByLexicon(key)
+        val itemEntity = wfLexiconService.selectItemByAccurateNature(key)
         if (itemEntity != null) {
             redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
             return itemEntity
         }
 
-        val keyList = wfLexiconService.turnKeyToUrlNameByLexiconLike(key)
+        val keyList = wfLexiconService.getItemByFuzzyMatching(key)
         if (!keyList.isNullOrEmpty()) {
             val firstItemEntity = keyList.first()
             redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
