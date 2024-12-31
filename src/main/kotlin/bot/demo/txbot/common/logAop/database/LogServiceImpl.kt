@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.logAop.database
 
 import bot.demo.txbot.common.logAop.LogEntity
+import com.baomidou.mybatisplus.core.metadata.IPage
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -17,5 +18,9 @@ class LogServiceImpl : ServiceImpl<LogMapper?, LogEntity?>(), LogService {
     private lateinit var logMapper: LogMapper
     override fun insertLog(logParam: LogEntity) {
         logMapper.insert(logParam)
+    }
+
+    override fun getLog(page:IPage<LogEntity?>): IPage<LogEntity?> {
+        return logMapper.selectPage(page, null)
     }
 }

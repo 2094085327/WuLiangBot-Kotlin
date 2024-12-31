@@ -142,9 +142,9 @@ class SystemResourcesMain {
                 dirName = fs.mount,
                 sysTypeName = fs.type,
                 typeName = fs.name,
-                fileTotal = convertFileSize(total),
-                fileFree = convertFileSize(free),
-                fileUsed = convertFileSize(used),
+                fileTotal = total,
+                fileFree = free,
+                fileUsed = used,
                 fileUsage = (used / total.toDouble() * 100).round(2)
             )
             sysFileList.add(sysFile)
@@ -186,9 +186,9 @@ class SystemResourcesMain {
             "盘符: ${it.dirName}\n" +
                     "盘符类型: ${it.sysTypeName}\n" +
                     "磁盘名: ${it.typeName}\n" +
-                    "总大小: ${it.fileTotal}\n" +
-                    "剩余大小: ${it.fileFree}\n" +
-                    "已用大小: ${it.fileUsed}\n" +
+                    "总大小: ${convertFileSize(it.fileTotal)}\n" +
+                    "剩余大小: ${convertFileSize(it.fileFree)}\n" +
+                    "已用大小: ${convertFileSize(it.fileUsed)}\n" +
                     "空间使用率: ${it.fileUsage}%\n"
         }
 

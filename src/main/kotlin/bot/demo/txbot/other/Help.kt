@@ -2,6 +2,7 @@ package bot.demo.txbot.other
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.exception.RespBean
+import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
@@ -21,6 +22,7 @@ import java.util.*
 @Controller
 @ActionService
 class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
+    @SystemLog(businessName = "获取帮助菜单")
     @AParameter
     @Executor(action = "\\b(帮助|菜单|help)\\b")
     fun help(context: Context) {
@@ -35,6 +37,7 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
 
     @AParameter
     @Executor(action = "日活")
+    @SystemLog(businessName = "机器人日活信息")
     fun daily(context: Context) {
         totalDistribution.saveActiveLog()
         val imageData = WebImgUtil.ImgData(

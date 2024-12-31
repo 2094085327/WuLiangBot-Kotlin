@@ -15,6 +15,7 @@ enum class RespBeanEnum(
     JAR_NOT_RUN(500203, "当前程序并未运行在Jar中"),
     JAR_UPLOAD_FAIL(500204, "Jar文件上传失败"),
     FILE_MERGE_FAIL(500205, "文件合并失败"),
+    LOG_GET_ERROR(500206, "获取日志异常"),
     ;
 
 }
