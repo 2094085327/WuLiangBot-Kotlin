@@ -34,12 +34,6 @@
                                 other_name   = VALUES(other_name);
     </insert>
 
-    <select id="selectEnFromOther" parameterType="java.lang.String" resultType="java.lang.String">
-        select en_item_name
-        from wf_other_name
-        WHERE LOWER(en_item_name) = LOWER(#{key})
-    </select>
-
     <select id="selectAllOtherName" resultType="bot.demo.txbot.warframe.database.WfOtherNameEntity">
         select id, en_item_name, other_name
         from wf_other_name
@@ -51,23 +45,4 @@
         set other_name = #{otherName}
         where #{id} = id
     </update>
-
-    <select id="turnKeyToUrlNameByLexicon" parameterType="java.lang.String" resultType="bot.demo.txbot.warframe.database.WfLexiconEntity">
-        select * from wfLexicon
-        where in_market = 1 and (zh_item_name = #{zh} or en_item_name = #{zh})
-    </select>
-
-    <select id="selectItemByFuzzyMatching" parameterType="java.util.Map" resultType="bot.demo.txbot.warframe.database.WfLexiconEntity">
-        SELECT *
-        FROM wfLexicon
-        WHERE in_market = 1
-          AND (
-            url_name LIKE CONCAT('%', #{paramsMap.finalQueryString}, '%')
-                OR zh_item_name REGEXP #{paramsMap.finalQueryStringRegex}
-                OR en_item_name LIKE CONCAT('%', #{paramsMap.finalQueryString}, '%')
-                OR zh_item_name REGEXP #{paramsMap.zhRegex}
-                OR en_item_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
-                OR url_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
-            )
-    </select>
 </mapper>

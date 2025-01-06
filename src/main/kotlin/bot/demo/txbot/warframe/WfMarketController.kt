@@ -9,9 +9,10 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
-import bot.demo.txbot.warframe.database.WfLexiconEntity
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
+import bot.demo.txbot.warframe.database.entity.WfMarketItemEntity
+import bot.demo.txbot.warframe.database.service.WfMarketItemService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.warframeResp.WarframeRespEnum
 import org.springframework.beans.factory.annotation.Autowired
@@ -37,6 +38,9 @@ class WfMarketController @Autowired constructor(
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
     private val redisService: RedisService
 ) {
+    @Autowired
+    private lateinit var wfMarketItemService: WfMarketItemService
+
     object WfMarket {
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
     }
@@ -55,7 +59,7 @@ class WfMarketController @Autowired constructor(
         val redisKey = "warframe:lexicon:$cleanKey"
 
         // 尝试从Redis获取数据
-        val lexiconEntity = redisService.getValue(redisKey, WfLexiconEntity::class.java)
+        val lexiconEntity = redisService.getValue(redisKey, WfMarketItemEntity::class.java)
         if (lexiconEntity != null) {
             wfUtil.sendMarketItemInfo(context, lexiconEntity, level)
             return
@@ -66,7 +70,7 @@ class WfMarketController @Autowired constructor(
             ?: run {
                 // 模糊查询
                 val fuzzyList = key.flatMap { eachKey ->
-                    wfLexiconService.fuzzyQuery(eachKey.toString())?.mapNotNull { it?.zhItemName } ?: emptyList()
+                    wfMarketItemService.fuzzyQuery(eachKey.toString()).mapNotNull { it?.zhName }
                 }
                 if (fuzzyList.isNotEmpty()) {
                     otherUtil.findMatchingStrings(key, fuzzyList).let {

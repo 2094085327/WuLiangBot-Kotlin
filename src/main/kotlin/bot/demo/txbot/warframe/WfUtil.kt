@@ -9,10 +9,10 @@ import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
-import bot.demo.txbot.warframe.database.WfLexiconEntity
-import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
+import bot.demo.txbot.warframe.database.entity.WfMarketItemEntity
+import bot.demo.txbot.warframe.database.service.WfMarketItemService
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.vo.WfUtilVo
@@ -43,9 +43,11 @@ import kotlin.random.Random
 class WfUtil @Autowired constructor(
     private val wfRivenService: WfRivenService,
     private val redisService: RedisService,
-    private val wfLexiconService: WfLexiconService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
 ) {
+
+    @Autowired
+    private lateinit var wfMarketItemService: WfMarketItemService
 
     /**
      * 发送物品信息
@@ -53,7 +55,7 @@ class WfUtil @Autowired constructor(
      * @param item 物品
      * @param modLevel 模组等级
      */
-    fun sendMarketItemInfo(context: Context, item: WfLexiconEntity, modLevel: Any? = null) {
+    fun sendMarketItemInfo(context: Context, item: WfMarketItemEntity, modLevel: Any? = null) {
         val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
@@ -89,7 +91,7 @@ class WfUtil @Autowired constructor(
             .toList()
 
         val orderString = if (filteredOrders.isEmpty()) {
-            "当前没有任何在线的玩家出售${item.zhItemName}"
+            "当前没有任何在线的玩家出售${item.zhName}"
         } else {
             filteredOrders.joinToString("\n") {
                 "| ${it.inGameName.replace(".", "ׅ")} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
@@ -98,7 +100,7 @@ class WfUtil @Autowired constructor(
                     ".",
                     "ׅ"
                 )
-            } Hi! I want to buy: \"${item.enItemName}\" for ${filteredOrders.first().platinum} platinum.(warframe market)"
+            } Hi! I want to buy: \"${item.enName}\" for ${filteredOrders.first().platinum} platinum.(wf.m WuLiang-Bot)"
         }
 
         val modLevelString = when {
@@ -107,7 +109,7 @@ class WfUtil @Autowired constructor(
             else -> ""
         }
 
-        context.sendMsg("你查询的物品是 $modLevelString「${item.zhItemName}」\n$orderString")
+        context.sendMsg("你查询的物品是 $modLevelString「${item.zhName}」\n$orderString")
     }
 
     /**
@@ -903,20 +905,45 @@ class WfUtil @Autowired constructor(
      * @param key
      * @return WfLexiconEntity 查询到的物品数据
      */
-    fun fetchItemEntity(key: String): WfLexiconEntity? {
-        val itemEntity = wfLexiconService.selectItemByAccurateNature(key)
+    fun fetchItemEntity(key: String): WfMarketItemEntity? {
+        val itemEntity = wfMarketItemService.selectItemByAccurateNature(key)
         if (itemEntity != null) {
             redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
             return itemEntity
         }
 
-        val keyList = wfLexiconService.getItemByFuzzyMatching(key)
-        if (!keyList.isNullOrEmpty()) {
-            val firstItemEntity = keyList.first()
+//        val keyList = wfLexiconService.getItemByFuzzyMatching(key)
+        val marketItemList = wfMarketItemService.getItemByFuzzyMatching(key)
+        if (!marketItemList.isNullOrEmpty()) {
+            val firstItemEntity = marketItemList.first()
             redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
             return firstItemEntity
         }
 
         return null
     }
+//
+//    /**
+//     * 根据物品名称获取物品数据
+//     *
+//     * @param key
+//     * @return WfLexiconEntity 查询到的物品数据
+//     */
+//    fun fetchItemEntity(key: String): WfLexiconEntity? {
+////        val itemEntity = wfMarketItemService.selectItemByAccurateNature(key)
+////        if (itemEntity != null) {
+////            redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
+////            return itemEntity
+////        }
+//
+//        val marketItemList = wfLexiconService.getItemByFuzzyMatching(key)
+////        val marketItemList = wfMarketItemService.getItemByFuzzyMatching(key)
+//        if (!marketItemList.isNullOrEmpty()) {
+//            val firstItemEntity = marketItemList.first()
+//            redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
+//            return firstItemEntity
+//        }
+//
+//        return null
+//    }
 }
