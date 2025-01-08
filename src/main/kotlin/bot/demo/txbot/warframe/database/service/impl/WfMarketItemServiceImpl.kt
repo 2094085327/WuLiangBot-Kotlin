@@ -134,25 +134,29 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
         var newEnName: String? = null
         var remainingString = cleanZh // 剩余未匹配的部分
 
+        // 对子字符串执行批量查询
         val queryResults = wfMarketItemMapper.batchSelectBySubstrings(sortedSubstrings)
         val sortedResults = sortResultsBySimilarity(queryResults, cleanZh)
 
 
-        for (substring in sortedSubstrings) {
-            if (cache.add(substring)) {
-                val result = sortedResults.firstOrNull()?.enItemName
-                if (result != null) {
-                    newEnName = result
-                    remainingString = cleanZh.replaceFirst(substring, "", ignoreCase = true)
-                    break
-                }
+        // 遍历子字符串，进行别名匹配
+        sortedSubstrings.firstOrNull { substring ->
+            cache.add(substring) && sortedResults.any { result ->
+                val match = listOfNotNull(result.enItemName, result.otherName).find { cleanZh.contains(it, ignoreCase = true) }
+                if (match != null) {
+                    newEnName = result.enItemName // 始终使用 result.enItemName
+                    remainingString = cleanZh.replaceFirst(match, "", ignoreCase = true).trim() // 替换匹配到的部分
+                    true
+                } else false
             }
-        }
+        } != null
+
 
 
         // 构建最终的查询字符串，结合已匹配的英文名和剩余的中文部分
         val replaceBoolean = REPLACE_LIST.any { key.contains(it) }
 
+        // 根据剩余字符串的内容决定是否需要添加"一套"或"蓝图"
         val addString = when {
             remainingString.isEmpty() && !replaceBoolean -> "一套"
             replaceBoolean -> "蓝图"
@@ -171,8 +175,10 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
         val resultList = wfMarketItemMapper.selectItemByFuzzyMatching(paramsMap)
         if (resultList.isNullOrEmpty()) return null
 
-        // 找到最大 useCount 用于归一化
-        val maxUseCount = resultList.maxOfOrNull { it.useCount ?: 0 }?.toDouble() ?: 1.0
+        // 找到最大 useCount 用于归一化 最大值为0时取1避免除零
+        val maxUseCount = resultList.maxOfOrNull { it.useCount ?: 0 }
+            ?.takeIf { it > 0 }
+            ?.toDouble() ?: 1.0
 
 
         val coefficients = resultList.map {

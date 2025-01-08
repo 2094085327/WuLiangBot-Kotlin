@@ -5,6 +5,7 @@ import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfOtherNameEntity
 import bot.demo.txbot.warframe.database.WfRivenService
+import bot.demo.txbot.warframe.database.controller.WfMarketController
 import bot.demo.txbot.warframe.vo.WfMarketVo
 import bot.demo.txbot.warframe.vo.WfStatusVo
 import bot.demo.txbot.warframe.warframeResp.WarframeRespBean

@@ -46,8 +46,6 @@ class WfTranslateLexicon {
      * @return 格式化后的词库List
      */
     fun getLexiconList(lexiconMap: MutableMap<String, WfLexiconEntity>): MutableList<WfLexiconEntity> {
-        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_EN_HANS, "items", "item_name", inMarket = 1)
-        updateLexicon(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true, 1)
         updateLexicon(lexiconMap, WARFRAME_MARKET_LOCATION, LANGUAGE_EN_HANS, "locations", "system_name")
         updateLexicon(
             lexiconMap,
@@ -70,7 +68,7 @@ class WfTranslateLexicon {
      * @param lexiconMap 词库Map
      * @return 格式化后的词库List
      */
-    fun getLexiconList2(lexiconMap: MutableMap<String, WfMarketItemEntity>): MutableList<WfMarketItemEntity> {
+    fun getMarketItem(lexiconMap: MutableMap<String, WfMarketItemEntity>): MutableList<WfMarketItemEntity> {
         updateLexicon2(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_EN_HANS, "items", "item_name")
         updateLexicon2(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true)
 
@@ -311,8 +309,6 @@ class WfTranslateLexicon {
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
         val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
         val lichMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
-
-
         val marketItemMap: MutableMap<String, WfMarketItemEntity> = mutableMapOf()
 
         GlobalScope.launch {
@@ -322,11 +318,10 @@ class WfTranslateLexicon {
 
                 // 使用async并行执行插入操作
                 val marketJob = async {
-                    wfMarketItemService.updateMarketItem(getLexiconList2(marketItemMap))
+                    wfMarketItemService.updateMarketItem(getMarketItem(marketItemMap))
                     logInfo("Market更新完成")
                     marketItemMap.clear()
                 }
-
 
                 val lexiconJob = async {
                     wfLexiconService.insertLexicon(getLexiconList(lexiconMap))

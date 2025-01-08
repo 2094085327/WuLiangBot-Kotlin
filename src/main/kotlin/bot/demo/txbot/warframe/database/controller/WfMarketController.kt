@@ -1,4 +1,4 @@
-package bot.demo.txbot.warframe
+package bot.demo.txbot.warframe.database.controller
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
 import bot.demo.txbot.common.logAop.SystemLog
@@ -9,6 +9,7 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
+import bot.demo.txbot.warframe.WfUtil
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
 import bot.demo.txbot.warframe.database.entity.WfMarketItemEntity
@@ -60,7 +61,8 @@ class WfMarketController @Autowired constructor(
 
         // 尝试从Redis获取数据
         val lexiconEntity = redisService.getValue(redisKey, WfMarketItemEntity::class.java)
-        if (lexiconEntity != null) {
+        if (lexiconEntity !=
+            null) {
             wfUtil.sendMarketItemInfo(context, lexiconEntity, level)
             return
         }

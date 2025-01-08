@@ -6,7 +6,7 @@ import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.RedisService
-import bot.demo.txbot.warframe.WfMarketController.WfMarket
+import bot.demo.txbot.warframe.database.controller.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfRivenEntity
@@ -912,7 +912,6 @@ class WfUtil @Autowired constructor(
             return itemEntity
         }
 
-//        val keyList = wfLexiconService.getItemByFuzzyMatching(key)
         val marketItemList = wfMarketItemService.getItemByFuzzyMatching(key)
         if (!marketItemList.isNullOrEmpty()) {
             val firstItemEntity = marketItemList.first()
@@ -922,28 +921,4 @@ class WfUtil @Autowired constructor(
 
         return null
     }
-//
-//    /**
-//     * 根据物品名称获取物品数据
-//     *
-//     * @param key
-//     * @return WfLexiconEntity 查询到的物品数据
-//     */
-//    fun fetchItemEntity(key: String): WfLexiconEntity? {
-////        val itemEntity = wfMarketItemService.selectItemByAccurateNature(key)
-////        if (itemEntity != null) {
-////            redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
-////            return itemEntity
-////        }
-//
-//        val marketItemList = wfLexiconService.getItemByFuzzyMatching(key)
-////        val marketItemList = wfMarketItemService.getItemByFuzzyMatching(key)
-//        if (!marketItemList.isNullOrEmpty()) {
-//            val firstItemEntity = marketItemList.first()
-//            redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
-//            return firstItemEntity
-//        }
-//
-//        return null
-//    }
 }
