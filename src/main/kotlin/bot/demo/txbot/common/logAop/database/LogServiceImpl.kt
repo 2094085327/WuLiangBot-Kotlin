@@ -1,6 +1,7 @@
 package bot.demo.txbot.common.logAop.database
 
 import bot.demo.txbot.common.logAop.LogEntity
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.metadata.IPage
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,6 +22,8 @@ class LogServiceImpl : ServiceImpl<LogMapper?, LogEntity?>(), LogService {
     }
 
     override fun getLog(page:IPage<LogEntity?>): IPage<LogEntity?> {
-        return logMapper.selectPage(page, null)
+        val queryWrapper = QueryWrapper<LogEntity>()
+        queryWrapper.orderByDesc("create_time")
+        return logMapper.selectPage(page, queryWrapper)
     }
 }

@@ -19,10 +19,7 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.util.*
 
 
@@ -245,4 +242,52 @@ class Restart {
         }
     }
 
+    fun isJarRunning(jarPath: String): Boolean {
+        val os = System.getProperty("os.name").lowercase()
+        val command: List<String>
+
+        return try {
+            command = if (os.contains("win")) {
+                // Windows 使用 WMIC 命令
+                listOf("cmd", "/c", "wmic", "process", "where", "commandline like '%${jarPath}%'", "get", "processid")
+            } else {
+                // Linux/Mac 使用 ps 和 grep
+                listOf("sh", "-c", "ps aux | grep java | grep -F '$jarPath' | grep -v grep")
+            }
+
+            val process = ProcessBuilder(command).start()
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            process.waitFor()
+
+            // 判断输出是否有效
+            if (os.contains("win")) {
+                output.lines().any { it.trim().matches(Regex("\\d+")) }
+            } else {
+                output.isNotBlank()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    @PostMapping("/deleteJar")
+    @ResponseBody
+    fun deleteJar(@RequestParam("jar_name") jarName: String): RespBean {
+        try {
+            val jarFile = File(jarName)
+            if (!jarFile.exists()) {
+                return RespBean.error(RespBeanEnum.JAR_NOT_FOUND)
+            }
+
+            if (isJarRunning(jarName)) {
+                return RespBean.error(RespBeanEnum.JAR_IN_USE)
+            }
+
+            jarFile.delete()
+            return RespBean.success()
+        } catch (e: Exception) {
+            return RespBean.error(RespBeanEnum.JAR_ERROR, e)
+        }
+    }
 }
