@@ -9,6 +9,7 @@ import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
+import bot.demo.txbot.warframe.WARFRAME_AMP_PNG
 import bot.demo.txbot.warframe.WfUtil
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
@@ -62,7 +63,8 @@ class WfMarketController @Autowired constructor(
         // 尝试从Redis获取数据
         val lexiconEntity = redisService.getValue(redisKey, WfMarketItemEntity::class.java)
         if (lexiconEntity !=
-            null) {
+            null
+        ) {
             wfUtil.sendMarketItemInfo(context, lexiconEntity, level)
             return
         }
@@ -237,5 +239,17 @@ class WfMarketController @Autowired constructor(
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
         context.sendMsg(WarframeRespEnum.SEARCH_WIKI.message + wikiUrl)
+    }
+
+    @SystemLog(businessName = "获取增幅器序号")
+    @AParameter
+    @Executor(action = "(?i)\\b(增幅器|指挥官|指挥官武器|amp)\\b")
+    fun getAmp(context: Context) {
+        val imgData = WebImgUtil.ImgData(
+            url = WARFRAME_AMP_PNG,
+            imgName = "amp",
+            local = true,
+        )
+        webImgUtil.sendNewImage(context, imgData)
     }
 }

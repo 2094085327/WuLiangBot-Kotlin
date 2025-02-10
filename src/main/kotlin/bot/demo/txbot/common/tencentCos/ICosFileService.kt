@@ -17,4 +17,6 @@ interface ICosFileService {
     fun deleteFile(fileName: String, mime: String)
 
     fun checkFileExist(fileName: String, mime: String): Boolean
+
+    fun getFileUrl(fileName: String, mime: String): String?
 }

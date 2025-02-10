@@ -63,7 +63,8 @@ class WebImgUtil(
         val scale: Double? = null,
         var imageType: String? = "jpeg",
         var sleepTime: Long = 0,
-        var openCache: Boolean = true
+        var openCache: Boolean = true,
+        var local: Boolean = false
     )
 
     fun convertImageToBase64(imagePath: String): String {
@@ -301,14 +302,38 @@ class WebImgUtil(
      * @return 返回的图片链接
      */
     fun returnUrlImgByTxCos(imgData: ImgData): String? {
-        val byte = getImgByte(imgData)
-        val input: InputStream = ByteArrayInputStream(byte)
+        val input: InputStream
+        if (!imgData.local) {
+            val byte = getImgByte(imgData)
+            input = ByteArrayInputStream(byte)
+        } else {
+            input = FileInputStream(imgData.url)
+        }
         return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
     }
 
+    /**
+     * 从腾讯云缓存获取或上传图片
+     *
+     * @param imgData 图片数据
+     * @return 图片链接
+     */
+    private fun getImgUrl(imgData: ImgData): String? {
+        return if (txCosService.checkFileExist(imgData.imgName!!, imgData.imageType!!)) {
+            txCosService.getFileUrl(imgData.imgName, imgData.imageType!!)
+        } else {
+            returnUrlImgByTxCos(imgData)
+        }
+    }
+
+    /**
+     * 发送新图片
+     *
+     * @param context 上下文
+     * @param imgData 图片数据
+     */
     fun sendNewImage(context: Context, imgData: ImgData) {
-//        val imgUrl: String? = checkCacheImg(imgData)
-        val imgUrl: String? = returnUrlImgByTxCos(imgData)
+        val imgUrl = getImgUrl(imgData)
         val sendMsg = MsgUtils.builder().img(imgUrl).build()
         context.sendMsg(sendMsg)
     }

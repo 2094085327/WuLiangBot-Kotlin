@@ -13,6 +13,7 @@ const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
 const val WARFRAME_MOOD_SPIRALS = "$WARFRAME_RESOURCES/mood_spirals.json"
+const val WARFRAME_AMP_PNG = "$WARFRAME_RESOURCES/amp.png"
 
 /**
  * Market 物品

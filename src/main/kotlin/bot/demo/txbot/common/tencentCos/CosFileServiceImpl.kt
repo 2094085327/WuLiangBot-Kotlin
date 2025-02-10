@@ -139,4 +139,8 @@ class CosFileServiceImpl(
         return cosClient.doesObjectExist(txCosConfig.bucketName, key)
     }
 
+    override fun getFileUrl(fileName: String, mime: String): String {
+        return txCosConfig.url + txCosConfig.path + fileName + ".$mime"
+    }
+
 }
