@@ -10,6 +10,7 @@ import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
 import bot.demo.txbot.warframe.WARFRAME_AMP_PNG
+import bot.demo.txbot.warframe.WARFRAME_CETUS_WISP_PNG
 import bot.demo.txbot.warframe.WfUtil
 import bot.demo.txbot.warframe.database.WfLexiconService
 import bot.demo.txbot.warframe.database.WfRivenService
@@ -248,6 +249,18 @@ class WfMarketController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = WARFRAME_AMP_PNG,
             imgName = "amp",
+            local = true,
+        )
+        webImgUtil.sendNewImage(context, imgData)
+    }
+
+    @SystemLog(businessName = "获取希图斯幽魂")
+    @AParameter
+    @Executor(action = "(?i)\\b(幽魂|希图斯幽魂)\\b")
+    fun getCetusWisp(context: Context) {
+        val imgData = WebImgUtil.ImgData(
+            url = WARFRAME_CETUS_WISP_PNG,
+            imgName = "cetus_wisp",
             local = true,
         )
         webImgUtil.sendNewImage(context, imgData)

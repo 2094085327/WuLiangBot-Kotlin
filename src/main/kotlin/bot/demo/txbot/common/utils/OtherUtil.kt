@@ -89,7 +89,7 @@ class OtherUtil {
         targetFolderPath: String,
         accessToken: String? = null,
         downloadUrlPrefix: String = "raw.githubusercontent.com",
-        mirrorUrlPrefix: String = "https://gh-proxy.com/"
+        mirrorUrlPrefix: String = "https://gh.llkk.cc/"
     ): Pair<Boolean, Int> {
         val apiUrl =
             "https://api.github.com/repos/$repoOwner/$repoName/contents/${folderPath.replace(File.separator, "/")}"
@@ -125,7 +125,8 @@ class OtherUtil {
                                 fileCount += count // 累加文件计数
                             } else {
                                 // 文件，使用国内镜像下载
-                                fileDownloadUrl = fileDownloadUrl.replace("https://", mirrorUrlPrefix)
+//                                fileDownloadUrl = fileDownloadUrl.replace("https://", mirrorUrlPrefix)
+                                fileDownloadUrl = mirrorUrlPrefix + fileDownloadUrl
 
                                 val targetFilePath = Paths.get(folderPath, fileName).toString()
 
