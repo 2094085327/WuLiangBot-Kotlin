@@ -115,7 +115,7 @@ class TotalDistribution(
                 val currentTime =
                     LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 val json =
-                    """{"data":[{"date":"$currentTime","dailyActiveUsers":0,"totalUpMessages":0}],"users":[]}""".trimIndent()
+                    """{"data":[{"date":"$currentTime","dailyActiveUsers":0,"totalUpMessages":0}]}""".trimIndent()
                 file.writeText(json)
                 logInfo("日活日志文件缺失，已自动创建")
             }

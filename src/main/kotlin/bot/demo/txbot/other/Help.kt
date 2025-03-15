@@ -1,7 +1,6 @@
 package bot.demo.txbot.other
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
-import bot.demo.txbot.common.exception.RespBean
 import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
@@ -13,9 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseBody
 
 @Component
 @Controller
@@ -38,12 +35,5 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
     fun helpWeb2(model: Model): String {
         model.addAttribute("commandConfig", commandConfig)
         return "Other/Help"
-    }
-
-    @ResponseBody
-    @GetMapping("/dailyJson")
-    fun dailyJson(): RespBean {
-        val helpJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
-        return RespBean.success(helpJson)
     }
 }

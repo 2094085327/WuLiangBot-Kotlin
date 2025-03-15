@@ -1,9 +1,11 @@
 package bot.demo.txbot.other.dailyActive
 
 import bot.demo.txbot.common.botUtil.BotUtils.Context
+import bot.demo.txbot.common.exception.RespBean
 import bot.demo.txbot.common.logAop.LogEntity
 import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.logAop.database.LogService
+import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.DAILY_ACTIVE_PATH
 import bot.demo.txbot.other.distribute.annotation.AParameter
@@ -14,7 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.ui.Model
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.io.File
 import java.time.LocalDate
@@ -82,6 +86,27 @@ class DailyActive {
     @RequestMapping("/dailyActive")
     fun dailyActive(model: Model): String {
         return "Other/DailyActive"
+    }
+
+
+    @GetMapping("/dailyJson")
+    fun dailyJson(@RequestParam("day") day: Int = 30): RespBean {
+        initDailyActive()
+        val helpJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
+        val dailyActiveResponse = objectMapper.readValue(helpJson.toString(), DailyActiveResponse::class.java)
+
+        // 获取当前日期
+        val currentDate = LocalDate.now()
+
+        if (day == -1) return RespBean.success(DailyActiveResponse(data = dailyActiveResponse.data.orEmpty()))
+
+        // 过滤出最近 day 天的数据
+        val filteredData = dailyActiveResponse.data.orEmpty()
+            .filter { it.date != null && LocalDate.parse(it.date).isAfter(currentDate.minusDays(day.toLong())) }
+            .sortedBy { it.date }
+            .take(day)
+
+        return RespBean.success(DailyActiveResponse(data = filteredData))
     }
 
     /**
