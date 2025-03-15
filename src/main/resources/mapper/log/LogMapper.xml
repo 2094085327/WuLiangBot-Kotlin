@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.demo.txbot.common.logAop.database.LogMapper">
+    <select id="selectLogByTime" resultType="bot.demo.txbot.common.logAop.LogEntity">
+        SELECT * FROM bot_log
+        <where>
+            <foreach collection="timeRanges" item="timeRange" separator="OR">
+                (create_time BETWEEN #{timeRange.startTime} AND #{timeRange.endTime})
+            </foreach>
+        </where>
+    </select>
+
+</mapper>

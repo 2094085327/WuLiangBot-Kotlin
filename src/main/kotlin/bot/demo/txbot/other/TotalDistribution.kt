@@ -7,16 +7,14 @@ import bot.demo.txbot.common.botUtil.BotUtils.ContextUtil.createContextVo
 import bot.demo.txbot.common.database.template.TemplateService
 import bot.demo.txbot.common.logAop.LogEntity
 import bot.demo.txbot.common.logAop.database.LogServiceImpl
-import bot.demo.txbot.common.utils.JacksonUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
-import bot.demo.txbot.common.utils.OtherUtil.GensokyoUtil.getRealId
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
 import bot.demo.txbot.common.utils.WebImgUtil
 import bot.demo.txbot.other.TotalDistribution.CommandList.commandConfig
-import bot.demo.txbot.other.TotalDistribution.CommandList.dailyActiveJson
 import bot.demo.txbot.other.TotalDistribution.CommandList.helpMd5
 import bot.demo.txbot.other.TotalDistribution.CommandList.lastHelpMd5
+import bot.demo.txbot.other.dailyActive.DailyActive
 import bot.demo.txbot.other.distribute.actionConfig.ActionFactory
 import bot.demo.txbot.other.distribute.actionConfig.Addition
 import bot.demo.txbot.other.distribute.annotation.AParameter
@@ -24,7 +22,6 @@ import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
 import bot.demo.txbot.other.vo.HelpVo.CommandConfig
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -41,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
 import java.time.LocalDateTime
@@ -68,6 +64,9 @@ class TotalDistribution(
 ) {
     @Autowired
     private lateinit var logService: LogServiceImpl
+
+    @Autowired
+    private lateinit var dailyActive: DailyActive
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
 
@@ -83,8 +82,6 @@ class TotalDistribution(
 
         // 上次更新help.json的Md5
         var lastHelpMd5: String? = commandConfig.updateMd5
-
-        var dailyActiveJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
 
         init {
             reloadCommands()
@@ -107,34 +104,6 @@ class TotalDistribution(
         }
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
-    fun creatTodayActiveData() {
-        if (dailyActiveJson is ObjectNode) {
-            val data = dailyActiveJson["data"] as ArrayNode
-            val lastData = data.last() as ObjectNode
-            val currentTime =
-                LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            if (lastData["date"].textValue() != currentTime) {
-                lastData.put("dailyActiveUsers", dailyActiveJson["users"].size())
-                if (lastData["dailyActiveUsers"].intValue() != 0) {
-                    (dailyActiveJson["users"] as ArrayNode).removeAll()
-                }
-                val nodeFactory = mapper.nodeFactory // 获取 JsonNodeFactory 对象
-                val newData = ObjectNode(nodeFactory) // 使用 JsonNodeFactory 创建 ObjectNode
-                newData.put("date", currentTime)
-                newData.put("dailyActiveUsers", 0)
-                newData.put("totalUpMessages", 0)
-                data.add(newData)
-                mapper.writeValue(File(DAILY_ACTIVE_PATH), dailyActiveJson)
-                logInfo("创建今日日活")
-            }
-        }
-    }
-
-    @Scheduled(cron = "0 1 * * * ?")
-    fun saveActiveLog() {
-        mapper.writeValue(File(DAILY_ACTIVE_PATH), dailyActiveJson)
-    }
 
     @PostConstruct
     fun creatDailyActiveFile() {
@@ -160,14 +129,13 @@ class TotalDistribution(
                 restartJson.put("jar_file", Restart().getNowJarName())
                 mapper.writeValue(restartFile, restartJson)
             }
-            creatTodayActiveData()
         }
     }
 
     @EventListener
     fun endEventListenerShutdown(event: ContextClosedEvent) {
         // 保存日活日志
-        saveActiveLog()
+        dailyActive.initDailyActive()
         logInfo("程序关闭...进行关键信息保存")
     }
 
@@ -196,23 +164,6 @@ class TotalDistribution(
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val startTime: Long = System.currentTimeMillis()
         val context = BotUtils().initialize(event, bot)
-        val todayUpMessage = dailyActiveJson["data"].last() as ObjectNode
-        todayUpMessage.put("totalUpMessages", todayUpMessage["totalUpMessages"].intValue() + 1) // 当前消息数量加一
-        val realId = context.getEvent().getRealId()
-
-        // 将 usersNode 转换为一个可变列表
-        val usersNode = dailyActiveJson["users"] as ArrayNode
-        val usersText = usersNode.toString()
-        val users: MutableSet<String> = if (usersText.isNotEmpty()) mapper.readValue(usersText) else mutableSetOf()
-
-        // 添加 realId 到 users 列表中
-        users.add(realId)
-        val dailyActiveUsers = users.size
-        todayUpMessage.put("dailyActiveUsers", dailyActiveUsers)
-        // 将更新后的 users 列表转换为 ArrayNode
-        val updatedUsersNode = mapper.valueToTree<ArrayNode>(users)
-        // 更新 dailyActiveJson 中的 users 节点
-        (dailyActiveJson as ObjectNode).replace("users", updatedUsersNode)
 
         val match = matcher.group(1)
 

@@ -107,6 +107,21 @@ class RedisService {
         redisTemplate.delete(key)
     }
 
+    /**
+     * 删除多个key
+     *
+     * @param keys key集合
+     */
+    fun deleteKey(keys: Set<String>) {
+        redisTemplate.delete(keys)
+    }
+
+    /**
+     * 获取所有符合条件的key
+     *
+     * @param prefix key前缀
+     * @return key集合
+     */
     fun getListKey(prefix: String): MutableSet<String> {
         return redisTemplate.keys(prefix)
     }

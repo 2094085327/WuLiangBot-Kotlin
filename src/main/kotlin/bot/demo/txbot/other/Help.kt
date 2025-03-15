@@ -16,7 +16,6 @@ import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
-import java.util.*
 
 @Component
 @Controller
@@ -35,20 +34,6 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
         webImgUtil.sendNewImage(context, imageData)
     }
 
-    @AParameter
-    @Executor(action = "日活")
-    @SystemLog(businessName = "机器人日活信息")
-    fun daily(context: Context) {
-        totalDistribution.saveActiveLog()
-        val imageData = WebImgUtil.ImgData(
-            imgName = "dailyActive-${UUID.randomUUID()}",
-            element = "body",
-            url = "http://localhost:${webImgUtil.usePort}/dailyActive"
-        )
-        webImgUtil.sendNewImage(context, imageData)
-        webImgUtil.deleteImg(imageData)
-    }
-
     @RequestMapping("/help")
     fun helpWeb2(model: Model): String {
         model.addAttribute("commandConfig", commandConfig)
@@ -60,10 +45,5 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
     fun dailyJson(): RespBean {
         val helpJson = JacksonUtil.getJsonNode(DAILY_ACTIVE_PATH)
         return RespBean.success(helpJson)
-    }
-
-    @RequestMapping("/dailyActive")
-    fun dailyActive(model: Model): String {
-        return "Other/DailyActive"
     }
 }

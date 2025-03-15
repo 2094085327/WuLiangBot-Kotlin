@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 
 /**
@@ -21,9 +22,13 @@ class LogServiceImpl : ServiceImpl<LogMapper?, LogEntity?>(), LogService {
         logMapper.insert(logParam)
     }
 
-    override fun getLog(page:IPage<LogEntity?>): IPage<LogEntity?> {
+    override fun getLog(page: IPage<LogEntity?>): IPage<LogEntity?> {
         val queryWrapper = QueryWrapper<LogEntity>()
         queryWrapper.orderByDesc("create_time")
         return logMapper.selectPage(page, queryWrapper)
+    }
+
+    override fun selectLogByTime(timeRanges: MutableList<Map<String, LocalDateTime>>): List<LogEntity> {
+        return logMapper.selectLogByTime(timeRanges)
     }
 }
