@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.io.File
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -131,7 +132,7 @@ class DailyActive {
     /**
      * 初始化日活信息
      */
-    @Scheduled(cron = "59 59 * * * ? ")
+    @Scheduled(cron = "0 0 * * * ? ")
     fun initDailyActive() {
         return File(DAILY_ACTIVE_PATH).let { jsonFile ->
             // 读取并解析基础数据
@@ -139,10 +140,19 @@ class DailyActive {
             val existingDates = dailyResponse.data.orEmpty().mapNotNull { it.date }
 
             // 计算缺失日期并生成时间范围，强制包含当前日期
-            val currentDate = LocalDate.now().toString()
+            val currentDate = LocalDate.now()
+            val currentTime = LocalTime.now()
+
             val missingDates = findMissDates(existingDates).toMutableList().apply {
-                if (!contains(currentDate)) {
-                    add(currentDate)
+                if (!contains(currentDate.toString())) {
+                    add(currentDate.toString())
+                }
+                // 检查当前时间是否在0点到1点之间
+                if (currentTime.isAfter(LocalTime.MIDNIGHT) && currentTime.isBefore(LocalTime.of(1, 0))) {
+                    val yesterday = currentDate.minusDays(1)
+                    if (!contains(yesterday.toString())) {
+                        add(yesterday.toString())
+                    }
                 }
             }
 
