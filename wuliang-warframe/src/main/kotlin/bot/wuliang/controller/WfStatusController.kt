@@ -3,6 +3,9 @@ package bot.wuliang.controller
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
+import bot.wuliang.distribute.annotation.AParameter
+import bot.wuliang.distribute.annotation.ActionService
+import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil

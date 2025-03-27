@@ -4,6 +4,9 @@ import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
+import bot.wuliang.distribute.annotation.AParameter
+import bot.wuliang.distribute.annotation.ActionService
+import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.httpUtil.HttpBase.UrlUtil.urlEncode
