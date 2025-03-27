@@ -10,13 +10,21 @@
     </parent>
     <groupId>bot.demo</groupId>
     <artifactId>Tencent-Bot-Kotlin</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
     <name>Tencent-Bot-Kotlin</name>
     <description>Tencent-Bot-Kotlin</description>
+
+
+    <modules>
+        <module>wuliang-admin</module>
+        <module>wuliang-common</module>
+    </modules>
+
     <properties>
         <java.version>17</java.version>
-        <!--        <kotlin.version>1.9.20</kotlin.version>-->
         <kotlin.version>1.9.22</kotlin.version>
+        <wuliang.version>1.0.0</wuliang.version>
     </properties>
     <dependencies>
         <dependency>
@@ -307,11 +315,23 @@
             <version>3.12.10</version>
         </dependency>
 
+
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--通用工具-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-common</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+        <!--        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>-->
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
