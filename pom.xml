@@ -19,6 +19,7 @@
     <modules>
         <module>wuliang-admin</module>
         <module>wuliang-common</module>
+        <module>wuliang-warframe</module>
     </modules>
 
     <properties>
@@ -320,10 +321,24 @@
 
     <dependencyManagement>
         <dependencies>
+            <!--主程序-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-admin</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+
             <!--通用工具-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-common</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+
+            <!--warframe模块-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-warframe</artifactId>
                 <version>${wuliang.version}</version>
             </dependency>
         </dependencies>

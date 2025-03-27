@@ -30,15 +30,15 @@ class RespBean(
         /**
          * 失败返回结果
          *
-         * @param respBeanEnum 错误信息
+         * @param respCode 错误信息
          * @return respBean
          */
-        fun error(respBeanEnum: RespBeanEnum): RespBean {
-            return RespBean(respBeanEnum.code, respBeanEnum.message, null)
+        fun error(respCode: RespCode): RespBean {
+            return RespBean(respCode.code, respCode.message, null)
         }
 
-        fun error(respBeanEnum: RespBeanEnum, obj: Any?): RespBean {
-            return RespBean(respBeanEnum.code, respBeanEnum.message, obj)
+        fun error(respCode: RespCode, obj: Any?): RespBean {
+            return RespBean(respCode.code, respCode.message, obj)
         }
     }
 }

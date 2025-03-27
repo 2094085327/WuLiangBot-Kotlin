@@ -1,4 +1,4 @@
-package bot.demo.txbot
+package bot.wuliang
 
 import bot.demo.txbot.bot.wuliang.config.APP_PID_PATH
 import org.mybatis.spring.annotation.MapperScan
@@ -12,9 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableCaching
 @EnableScheduling
 @SpringBootApplication(
-    scanBasePackages = [
-        "bot.wuliang",  // 默认扫描路径
-    ]
+    scanBasePackages = ["bot.wuliang"]
 )
 @MapperScan("bot.wuliang.*")
 class TencentBotKotlinApplication

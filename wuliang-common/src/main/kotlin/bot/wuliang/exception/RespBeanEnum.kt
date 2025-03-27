@@ -1,9 +1,9 @@
 package bot.wuliang.exception
 
 enum class RespBeanEnum(
-    val code: Long,
-    val message: String
-) {
+    override val code: Long,
+    override val message: String
+) : RespCode {
     SUCCESS(200, "SUCCESS"),
     ERROR(500, "服务端异常"),
 

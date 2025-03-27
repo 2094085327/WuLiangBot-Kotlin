@@ -1,5 +1,7 @@
 package bot.wuliang.user
 
+import java.io.Serializable
+
 
 /**
  * @description: 用户登录信息
@@ -16,4 +18,4 @@ data class UserVo(
      * 密码
      */
     private val password: String? = null
-)
+) : Serializable
