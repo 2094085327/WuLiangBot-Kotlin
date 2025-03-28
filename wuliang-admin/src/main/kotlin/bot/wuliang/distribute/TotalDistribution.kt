@@ -1,7 +1,7 @@
 package bot.wuliang.distribute
 
 import bot.wuliang.TencentBotKotlinApplication
-import bot.wuliang.botLog.database.LogServiceImpl
+import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
@@ -22,7 +22,7 @@ import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
 import bot.wuliang.restart.Restart
-import bot.wuliang.template.TemplateService
+import bot.wuliang.template.service.TemplateService
 import bot.wuliang.vo.HelpVo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode

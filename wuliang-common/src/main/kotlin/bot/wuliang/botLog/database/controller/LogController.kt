@@ -1,5 +1,6 @@
-package bot.wuliang.botLog.database
+package bot.wuliang.botLog.database.controller
 
+import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum

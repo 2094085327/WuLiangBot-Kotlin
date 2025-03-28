@@ -3,7 +3,7 @@ package bot.wuliang.botLog.logAop
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.vo.ContextVo
 
-import bot.wuliang.botLog.database.LogServiceImpl
+import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.aspectj.lang.ProceedingJoinPoint

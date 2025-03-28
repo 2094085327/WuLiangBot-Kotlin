@@ -1,5 +1,6 @@
-package bot.wuliang.user
+package bot.wuliang.user.service
 
+import bot.wuliang.user.entity.UserEntity
 import com.baomidou.mybatisplus.extension.service.IService
 
 /**

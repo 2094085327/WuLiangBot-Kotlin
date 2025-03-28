@@ -1,5 +1,6 @@
-package bot.wuliang.template
+package bot.wuliang.template.service
 
+import bot.wuliang.template.entity.TemplateEntity
 import com.baomidou.mybatisplus.extension.service.IService
 
 interface TemplateService : IService<TemplateEntity?> {

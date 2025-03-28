@@ -12,9 +12,9 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableCaching
 @EnableScheduling
 @SpringBootApplication(
-    scanBasePackages = ["bot.wuliang"]
+    scanBasePackages = ["bot.wuliang.**"]
 )
-@MapperScan("bot.wuliang.*")
+@MapperScan("bot.wuliang.**.mapper")
 class TencentBotKotlinApplication
 
 fun main(args: Array<String>) {

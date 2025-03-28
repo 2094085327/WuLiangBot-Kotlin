@@ -1,4 +1,4 @@
-package bot.wuliang.user
+package bot.wuliang.user.entity.vo
 
 import java.io.Serializable
 

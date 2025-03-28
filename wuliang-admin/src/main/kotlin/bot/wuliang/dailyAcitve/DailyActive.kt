@@ -1,6 +1,6 @@
 package bot.wuliang.dailyAcitve
 
-import bot.wuliang.botLog.database.LogService
+import bot.wuliang.botLog.database.service.LogService
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils

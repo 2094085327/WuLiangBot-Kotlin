@@ -3,6 +3,7 @@ package bot.wuliang.entity
 import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
+import java.io.Serializable
 
 @TableName("wf_market_item")
 data class WfMarketItemEntity(
@@ -32,4 +33,4 @@ data class WfMarketItemEntity(
      */
     @TableField("use_count")
     var useCount: Int? = 0,
-)
+) : Serializable

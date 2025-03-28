@@ -1,5 +1,8 @@
-package bot.wuliang.template
+package bot.wuliang.template.service.impl
 
+import bot.wuliang.template.entity.TemplateEntity
+import bot.wuliang.template.mapper.TemplateMapper
+import bot.wuliang.template.service.TemplateService
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired

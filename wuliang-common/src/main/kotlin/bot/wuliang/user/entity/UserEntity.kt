@@ -1,4 +1,4 @@
-package bot.wuliang.user
+package bot.wuliang.user.entity
 
 import com.baomidou.mybatisplus.annotation.*
 

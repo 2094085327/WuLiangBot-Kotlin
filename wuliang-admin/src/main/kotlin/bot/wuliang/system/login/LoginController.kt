@@ -4,7 +4,7 @@ import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum
 import bot.wuliang.otherUtil.CookieUtil
 import bot.wuliang.redis.RedisService
-import bot.wuliang.user.UserVo
+import bot.wuliang.user.entity.vo.UserVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.bind.annotation.PostMapping

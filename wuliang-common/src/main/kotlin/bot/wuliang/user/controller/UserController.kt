@@ -1,4 +1,4 @@
-package bot.wuliang.user
+package bot.wuliang.user.controller
 
 import org.springframework.stereotype.Controller
 

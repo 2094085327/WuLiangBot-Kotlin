@@ -1,4 +1,4 @@
-package bot.wuliang.botLog.database
+package bot.wuliang.botLog.database.mapper
 
 import bot.wuliang.botLog.logAop.LogEntity
 import com.baomidou.mybatisplus.core.mapper.BaseMapper

@@ -1,5 +1,7 @@
-package bot.wuliang.botLog.database
+package bot.wuliang.botLog.database.service.impl
 
+import bot.wuliang.botLog.database.mapper.LogMapper
+import bot.wuliang.botLog.database.service.LogService
 import bot.wuliang.botLog.logAop.LogEntity
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.metadata.IPage

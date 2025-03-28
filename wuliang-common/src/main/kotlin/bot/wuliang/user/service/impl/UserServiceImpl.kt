@@ -1,5 +1,8 @@
-package bot.wuliang.user
+package bot.wuliang.user.service.impl
 
+import bot.wuliang.user.entity.UserEntity
+import bot.wuliang.user.mapper.UserMapper
+import bot.wuliang.user.service.UserService
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired

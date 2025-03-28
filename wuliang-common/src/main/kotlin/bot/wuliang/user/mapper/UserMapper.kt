@@ -1,5 +1,6 @@
-package bot.wuliang.user
+package bot.wuliang.user.mapper
 
+import bot.wuliang.user.entity.UserEntity
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import org.apache.ibatis.annotations.Mapper
 

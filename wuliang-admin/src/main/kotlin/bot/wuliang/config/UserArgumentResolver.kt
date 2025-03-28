@@ -2,8 +2,8 @@ package bot.demo.txbot.bot.wuliang.config
 
 import bot.wuliang.otherUtil.CookieUtil
 import bot.wuliang.redis.RedisService
-import bot.wuliang.user.UserService
-import bot.wuliang.user.UserVo
+import bot.wuliang.user.service.UserService
+import bot.wuliang.user.entity.vo.UserVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.MethodParameter
