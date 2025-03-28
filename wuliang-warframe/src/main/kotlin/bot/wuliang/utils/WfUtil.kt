@@ -3,6 +3,8 @@ package bot.wuliang.utils
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.config.*
+import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.entity.vo.WfMarketVo
@@ -11,6 +13,10 @@ import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
+import bot.wuliang.service.WfRivenService
+import bot.wuliang.service.WfMarketItemService
+import bot.wuliang.utils.WfStatus.replaceTime
+import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
@@ -35,14 +41,18 @@ import kotlin.random.Random
  * @date 2024/6/4 上午9:45
  */
 @Component
-class WfUtil @Autowired constructor(
-    private val wfRivenService: WfRivenService,
-    private val redisService: RedisService,
-    @Qualifier("otherUtil") private val otherUtil: OtherUtil,
-) {
+class WfUtil{
 
     @Autowired
     private lateinit var wfMarketItemService: WfMarketItemService
+    @Autowired
+    private lateinit var wfRivenService: WfRivenService
+    @Autowired
+    private lateinit var redisService: RedisService
+
+    @Autowired
+    @Qualifier("otherUtil")
+    private lateinit var otherUtil: OtherUtil
 
     /**
      * 发送物品信息
@@ -51,7 +61,7 @@ class WfUtil @Autowired constructor(
      * @param modLevel 模组等级
      */
     fun sendMarketItemInfo(context: BotUtils.Context, item: WfMarketItemEntity, modLevel: Any? = null) {
-        val url = "$WARFRAME_MARKET_ITMES/${item.urlName}/orders"
+        val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
 
@@ -311,7 +321,7 @@ class WfUtil @Autowired constructor(
 
         if (rivenOrderList.isEmpty()) return false
 
-        WfMarket.rivenOrderList = WfMarketVo.RivenOrderList(
+        WfMarketController.WfMarket.rivenOrderList = WfMarketVo.RivenOrderList(
             itemName = itemZhName,
             orderList = rivenOrderList
         )
@@ -695,7 +705,7 @@ class WfUtil @Autowired constructor(
         )
         // 筛选和格式化拍卖数据
         rivenJson?.let { formatAuctionData(it, item.name!!) }
-        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
+        val startPlatinumList = WfMarketController.WfMarket.rivenOrderList?.orderList?.map { order ->
             order.startPlatinum
         } as MutableList
         startPlatinumList.remove(startPlatinumList.max())
@@ -755,7 +765,7 @@ class WfUtil @Autowired constructor(
     suspend fun getAvg(item: String): Map<String, String> = withContext(Dispatchers.IO) {
         val rivenJson = getAllRivenJson(itemEntityUrlName = item)
         rivenJson?.let { formatAuctionData(it, item) }
-        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
+        val startPlatinumList = WfMarketController.WfMarket.rivenOrderList?.orderList?.map { order ->
             order.startPlatinum
         } as MutableList
         startPlatinumList.remove(startPlatinumList.maxOrNull())

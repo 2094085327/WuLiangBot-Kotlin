@@ -1,4 +1,4 @@
-package bot.demo.txbot.other.distribute.actionConfig
+package bot.wuliang.distribute.actionConfig
 
 import bot.wuliang.jacksonUtil.JacksonUtil
 

@@ -1,4 +1,4 @@
-package bot.wuliang.system
+package bot.wuliang.system.login
 
 import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum
@@ -7,7 +7,6 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.user.UserVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
