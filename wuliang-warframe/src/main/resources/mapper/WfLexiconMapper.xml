@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.WfLexiconMapper">
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO wfLexicon (id, en_item_name, zh_item_name, url_name, in_market, use_count) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.enItemName}, #{item.zhItemName}, #{item.urlName}, #{item.inMarket}, #{item.useCount})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        en_item_name = VALUES(en_item_name),
+        zh_item_name = VALUES(zh_item_name),
+        url_name = VALUES(url_name),
+        in_market = VALUES(in_market),
+        use_count = VALUES(use_count);
+    </insert>
+
+    <select id="selectByZhItemName" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT LOWER(wf_other_name.en_item_name)
+        FROM wf_other_name
+        WHERE LOWER(wf_other_name.other_name) = LOWER(#{otherName})
+    </select>
+
+    <select id="selectByEnItemName" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT wf_other_name.other_name
+        FROM wf_other_name
+        WHERE LOWER(wf_other_name.en_item_name) = LOWER(#{enItemName})
+    </select>
+
+    <insert id="insertNewOtherName">
+        INSERT wf_other_name (en_item_name, other_name)
+        VALUES (#{enItemName}, #{otherName})
+        ON DUPLICATE KEY UPDATE en_item_name = VALUES(en_item_name),
+                                other_name   = VALUES(other_name);
+    </insert>
+
+    <select id="selectAllOtherName" resultType="bot.wuliang.entity.WfOtherNameEntity">
+        select id, en_item_name, other_name
+        from wf_other_name
+        ORDER BY en_item_name
+    </select>
+
+    <update id="updateOtherNameById">
+        update wf_other_name
+        set other_name = #{otherName}
+        where #{id} = id
+    </update>
+</mapper>

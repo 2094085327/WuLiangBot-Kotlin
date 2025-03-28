@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.WfRivenMapper">
+
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        INSERT INTO wf_riven (id, url_name, en , zh, r_group,attributes) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.urlName}, #{item.enName}, #{item.zhName}, #{item.rGroup}, #{item.attributesBool})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        id = VALUES(id),
+        en = VALUES(en),
+        zh = VALUES(zh),
+        url_name = VALUES(url_name)
+    </insert>
+
+    <select id="selectAllRiven" resultType="bot.wuliang.entity.WfRivenEntity">
+        Select id, url_name, en as enName, zh as zhName, r_group, attributes
+        from wf_riven
+        where attributes = 0
+        ORDER BY url_name
+    </select>
+</mapper>
