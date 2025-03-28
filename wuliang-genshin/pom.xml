@@ -10,7 +10,7 @@
     </parent>
 
     <groupId>bot.wuliang</groupId>
-    <artifactId>wuliang-warframe</artifactId>
+    <artifactId>wuliang-genshin</artifactId>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -81,10 +81,6 @@
         <dependency>
             <groupId>bot.wuliang</groupId>
             <artifactId>wuliang-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>bot.wuliang</groupId>
-            <artifactId>wuliang-admin</artifactId>
         </dependency>
     </dependencies>
 

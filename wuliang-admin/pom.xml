@@ -94,6 +94,16 @@
             <groupId>bot.wuliang</groupId>
             <artifactId>wuliang-common</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>bot.wuliang</groupId>
+            <artifactId>wuliang-warframe</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>bot.wuliang</groupId>
+            <artifactId>wuliang-genshin</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
