@@ -20,6 +20,7 @@
         <module>wuliang-admin</module>
         <module>wuliang-common</module>
         <module>wuliang-warframe</module>
+        <module>wuliang-genshin</module>
     </modules>
 
     <properties>
@@ -339,6 +340,14 @@
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-warframe</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+
+
+            <!--genshin模块-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-genshin</artifactId>
                 <version>${wuliang.version}</version>
             </dependency>
         </dependencies>
