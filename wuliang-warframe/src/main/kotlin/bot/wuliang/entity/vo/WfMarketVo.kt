@@ -1,5 +1,7 @@
 package bot.wuliang.entity.vo
 
+import java.io.Serializable
+
 
 /**
  * @description: Warframe Market Vo层
@@ -19,7 +21,7 @@ class WfMarketVo {
         val platinum: Int,
         val quantity: Int,
         val inGameName: String,
-    )
+    ) : Serializable
 
     /**
      * Warframe 紫卡信息
@@ -32,7 +34,7 @@ class WfMarketVo {
         val value: Double,
         val positive: Boolean,
         val urlName: String
-    )
+    ) : Serializable
 
     /**
      * Warframe 紫卡订单信息
@@ -57,7 +59,7 @@ class WfMarketVo {
         val positive: MutableList<Attributes>,
         val negative: MutableList<Attributes>,
         val updateTime: String,
-    )
+    ) : Serializable
 
     /**
      * 玄骸武器订单
@@ -74,7 +76,7 @@ class WfMarketVo {
         val damage: Int? = null,
         val startPlatinum: Int? = null,
         val buyOutPlatinum: Int? = null,
-    )
+    ) : Serializable
 
     /**
      * 玄骸武器Entity
@@ -85,7 +87,7 @@ class WfMarketVo {
     data class LichEntity(
         val lichName: String? = null,
         val lichOrderInfoList: List<LichOrderInfo>? = listOf()
-    )
+    ) : Serializable
 
     /**
      * 紫卡订单列表
@@ -96,7 +98,7 @@ class WfMarketVo {
     data class RivenOrderList(
         val itemName: String,
         val orderList: List<RivenOrderInfo>
-    )
+    ) : Serializable
 
     /**
      * 全部紫卡价格排行
@@ -104,5 +106,5 @@ class WfMarketVo {
      * @property name 紫卡名称
      * @property value 价格
      */
-    data class RivenRank(val name: String? = null, val value: String? = null)
+    data class RivenRank(val name: String? = null, val value: String? = null) : Serializable
 }

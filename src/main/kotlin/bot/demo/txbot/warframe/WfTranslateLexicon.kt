@@ -5,6 +5,7 @@ import bot.demo.txbot.common.logAop.SystemLog
 import bot.demo.txbot.common.utils.HttpUtil
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil.STConversion.toMd5
+import bot.demo.txbot.common.utils.RedisService
 import bot.demo.txbot.other.distribute.annotation.AParameter
 import bot.demo.txbot.other.distribute.annotation.ActionService
 import bot.demo.txbot.other.distribute.annotation.Executor
@@ -38,6 +39,9 @@ class WfTranslateLexicon {
 
     @Autowired
     lateinit var wfMarketItemService: WfMarketItemService
+
+    @Autowired
+    lateinit var redisService: RedisService
 
     /**
      * 获取Json数据并进行格式化
@@ -331,6 +335,9 @@ class WfTranslateLexicon {
                 val rivenJob = async {
                     wfRivenService.insertRiven(getRivenList(rivenMap))
                     logInfo("紫卡词库更新完成")
+                    // 删除缓存的Redis紫卡数据
+                    redisService.deleteKey(redisService.getListKey("warframe:riven:*"))
+
                     rivenMap.clear()
                 }
                 val lichJob = async {

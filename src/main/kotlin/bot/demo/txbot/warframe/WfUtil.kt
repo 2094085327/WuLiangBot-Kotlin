@@ -6,11 +6,11 @@ import bot.demo.txbot.common.utils.LoggerUtils.logError
 import bot.demo.txbot.common.utils.LoggerUtils.logInfo
 import bot.demo.txbot.common.utils.OtherUtil
 import bot.demo.txbot.common.utils.RedisService
-import bot.demo.txbot.warframe.database.controller.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.WfStatusController.WfStatus.replaceTime
 import bot.demo.txbot.warframe.WfUtil.WfUtilObject.toEastEightTimeZone
 import bot.demo.txbot.warframe.database.WfRivenEntity
 import bot.demo.txbot.warframe.database.WfRivenService
+import bot.demo.txbot.warframe.database.controller.WfMarketController.WfMarket
 import bot.demo.txbot.warframe.database.entity.WfMarketItemEntity
 import bot.demo.txbot.warframe.database.service.WfMarketItemService
 import bot.demo.txbot.warframe.vo.WfMarketVo
@@ -271,9 +271,9 @@ class WfUtil @Autowired constructor(
         val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
 
         val rivenOrderList = orders.asSequence()
-            // 筛选游戏状态为 在线 和 游戏中 的信息
+            // 筛选循环次数小于等于 reRollTimes 的信息
             .filter {
-                if (reRollTimes != null) it["item"]["re_rolls"].intValue() == reRollTimes else true
+                if (reRollTimes != null) it["item"]["re_rolls"].intValue() <= reRollTimes else true
             }
             // 按照 status 排序，ingame -> online -> offline
             .sortedBy {
@@ -322,6 +322,30 @@ class WfUtil @Autowired constructor(
         )
 
         return true
+    }
+
+    /**
+     * 格式化紫卡的起拍价格
+     *
+     * @param rivenJson 紫卡Json数据
+     * @return 起拍价格列表
+     */
+    fun formatStartPrice(rivenJson: JsonNode): MutableList<Int> {
+        val orders = rivenJson["payload"]["auctions"]
+        // 定义允许的状态集合
+        val allowedStatuses = setOf("online", "ingame")
+
+        return orders.asSequence()
+            // 筛选游戏状态为 在线 和 游戏中 的信息
+            .filter { order ->
+                order["owner"]["status"].textValue() in allowedStatuses
+            }
+            .map { order ->
+                order["starting_price"]?.intValue() ?: order["buyout_price"].intValue()
+            }
+            .sortedBy { it }
+            .take(5)
+            .toMutableList()
     }
 
     /**
@@ -694,15 +718,12 @@ class WfUtil @Autowired constructor(
      * @return Map<String, String>
      */
     suspend fun getAvg(item: SteelItem): Map<String, String> = withContext(Dispatchers.IO) {
-        val rivenJson = getAuctionsJson(
+        val startPlatinumList = getAuctionsJson(
             itemEntityUrlName = item.urlName!!,
             auctionType = "riven",
-        )
-        // 筛选和格式化拍卖数据
-        rivenJson?.let { formatAuctionData(it, item.name!!) }
-        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
-            order.startPlatinum
-        } as MutableList
+        )?.let { formatStartPrice(it) }
+        // 筛选和格式化拍卖数据，获取起拍价格列表
+        if (startPlatinumList.isNullOrEmpty()) return@withContext emptyMap()
         startPlatinumList.remove(startPlatinumList.max())
         startPlatinumList.remove(startPlatinumList.min())
         val avg = startPlatinumList.average()
@@ -758,11 +779,10 @@ class WfUtil @Autowired constructor(
      * @return Map<String, String>
      */
     suspend fun getAvg(item: String): Map<String, String> = withContext(Dispatchers.IO) {
-        val rivenJson = getAllRivenJson(itemEntityUrlName = item)
-        rivenJson?.let { formatAuctionData(it, item) }
-        val startPlatinumList = WfMarket.rivenOrderList?.orderList?.map { order ->
-            order.startPlatinum
-        } as MutableList
+        // 筛选和格式化拍卖数据，获取起拍价格列表
+        val startPlatinumList = getAllRivenJson(itemEntityUrlName = item)?.let { formatStartPrice(it) }
+        println("startPlatinumList: $startPlatinumList")
+        if (startPlatinumList.isNullOrEmpty()) return@withContext emptyMap()
         startPlatinumList.remove(startPlatinumList.maxOrNull())
         startPlatinumList.remove(startPlatinumList.minOrNull())
         val avg = startPlatinumList.average()
@@ -829,7 +849,7 @@ class WfUtil @Autowired constructor(
     }
 
     /**
-     * 定时更新紫卡数据
+     * 定时更新紫卡价格数据
      *
      */
     @Scheduled(cron = "0 0 * * * ?")
@@ -846,12 +866,17 @@ class WfUtil @Autowired constructor(
     private fun updateRivenData(midnight: Boolean = false) {
         if (redisService.hasKey("warframe:rivenRanking") && !midnight) return
 
-        val rivenData = wfRivenService.selectAllRivenData()
-        rivenData.forEach {
-            redisService.setValue("warframe:riven:${it.urlName}", it)
+        // redis不存在紫卡数据，从数据库中获取并缓存
+        val urlNameList = redisService.getListKey("warframe:riven:*").map { it.split(":")[2] }
+        if (urlNameList.isEmpty()) {
+            val rivenData = wfRivenService.selectAllRivenData()
+            urlNameList as MutableList<String>
+            urlNameList.addAll(rivenData.map { it.urlName!! })
+            rivenData.forEach {
+                redisService.setValue("warframe:riven:${it.urlName}", it)
+            }
         }
 
-        val urlNameList = redisService.getListKey("warframe:riven:*").map { it.split(":")[2] }
         val rivenAvgList =
             if (!midnight) redisService.getListKey("warframe:rivenAvg:*").map { it.split(":")[2] } else emptyList()
         val newList = urlNameList.subtract(rivenAvgList.toSet()).toList()

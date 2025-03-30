@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField
 import com.baomidou.mybatisplus.annotation.TableId
 import com.baomidou.mybatisplus.annotation.TableName
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.io.Serializable
 
 
 /**
@@ -54,4 +55,4 @@ data class WfRivenEntity(
     @JsonProperty("attributes")
     @TableField(value = "attributes")
     val attributesBool: Int? = 0
-)
+) : Serializable
