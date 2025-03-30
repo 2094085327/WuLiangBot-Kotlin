@@ -48,7 +48,6 @@ class WfStatusController @Autowired constructor(
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
 
-
     /**
      * 获取裂缝信息
      *
@@ -755,5 +754,42 @@ class WfStatusController @Autowired constructor(
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
+    }
+
+    @SystemLog(businessName = "获取信条/终幕武器轮换信息")
+    @AParameter
+    @Executor(action = "\\b(佩兰|信条|终幕|信条轮换|终幕轮换)\\b")
+    fun weaponRotation(context: BotUtils.Context) {
+        // 信条刷新日期 2025-03-29 08:00:00
+        val tenetStartDate = LocalDateTime.of(2025, 3, 29, 8, 0, 0)
+        // 终幕刷新日期 2025-03-19 08:00:00
+        val codaStartDate = LocalDateTime.of(2025, 3, 19, 8, 0, 0)
+
+        // 每4天刷新一次
+        val refreshInterval = Duration.ofDays(4)
+
+        val now = LocalDateTime.now()
+        // 每4天刷新一次，计算剩余刷新时间
+        val tenetNextRefresh = wfUtil.getNextRefreshTime(tenetStartDate, now, refreshInterval)
+        // 计算下一次终幕刷新时间
+        val codaNextRefresh = wfUtil.getNextRefreshTime(codaStartDate, now, refreshInterval)
+
+        // 计算剩余时间
+        val tenetRemainingTime = Duration.between(now, tenetNextRefresh)
+        val codaRemainingTime = Duration.between(now, codaNextRefresh)
+
+        // 格式化剩余时间
+        val formattedTenetRemainingTime = wfUtil.formatDuration(tenetRemainingTime)
+        val formattedCodaRemainingTime = wfUtil.formatDuration(codaRemainingTime)
+
+        // 定义日期时间格式化器
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        // 格式化下一次刷新时间
+        val formattedTenetNextRefresh = tenetNextRefresh.format(dateTimeFormatter)
+        val formattedCodaNextRefresh = codaNextRefresh.format(dateTimeFormatter)
+
+        // 发送消息
+        context.sendMsg("信条下一次刷新时间: $formattedTenetNextRefresh  剩余时间: $formattedTenetRemainingTime\n终幕下一次刷新时间: $formattedCodaNextRefresh  剩余时间: $formattedCodaRemainingTime")
     }
 }

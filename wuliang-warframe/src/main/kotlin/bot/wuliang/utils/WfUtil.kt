@@ -13,8 +13,8 @@ import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
-import bot.wuliang.service.WfRivenService
 import bot.wuliang.service.WfMarketItemService
+import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.WfStatus.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -41,12 +41,14 @@ import kotlin.random.Random
  * @date 2024/6/4 上午9:45
  */
 @Component
-class WfUtil{
+class WfUtil {
 
     @Autowired
     private lateinit var wfMarketItemService: WfMarketItemService
+
     @Autowired
     private lateinit var wfRivenService: WfRivenService
+
     @Autowired
     private lateinit var redisService: RedisService
 
@@ -578,6 +580,7 @@ class WfUtil{
 
     fun formatDuration(duration: Duration): String {
         return when {
+            duration.toDays() > 0 -> "${duration.toDays()} 天 ${duration.toHoursPart()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
             duration.toHours() > 0 -> "${duration.toHours()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
             duration.toMinutes() > 0 -> "${duration.toMinutes()} 分钟 ${duration.toSecondsPart()} 秒"
             else -> "${duration.toSecondsPart()} 秒"
@@ -925,5 +928,12 @@ class WfUtil{
         }
 
         return null
+    }
+
+    fun getNextRefreshTime(startDate: LocalDateTime, now: LocalDateTime, interval: Duration): LocalDateTime {
+        val durationSinceStart = Duration.between(startDate, now)
+        val fullCycles = durationSinceStart.toDays() / interval.toDays()
+        val lastRefresh = startDate.plus(interval.multipliedBy(fullCycles))
+        return if (lastRefresh.isBefore(now)) lastRefresh.plus(interval) else lastRefresh
     }
 }
