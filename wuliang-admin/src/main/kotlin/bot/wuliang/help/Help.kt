@@ -3,8 +3,8 @@ package bot.wuliang.help
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.HELP_JSON
-import bot.wuliang.distribute.TotalDistribution
-import bot.wuliang.distribute.TotalDistribution.CommandList.commandConfig
+import bot.wuliang.totalDistribution.TotalDistribution
+import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor

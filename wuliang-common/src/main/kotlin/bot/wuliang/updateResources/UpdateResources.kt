@@ -17,10 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
-import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.io.File
 import javax.annotation.PostConstruct
@@ -43,6 +41,8 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
+    private val updateResourcesUtil = UpdateResourcesUtil()
+
     @Value("\${github.owner}")
     fun getOwner(githubOwner: String) {
         owner = githubOwner
@@ -59,62 +59,6 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
     }
 
     val otherUtil = OtherUtil()
-
-    fun manageFolderSize(folderPath: String, maxSizeMB: Double, deletePercentage: Double) {
-        val folder = File(folderPath)
-        if (!folder.exists() || !folder.isDirectory) {
-            logWarn("指定路径不是文件夹或文件夹不存在")
-            return
-        }
-
-        // 获取文件夹下所有文件
-        val files = folder.listFiles()
-        if (files.isNullOrEmpty()) {
-            logWarn("缓存文件夹为空")
-            return
-        }
-
-        // 计算当前文件夹的总大小，转换为MB
-        val currentSizeMB = files.sumOf { it.length() } / (1024.0 * 1024.0)
-
-        // 判断当前文件夹大小是否超过最大允许大小
-        if (currentSizeMB <= maxSizeMB) {
-            return
-        }
-
-        // 计算要删除的文件数量
-        val filesToDeleteCount = (deletePercentage * files.size).toInt()
-
-        // 按最久未修改时间排序文件
-        val filesSortedByLastModified = files.sortedBy { it.lastModified() }
-
-        // 删除最久未修改的部分文件
-        var deletedSizeMB = 0.0
-        for (i in 0 until filesToDeleteCount) {
-            val fileToDelete = filesSortedByLastModified[i]
-            val fileSizeMB = fileToDelete.length() / (1024.0 * 1024.0)
-            val deleted = fileToDelete.delete()
-            if (deleted) deletedSizeMB += fileSizeMB
-
-            // 判断是否已删除足够大小的文件
-            if (deletedSizeMB >= currentSizeMB - maxSizeMB) {
-                break
-            }
-        }
-    }
-
-    /**
-     * 强制删除缓存
-     *
-     * @param cachePath 缓存路径
-     */
-    fun forceDeleteCache(cachePath: String) {
-        val folder = File(cachePath)
-        folder.listFiles()?.forEach { file ->
-            logInfo("删除缓存：${file.name}")
-            file.delete()
-        }
-    }
 
     @AParameter
     @Executor(action = "更新资源")
@@ -139,32 +83,15 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
             context.sendMsg("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
 
-//            // 尝试更新卡池数据
-//            UpdateGachaResources().getDataMain()
-//
-//            // 重新初始化原神相关数据
-//            InitGenShinData.initGachaLogData()
-
             // 发布资源更新事件
             applicationContext.publishEvent(ResourceUpdateEvent(this))
         }
     }
 
-    @GetMapping("/tttt")
-    fun tttt(): String {
-        applicationContext.publishEvent(ResourceUpdateEvent(this))
-        return "tttt"
-    }
-
-    @EventListener
-    fun  ffff(event: ResourceUpdateEvent){
-        println("ffffff")
-    }
-
     @AParameter
     @Executor(action = "清除缓存")
     fun deleteCache(context: BotUtils.Context) {
-        forceDeleteCache("resources/imageCache")
+        updateResourcesUtil.forceDeleteCache("resources/imageCache")
         context.sendMsg("已完成缓存清理")
     }
 

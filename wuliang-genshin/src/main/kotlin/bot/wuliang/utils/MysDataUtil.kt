@@ -7,6 +7,8 @@ import bot.wuliang.config.New_ADD
 import bot.wuliang.config.POOL_JSON
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.jacksonUtil.JacksonUtil.objectMapper
+import bot.wuliang.utils.InitGenShinData.Companion.poolData
+import bot.wuliang.utils.InitGenShinData.Companion.upPoolData
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode

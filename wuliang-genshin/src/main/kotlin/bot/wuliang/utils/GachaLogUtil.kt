@@ -1,6 +1,7 @@
 package bot.wuliang.utils
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
+import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
@@ -8,7 +9,9 @@ import bot.wuliang.entity.GenShinItemEntity
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.qiNiuCos.QiNiuService
+import bot.wuliang.service.GaChaLogService
 import bot.wuliang.tencentCos.CosFileServiceImpl
+import bot.wuliang.utils.InitGenShinData.Companion.upPoolData
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
 import java.io.IOException
+import java.net.URLEncoder
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,11 +32,17 @@ import java.util.*
  * @date 2024/2/5 20:04
  */
 @Component
-class GachaLogUtil(
-    @Autowired private val webImgUtil: WebImgUtil,
-    @Autowired private val qiNiuService: QiNiuService,
-    @Autowired private val txCosService: CosFileServiceImpl
-) {
+class GachaLogUtil {
+    @Autowired
+    private lateinit var gaChaLogService: GaChaLogService
+    @Autowired
+    private lateinit var mysApiTools: MysApiTools
+    @Autowired
+    private lateinit var webImgUtil: WebImgUtil
+    @Autowired
+    private lateinit var qiNiuService: QiNiuService
+    @Autowired
+    private lateinit var txCosService: CosFileServiceImpl
 
     /**
      * 抽卡数据
@@ -412,6 +422,70 @@ class GachaLogUtil(
         )
 
         return newUuid
+    }
+
+
+    fun getData(authKeyB: JsonNode) =
+        processGachaData(authKeyB) { authKey, id -> gachaThreadByAuth(authKey as JsonNode, id) }
+
+    fun getData(gachaUrl: String) = processGachaData(gachaUrl) { url, id -> gachaThreadByUrl(url as String, id) }
+
+    fun processGachaData(data: Any, threadFunc: (Any, Int) -> Unit) {
+        val idList = listOf(301, 302, 200, 500)
+        idList.forEach { id ->
+            threadFunc(data, id)
+            logInfo("卡池：$id 分析完毕")
+        }
+        System.gc()
+    }
+
+
+    /**
+     * 获取抽卡数据进程
+     *
+     * @param authKeyB 米游社验证
+     * @param gachaId 卡池类型
+     */
+    fun gachaThreadByAuth(authKeyB: JsonNode, gachaId: Int) = fetchData(authKeyB, gachaId) { map ->
+        mysApiTools.getData("gachaLog", map as MutableMap<String, Any?>)
+    }
+
+    /**
+     * 获取抽卡数据进程
+     *
+     * @param gachaUrl 抽卡链接
+     * @param gachaId 卡池类型
+     */
+    fun gachaThreadByUrl(gachaUrl: String, gachaId: Int) = fetchData(gachaUrl, gachaId) { map ->
+        getDataByUrl(map["url"]!! as String)
+    }
+
+    fun <T> fetchData(data: T, gachaId: Int, fetchFunc: (Map<String, Any?>) -> JsonNode) {
+        var endId = "0"
+        for (i in 1..10000) {
+            val map: Map<String, Any> = when (data) {
+                is JsonNode -> mapOf(
+                    "authkey" to URLEncoder.encode(data["data"]["authkey"].textValue(), "UTF-8"),
+                    "size" to "20",
+                    "end_id" to endId,
+                    "page" to i,
+                    "gacha_type" to gachaId.toString()
+                )
+
+                is String -> mapOf(
+                    "url" to getUrl(url = data, gachaType = gachaId.toString(), times = i, endId = endId)
+                )
+
+                else -> throw IllegalArgumentException("不支持的数据格式")
+            }
+
+            val gachaData = fetchFunc(map)
+            if (gachaData["data"]["list"].isEmpty) break
+            endId = gachaData["data"]["list"].last()["id"].textValue()
+            if (!gaChaLogService.insertByJson(gachaData["data"])) break
+
+            Thread.sleep(500)
+        }
     }
 
     fun getGachaData(): GachaData {

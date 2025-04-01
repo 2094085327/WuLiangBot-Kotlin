@@ -1,4 +1,4 @@
-package bot.wuliang.distribute
+package bot.wuliang.totalDistribution
 
 import bot.wuliang.TencentBotKotlinApplication
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
@@ -10,9 +10,9 @@ import bot.wuliang.config.DAILY_ACTIVE_PATH
 import bot.wuliang.config.HELP_JSON
 import bot.wuliang.config.RESTART_CONFIG
 import bot.wuliang.dailyAcitve.DailyActive
-import bot.wuliang.distribute.TotalDistribution.CommandList.commandConfig
-import bot.wuliang.distribute.TotalDistribution.CommandList.helpMd5
-import bot.wuliang.distribute.TotalDistribution.CommandList.lastHelpMd5
+import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
+import bot.wuliang.totalDistribution.TotalDistribution.CommandList.helpMd5
+import bot.wuliang.totalDistribution.TotalDistribution.CommandList.lastHelpMd5
 import bot.wuliang.distribute.actionConfig.ActionFactory
 import bot.wuliang.distribute.actionConfig.Addition
 import bot.wuliang.distribute.annotation.AParameter
