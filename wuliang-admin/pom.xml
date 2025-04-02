@@ -111,6 +111,12 @@
             <artifactId>wuliang-game</artifactId>
         </dependency>
 
+        <!--天气模块-->
+        <dependency>
+            <groupId>bot.wuliang</groupId>
+            <artifactId>wuliang-weather</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

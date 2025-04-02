@@ -22,6 +22,7 @@
         <module>wuliang-warframe</module>
         <module>wuliang-genshin</module>
         <module>wuliang-game</module>
+        <module>wuliang-weather</module>
     </modules>
 
     <properties>
@@ -356,6 +357,13 @@
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-genshin</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+
+            <!--天气模块-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-weather</artifactId>
                 <version>${wuliang.version}</version>
             </dependency>
         </dependencies>
