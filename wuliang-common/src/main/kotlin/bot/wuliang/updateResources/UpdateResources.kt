@@ -164,12 +164,6 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
             }
             logInfo("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
-
-//            // 尝试更新卡池数据
-//            UpdateGachaResources().getDataMain()
-//
-//            // 重新初始化原神相关数据
-//            InitGenShinData.initGachaLogData()
         }
     }
 
