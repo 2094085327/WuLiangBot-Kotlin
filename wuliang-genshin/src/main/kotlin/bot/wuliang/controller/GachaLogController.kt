@@ -55,7 +55,7 @@ class GachaLogController {
     @Autowired
     private lateinit var mysApiTools: MysApiTools
 
-    val updateGachaResources = UpdateGachaResources()
+    private val updateGachaResources = UpdateGachaResources()
 
 
     @SystemLog(businessName = "获取当前用户抽卡历史记录")
