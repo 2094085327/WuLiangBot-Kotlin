@@ -27,6 +27,11 @@ class RespBean(
             return RespBean(RespBeanEnum.SUCCESS.code, RespBeanEnum.SUCCESS.message, obj)
         }
 
+
+        fun error(): RespBean {
+            return RespBean(RespBeanEnum.ERROR.code, RespBeanEnum.ERROR.message, null)
+        }
+
         /**
          * 失败返回结果
          *
@@ -39,6 +44,25 @@ class RespBean(
 
         fun error(respCode: RespCode, obj: Any?): RespBean {
             return RespBean(respCode.code, respCode.message, obj)
+        }
+
+        /**
+         * 返回结果
+         *
+         * @param result 布尔类型
+         */
+        fun toReturn(result: Boolean): RespBean {
+            return if (result) success() else error()
+        }
+
+        /**
+         * 响应返回结果
+         *
+         * @param rows 影响行数
+         * @return 操作结果
+         */
+        fun toReturn(rows:Int): RespBean {
+           return if (rows > 0) success() else error();
         }
     }
 }

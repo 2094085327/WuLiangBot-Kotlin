@@ -1,0 +1,71 @@
+package entity
+
+import com.alibaba.fastjson2.annotation.JSONField
+import com.baomidou.mybatisplus.annotation.FieldFill
+import com.baomidou.mybatisplus.annotation.TableField
+import com.baomidou.mybatisplus.annotation.TableId
+import com.baomidou.mybatisplus.annotation.TableName
+import com.fasterxml.jackson.annotation.JsonFormat
+import java.io.Serializable
+import java.util.*
+
+@TableName("bot_directive")
+data class DirectivesEntity(
+    /***
+     * 指令ID
+     */
+    @TableId(value = "id")
+    val id: Long? = null,
+
+    /**
+     * 分类名称
+     */
+    @TableField(value = "category_id")
+    val categoryId: Long? = null,
+
+    /**
+     * 指令名称
+     */
+    @TableField(value = "directive_name")
+    val directiveName: String? = null,
+
+    /**
+     * 指令显示描述
+     */
+    @TableField(value = "description")
+    val description: String? = null,
+
+    /**
+     * 指令详细描述
+     */
+    @TableField(value = "detail")
+    val detail: String? = null,
+
+
+    /**
+     * 指令正则
+     */
+    @TableField(value = "regex")
+    val regex: String? = null,
+
+    /**
+     * 是否启用
+     */
+    @TableField(value = "regex")
+    val enable: Int? = 0,
+
+    /**
+     * 删除状态
+     */
+    @TableField(value = "del_status")
+    val delStatus: Int? = 0,
+
+
+    /** 创建时间  */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+    @TableField(fill = FieldFill.INSERT)
+    private var createTime: Date? = null
+
+
+) : Serializable

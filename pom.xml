@@ -23,6 +23,7 @@
         <module>wuliang-genshin</module>
         <module>wuliang-game</module>
         <module>wuliang-weather</module>
+        <module>wuliang-system</module>
     </modules>
 
     <properties>
@@ -364,6 +365,13 @@
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-weather</artifactId>
+                <version>${wuliang.version}</version>
+            </dependency>
+
+            <!--系统模块-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-system</artifactId>
                 <version>${wuliang.version}</version>
             </dependency>
         </dependencies>
