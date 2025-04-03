@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.DirectivesCategoryMapper">
+
+    <select id="findByCategoryNamesIn" resultType="bot.wuliang.entity.DirectivesCategoryEntity">
+        SELECT id, category_name, category_desc, del_status, create_time
+        FROM directives_category
+        <where>
+            <foreach collection="categoryNames" item="categoryName" separator="OR">
+                category_name = #{categoryName}
+            </foreach>
+        </where>
+    </select>
+
+    <insert id="batchAddCategories">
+        INSERT INTO directives_category (category_name, category_desc, create_time)
+        VALUES
+        <foreach collection="categories" item="category" separator=",">
+            (#{category.categoryName}, #{category.categoryDesc},#{category.create_time})
+        </foreach>
+    </insert>
+</mapper>
