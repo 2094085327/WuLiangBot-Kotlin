@@ -1,11 +1,11 @@
 package bot.wuliang.service.impl
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.mapper.DirectivesMapper
+import bot.wuliang.service.DirectivesService
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import bot.wuliang.service.DirectivesService
 
 @Service
 class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(), DirectivesService {
@@ -17,5 +17,17 @@ class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(
 
     override fun addDirectives(directivesEntity: DirectivesEntity): Int {
         return directivesMapper.insert(directivesEntity)
+    }
+
+    override fun batchAddDirectives(directivesList: List<DirectivesEntity>): Int {
+        return directivesMapper.batchAddDirectives(directivesList)
+    }
+
+    override fun findByCategoryId(categoryId: Long): List<DirectivesEntity> {
+        return directivesMapper.findByCategoryId(categoryId)
+    }
+
+    override fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>) {
+       return directivesMapper.batchUpdateDirectives(directivesToUpdate)
     }
 }

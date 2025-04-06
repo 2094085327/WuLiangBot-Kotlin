@@ -13,7 +13,7 @@ class DirectivesCategoryServiceImpl : ServiceImpl<DirectivesCategoryMapper?, Dir
     @Autowired
     private lateinit var directivesCategoryMapper: DirectivesCategoryMapper
     override fun selectDirectivesCategoryList(): MutableList<DirectivesCategoryEntity?> {
-        return directivesCategoryMapper.selectList(null);
+        return directivesCategoryMapper.selectList(null)
     }
 
     override fun addDirectivesCategory(directivesCategoryEntity: DirectivesCategoryEntity): Int {
@@ -26,5 +26,9 @@ class DirectivesCategoryServiceImpl : ServiceImpl<DirectivesCategoryMapper?, Dir
 
     override fun batchAddCategories(categories: List<DirectivesCategoryEntity>): Int {
         return directivesCategoryMapper.batchAddCategories(categories)
+    }
+
+    override fun batchUpdateCategories(categories: List<DirectivesCategoryEntity>) {
+        directivesCategoryMapper.batchUpdateCategories(categories)
     }
 }

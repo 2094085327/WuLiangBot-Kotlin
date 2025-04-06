@@ -15,7 +15,7 @@ data class DirectivesCategoryEntity(
      * 主键
      */
     @TableId(value = "id")
-    var id: Int? = null,
+    var id: Long? = null,
 
     /**
      * 分类名称

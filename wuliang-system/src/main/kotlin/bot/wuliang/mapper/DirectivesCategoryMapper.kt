@@ -11,4 +11,6 @@ interface DirectivesCategoryMapper : BaseMapper<DirectivesCategoryEntity?> {
 
 
     fun batchAddCategories(@Param("categories") categories: List<DirectivesCategoryEntity>): Int
+
+    fun batchUpdateCategories(@Param("categories") categories: List<DirectivesCategoryEntity>): Int
 }

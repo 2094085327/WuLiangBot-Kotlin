@@ -1,9 +1,43 @@
 package bot.wuliang.service
 
-import com.baomidou.mybatisplus.extension.service.IService
 import bot.wuliang.entity.DirectivesEntity
+import com.baomidou.mybatisplus.extension.service.IService
 
 interface DirectivesService : IService<DirectivesEntity?> {
+    /**
+     * 查询指令列表
+     *
+     * @return
+     */
     fun selectDirectivesList(): MutableList<DirectivesEntity?>?
+
+    /**
+     * 添加指令
+     *
+     * @param directivesEntity 指令实体
+     * @return
+     */
     fun addDirectives(directivesEntity: DirectivesEntity): Int
+
+    /**
+     * 批量插入指令
+     *
+     * @param directivesList
+     */
+    fun batchAddDirectives(directivesList: List<DirectivesEntity>): Int
+
+    /**
+     * 根据指令ID查询指令
+     *
+     * @param categoryId
+     * @return
+     */
+    fun findByCategoryId(categoryId: Long): List<DirectivesEntity>
+
+    /**
+     * 批量更新指令
+     *
+     * @param directivesToUpdate
+     */
+    fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>)
 }

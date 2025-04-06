@@ -1,6 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="bot.wuliang.mapper.DirectivesMapper">
+    <insert id="batchAddDirectives" parameterType="java.util.List">
+        INSERT INTO bot_directives (
+        directive_name, description, detail,
+        regex, enable, category_id, create_time
+        ) VALUES
+        <foreach collection="directives" item="directive" separator=",">
+            (
+            #{directive.directiveName},
+            #{directive.description},
+            #{directive.detail},
+            #{directive.regex},
+            #{directive.enable},
+            #{directive.categoryId},
+            NOW()
+            )
+        </foreach>
+    </insert>
+
+    <select id="findByCategoryId" resultType="bot.wuliang.entity.DirectivesEntity">
+        SELECT id,
+               directive_name,
+               description,
+               detail,
+               regex,
+               enable,
+               category_id,
+               create_time,
+               update_time
+        FROM bot_directives
+        WHERE category_id = #{categoryId}
+    </select>
 
 
+    <update id="batchUpdateDirectives" parameterType="list">
+        UPDATE directives
+        <trim prefix="SET" suffixOverrides=",">
+            <trim prefix="directive_name = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN id = #{item.id} THEN #{item.directiveName}
+                </foreach>
+            </trim>
+            <trim prefix="description = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN id = #{item.id} THEN #{item.description}
+                </foreach>
+            </trim>
+            <trim prefix="detail = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN id = #{item.id} THEN #{item.detail}
+                </foreach>
+            </trim>
+            <trim prefix="regex = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN id = #{item.id} THEN #{item.regex}
+                </foreach>
+            </trim>
+            update_time = NOW()
+        </trim>
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
 </mapper>

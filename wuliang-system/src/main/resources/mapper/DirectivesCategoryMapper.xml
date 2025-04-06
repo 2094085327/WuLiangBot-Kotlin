@@ -16,7 +16,32 @@
         INSERT INTO directives_category (category_name, category_desc, create_time)
         VALUES
         <foreach collection="categories" item="category" separator=",">
-            (#{category.categoryName}, #{category.categoryDesc},#{category.create_time})
+            (#{category.categoryName}, #{category.categoryDesc},#{category.createTime})
         </foreach>
     </insert>
+
+    <update id="batchUpdateCategories" parameterType="java.util.List">
+        UPDATE directives_category
+        <trim prefix="SET" suffixOverrides=",">
+            <trim prefix="category_name = CASE" suffix="END,">
+                <foreach collection="categories" item="category">
+                    WHEN id = #{category.id} THEN #{category.categoryName}
+                </foreach>
+            </trim>
+            <trim prefix="category_desc = CASE" suffix="END,">
+                <foreach collection="categories" item="category">
+                    WHEN id = #{category.id} THEN #{category.categoryDesc}
+                </foreach>
+            </trim>
+            <trim prefix="update_time = CASE" suffix="END,">
+                <foreach collection="categories" item="category">
+                    WHEN id = #{category.id} THEN NOW()
+                </foreach>
+            </trim>
+        </trim>
+        WHERE id IN
+        <foreach collection="categories" item="category" open="(" close=")" separator=",">
+            #{category.id}
+        </foreach>
+    </update>
 </mapper>
