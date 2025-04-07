@@ -7,22 +7,22 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
 import bot.wuliang.config.DAILY_ACTIVE_PATH
+import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.config.HELP_JSON
 import bot.wuliang.config.RESTART_CONFIG
 import bot.wuliang.dailyAcitve.DailyActive
-import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
-import bot.wuliang.totalDistribution.TotalDistribution.CommandList.helpMd5
-import bot.wuliang.totalDistribution.TotalDistribution.CommandList.lastHelpMd5
 import bot.wuliang.distribute.actionConfig.ActionFactory
 import bot.wuliang.distribute.actionConfig.Addition
-import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
-import bot.wuliang.distribute.annotation.Executor
+import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
+import bot.wuliang.redis.RedisService
 import bot.wuliang.restart.Restart
+import bot.wuliang.service.DirectivesService
 import bot.wuliang.template.service.TemplateService
+import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
 import bot.wuliang.vo.HelpVo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -63,6 +63,7 @@ class TotalDistribution(
     @Autowired private val webImgUtil: WebImgUtil,
     @Autowired private val actionFactory: ActionFactory,
     @Autowired private val addition: Addition,
+    @Autowired private val redisService: RedisService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
     @Autowired
@@ -70,6 +71,10 @@ class TotalDistribution(
 
     @Autowired
     private lateinit var dailyActive: DailyActive
+
+    @Autowired
+    private lateinit var directivesService: DirectivesService
+
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
 
@@ -142,27 +147,28 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-    @AParameter
-    @Executor(action = "重载指令")
-    fun reloadConfig(context: BotUtils.Context) {
-        CommandList.reloadCommands()
-        context.sendMsg("指令列表已重载")
-        logInfo("指令列表已重载")
-        val imageData = WebImgUtil.ImgData(
-            imgName = "help-$lastHelpMd5",
-            element = "body",
-            url = "http://localhost:${webImgUtil.usePort}/help"
-        )
-        if (lastHelpMd5 != helpMd5) {
-            webImgUtil.deleteImg(imageData)
-            logInfo("帮助缓存已删除")
-        }
-        lastHelpMd5 = helpMd5
-    }
+    /*    @AParameter
+        @Executor(action = "重载指令")
+        fun reloadConfig(context: BotUtils.Context) {
+            CommandList.reloadCommands()
+            context.sendMsg("指令列表已重载")
+            logInfo("指令列表已重载")
+            val imageData = WebImgUtil.ImgData(
+                imgName = "help-$lastHelpMd5",
+                element = "body",
+                url = "http://localhost:${webImgUtil.usePort}/help"
+            )
+            if (lastHelpMd5 != helpMd5) {
+                webImgUtil.deleteImg(imageData)
+                logInfo("帮助缓存已删除")
+            }
+            lastHelpMd5 = helpMd5
+        }*/
 
 
     @Order(0)
     @AnyMessageHandler
+    @Suppress("UNCHECKED_CAST")
     @MessageHandlerFilter(cmd = "(.*)")
     fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val startTime: Long = System.currentTimeMillis()
@@ -189,17 +195,14 @@ class TotalDistribution(
             context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
             return
         }
-        val foundMatch = commandConfig.allCmd.any { command ->
-            command.value.commendList
-                .filter { it.enable } // 只过滤出启用的命令
-                .any { it.regex.toRegex().matches(match) }
+
+        val directivesMatch = directivesService.selectDirectivesMatch(match).any { directive ->
+            directive.regex?.toRegex()?.matches(match) ?: false
         }
 
-        if (!foundMatch) {
-            val commandList: List<String> = commandConfig.allCmd
-                .flatMap { it.value.commendList } // 扁平化 commendList 列表
-                .map { it.command } // 提取 command 字段
-            val matchedCommands = otherUtil.findMatchingStrings(match, commandList)
+        if (!directivesMatch) {
+            val directivesList = redisService.getValue(DIRECTIVES_KEY) as List<DirectivesEntity>
+            val matchedCommands = otherUtil.findMatchingStrings(match, directivesList.map { it.directiveName!! })
             context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
             val endTime: Long = System.currentTimeMillis()
             val contextVo = context.createContextVo()

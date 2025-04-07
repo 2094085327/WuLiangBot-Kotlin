@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+    <head>
+        <title>地理信息</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/Geography.css}">
+        <link rel="stylesheet" type="text/css" href="/static/css/Geography.css">
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Noto+Sans+SC">
+    </head>
+    <body>
+        <div class="background">
+            <div class="head">
+                <div class="city" th:text="${country}">
+                    兰州
+                </div>
+                <div class="timeText">查询时间:</div>
+                <div class="time" th:text="${time}">
+                    2023-06-08 10:46
+                </div>
+            </div>
+
+            <div class="temperature" th:text="${city}">
+                北京
+            </div>
+            <div class="cityId">
+                <span class="label"> 城市ID:</span>
+                <span class="label" th:text="${cityId}">10001</span>
+            </div>
+            <div class="weatherDetail">
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${adm2}">
+                            北京
+                        </div>
+                        <div class="infoZh">
+                            上级行政
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${adm1}">
+                            北京市
+                        </div>
+                        <div class="infoZh">
+                            城市行政
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${country}">
+                            中国
+                        </div>
+                        <div class="infoZh">
+                            所属国家
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${tz}">
+                            Asia/Shanghai
+                        </div>
+                        <div class="infoZh">
+                            时区
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${utcOffset}">
+                            +08:00
+                        </div>
+                        <div class="infoZh">
+                            UTC时间偏移
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${isDst}">
+                            是
+                        </div>
+                        <div class="infoZh">
+                            夏令时
+                        </div>
+                    </div>
+                </div>
+                <div class="weatherInside">
+                    <div class="info left">
+                        <div class="infoText" th:text="${lon}">
+                            116.3°E
+                        </div>
+                        <div class="infoZh">
+                            经度
+                        </div>
+                    </div>
+                    <div class="info right">
+                        <div class="infoText" th:text="${lat}">
+                            39.9°N
+                        </div>
+                        <div class="infoZh">
+                            纬度
+                        </div>
+                    </div>
+                </div>
+                <div class="divisionLine">
+                    <div class="lineLift">
+                        -------------
+                    </div>
+                    <div class="nextDay">
+                        近似城市/地区
+                    </div>
+                    <div class="lineRight">
+                        -------------
+                    </div>
+                </div>
+                <div class="nextInfo">
+                    <div class="left">
+                        <div class="infoText" th:text="${nextCity?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            城市/地区名称
+                        </div>
+                    </div>
+                    <div class="mid">
+                        <div class="infoText" th:text="${nextCityId?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            城市/地区ID
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="infoText" th:text="${nextCountry?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            国家
+                        </div>
+                    </div>
+                </div>
+                <div class="nextInfo">
+                    <div class="left">
+                        <div class="infoText" th:text="${nextCityLonChange?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            经度
+                        </div>
+                    </div>
+                    <div class="mid">
+                        <div class="infoText" th:text="${nextCityLatChange?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            纬度
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="infoText" th:text="${nextTz?:'无'}">
+                            *
+                        </div>
+                        <div class="infoZh">
+                            时区
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>

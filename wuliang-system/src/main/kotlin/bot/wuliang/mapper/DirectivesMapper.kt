@@ -1,12 +1,18 @@
 package bot.wuliang.mapper
 
 import bot.wuliang.entity.DirectivesEntity
+import bot.wuliang.entity.vo.DirectivesVo
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import org.apache.ibatis.annotations.Mapper
 import org.apache.ibatis.annotations.Param
 
 @Mapper
 interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
+    /**
+     * 查询指令列表
+     */
+    fun selectDirectivesList(directivesEntity: DirectivesEntity?): MutableList<DirectivesVo>
+
     /**
      * 批量插入指令
      *
@@ -29,4 +35,9 @@ interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
      * @param directivesToUpdate
      */
     fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>)
+
+    /**
+     * 返回指令匹配列表
+     */
+    fun selectDirectivesMatch(@Param("match") match: String): MutableList<DirectivesEntity>
 }

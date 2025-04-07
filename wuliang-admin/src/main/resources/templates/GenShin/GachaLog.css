@@ -1,0 +1,241 @@
+@font-face {
+    font-family: 'YaHei';
+    /*src: url('../ttf/微软雅黑.otf') format('opentype');*/
+    src: url('../ttf/HYQianGuang.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    font-family: "YaHei", serif
+}
+
+html {
+    transform: scale(0.8);
+    display: flex;
+    justify-content: center;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    background-color: #d3d3d3;
+    margin: 0;
+    font-family: "YaHei", sans-serif;
+    align-items: center;
+}
+
+.header {
+    width: 700px;
+}
+
+.gachaAll {
+    display: flex;
+    flex-direction: column
+}
+
+.gachaTypeText {
+    display: flex;
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.background {
+    display: flex;
+    background-color: rgb(222, 220, 220);
+    border-radius: 10px;
+    margin: 15px 30px 15px 30px;
+    flex-direction: column;
+}
+
+.eachCard {
+    display: flex;
+    margin: 10px;
+}
+
+.eachData {
+    display: grid;
+    grid-template-columns: repeat(6, auto);
+    grid-gap: 10px;
+}
+
+.eachOne {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 新增的占位元素样式 */
+.empty-placeholder {
+    flex: 0 0 15.59%;
+    margin: 5px;
+}
+
+.itemContainer {
+    position: relative;
+    display: flex;
+}
+
+.itemImg {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.progress-container {
+    position: absolute;
+    bottom: 1px;
+    left: 1px;
+    width: 100%;
+    height: 20%;
+    display: flex;
+    background-color: rgba(189, 188, 188, 0.5);
+    border-radius: 10px;
+}
+
+.progress {
+    height: 25px;
+    border-radius: 10px;
+}
+
+.getTimes {
+    position: absolute;
+    color: white;
+    height: 100%;
+    align-items: center;
+    display: flex;
+    font-size: 25px;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    font-size: 25px;
+}
+
+.container {
+    position: relative; /* 设置容器为相对定位 */
+    width: 130px; /* 设置容器宽度为第一张图片的宽度 */
+    height: 174px; /* 设置容器高度为第一张图片的高度 */
+}
+
+.overlay-image {
+    position: absolute; /* 设置图片为绝对定位 */
+    top: 0;
+    left: 0;
+    width: 100%; /* 设置图片宽度为容器宽度 */
+    height: 100%; /* 设置图片高度为容器高度 */
+}
+
+.firstImg {
+    width: 100%;
+    height: 97%;
+    object-fit: cover;
+    position: absolute;
+}
+
+.backImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+}
+
+.weaponContainer {
+    display: grid;
+    justify-content: center;
+    position: relative;
+    height: 175px;
+    background: #ffffff;
+    border-radius: 10px;
+}
+
+.backImgWeapon {
+    height: 60%;
+    margin: 5px;
+    border-radius: 10px;
+}
+
+.weaponImg {
+    position: absolute;
+    height: auto; /* 设置高度为自适应 */
+    max-width: 80%; /* 限制宽度不超过父容器宽度 */
+    max-height: 56%; /* 限制高度不超过父容器高度 */
+    left: 50%; /* 设置左边距为容器宽度的一半 */
+    top: 43%; /* 设置顶边距为容器高度的一半 */
+    transform: translate(-50%, -50%); /* 使用transform来调整位置，保持在容器的正中心 */
+    margin: 0;
+    object-fit: contain; /* 控制图片如何适应容器 */
+}
+
+.gachaCount {
+    display: flex;
+    flex-direction: row;
+    margin: 10px;
+}
+
+.luckImg {
+    display: flex;
+    /*width: 20%;*/
+    height: 230px;
+}
+
+.countText {
+    display: flex;
+    flex-direction: column;
+}
+
+.countDetail {
+    display: grid;
+    justify-items: start;
+    grid-template-columns: repeat(3, 180px);
+}
+
+.eachCount {
+    display: flex;
+    flex-direction: column;
+    margin: 0 5px;
+}
+
+.countNum {
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 50px;
+    color: black;
+}
+
+.countText {
+    color: #7e8088;
+    display: flex;
+    font-weight: bold;
+    font-size: 30px;
+    justify-content: space-around;
+    margin: 0 20px;
+}
+
+.alreadyGachaTimes {
+    color: rgb(241, 154, 16);
+    margin: 0 10px;
+    font-size: 28px;
+}
+
+.alreadyGachaText {
+    color: #7e8088;
+    font-size: 28px;
+}
+
+.gachaTitle {
+    color: black;
+    display: flex;
+    font-weight: bold;
+    font-size: 40px;
+}
+
+.waiImg {
+    position: absolute;
+    top: -10px;
+    width: 30px;
+    height: 30px;
+    left: 108px;
+}

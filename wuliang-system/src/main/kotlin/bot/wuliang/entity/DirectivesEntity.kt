@@ -52,7 +52,7 @@ data class DirectivesEntity(
      * 是否启用
      */
     @TableField(value = "enable")
-    val enable: Int? = 0,
+    val enable: Int? = null,
 
     /**
      * 删除状态

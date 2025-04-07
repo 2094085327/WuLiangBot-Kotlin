@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="bot.wuliang.mapper.DirectivesMapper">
+    <resultMap type="bot.wuliang.entity.vo.DirectivesVo" id="DirectivesVoResult">
+        <result property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="directiveName" column="directive_name"/>
+        <result property="description" column="description"/>
+        <result property="detail" column="detail"/>
+        <result property="regex" column="regex"/>
+        <result property="enable" column="enable"/>
+        <result property="delStatus" column="del_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <sql id="selectDirective">
+        SELECT bd.id,
+               bd.directive_name,
+               bd.description,
+               bd.detail,
+               bd.regex,
+               bd.enable,
+               bd.category_id,
+               bd.create_time,
+               bd.update_time,
+               dc.category_name
+        FROM bot_directives bd
+                 LEFT JOIN directives_category dc ON bd.category_id = dc.id
+    </sql>
+
+    <select id="selectDirectivesList" parameterType="bot.wuliang.entity.vo.DirectivesVo" resultMap="DirectivesVoResult">
+        <include refid="selectDirective"/>
+        <where>
+            <if test="directiveName != null">AND bd.directive_name = #{directiveName}</if>
+            <if test="description != null">AND bd.description = #{description}</if>
+            <if test="detail != null">AND bd.detail = #{detail}</if>
+            <if test="regex != null">AND bd.regex = #{regex}</if>
+            <if test="enable != null">AND bd.enable = #{enable}</if>
+            <if test="categoryId != null">AND bd.category_id = #{categoryId}</if>
+        </where>
+    </select>
+
+
     <insert id="batchAddDirectives" parameterType="java.util.List">
         INSERT INTO bot_directives (
         directive_name, description, detail,
@@ -20,20 +62,19 @@
     </insert>
 
     <select id="findByCategoryIds" resultType="bot.wuliang.entity.DirectivesEntity">
-        SELECT id,
-               directive_name,
-               description,
-               detail,
-               regex,
-               enable,
-               category_id,
-               create_time,
-               update_time
-        FROM bot_directives
+        <include refid="selectDirective"/>
         WHERE category_id IN
         <foreach item="id" collection="categoryIds" open="(" separator="," close=")">
             #{id}
         </foreach>
+    </select>
+
+    <select id="selectDirectivesMatch" resultType="bot.wuliang.entity.DirectivesEntity">
+        <include refid="selectDirective"/>
+        <where>
+            enable = 1
+            AND #{match} REGEXP regex
+        </where>
     </select>
 
 

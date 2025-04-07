@@ -2,14 +2,14 @@ package bot.wuliang.help
 
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.config.HELP_JSON
-import bot.wuliang.totalDistribution.TotalDistribution
-import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
+import bot.wuliang.redis.RedisService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Component
 @Controller
 @ActionService
-class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val totalDistribution: TotalDistribution) {
+class Help @Autowired constructor(private val webImgUtil: WebImgUtil, private val redisService: RedisService) {
     @SystemLog(businessName = "获取帮助菜单")
     @AParameter
     @Executor(action = "\\b(帮助|菜单|help)\\b")
@@ -35,7 +35,8 @@ class Help(@Autowired private val webImgUtil: WebImgUtil, @Autowired private val
 
     @RequestMapping("/help")
     fun helpWeb2(model: Model): String {
-        model.addAttribute("commandConfig", commandConfig)
+        val directivesList = redisService.getValue(DIRECTIVES_KEY)
+        model.addAttribute("directivesList", directivesList)
         return "Other/Help"
     }
 }
