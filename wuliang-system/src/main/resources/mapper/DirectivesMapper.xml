@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="bot.wuliang.mapper.DirectivesMapper">
-    <resultMap type="bot.wuliang.entity.vo.DirectivesVo" id="DirectivesVoResult">
+    <resultMap type="bot.wuliang.entity.DirectivesEntity" id="DirectivesVoResult">
         <result property="id" column="id"/>
         <result property="categoryId" column="category_id"/>
         <result property="categoryName" column="category_name"/>
@@ -25,12 +25,13 @@
                bd.category_id,
                bd.create_time,
                bd.update_time,
+               bd.del_status,
                dc.category_name
         FROM bot_directives bd
                  LEFT JOIN directives_category dc ON bd.category_id = dc.id
     </sql>
 
-    <select id="selectDirectivesList" parameterType="bot.wuliang.entity.vo.DirectivesVo" resultMap="DirectivesVoResult">
+    <select id="selectDirectivesList" parameterType="bot.wuliang.entity.DirectivesEntity" resultMap="DirectivesVoResult">
         <include refid="selectDirective"/>
         <where>
             <if test="directiveName != null">AND bd.directive_name = #{directiveName}</if>

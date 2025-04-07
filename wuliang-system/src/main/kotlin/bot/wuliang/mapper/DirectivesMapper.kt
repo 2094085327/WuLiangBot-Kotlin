@@ -1,7 +1,6 @@
 package bot.wuliang.mapper
 
 import bot.wuliang.entity.DirectivesEntity
-import bot.wuliang.entity.vo.DirectivesVo
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import org.apache.ibatis.annotations.Mapper
 import org.apache.ibatis.annotations.Param
@@ -11,7 +10,7 @@ interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
     /**
      * 查询指令列表
      */
-    fun selectDirectivesList(directivesEntity: DirectivesEntity?): MutableList<DirectivesVo>
+    fun selectDirectivesList(directivesEntity: DirectivesEntity?): List<DirectivesEntity>
 
     /**
      * 批量插入指令

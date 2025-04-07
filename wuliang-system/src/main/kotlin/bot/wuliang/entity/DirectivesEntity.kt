@@ -18,10 +18,16 @@ data class DirectivesEntity(
     var id: Long? = null,
 
     /**
-     * 分类名称
+     * 分类ID
      */
     @TableField(value = "category_id")
     val categoryId: Long? = null,
+
+    /**
+     * 分类名称
+     */
+    @TableField(exist = false)
+    val categoryName: String? = null,
 
     /**
      * 指令名称

@@ -1,7 +1,6 @@
 package bot.wuliang.service
 
 import bot.wuliang.entity.DirectivesEntity
-import bot.wuliang.entity.vo.DirectivesVo
 import com.baomidou.mybatisplus.extension.service.IService
 
 interface DirectivesService : IService<DirectivesEntity?> {
@@ -10,7 +9,7 @@ interface DirectivesService : IService<DirectivesEntity?> {
      *
      * @return
      */
-    fun selectDirectivesList(directivesEntity: DirectivesEntity?): MutableList<DirectivesVo>
+    fun selectDirectivesList(directivesEntity: DirectivesEntity?): List<DirectivesEntity>
 
     /**
      * 精确正则匹配查询指令
