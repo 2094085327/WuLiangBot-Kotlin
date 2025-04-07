@@ -24,7 +24,7 @@ class DirectivesCategoryServiceImpl : ServiceImpl<DirectivesCategoryMapper?, Dir
         return directivesCategoryMapper.findByCategoryNamesIn(categoryNameList)
     }
 
-    override fun batchAddCategories(categories: List<DirectivesCategoryEntity>): Int {
+    override fun batchAddCategories(categories: List<DirectivesCategoryEntity>): List<DirectivesCategoryEntity> {
         return directivesCategoryMapper.batchAddCategories(categories)
     }
 

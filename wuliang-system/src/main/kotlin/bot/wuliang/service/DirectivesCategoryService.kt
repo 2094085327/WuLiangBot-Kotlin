@@ -33,7 +33,7 @@ interface DirectivesCategoryService : IService<DirectivesCategoryEntity?> {
      * @param categories 分类列表
      * @return
      */
-    fun batchAddCategories(categories: List<DirectivesCategoryEntity>): Int
+    fun batchAddCategories(categories: List<DirectivesCategoryEntity>): List<DirectivesCategoryEntity>
 
     /**
      * 批量更新指令分类

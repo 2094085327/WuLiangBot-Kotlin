@@ -18,10 +18,10 @@ interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
     /**
      * 根据指令分类ID查询指令
      *
-     * @param categoryId
+     * @param categoryIds 指令分类ID集合
      * @return
      */
-    fun findByCategoryId(@Param("categoryId") categoryId: Long): List<DirectivesEntity>
+    fun findByCategoryIds(@Param("categoryIds") categoryIds: List<Long>): List<DirectivesEntity>
 
     /**
      * 批量更新指令

@@ -12,7 +12,7 @@
         </where>
     </select>
 
-    <insert id="batchAddCategories">
+    <insert id="batchAddCategories" useGeneratedKeys="true" keyProperty="id" parameterType="list">
         INSERT INTO directives_category (category_name, category_desc, create_time)
         VALUES
         <foreach collection="categories" item="category" separator=",">

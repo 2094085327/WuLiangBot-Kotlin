@@ -19,7 +19,7 @@
         </foreach>
     </insert>
 
-    <select id="findByCategoryId" resultType="bot.wuliang.entity.DirectivesEntity">
+    <select id="findByCategoryIds" resultType="bot.wuliang.entity.DirectivesEntity">
         SELECT id,
                directive_name,
                description,
@@ -30,12 +30,15 @@
                create_time,
                update_time
         FROM bot_directives
-        WHERE category_id = #{categoryId}
+        WHERE category_id IN
+        <foreach item="id" collection="categoryIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
 
     <update id="batchUpdateDirectives" parameterType="list">
-        UPDATE directives
+        UPDATE bot_directives
         <trim prefix="SET" suffixOverrides=",">
             <trim prefix="directive_name = CASE" suffix="END,">
                 <foreach collection="list" item="item">

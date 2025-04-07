@@ -10,7 +10,7 @@ interface DirectivesCategoryMapper : BaseMapper<DirectivesCategoryEntity?> {
     fun findByCategoryNamesIn(@Param("categoryNames") categoryNameList: List<String>): List<DirectivesCategoryEntity>
 
 
-    fun batchAddCategories(@Param("categories") categories: List<DirectivesCategoryEntity>): Int
+    fun batchAddCategories(@Param("categories") categories: List<DirectivesCategoryEntity>): List<DirectivesCategoryEntity>
 
     fun batchUpdateCategories(@Param("categories") categories: List<DirectivesCategoryEntity>): Int
 }

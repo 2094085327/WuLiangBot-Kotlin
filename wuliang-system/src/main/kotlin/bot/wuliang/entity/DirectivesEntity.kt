@@ -15,7 +15,7 @@ data class DirectivesEntity(
      * 指令ID
      */
     @TableId(value = "id")
-    val id: Long? = null,
+    var id: Long? = null,
 
     /**
      * 分类名称

@@ -29,10 +29,10 @@ interface DirectivesService : IService<DirectivesEntity?> {
     /**
      * 根据指令ID查询指令
      *
-     * @param categoryId
+     * @param categoryIds 指令ID集合
      * @return
      */
-    fun findByCategoryId(categoryId: Long): List<DirectivesEntity>
+    fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity>
 
     /**
      * 批量更新指令
