@@ -1,9 +1,11 @@
-package bot.demo.txbot.bot.wuliang.config
+package bot.wuliang.config
 
+import bot.wuliang.config.CommonConfig.USER_TICKET_KEY
 import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum
 import bot.wuliang.otherUtil.CookieUtil
 import bot.wuliang.redis.RedisService
+import bot.wuliang.user.entity.vo.UserVo
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.web.servlet.HandlerInterceptor
 import javax.servlet.http.HttpServletRequest
@@ -31,7 +33,7 @@ class LoginHandlerInterceptor(
             return false
         }
 
-        if (redisService.getValue("users:$token") == null) {
+        if (redisService.getValueTyped<UserVo>(USER_TICKET_KEY + token) == null) {
             // 拦截请求并返回信息给前台 （前台后置拦截器就是根据这里面返回的json数据，来判读并跳转到登录界面）
             response.contentType = "application/json; charset=utf-8"
             response.writer.print(objectMapper.writeValueAsString(RespBean.error(RespBeanEnum.NO_USER)))

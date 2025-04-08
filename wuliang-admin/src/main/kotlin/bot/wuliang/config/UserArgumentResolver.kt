@@ -1,4 +1,4 @@
-package bot.demo.txbot.bot.wuliang.config
+package bot.wuliang.config
 
 import bot.wuliang.otherUtil.CookieUtil
 import bot.wuliang.redis.RedisService

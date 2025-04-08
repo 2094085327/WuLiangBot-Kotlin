@@ -1,5 +1,6 @@
 package bot.wuliang.system.login
 
+import bot.wuliang.config.CommonConfig.USER_TICKET_KEY
 import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum
 import bot.wuliang.otherUtil.CookieUtil
@@ -53,14 +54,14 @@ class LoginController(
                 password = password
             )
             // 将用户对象存储到redis中
-            redisService.setValueWithExpiry("users:$ticket", userVo, 30, TimeUnit.DAYS)
+            redisService.setValueWithExpiry(USER_TICKET_KEY + ticket, userVo, 30, TimeUnit.DAYS)
             return RespBean.success(ticket)
         } else return RespBean.error(RespBeanEnum.LOGIN_ERROR)
     }
 
     @PostMapping("/checkUserTicket")
     fun checkUserTicket(@RequestParam("userTicket") userTicket: String): RespBean {
-        if (redisService.hasKey("users:$userTicket")) return RespBean.success()
+        if (redisService.hasKey(USER_TICKET_KEY + userTicket)) return RespBean.success()
         return RespBean.error(RespBeanEnum.NO_USER)
     }
 }
