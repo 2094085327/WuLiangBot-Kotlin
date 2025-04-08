@@ -34,8 +34,9 @@ class Help @Autowired constructor(private val webImgUtil: WebImgUtil, private va
     }
 
     @RequestMapping("/help")
-    fun helpWeb2(model: Model): String {
+    fun helpWeb(model: Model): String {
         val directivesList = redisService.getValue(DIRECTIVES_KEY)
+        // TODO 移除模板 采用vue3
         model.addAttribute("directivesList", directivesList)
         return "Other/Help"
     }

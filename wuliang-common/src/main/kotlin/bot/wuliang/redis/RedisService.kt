@@ -44,11 +44,11 @@ class RedisService {
     }
 
     // 泛型版本的 getValue 方法
-    @Suppress("UNCHECKED_CAST")
-    fun <T> getValue(key: String, clazz: Class<T>): T? {
+    fun <T> getValueTyped(key: String): T? {
         if (key == "") return null
         if (!hasKey(key)) return null
         try {
+            @Suppress("UNCHECKED_CAST")
             return redisTemplate.opsForValue().get(key) as T
         } catch (e: Exception) {
             e.printStackTrace()

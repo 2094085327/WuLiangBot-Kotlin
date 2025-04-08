@@ -97,7 +97,7 @@ class WarframeController(
 
     @RequestMapping("/fissureList")
     fun fissureList(@RequestParam("type") type: String): WfStatusVo.FissureList? {
-        return redisService.getValue("warframe:${type}", WfStatusVo.FissureList::class.java)
+        return redisService.getValueTyped<WfStatusVo.FissureList>("warframe:${type}")
     }
 
     @RequestMapping("/voidTrader")
@@ -125,9 +125,8 @@ class WarframeController(
         @RequestParam("element") element: String?,
         @RequestParam("ephemera") ephemera: String?
     ): WfMarketVo.LichEntity? {
-        return redisService.getValue(
+        return redisService.getValueTyped<WfMarketVo.LichEntity>(
             "warframe:lichOrderEntity:${urlName}${damage}${element}${ephemera}",
-            WfMarketVo.LichEntity::class.java
         )
     }
 
@@ -138,7 +137,7 @@ class WarframeController(
 
     @RequestMapping("/nightWave")
     fun nightWave(): WfStatusVo.NightWaveEntity? {
-        return redisService.getValue("warframe:nightWave", WfStatusVo.NightWaveEntity::class.java)
+        return redisService.getValueTyped<WfStatusVo.NightWaveEntity>("warframe:nightWave")
     }
 
     @RequestMapping("/invasions")

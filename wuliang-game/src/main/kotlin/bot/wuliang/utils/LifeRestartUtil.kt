@@ -3,8 +3,11 @@ package bot.wuliang.utils
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
+import bot.wuliang.entity.UserInfoEntity
 import bot.wuliang.entity.vo.AgeDataVO
 import bot.wuliang.entity.vo.EventDataVO
+import bot.wuliang.entity.vo.JudgeItemVO
+import bot.wuliang.entity.vo.TalentDataVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
@@ -41,7 +44,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    fun updateUserInfo(userInfo: bot.wuliang.entity.UserInfoEntity) {
+    fun updateUserInfo(userInfo: UserInfoEntity) {
         redisService.setValueWithExpiry("lifeRestart:userInfo:${userInfo.userId}", userInfo, 5L, TimeUnit.MINUTES)
     }
 
@@ -51,9 +54,9 @@ class LifeRestartUtil @Autowired constructor(
      * @param realId 真实id
      * @return 找到的用户信息
      */
-    fun findUserInfo(realId: String): bot.wuliang.entity.UserInfoEntity? {
+    fun findUserInfo(realId: String): UserInfoEntity? {
         redisService.setExpire("lifeRestart:userInfo:${realId}", Duration.of(5L, ChronoUnit.MINUTES))
-        return redisService.getValue("lifeRestart:userInfo:${realId}", bot.wuliang.entity.UserInfoEntity::class.java)
+        return redisService.getValueTyped<UserInfoEntity>("lifeRestart:userInfo:${realId}")
     }
 
 
@@ -110,7 +113,7 @@ class LifeRestartUtil @Autowired constructor(
      * @return 属性
      */
     private fun additionalAttributes(
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         attributeNames: List<String>,
         mutableProperty: MutableMap<String, Int>
     ): MutableMap<String, Int> {
@@ -134,7 +137,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 属性
      */
-    fun randomAttributes(userInfo: bot.wuliang.entity.UserInfoEntity): MutableMap<String, Int> {
+    fun randomAttributes(userInfo: UserInfoEntity): MutableMap<String, Int> {
         var mutableProperty = userInfo.property
         val userMaxProperty = userInfo.maxProperty
 
@@ -179,7 +182,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param match 匹配
      * @return 属性
      */
-    fun assignAttributes(userInfo: bot.wuliang.entity.UserInfoEntity, match: Matcher): RestartRespEnum {
+    fun assignAttributes(userInfo: UserInfoEntity, match: Matcher): RestartRespEnum {
         val attributeValues = match.group(1).split(" ").map(String::toInt)
         val total = attributeValues.sum()
 
@@ -228,7 +231,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param condition 条件
      * @return 是否满足条件
      */
-    private fun checkProp(userInfo: bot.wuliang.entity.UserInfoEntity, condition: String): Boolean {
+    private fun checkProp(userInfo: UserInfoEntity, condition: String): Boolean {
         val property = userInfo.property
         val events = userInfo.events
         val length = condition.length
@@ -347,7 +350,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param conditions 条件
      * @return 是否满足条件
      */
-    private fun checkParsedConditions(userInfo: bot.wuliang.entity.UserInfoEntity, conditions: Any): Boolean {
+    private fun checkParsedConditions(userInfo: UserInfoEntity, conditions: Any): Boolean {
         if (conditions !is List<*>) {
             conditions as String
             return checkProp(userInfo, conditions)
@@ -380,7 +383,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param condition 条件
      * @return
      */
-    private fun checkCondition(userInfo: bot.wuliang.entity.UserInfoEntity, condition: String): Boolean {
+    private fun checkCondition(userInfo: UserInfoEntity, condition: String): Boolean {
         val parsedCondition = parseCondition(condition)
         return checkParsedConditions(userInfo, parsedCondition)
     }
@@ -393,7 +396,7 @@ class LifeRestartUtil @Autowired constructor(
      * @return 符合条件的事件列表
      */
     private fun generateValidEvent(
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         ageDataVO: AgeDataVO,
         eventData: JsonNode
     ): List<Map<String, Double>> {
@@ -434,7 +437,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 随机事件ID
      */
-    private fun getRandom(userInfo: bot.wuliang.entity.UserInfoEntity, ageData: JsonNode, eventData: JsonNode): String {
+    private fun getRandom(userInfo: UserInfoEntity, ageData: JsonNode, eventData: JsonNode): String {
 
         val ageList = ageData.get(userInfo.age.toString())
         val eventList: MutableList<Any?> = mutableListOf()
@@ -452,7 +455,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 是否结束
      */
-    private fun isEnd(userInfo: bot.wuliang.entity.UserInfoEntity) {
+    private fun isEnd(userInfo: UserInfoEntity) {
         val lif = userInfo.property[LIF] ?: 1
         if (lif < 1) userInfo.isEnd = true
     }
@@ -462,7 +465,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    private fun ageNext(userInfo: bot.wuliang.entity.UserInfoEntity) {
+    private fun ageNext(userInfo: UserInfoEntity) {
         userInfo.age += 1
     }
 
@@ -473,7 +476,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param eventId 事件ID
      * @return 事件
      */
-    private fun getDo(userInfo: bot.wuliang.entity.UserInfoEntity, eventId: String, eventData: JsonNode): List<Any?> {
+    private fun getDo(userInfo: UserInfoEntity, eventId: String, eventData: JsonNode): List<Any?> {
         val eventDataJson = eventData.get(eventId)
         val eventEffect = eventDataJson["effect"]
         val event = EventDataVO(
@@ -518,7 +521,7 @@ class LifeRestartUtil @Autowired constructor(
      * @return 事件内容
      */
     private fun doEvent(
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         eventId: String,
         eventDataJson: JsonNode
     ): List<SendListEntity> {
@@ -578,7 +581,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      */
     fun next(
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         ageData: JsonNode,
         eventData: JsonNode
     ): List<SendListEntity> {
@@ -596,7 +599,7 @@ class LifeRestartUtil @Autowired constructor(
      * @return 事件内容
      */
     fun trajectory(
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         ageData: JsonNode,
         eventData: JsonNode
     ): List<SendListEntity> {
@@ -612,7 +615,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param eventId 事件ID
      * @return 是否满足条件
      */
-    private fun eventCheck(userInfo: bot.wuliang.entity.UserInfoEntity, eventId: String, eventData: JsonNode): Boolean {
+    private fun eventCheck(userInfo: UserInfoEntity, eventId: String, eventData: JsonNode): Boolean {
         val eventList = eventData.get(eventId)
 
         if (eventList["noRandom"] != null) return false
@@ -637,7 +640,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 天赋列表
      */
-    fun talentRandomInit(userInfo: bot.wuliang.entity.UserInfoEntity): MutableList<bot.wuliang.entity.vo.TalentDataVo> {
+    fun talentRandomInit(userInfo: UserInfoEntity): MutableList<TalentDataVo> {
         // 继承的天赋
         val lastExtentTalent = null
         val talentRandom = talentRandom(lastExtentTalent, userInfo)
@@ -657,9 +660,9 @@ class LifeRestartUtil @Autowired constructor(
      * @return 天赋列表
      */
     private fun talentRandom(
-        include: bot.wuliang.entity.vo.TalentDataVo?,
-        userInfo: bot.wuliang.entity.UserInfoEntity
-    ): MutableList<bot.wuliang.entity.vo.TalentDataVo> {
+        include: TalentDataVo?,
+        userInfo: UserInfoEntity
+    ): MutableList<TalentDataVo> {
         val rate = getRate(userInfo)
 
         fun randomGrade(): Int {
@@ -673,7 +676,7 @@ class LifeRestartUtil @Autowired constructor(
         // 从缓存获取天赋数据
         val talentData = JacksonUtil.readTree(redisService.getValue("lifeRestart:talentData").toString())
 
-        val talentList = mutableMapOf<Int, MutableList<bot.wuliang.entity.vo.TalentDataVo>>()
+        val talentList = mutableMapOf<Int, MutableList<TalentDataVo>>()
 
         for (talent in talentData) {
             val talentId = talent.get("id").asInt().toString()
@@ -700,7 +703,7 @@ class LifeRestartUtil @Autowired constructor(
             val exclusive = talent.get("exclusive")?.booleanValue() ?: true
             if (!exclusive) continue
 
-            val talentDataVo = bot.wuliang.entity.vo.TalentDataVo(
+            val talentDataVo = TalentDataVo(
                 id = talentId,
                 grade = grade,
                 name = name,
@@ -714,7 +717,7 @@ class LifeRestartUtil @Autowired constructor(
             else talentList[grade]?.add(talentDataVo)
         }
 
-        val result = mutableListOf<bot.wuliang.entity.vo.TalentDataVo>()
+        val result = mutableListOf<TalentDataVo>()
         repeat(talentConfig.talentPullCount) { i ->
             if (i == 0 && include != null) {
                 result.add(include)
@@ -751,7 +754,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 天赋概率
      */
-    private fun getRate(userInfo: bot.wuliang.entity.UserInfoEntity): MutableMap<Any, Int> {
+    private fun getRate(userInfo: UserInfoEntity): MutableMap<Any, Int> {
         val rate = talentConfig.talentRate.toMutableMap()
         val addition = mutableMapOf(1 to 1, 2 to 1, 3 to 1)
 
@@ -777,7 +780,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param match 匹配到的天赋值
      * @param userInfo 用户信息
      */
-    fun getChoiceTalent(match: String, userInfo: bot.wuliang.entity.UserInfoEntity) {
+    fun getChoiceTalent(match: String, userInfo: UserInfoEntity) {
         val talentIdList = mutableListOf<String>()
         val matchList = match.split(" ")
         matchList.forEach { index ->
@@ -795,7 +798,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @return 检查结果
      */
-    fun talentCheck(match: String, userInfo: bot.wuliang.entity.UserInfoEntity): String {
+    fun talentCheck(match: String, userInfo: UserInfoEntity): String {
         var matchList = match.split(" ")
         matchList = matchList.distinct()
         return if (matchList.size < userInfo.talentSelectLimit) {
@@ -807,11 +810,11 @@ class LifeRestartUtil @Autowired constructor(
         }
     }
 
-    fun launchTalent(userInfo: bot.wuliang.entity.UserInfoEntity): MutableList<bot.wuliang.entity.vo.TalentDataVo> {
+    fun launchTalent(userInfo: UserInfoEntity): MutableList<TalentDataVo> {
         // 天赋已经全部激活，直接返回空
         if (userInfo.talent.isEmpty()) return mutableListOf()
         // 存储已经发动过的天赋
-        val activatedTalents = mutableListOf<bot.wuliang.entity.vo.TalentDataVo>()
+        val activatedTalents = mutableListOf<TalentDataVo>()
         // 使用迭代器来遍历并移除符合条件的 talent
         val iterator = userInfo.talent.iterator()
         while (iterator.hasNext()) {
@@ -838,7 +841,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    fun getTalentAllocationAddition(userInfo: bot.wuliang.entity.UserInfoEntity) {
+    fun getTalentAllocationAddition(userInfo: UserInfoEntity) {
         val talents = userInfo.talent
 
         // 初始化无条件天赋的属性
@@ -876,7 +879,7 @@ class LifeRestartUtil @Autowired constructor(
      * @param operation 类型
      * @return
      */
-    fun errorState(userInfo: bot.wuliang.entity.UserInfoEntity?, operation: OperationType): RespBean {
+    fun errorState(userInfo: UserInfoEntity?, operation: OperationType): RespBean {
         if (userInfo == null) return RespBean.error(RestartRespEnum.GAME_NOT_START)
 
         fun checkTalentAssigned(): RespBean {
@@ -931,7 +934,7 @@ class LifeRestartUtil @Autowired constructor(
      */
     fun updateAndSend(
         context: BotUtils.Context,
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         realId: String,
         message: String? = null
     ) {
@@ -958,8 +961,8 @@ class LifeRestartUtil @Autowired constructor(
      */
     fun findJudgeForValue(
         input: Int,
-        judgeList: List<bot.wuliang.entity.vo.JudgeItemVO>
-    ): bot.wuliang.entity.vo.JudgeItemVO? {
+        judgeList: List<JudgeItemVO>
+    ): JudgeItemVO? {
         // 检查列表是否为空
         if (judgeList.isEmpty()) {
             return null
@@ -1013,7 +1016,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    fun sendGameEnd(context: BotUtils.Context, userInfo: bot.wuliang.entity.UserInfoEntity) {
+    fun sendGameEnd(context: BotUtils.Context, userInfo: UserInfoEntity) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://localhost:16666/game/lifeRestart?game_userId=${userInfo.userId}"
@@ -1030,7 +1033,7 @@ class LifeRestartUtil @Autowired constructor(
             val judgeChrNode: JsonNode? = rootNode.path("judge").path(key)
 
             // 将特定部分转换为 List<JudgeItemVO>
-            val propertyList: List<bot.wuliang.entity.vo.JudgeItemVO> = mapper.readValue(judgeChrNode.toString())
+            val propertyList: List<JudgeItemVO> = mapper.readValue(judgeChrNode.toString())
 
             evaluateMap[key] = generateEvaluate(key, userInfo, propertyList, grade)
         }
@@ -1049,8 +1052,8 @@ class LifeRestartUtil @Autowired constructor(
 
     private fun generateEvaluate(
         key: String,
-        userInfo: bot.wuliang.entity.UserInfoEntity,
-        propertyList: List<bot.wuliang.entity.vo.JudgeItemVO>,
+        userInfo: UserInfoEntity,
+        propertyList: List<JudgeItemVO>,
         rootNode: JsonNode
     ): Evaluate {
         val maxPropertyValue = userInfo.maxProperty[key] ?: if (key != AGE) return Evaluate(0, "") else 0

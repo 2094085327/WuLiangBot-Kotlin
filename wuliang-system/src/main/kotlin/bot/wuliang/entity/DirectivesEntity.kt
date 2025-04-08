@@ -30,6 +30,12 @@ data class DirectivesEntity(
     val categoryName: String? = null,
 
     /**
+     * 分类描述
+     */
+    @TableField(exist = false)
+    val categoryDesc: String? = null,
+
+    /**
      * 指令名称
      */
     @TableField(value = "directive_name")
@@ -76,7 +82,7 @@ data class DirectivesEntity(
     /** 更新时间  */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
-    @TableField(value = "update_time", fill = FieldFill.INSERT)
+    @TableField(value = "update_time", fill = FieldFill.UPDATE)
     private var updateTime: Date? = null
 
 ) : Serializable

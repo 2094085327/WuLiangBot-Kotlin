@@ -62,7 +62,7 @@ class WfMarketController @Autowired constructor(
         val redisKey = "warframe:lexicon:$cleanKey"
 
         // 尝试从Redis获取数据
-        val lexiconEntity = redisService.getValue(redisKey, WfMarketItemEntity::class.java)
+        val lexiconEntity = redisService.getValueTyped<WfMarketItemEntity>(redisKey)
         if (lexiconEntity !=
             null
         ) {

@@ -421,7 +421,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     fun phobosStatus(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValue("warframe:phobosStatus", WfStatusVo.WordStatus::class.java)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:phobosStatus")
         if (wordStatus == null) {
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
             redisService.setValueWithExpiry(
@@ -444,7 +444,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValue("warframe:cetusCycle", WfStatusVo.WordStatus::class.java)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:cetusCycle")
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)
@@ -470,7 +470,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
     fun earthCycle(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValue("warframe:earthCycle", WfStatusVo.WordStatus::class.java)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:earthCycle")
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)
@@ -496,7 +496,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
     fun venusStatus(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValue("warframe:venusStatus", WfStatusVo.WordStatus::class.java)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:venusStatus")
         if (wordStatus == null) {
             val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)
@@ -581,7 +581,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: BotUtils.Context) {
-        var incarnon = redisService.getValue("warframe:incarnon", WfStatusVo.IncarnonEntity::class.java)
+        var incarnon = redisService.getValueTyped<WfStatusVo.IncarnonEntity>("warframe:incarnon")
 
         if (incarnon == null) {
             val mapper = jacksonObjectMapper()

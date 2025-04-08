@@ -883,7 +883,7 @@ class WfUtil {
         }.sortedByDescending { (_, value) -> value.toString().toDouble() }
 
         val result = rivenAvgValueList.map { (key, value) ->
-            val rivenEntity = redisService.getValue("warframe:riven:$key", WfRivenEntity::class.java)
+            val rivenEntity = redisService.getValueTyped<WfRivenEntity>("warframe:riven:$key")
             WfMarketVo.RivenRank(
                 name = rivenEntity?.zhName,
                 value = value as String

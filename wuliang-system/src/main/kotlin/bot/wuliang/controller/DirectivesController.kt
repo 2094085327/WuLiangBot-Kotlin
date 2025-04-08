@@ -42,13 +42,6 @@ class DirectivesController @Autowired constructor(
         return RespBean.success(selectDirectivesList)
     }
 
-
-    @GetMapping("/aaa")
-    fun aaa(directivesEntity: DirectivesEntity?): RespBean {
-
-        return RespBean.success(redisService.getValue(DIRECTIVES_KEY))
-    }
-
     /**
      * 增加指令
      */

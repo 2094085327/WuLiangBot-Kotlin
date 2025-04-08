@@ -8,11 +8,11 @@ import bot.wuliang.config.TALENT_SELECT_NOT_COMPLETE
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
+import bot.wuliang.entity.UserInfoEntity
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.RestartRespEnum
-import bot.wuliang.service.LifeRestartService
 import bot.wuliang.service.impl.LifeRestartServiceImpl
 import bot.wuliang.utils.LifeRestartUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -42,17 +42,14 @@ class LifeRestartMainController @Autowired constructor(
 
     @RequestMapping("/lifeRestart")
     fun lifeRestart(@RequestParam("game_userId") userId: String): Pair<MutableMap<String, Int>, Any?> {
-        val userInfo = redisService.getValue("lifeRestart:userInfo:${userId}", bot.wuliang.entity.UserInfoEntity::class.java)
+        val userInfo = redisService.getValueTyped<UserInfoEntity>("lifeRestart:userInfo:${userId}")
         val sendMessage = redisService.getValue("lifeRestart:sendMessage:${userId}")
         return Pair(userInfo?.property ?: mutableMapOf(), sendMessage)
     }
 
     @RequestMapping("/lifeRestartTalent")
     fun talent(@RequestParam("game_userId") userId: String): MutableList<bot.wuliang.entity.vo.TalentDataVo>? {
-        return redisService.getValue(
-            "lifeRestart:userInfo:${userId}",
-            bot.wuliang.entity.UserInfoEntity::class.java
-        )?.randomTalentTemp
+        return redisService.getValueTyped<UserInfoEntity>("lifeRestart:userInfo:${userId}")?.randomTalentTemp
     }
 
 
@@ -75,7 +72,7 @@ class LifeRestartMainController @Autowired constructor(
         val realId = context.getEvent().getRealUserId()
 
         val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
-        val userInfo = bot.wuliang.entity.UserInfoEntity(
+        val userInfo = UserInfoEntity(
             userId = realId,
             attributes = null,
             age = -1,
@@ -256,7 +253,7 @@ class LifeRestartMainController @Autowired constructor(
     @Suppress("UNCHECKED_CAST")
     private fun handleGameEnd(
         context: BotUtils.Context,
-        userInfo: bot.wuliang.entity.UserInfoEntity,
+        userInfo: UserInfoEntity,
         realId: String,
         strList: List<List<LifeRestartUtil.SendListEntity>>
     ) {

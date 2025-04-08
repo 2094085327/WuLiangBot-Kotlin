@@ -6,28 +6,23 @@ import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
+import bot.wuliang.config.CommonConfig
 import bot.wuliang.config.DAILY_ACTIVE_PATH
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
-import bot.wuliang.config.HELP_JSON
 import bot.wuliang.config.RESTART_CONFIG
 import bot.wuliang.dailyAcitve.DailyActive
 import bot.wuliang.distribute.actionConfig.ActionFactory
 import bot.wuliang.distribute.actionConfig.Addition
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.entity.DirectivesEntity
-import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil
-import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
 import bot.wuliang.redis.RedisService
 import bot.wuliang.restart.Restart
+import bot.wuliang.service.BotConfigService
 import bot.wuliang.service.DirectivesService
-import bot.wuliang.template.service.TemplateService
-import bot.wuliang.totalDistribution.TotalDistribution.CommandList.commandConfig
-import bot.wuliang.vo.HelpVo
+import bot.wuliang.text.Convert
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.mikuac.shiro.annotation.AnyMessageHandler
 import com.mikuac.shiro.annotation.MessageHandlerFilter
 import com.mikuac.shiro.annotation.common.Order
@@ -58,60 +53,20 @@ import javax.annotation.PostConstruct
 @Shiro
 @Component
 @ActionService
-class TotalDistribution(
-    @Autowired private val templateService: TemplateService,
-    @Autowired private val webImgUtil: WebImgUtil,
-    @Autowired private val actionFactory: ActionFactory,
-    @Autowired private val addition: Addition,
-    @Autowired private val redisService: RedisService,
+class TotalDistribution @Autowired constructor(
+    private val actionFactory: ActionFactory,
+    private val addition: Addition,
+    private val redisService: RedisService,
+    private val logService: LogServiceImpl,
+    private val dailyActive: DailyActive,
+    private val directivesService: DirectivesService,
+    private val botConfigService: BotConfigService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
-    @Autowired
-    private lateinit var logService: LogServiceImpl
-
-    @Autowired
-    private lateinit var dailyActive: DailyActive
-
-    @Autowired
-    private lateinit var directivesService: DirectivesService
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
-
-    object CommandList {
-        private val jacksonMapper = jacksonObjectMapper()
-
-        var commandConfig: HelpVo.CommandConfig =
-            jacksonMapper.readValue(File(HELP_JSON))
-        var helpMd5: String? = null
-
-        // 是否启用命令检查
-        private var CHECK_COMMAND = commandConfig.checkCmd
-
-        // 上次更新help.json的Md5
-        var lastHelpMd5: String? = commandConfig.updateMd5
-
-        init {
-            reloadCommands()
-        }
-
-        fun reloadCommands() {
-            commandConfig = jacksonMapper.readValue(File(HELP_JSON))
-            CHECK_COMMAND = commandConfig.checkCmd
-
-            // 根据Md5判断是否更新help.json
-            lastHelpMd5 = commandConfig.updateMd5
-            helpMd5 = commandConfig.allCmd.toString().toMd5()
-            if (helpMd5 != lastHelpMd5) {
-                commandConfig.updateMd5 = helpMd5 as String
-                jacksonMapper.writeValue(
-                    File(HELP_JSON),
-                    commandConfig
-                )
-            }
-        }
-    }
-
+    private val convert = Convert()
 
     @PostConstruct
     fun creatDailyActiveFile() {
@@ -147,24 +102,6 @@ class TotalDistribution(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-    /*    @AParameter
-        @Executor(action = "重载指令")
-        fun reloadConfig(context: BotUtils.Context) {
-            CommandList.reloadCommands()
-            context.sendMsg("指令列表已重载")
-            logInfo("指令列表已重载")
-            val imageData = WebImgUtil.ImgData(
-                imgName = "help-$lastHelpMd5",
-                element = "body",
-                url = "http://localhost:${webImgUtil.usePort}/help"
-            )
-            if (lastHelpMd5 != helpMd5) {
-                webImgUtil.deleteImg(imageData)
-                logInfo("帮助缓存已删除")
-            }
-            lastHelpMd5 = helpMd5
-        }*/
-
 
     @Order(0)
     @AnyMessageHandler
@@ -191,10 +128,13 @@ class TotalDistribution(
 //            context.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
                 }*/
 
-        if (!commandConfig.enableAll) {
+        val allEnableConfig =
+            convert.toBool(botConfigService.selectConfigByKey(CommonConfig.BOT_CONFIG_KEY + "allEnable"))
+        if (!allEnableConfig) {
             context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
             return
         }
+
 
         val directivesMatch = directivesService.selectDirectivesMatch(match).any { directive ->
             directive.regex?.toRegex()?.matches(match) ?: false

@@ -5,6 +5,7 @@
         <result property="id" column="id"/>
         <result property="categoryId" column="category_id"/>
         <result property="categoryName" column="category_name"/>
+        <result property="categoryDesc" column="category_desc"/>
         <result property="directiveName" column="directive_name"/>
         <result property="description" column="description"/>
         <result property="detail" column="detail"/>
@@ -26,7 +27,8 @@
                bd.create_time,
                bd.update_time,
                bd.del_status,
-               dc.category_name
+               dc.category_name,
+               dc.category_desc
         FROM bot_directives bd
                  LEFT JOIN directives_category dc ON bd.category_id = dc.id
     </sql>

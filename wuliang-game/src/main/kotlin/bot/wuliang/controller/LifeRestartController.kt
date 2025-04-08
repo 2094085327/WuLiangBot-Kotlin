@@ -1,8 +1,7 @@
 package bot.wuliang.controller
 
-import bot.wuliang.redis.RedisService
 import bot.wuliang.entity.UserInfoEntity
-import bot.wuliang.entity.vo.TalentDataVo
+import bot.wuliang.redis.RedisService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -20,17 +19,14 @@ class LifeRestartController @Autowired constructor(
 ) {
     @RequestMapping("/lifeRestart")
     fun lifeRestart(@RequestParam("game_userId") userId: String): Pair<MutableMap<String, Int>, Any?> {
-        val userInfo = redisService.getValue("lifeRestart:userInfo:${userId}", bot.wuliang.entity.UserInfoEntity::class.java)
+        val userInfo = redisService.getValueTyped<UserInfoEntity>("lifeRestart:userInfo:${userId}")
         val sendMessage = redisService.getValue("lifeRestart:sendMessage:${userId}")
         return Pair(userInfo?.property ?: mutableMapOf(), sendMessage)
     }
 
     @RequestMapping("/lifeRestartTalent")
     fun talent(@RequestParam("game_userId") userId: String): MutableList<bot.wuliang.entity.vo.TalentDataVo>? {
-        return redisService.getValue(
-            "lifeRestart:userInfo:${userId}",
-            bot.wuliang.entity.UserInfoEntity::class.java
-        )?.randomTalentTemp
+        return redisService.getValueTyped<UserInfoEntity>("lifeRestart:userInfo:${userId}")?.randomTalentTemp
     }
 
 
