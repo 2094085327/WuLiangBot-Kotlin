@@ -28,7 +28,7 @@ class BotConfigServiceImpl : ServiceImpl<BotConfigMapper?, BotConfigEntity?>(), 
 
     @PostConstruct
     fun initConfig() {
-        if (redisService.getListKey(CommonConfig.BOT_CONFIG_KEY + "*").isNotEmpty()) {
+        if (redisService.getListKey(CommonConfig.BOT_CONFIG_KEY + "*").size == 0) {
             loadingConfigCache()
             logInfo("加载配置缓存完成")
         }

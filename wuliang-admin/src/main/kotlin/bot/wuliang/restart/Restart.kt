@@ -4,14 +4,14 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.FILE_CACHE_PATH
 import bot.wuliang.config.RESTART_CONFIG
+import bot.wuliang.controller.SystemResourcesMain
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
+import bot.wuliang.entity.getTotal
+import bot.wuliang.entity.getUsage
 import bot.wuliang.exception.RespBean
 import bot.wuliang.exception.RespBeanEnum
-import bot.wuliang.system.systemResources.SystemResourcesMain
-import bot.wuliang.system.systemResources.getTotal
-import bot.wuliang.system.systemResources.getUsage
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
