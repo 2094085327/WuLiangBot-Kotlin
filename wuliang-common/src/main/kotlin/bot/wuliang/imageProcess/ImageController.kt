@@ -1,6 +1,6 @@
 package bot.wuliang.imageProcess
 
-import bot.wuliang.config.RESOURCES_PATH
+import bot.wuliang.config.CommonConfig.RESOURCES_PATH
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

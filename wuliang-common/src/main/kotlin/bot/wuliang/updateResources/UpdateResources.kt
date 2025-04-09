@@ -4,8 +4,8 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
 import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.config.HELP_JSON
-import bot.wuliang.config.RESOURCES_PATH
+import bot.wuliang.config.CommonConfig.HELP_JSON
+import bot.wuliang.config.CommonConfig.RESOURCES_PATH
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor

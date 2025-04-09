@@ -1,8 +1,8 @@
 package bot.wuliang.service.impl
 
-import bot.wuliang.config.DELETE_PERCENTAGE
+import bot.wuliang.config.CommonConfig.DELETE_PERCENTAGE
+import bot.wuliang.config.CommonConfig.MAX_SIZE_MB
 import bot.wuliang.config.GACHA_CACHE_PATH
-import bot.wuliang.config.MAX_SIZE_MB
 import bot.wuliang.config.UIGF_VERSION
 import bot.wuliang.entity.GaChaLogEntity
 import bot.wuliang.mapper.GaChaLogMapper

@@ -2,8 +2,8 @@ package bot.wuliang.restart
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.config.FILE_CACHE_PATH
-import bot.wuliang.config.RESTART_CONFIG
+import bot.wuliang.config.CommonConfig.FILE_CACHE_PATH
+import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.controller.SystemResourcesMain
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService

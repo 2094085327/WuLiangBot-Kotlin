@@ -7,9 +7,9 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
 import bot.wuliang.config.CommonConfig
-import bot.wuliang.config.DAILY_ACTIVE_PATH
+import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
+import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
-import bot.wuliang.config.RESTART_CONFIG
 import bot.wuliang.dailyAcitve.DailyActive
 import bot.wuliang.distribute.actionConfig.ActionFactory
 import bot.wuliang.distribute.actionConfig.Addition

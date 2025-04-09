@@ -1,5 +1,7 @@
 package bot.wuliang.config
 
+import bot.wuliang.config.CommonConfig.RESOURCES_PATH
+
 /**
  * @description: 原神用到的一些常量
  * @author Nature Zero

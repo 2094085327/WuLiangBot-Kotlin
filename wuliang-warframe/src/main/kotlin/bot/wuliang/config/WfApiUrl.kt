@@ -1,5 +1,7 @@
 package bot.wuliang.config
 
+import bot.wuliang.config.CommonConfig.RESOURCES_PATH
+
 val LANGUAGE_ZH_HANS: MutableMap<String, Any> = mutableMapOf("language" to "zh-hans")
 val LANGUAGE_EN_HANS: MutableMap<String, Any> = mutableMapOf("language" to "en")
 

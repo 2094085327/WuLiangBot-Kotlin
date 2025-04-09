@@ -3,7 +3,7 @@ package bot.wuliang.imageProcess
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils.Context
-import bot.wuliang.config.IMG_CACHE_PATH
+import bot.wuliang.config.CommonConfig.IMG_CACHE_PATH
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.qiNiuCos.QiNiuService
 import bot.wuliang.tencentCos.CosFileServiceImpl
