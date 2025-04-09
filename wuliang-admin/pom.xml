@@ -21,6 +21,7 @@
 
     <!-- 在admin模块的pom.xml中添加 -->
     <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

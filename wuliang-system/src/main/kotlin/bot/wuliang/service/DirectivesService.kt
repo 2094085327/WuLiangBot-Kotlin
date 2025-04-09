@@ -38,11 +38,4 @@ interface DirectivesService : IService<DirectivesEntity?> {
      * @return
      */
     fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity>
-
-    /**
-     * 批量更新指令
-     *
-     * @param directivesToUpdate
-     */
-    fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>)
 }

@@ -70,7 +70,7 @@ data class DirectivesEntity(
      * 删除状态
      */
     @TableField(value = "del_status", fill = FieldFill.INSERT)
-    val delStatus: Int? = 0,
+    val delStatus: Int? = null,
 
 
     /** 创建时间  */

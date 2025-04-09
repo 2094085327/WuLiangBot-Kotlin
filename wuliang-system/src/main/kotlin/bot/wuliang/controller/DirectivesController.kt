@@ -8,14 +8,18 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.service.DirectivesService
 import bot.wuliang.service.impl.DirectivesCategoryServiceImpl
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.swagger.annotations.Api
+import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
+/**
+ * 系统指令接口
+ * @module 系统指令接口
+ */
+@Api(tags = ["系统指令接口"])
 @RestController
 @RequestMapping("/directives")
 class DirectivesController @Autowired constructor(
@@ -27,7 +31,10 @@ class DirectivesController @Autowired constructor(
 
     /**
      * 获取指令列表
+     * @param directivesEntity 指令Entity
+     * @return 成功信息
      */
+    @ApiOperation("获取指令列表")
     @GetMapping("/list")
     fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean {
         if (redisService.hasKey(DIRECTIVES_KEY)) {
@@ -45,6 +52,7 @@ class DirectivesController @Autowired constructor(
     /**
      * 增加指令
      */
+    @ApiOperation("新增指令")
     @PostMapping("/addDirectives")
     fun addDirectives(directivesEntity: DirectivesEntity): RespBean {
         redisService.deleteKey(DIRECTIVES_KEY)
@@ -52,8 +60,19 @@ class DirectivesController @Autowired constructor(
     }
 
     /**
+     * 更新指令
+     */
+    @ApiOperation("更新指令")
+    @PutMapping("/updateDirectives")
+    fun updateDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean {
+        redisService.deleteKey(DIRECTIVES_KEY)
+        return RespBean.toReturn(directivesService.updateBatchById(directivesEntity))
+    }
+
+    /**
      * 导入指令
      */
+    @ApiOperation("导入指令列表")
     @PostMapping("/import")
     fun importDirectives(file: MultipartFile, covered: Boolean? = false): RespBean {
         redisService.deleteKey(DIRECTIVES_KEY)
@@ -62,7 +81,7 @@ class DirectivesController @Autowired constructor(
             val directivesJson = objectMapper.readTree(file.inputStream)
             val allCmd = directivesJson["allCmd"]
 
-            // 1. 分类处理优化
+            // 分类处理优化
             val importCategories = allCmd.fieldNames().asSequence().toList()
             val existingCategories = directivesCategoryService.findByCategoryNamesIn(importCategories)
                 .associateByTo(mutableMapOf()) { it.categoryName }
@@ -144,7 +163,7 @@ class DirectivesController @Autowired constructor(
 
             // 批量处理指令
             if (covered == true && directivesToUpdate.isNotEmpty()) {
-                directivesService.batchUpdateDirectives(directivesToUpdate)
+                directivesService.updateBatchById(directivesToUpdate as Collection<DirectivesEntity?>?)
             }
             if (allDirectives.isNotEmpty()) {
                 directivesService.batchAddDirectives(allDirectives)

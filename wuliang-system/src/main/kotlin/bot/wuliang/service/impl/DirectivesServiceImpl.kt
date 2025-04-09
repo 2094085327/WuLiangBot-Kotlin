@@ -30,8 +30,4 @@ class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(
     override fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity> {
         return directivesMapper.findByCategoryIds(categoryIds)
     }
-
-    override fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>) {
-        return directivesMapper.batchUpdateDirectives(directivesToUpdate)
-    }
 }

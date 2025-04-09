@@ -15,7 +15,7 @@
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
-    
+
     <sql id="selectDirective">
         SELECT bd.id,
                bd.directive_name,
@@ -33,7 +33,8 @@
                  LEFT JOIN directives_category dc ON bd.category_id = dc.id
     </sql>
 
-    <select id="selectDirectivesList" parameterType="bot.wuliang.entity.DirectivesEntity" resultMap="DirectivesVoResult">
+    <select id="selectDirectivesList" parameterType="bot.wuliang.entity.DirectivesEntity"
+            resultMap="DirectivesVoResult">
         <include refid="selectDirective"/>
         <where>
             <if test="directiveName != null">AND bd.directive_name = #{directiveName}</if>
@@ -79,36 +80,4 @@
             AND #{match} REGEXP regex
         </where>
     </select>
-
-
-    <update id="batchUpdateDirectives" parameterType="list">
-        UPDATE bot_directives
-        <trim prefix="SET" suffixOverrides=",">
-            <trim prefix="directive_name = CASE" suffix="END,">
-                <foreach collection="list" item="item">
-                    WHEN id = #{item.id} THEN #{item.directiveName}
-                </foreach>
-            </trim>
-            <trim prefix="description = CASE" suffix="END,">
-                <foreach collection="list" item="item">
-                    WHEN id = #{item.id} THEN #{item.description}
-                </foreach>
-            </trim>
-            <trim prefix="detail = CASE" suffix="END,">
-                <foreach collection="list" item="item">
-                    WHEN id = #{item.id} THEN #{item.detail}
-                </foreach>
-            </trim>
-            <trim prefix="regex = CASE" suffix="END,">
-                <foreach collection="list" item="item">
-                    WHEN id = #{item.id} THEN #{item.regex}
-                </foreach>
-            </trim>
-            update_time = NOW()
-        </trim>
-        WHERE id IN
-        <foreach collection="list" item="item" open="(" separator="," close=")">
-            #{item.id}
-        </foreach>
-    </update>
 </mapper>

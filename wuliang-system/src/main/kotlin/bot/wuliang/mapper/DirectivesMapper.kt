@@ -29,13 +29,6 @@ interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
     fun findByCategoryIds(@Param("categoryIds") categoryIds: List<Long>): List<DirectivesEntity>
 
     /**
-     * 批量更新指令
-     *
-     * @param directivesToUpdate
-     */
-    fun batchUpdateDirectives(directivesToUpdate: MutableList<DirectivesEntity>)
-
-    /**
      * 返回指令匹配列表
      */
     fun selectDirectivesMatch(@Param("match") match: String): MutableList<DirectivesEntity>
