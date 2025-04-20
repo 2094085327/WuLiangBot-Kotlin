@@ -303,6 +303,11 @@ class OtherUtil {
             val digest = md.digest(this.toByteArray(StandardCharsets.UTF_8))
             return BigInteger(1, digest).toString(16).padStart(32, '0')
         }
+        fun Any.toMd5(): String {
+            val md = MessageDigest.getInstance("MD5")
+            val digest = md.digest(this.toString().toByteArray(StandardCharsets.UTF_8))
+            return BigInteger(1, digest).toString(16).padStart(32, '0')
+        }
     }
 
     /**

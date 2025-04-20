@@ -42,6 +42,7 @@ class WebImgUtil(
 ) {
     @Autowired
     private lateinit var qiNiuService: QiNiuService
+
     @Autowired
     private lateinit var txCosService: CosFileServiceImpl
 

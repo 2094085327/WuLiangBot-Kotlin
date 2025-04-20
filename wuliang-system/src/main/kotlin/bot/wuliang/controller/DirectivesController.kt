@@ -37,6 +37,8 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("获取指令列表")
     @GetMapping("/list")
     fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean {
+        println("asdfqwdsfqwerqw34123412341234")
+
         if (redisService.hasKey(DIRECTIVES_KEY)) {
             return RespBean.success(redisService.getValue(DIRECTIVES_KEY))
         }

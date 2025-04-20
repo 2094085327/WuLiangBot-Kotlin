@@ -6,7 +6,6 @@ import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
-import bot.wuliang.config.CommonConfig
 import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
@@ -129,7 +128,7 @@ class TotalDistribution @Autowired constructor(
                 }*/
 
         val allEnableConfig =
-            convert.toBool(botConfigService.selectConfigByKey(CommonConfig.BOT_CONFIG_KEY + "allEnable"))
+            convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
         if (!allEnableConfig) {
             context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
             return
