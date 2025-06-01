@@ -6,7 +6,7 @@ enum class RestartRespEnum(
     override val code: Long,
     override val message: String,
 ):RespCode {
-    SUCCESS(2003000, "success"),
+    SUCCESS(200, "success"),
     GAME_START_SUCCESS(2003003, "游戏账号创建成功,请在5分钟内开始游戏。\n请使用如「天赋 1 2 3」指令来选择图片中的天赋"),
     CONTINUER_SUCCESS(2003004, "请发送「继续 继续的步数」来进行游戏"),
 

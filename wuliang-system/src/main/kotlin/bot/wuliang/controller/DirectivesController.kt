@@ -37,8 +37,6 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("获取指令列表")
     @GetMapping("/list")
     fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean {
-        println("asdfqwdsfqwerqw34123412341234")
-
         if (redisService.hasKey(DIRECTIVES_KEY)) {
             return RespBean.success(redisService.getValue(DIRECTIVES_KEY))
         }
@@ -66,7 +64,16 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("更新指令")
     @PutMapping("/updateDirectives")
-    fun updateDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean {
+    fun updateDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean {
+        redisService.deleteKey(DIRECTIVES_KEY)
+        return RespBean.toReturn(directivesService.updateById(directivesEntity))
+    }
+    /**
+     * 更新指令
+     */
+    @ApiOperation("批量更新指令")
+    @PutMapping("/updateBatchDirectives")
+    fun updateBatchDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.updateBatchById(directivesEntity))
     }

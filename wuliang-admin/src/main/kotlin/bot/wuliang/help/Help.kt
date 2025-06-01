@@ -14,8 +14,6 @@ import bot.wuliang.service.DirectivesService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.RequestMapping
 
 @Component
 @Controller
@@ -49,13 +47,5 @@ class Help @Autowired constructor(
             url = "http://localhost:16666/system/help"
         )
         webImgUtil.sendNewImage(context, imageData)
-    }
-
-    @RequestMapping("/help")
-    fun helpWeb(model: Model): String {
-        val directivesList = redisService.getValue(DIRECTIVES_KEY)
-        // TODO 移除模板 采用vue3
-        model.addAttribute("directivesList", directivesList)
-        return "Other/Help"
     }
 }
