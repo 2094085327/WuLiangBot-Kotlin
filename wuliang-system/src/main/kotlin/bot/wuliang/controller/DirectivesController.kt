@@ -54,7 +54,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("新增指令")
     @PostMapping("/addDirectives")
-    fun addDirectives(directivesEntity: DirectivesEntity): RespBean {
+    fun addDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.addDirectives(directivesEntity))
     }

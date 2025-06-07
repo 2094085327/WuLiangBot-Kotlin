@@ -1,13 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="bot.wuliang.botLog.database.mapper.LogMapper">
+    <sql id="logEntity">
+        select id,
+               bot_id,
+               business_name,
+               class_path,
+               method_name,
+               cmd_text,
+               event_type,
+               group_id,
+               user_id,
+               bot_id,
+               cost_time,
+               create_time
+        from bot_log
+    </sql>
+
     <select id="selectLogByTime" resultType="bot.wuliang.botLog.logAop.LogEntity">
-        SELECT * FROM bot_log
+        <include refid="logEntity"/>
         <where>
             <foreach collection="timeRanges" item="timeRange" separator="OR">
                 (create_time BETWEEN #{timeRange.startTime} AND #{timeRange.endTime})
             </foreach>
         </where>
     </select>
+   <select id="selectLogList" resultType="bot.wuliang.botLog.logAop.LogEntity">
+    <include refid="logEntity"/>
+    <where>
+        <if test="logEntity.botId != null">
+            bot_id = #{logEntity.botId}
+        </if>
+        <if test="logEntity.businessName != null">
+            AND business_name = #{logEntity.businessName}
+        </if>
+        <if test="logEntity.classPath != null">
+            AND class_path = #{logEntity.classPath}
+        </if>
+        <if test="logEntity.methodName != null">
+            AND method_name = #{logEntity.methodName}
+        </if>
+        <if test="logEntity.cmdText != null">
+            AND cmd_text = #{logEntity.cmdText}
+        </if>
+        <if test="logEntity.eventType != null">
+            AND event_type = #{logEntity.eventType}
+        </if>
+        <if test="logEntity.groupId != null">
+            AND group_id = #{logEntity.groupId}
+        </if>
+        <if test="logEntity.userId != null">
+            AND user_id = #{logEntity.userId}
+        </if>
+        <if test="logEntity.costTime != null">
+            AND cost_time = #{logEntity.costTime}
+        </if>
+        <if test="logEntity.createTime != null">
+            AND create_time = #{logEntity.createTime}
+        </if>
+    </where>
+    ORDER BY create_time DESC
+</select>
 
 </mapper>

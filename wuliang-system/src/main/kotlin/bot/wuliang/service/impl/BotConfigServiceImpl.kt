@@ -24,7 +24,6 @@ class BotConfigServiceImpl : ServiceImpl<BotConfigMapper?, BotConfigEntity?>(), 
 
     @Autowired
     private lateinit var botConfigUtil: BotConfigUtil
-    private val convert = Convert()
 
     @PostConstruct
     fun initConfig() {
@@ -36,7 +35,7 @@ class BotConfigServiceImpl : ServiceImpl<BotConfigMapper?, BotConfigEntity?>(), 
 
     override fun selectConfigByKey(configKey: String): String? {
         val cacheConfigKey = botConfigUtil.getCacheKey(configKey)
-        val redisValue = convert.toStr(redisService.getValueTyped<String>(CommonConfig.BOT_CONFIG_KEY +cacheConfigKey))
+        val redisValue = Convert.toStr(redisService.getValueTyped<String>(CommonConfig.BOT_CONFIG_KEY +cacheConfigKey))
         if (!redisValue.isNullOrBlank()) {
             return redisValue
         }

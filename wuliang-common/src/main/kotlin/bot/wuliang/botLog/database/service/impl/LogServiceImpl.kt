@@ -33,4 +33,8 @@ class LogServiceImpl : ServiceImpl<LogMapper?, LogEntity?>(), LogService {
     override fun selectLogByTime(timeRanges: MutableList<Map<String, LocalDateTime>>): List<LogEntity> {
         return logMapper.selectLogByTime(timeRanges)
     }
+
+    override fun selectList(page:IPage<LogEntity>,logEntity: LogEntity): IPage<LogEntity> {
+        return logMapper.selectLogList(page,logEntity)
+    }
 }

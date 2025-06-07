@@ -15,4 +15,13 @@ interface LogService {
      * @param timeRanges
      */
     fun selectLogByTime(timeRanges: MutableList<Map<String, LocalDateTime>>): List<LogEntity>
+
+    /**
+     * 查询日志列表
+     *
+     * @param page 分页对象
+     * @param logEntity 实体类
+     * @return
+     */
+    fun selectList(page: IPage<LogEntity>,logEntity: LogEntity):IPage<LogEntity>
 }

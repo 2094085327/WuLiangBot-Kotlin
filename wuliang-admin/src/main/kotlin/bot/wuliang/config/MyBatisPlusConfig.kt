@@ -1,4 +1,4 @@
-package bot.demo.txbot.bot.wuliang.config
+package bot.wuliang.config
 
 import com.baomidou.mybatisplus.annotation.DbType
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor

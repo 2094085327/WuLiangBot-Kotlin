@@ -65,7 +65,6 @@ class TotalDistribution @Autowired constructor(
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
-    private val convert = Convert()
 
     @PostConstruct
     fun creatDailyActiveFile() {
@@ -128,7 +127,7 @@ class TotalDistribution @Autowired constructor(
                 }*/
 
         val allEnableConfig =
-            convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
+            Convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
         if (!allEnableConfig) {
             context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
             return

@@ -7,7 +7,7 @@ import kotlin.math.floor
 import kotlin.math.pow
 
 @Suppress("unused")
-class Convert {
+object Convert {
     /**
      * 转换为字符串
      * 如果给定的值为null，或者转换失败，返回默认值
