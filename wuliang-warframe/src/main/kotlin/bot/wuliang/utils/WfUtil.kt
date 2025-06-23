@@ -777,11 +777,8 @@ class WfUtil {
             }
             channel.close()
         }
-        var proxyListSize = 10 // 默认并发数为10
-        if (redisService.hasKey("Wuliang:http:proxy")) {
-            proxyListSize = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")?.size ?: 10
-
-        } else {
+        val proxyListSize = 50 // 默认并发数为10
+        if (!redisService.hasKey("Wuliang:http:proxy")) {
             proxyUtil.proxyMain()
         }
 
