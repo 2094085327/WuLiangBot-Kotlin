@@ -1,6 +1,6 @@
 package bot.wuliang
 
-import bot.wuliang.config.APP_PID_PATH
+import bot.wuliang.config.CommonConfig.APP_PID_PATH
 import org.mybatis.spring.annotation.MapperScan
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.ApplicationPidFileWriter

@@ -9,4 +9,47 @@ package bot.wuliang.config
 object WfMarketConfig {
     val SPECIAL_ITEMS_LIST = listOf("赋能·充沛")
     val REPLACE_LIST = listOf("蓝图", "总图")
+
+    /** Warframe缓存key*/
+    const val WF_MARKET_CACHE_KEY = "Wuliang:Warframe:"
+
+    /**
+     * 别名缓存
+     */
+    const val WF_ALL_OTHER_NAME_KEY = WF_MARKET_CACHE_KEY + "allOtherName"
+
+    /**
+     * 执刑官缓存
+     */
+    const val WF_ARCHONHUNT_KEY = WF_MARKET_CACHE_KEY + "archonHunt"
+
+    /**
+     * 每日突击缓存
+     */
+    const val WF_SORTIE_KEY = WF_MARKET_CACHE_KEY + "sortie"
+
+    /**
+     * 钢铁之路缓存
+     */
+    const val WF_STEELPATH_KEY = WF_MARKET_CACHE_KEY + "steelPath"
+
+    /**
+     * 虚空商人缓存
+     */
+    const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader"
+
+    /**
+     * 玄骸缓存
+     */
+    const val WF_LICHORDER_KEY = WF_MARKET_CACHE_KEY + "lichOrder:"
+
+    /**
+     * 电波缓存
+     */
+    const val WF_NIGHTWAVE_KEY = WF_MARKET_CACHE_KEY + "nightWave"
+
+    /**
+     * 入侵缓存
+     */
+    const val WF_INVASIONS_KEY = WF_MARKET_CACHE_KEY + "invasions"
 }

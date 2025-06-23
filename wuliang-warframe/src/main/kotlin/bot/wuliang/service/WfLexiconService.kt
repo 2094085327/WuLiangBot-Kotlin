@@ -42,7 +42,7 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @param enName 英文名
      * @param zhName 中文别名
      */
-    fun insertOtherName(enName: String, zhName: String)
+    fun insertOtherName(enName: String, zhName: String): Int
 
     /**
      * 查询全部的别名

@@ -43,8 +43,8 @@ class WfLexiconServiceImpl : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), 
         return lexiconMapper.selectList(queryWrapper)?.firstOrNull()?.zhItemName
     }
 
-    override fun insertOtherName(enName: String, zhName: String) {
-        lexiconMapper.insertNewOtherName(enName, zhName)
+    override fun insertOtherName(enName: String, zhName: String): Int {
+        return lexiconMapper.insertNewOtherName(enName, zhName)
     }
 
     override fun selectAllOtherName(): List<WfOtherNameEntity> {

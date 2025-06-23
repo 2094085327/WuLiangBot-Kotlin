@@ -13,6 +13,9 @@ object CommonConfig {
     /**其他资源路径*/
     const val RESOURCES_OTHER = "$RESOURCES_PATH/others"
 
+    /**进程pid路径*/
+    const val APP_PID_PATH = "$RESOURCES_PATH/app.pid"
+
     /**帮助配置文件路径*/
     const val HELP_JSON = "$RESOURCES_OTHER/help.json"
 

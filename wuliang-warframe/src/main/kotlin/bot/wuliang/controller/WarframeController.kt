@@ -1,5 +1,14 @@
 package bot.wuliang.controller
 
+import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
+import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
@@ -9,6 +18,8 @@ import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.WfUtil
+import io.swagger.annotations.Api
+import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -22,6 +33,7 @@ import java.util.concurrent.TimeUnit
  * @author Nature Zero
  * @date 2024/6/11 下午1:23
  */
+@Api(tags = ["Warframe接口"])
 @RestController
 @RequestMapping("/warframe")
 class WarframeController(
@@ -31,28 +43,29 @@ class WarframeController(
     @Autowired private val wfUtil: WfUtil
 ) {
     /**
-     * 临时的别名管理页面
+     * 新增别名
      */
+    @ApiOperation("新增别名")
     @PostMapping("/wfManage/setOtherName")
-    fun login(
+    fun addOtherName(
         @RequestParam("itemName") itemName: String,
         @RequestParam("otherName") otherName: String,
     ): RespBean {
-        wfLexiconService.insertOtherName(itemName, otherName)
-        redisService.deleteKey("warframe:allOtherName")
-        return RespBean.success(WarframeRespEnum.SUBMIT_SUCCESS)
+        redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
+        return RespBean.toReturn(wfLexiconService.insertOtherName(itemName, otherName))
     }
 
+    @ApiOperation("执刑官数据")
     @RequestMapping("/archonHunt")
     fun archonHunt(): WfStatusVo.ArchonHuntEntity? {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, archonHuntEntity) = redisService.getExpireAndValue("warframe:archonHunt")
+        var (expiry, archonHuntEntity) = redisService.getExpireAndValue(WF_ARCHONHUNT_KEY)
         if (expiry == null) expiry = -1L
         archonHuntEntity as WfStatusVo.ArchonHuntEntity
         // 更新时间为当前时间（秒）
         archonHuntEntity.eta = wfUtil.formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
-            "warframe:archonHunt",
+            WF_ARCHONHUNT_KEY,
             archonHuntEntity,
             expiry,
             TimeUnit.SECONDS
@@ -60,17 +73,18 @@ class WarframeController(
         return archonHuntEntity
     }
 
+    @ApiOperation("每日突击数据")
     @RequestMapping("/sortie")
     fun sortie(): WfStatusVo.SortieEntity? {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, sortieEntity) = redisService.getExpireAndValue("warframe:sortie")
+        var (expiry, sortieEntity) = redisService.getExpireAndValue(WF_SORTIE_KEY)
         if (expiry == null) expiry = -1L
         sortieEntity as WfStatusVo.SortieEntity
         // 更新时间为当前时间（秒）
         sortieEntity.eta = wfUtil.formatTimeBySecond(expiry)
 
         redisService.setValueWithExpiry(
-            "warframe:sortie",
+            WF_SORTIE_KEY,
             sortieEntity,
             expiry,
             TimeUnit.SECONDS
@@ -78,16 +92,17 @@ class WarframeController(
         return sortieEntity
     }
 
+    @ApiOperation("钢路奖励")
     @RequestMapping("/steelPath")
     fun steelPath(): WfStatusVo.SteelPathEntity? {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, steelPathEntity) = redisService.getExpireAndValue("warframe:steelPath")
+        var (expiry, steelPathEntity) = redisService.getExpireAndValue(WF_STEELPATH_KEY)
         if (expiry == null) expiry = -1L
         steelPathEntity as WfStatusVo.SteelPathEntity
         // 更新时间为当前时间（秒）
         steelPathEntity.remaining = wfUtil.formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
-            "warframe:steelPath",
+            WF_STEELPATH_KEY,
             steelPathEntity,
             expiry,
             TimeUnit.SECONDS
@@ -95,22 +110,24 @@ class WarframeController(
         return steelPathEntity
     }
 
+    @ApiOperation("裂缝信息")
     @RequestMapping("/fissureList")
     fun fissureList(@RequestParam("type") type: String): WfStatusVo.FissureList? {
-        return redisService.getValueTyped<WfStatusVo.FissureList>("warframe:${type}")
+        return redisService.getValueTyped<WfStatusVo.FissureList>(WF_MARKET_CACHE_KEY + type)
     }
 
+    @ApiOperation("虚空商人信息")
     @RequestMapping("/voidTrader")
     fun voidTrader(): WfStatusVo.VoidTraderEntity? {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, voidTraderEntity) = redisService.getExpireAndValue("warframe:voidTrader")
+        var (expiry, voidTraderEntity) = redisService.getExpireAndValue(WF_VOIDTRADER_KEY)
         if (expiry == null) expiry = -1L
         voidTraderEntity as WfStatusVo.VoidTraderEntity
         // 更新时间为当前时间（秒）
         voidTraderEntity.time = wfUtil.formatTimeBySecond(expiry)
 
         redisService.setValueWithExpiry(
-            "warframe:voidTrader",
+            WF_VOIDTRADER_KEY,
             voidTraderEntity,
             expiry,
             TimeUnit.SECONDS
@@ -118,6 +135,7 @@ class WarframeController(
         return voidTraderEntity
     }
 
+    @ApiOperation("玄骸武器信息")
     @RequestMapping("/lich")
     fun lich(
         @RequestParam("url_name") urlName: String?,
@@ -125,24 +143,25 @@ class WarframeController(
         @RequestParam("element") element: String?,
         @RequestParam("ephemera") ephemera: String?
     ): WfMarketVo.LichEntity? {
-        return redisService.getValueTyped<WfMarketVo.LichEntity>(
-            "warframe:lichOrderEntity:${urlName}${damage}${element}${ephemera}",
-        )
+        return redisService.getValueTyped<WfMarketVo.LichEntity>(WF_LICHORDER_KEY + "${urlName}${damage}${element}${ephemera}")
     }
 
+    @ApiOperation("紫卡信息")
     @RequestMapping("/riven")
     fun riven(): WfMarketVo.RivenOrderList? {
         return WfMarketController.WfMarket.rivenOrderList
     }
 
+    @ApiOperation("电波信息")
     @RequestMapping("/nightWave")
     fun nightWave(): WfStatusVo.NightWaveEntity? {
-        return redisService.getValueTyped<WfStatusVo.NightWaveEntity>("warframe:nightWave")
+        return redisService.getValueTyped<WfStatusVo.NightWaveEntity>(WF_NIGHTWAVE_KEY)
     }
 
+    @ApiOperation("入侵信息")
     @RequestMapping("/invasions")
-    fun invasions(): List<*> {
-        return redisService.getValue("warframe:invasions") as List<*>
+    fun invasions(): List<WfStatusVo.IncarnonEntity>? {
+        return redisService.getValueTyped<List<WfStatusVo.IncarnonEntity>>(WF_INVASIONS_KEY)
     }
 
     @RequestMapping("/incarnon")
