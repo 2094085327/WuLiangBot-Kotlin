@@ -11,6 +11,7 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
+import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
@@ -55,6 +56,9 @@ class WfUtil {
 
     @Autowired
     private lateinit var redisService: RedisService
+
+    @Autowired
+    private lateinit var proxyUtil: ProxyUtil
 
     @Autowired
     @Qualifier("otherUtil")
@@ -773,9 +777,15 @@ class WfUtil {
             }
             channel.close()
         }
+        var proxyListSize = 10 // 默认并发数为10
+        if (redisService.hasKey("Wuliang:http:proxy")) {
+            proxyListSize = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")?.size ?: 10
+
+        } else {
+            proxyUtil.proxyMain()
+        }
 
         // 调用 proxyMain 获取代理列表
-        val proxyListSize = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")?.size ?: 10
 
         val workers = List(proxyListSize) { // 控制最大并发数
             launch {

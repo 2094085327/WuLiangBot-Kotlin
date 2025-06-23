@@ -62,7 +62,7 @@ class ProxyUtil {
                 scope.async {
                     val proxyAddress = Proxy(Proxy.Type.HTTP, InetSocketAddress(proxy.ip, proxy.port!!))
                     return@async try {
-                        HttpUtil.doGetStr("http://httpbin.org/ip", proxy = proxyAddress)
+                        HttpUtil.doGetStrNoLog("http://httpbin.org/ip", proxy = proxyAddress)
                         proxy
                     } catch (e: Exception) {
                         null
