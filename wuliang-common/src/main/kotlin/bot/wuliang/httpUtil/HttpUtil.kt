@@ -18,6 +18,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.net.URIBuilder
 import java.io.File
 import java.io.IOException
+import java.net.Proxy
 import java.net.URI
 import java.net.URLEncoder
 
@@ -38,6 +39,13 @@ open class HttpBase {
     protected open val httpClient: CloseableHttpClient = HttpClients.createDefault()
 
     protected open val client = OkHttpClient()
+
+    // 带代理的 client 工厂方法
+    infix fun createClientWithProxy(proxy: Proxy): OkHttpClient {
+        return OkHttpClient.Builder()
+            .proxy(proxy)
+            .build()
+    }
 
     /**
      * 发送get请求
@@ -155,8 +163,11 @@ open class HttpBase {
         url: String,
         params: Map<String, Any>? = null,
         headers: MutableMap<String, Any>? = null,
+        proxy: Proxy? = null
     ): String {
         val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
+
+        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
 
         val requestBuilder = Request.Builder()
             .url(fullUrl)
@@ -167,7 +178,7 @@ open class HttpBase {
         }
         val request = requestBuilder.build()
 
-        val response = client.newCall(request).execute()
+        val response = clientToUse.newCall(request).execute()
 
         return response.use {
             if (it.isSuccessful) {
@@ -185,8 +196,11 @@ open class HttpBase {
         url: String,
         params: Map<String, Any>? = null,
         headers: MutableMap<String, Any>? = null,
+        proxy: Proxy? = null
     ): String {
         val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
+
+        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
 
         val requestBuilder = Request.Builder()
             .url(fullUrl)
@@ -197,7 +211,7 @@ open class HttpBase {
         }
         val request = requestBuilder.build()
 
-        val response = client.newCall(request).execute()
+        val response = clientToUse.newCall(request).execute()
 
         return response.use {
             if (it.isSuccessful) {
@@ -223,8 +237,9 @@ open class HttpBase {
         url: String,
         headers: MutableMap<String, Any>? = null,
         params: Map<String, Any>? = null,
+        proxy: Proxy? = null
     ): JsonNode {
-        return JacksonUtil.readTree(doGetStr(url, params, headers))
+        return JacksonUtil.readTree(doGetStr(url, params, headers,proxy))
     }
 
     /**

@@ -34,7 +34,7 @@ const val WARFRAME_MARKET_RIVEN_ITEMS = "$WARFRAME_MARKET_BASE_URL/riven/items"
 const val WARFRAME_MARKET_RIVEN_ATTRIBUTES = "$WARFRAME_MARKET_BASE_URL/riven/attributes"
 
 /**
- * Market 紫卡拍卖
+ * Market 最新紫卡拍卖
  */
 const val WARFRAME_MARKET_RIVEN_AUCTIONS_BASE = "$WARFRAME_MARKET_BASE_URL/auctions"
 

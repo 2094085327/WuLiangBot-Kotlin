@@ -11,6 +11,7 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
+import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfMarketItemService
@@ -20,15 +21,18 @@ import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -332,6 +336,41 @@ class WfUtil {
     }
 
     /**
+     * 用于紫卡均价的拍卖数据格式化
+     *
+     * @param rivenJson 紫卡Json数据
+     * @param itemName 物品的urlName
+     * @return 此物品的前20条拍卖价格
+     */
+    fun formatAuctionDataForAvg(rivenJson: JsonNode?): MutableList<Long> {
+        if (rivenJson == null) return mutableListOf(0L)
+        val orders = rivenJson["payload"]?.get("auctions") ?: return mutableListOf(0L)
+
+        return orders.asSequence()
+            .filter {
+                val status = it["owner"]["status"].textValue()
+                status == "ingame" || status == "online"
+            }
+            .sortedWith(
+                compareBy(
+                    {
+                        when (it["owner"]["status"].textValue()) {
+                            "ingame" -> 0
+                            "online" -> 1
+                            else -> 2
+                        }
+                    },
+                    { it["starting_price"].intValue() }
+                )
+            )
+            .take(20)
+            .map { it["starting_price"].longValue() }
+            .toMutableList()
+            .ifEmpty { mutableListOf(0L) }
+    }
+
+
+    /**
      * 获取拍卖数据
      *
      * @param parameterList 紫卡参数列表
@@ -381,6 +420,26 @@ class WfUtil {
             logError("WM查询错误:$e")
             null
         }
+    }
+
+    /**
+     * 获取紫卡拍卖数据
+     *
+     * @param itemEntityUrlName 物品Url名称
+     * @return Json数据
+     */
+    fun getAuctionsJsonForRiven(
+        itemEntityUrlName: String,
+        headers: MutableMap<String, Any>? = null,
+        proxy: Proxy? = null
+    ): JsonNode? {
+        val queryParams = createQueryParams(itemEntityUrlName, mutableListOf(), null)
+        return HttpUtil.doGetJson(
+            WARFRAME_MARKET_RIVEN_AUCTIONS,
+            params = queryParams,
+            headers = headers,
+            proxy = proxy
+        )
     }
 
 
@@ -690,34 +749,10 @@ class WfUtil {
      */
     fun getIncarnonRiven(incarnonList: List<SteelWeek>?): Map<String, String>? = runBlocking {
         return@runBlocking incarnonList?.get(0)?.items?.map { item ->
-            async(Dispatchers.Default) { getAvg(item) }
+            async(Dispatchers.Default) { getAvg(item.urlName!!) }
         }?.awaitAll()?.flatMap { it.entries } // 将每个 Map 的 entry 展开为 List<Entry>
             ?.associate { it.toPair() } // 将 List<Entry> 转换为单一的 Map<String, String>
     }
-
-    /**
-     * 获取指定物品的平均价格
-     *
-     * @param item 灵化武器
-     * @return Map<String, String>
-     */
-    suspend fun getAvg(item: SteelItem): Map<String, String> = withContext(Dispatchers.IO) {
-        val rivenJson = getAuctionsJson(
-            itemEntityUrlName = item.urlName!!,
-            auctionType = "riven",
-        )
-        // 筛选和格式化拍卖数据
-        rivenJson?.let { formatAuctionData(it, item.name!!) }
-        val startPlatinumList = WfMarketController.WfMarket.rivenOrderList?.orderList?.map { order ->
-            order.startPlatinum
-        } as MutableList
-        startPlatinumList.remove(startPlatinumList.max())
-        startPlatinumList.remove(startPlatinumList.min())
-        val avg = startPlatinumList.average()
-
-        return@withContext mapOf<String, String>((item.name ?: "未知") to String.format("%.2f", avg))
-    }
-
 
     /**
      * 获取全部武器紫卡的平均价格
@@ -728,20 +763,36 @@ class WfUtil {
     fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
         if (weaponList.isNullOrEmpty()) return@runBlocking null
 
-        // 启用线程池
-        val dispatcher = Executors.newFixedThreadPool(20).asCoroutineDispatcher()
-        val results = weaponList.chunked((weaponList.size + 19) / 20) // 将列表分割为 20 个部分
-            .map { sublist ->
-                async(dispatcher) {
-                    sublist.flatMap { getAvgWithRetry(it).entries }
+        val channel = Channel<String>(capacity = 20)
+        val resultMutex = Mutex()
+        val results = mutableListOf<Map.Entry<String, String>>()
+
+        launch {
+            weaponList.forEach { item ->
+                channel.send(item)
+            }
+            channel.close()
+        }
+
+        // 调用 proxyMain 获取代理列表
+        val proxyListSize = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")?.size ?: 10
+
+        val workers = List(proxyListSize) { // 控制最大并发数
+            launch {
+                for (item in channel) {
+                    val result = getAvgWithRetry(item)
+                    resultMutex.lock()
+                    results.addAll(result.entries)
+                    resultMutex.unlock()
                 }
-            }.awaitAll().flatten() // 合并结果
+            }
+        }
 
-        // 关闭线程池
-        dispatcher.close() // 直接关闭调度器
+        workers.joinAll()
 
-        return@runBlocking results.associate { it.toPair() }
+        results.associate { it.toPair() }
     }
+
 
     suspend fun getAvgWithRetry(item: String, retries: Int = 3): Map<String, String> {
         repeat(retries) { attempt ->
@@ -749,7 +800,7 @@ class WfUtil {
                 return getAvg(item) // 尝试获取平均价格
             } catch (e: Exception) {
                 if (attempt < retries - 1) {
-                    delay(6000 + Random.nextLong(0, 1000)) // 添加随机延迟
+                    delay(5000 + Random.nextLong(0, 1000)) // 添加随机延迟
                 } else {
                     return emptyMap() // 如果所有尝试都失败了，返回一个空的 Map
                 }
@@ -766,14 +817,34 @@ class WfUtil {
      * @return Map<String, String>
      */
     suspend fun getAvg(item: String): Map<String, String> = withContext(Dispatchers.IO) {
-        val rivenJson = getAllRivenJson(itemEntityUrlName = item)
-        rivenJson?.let { formatAuctionData(it, item) }
-        val startPlatinumList = WfMarketController.WfMarket.rivenOrderList?.orderList?.map { order ->
-            order.startPlatinum
-        } as MutableList
-        startPlatinumList.remove(startPlatinumList.maxOrNull())
-        startPlatinumList.remove(startPlatinumList.minOrNull())
-        val avg = startPlatinumList.average()
+        // 调用 proxyMain 获取代理列表
+        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
+
+
+        // 如果代理池存在且不为空，则随机选择一个代理
+        val proxy: Proxy? = proxyList?.takeIf { it.isNotEmpty() }?.let {
+            val proxies = it.map { proxyInfo ->
+                Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
+            }
+            proxies.random()
+        }
+        // 发起 HTTP 请求（有代理则使用代理，否则使用本地网络）
+        val rivenJson = getAuctionsJsonForRiven(itemEntityUrlName = item, generateRandomHeaders(), proxy)
+        val formatAuctionDataForAvg = formatAuctionDataForAvg(rivenJson)
+
+        // 只有在数据量大于等于 3 时才去掉最大和最小值
+        val cleanedList = if (formatAuctionDataForAvg.size >= 3) {
+            val min = formatAuctionDataForAvg.minOrNull()
+            val max = formatAuctionDataForAvg.maxOrNull()
+            formatAuctionDataForAvg.filter { it != min && it != max }
+        } else {
+            formatAuctionDataForAvg
+        }.toMutableList()
+
+        val avg = when {
+            cleanedList.isNotEmpty() -> cleanedList.average()
+            else -> 0.0
+        }
         return@withContext mapOf(item to String.format("%.2f", avg))
     }
 
@@ -854,12 +925,48 @@ class WfUtil {
     private fun updateRivenData(midnight: Boolean = false) {
         if (redisService.hasKey("warframe:rivenRanking") && !midnight) return
 
-        val rivenData = wfRivenService.selectAllRivenData()
-        rivenData.forEach {
-            redisService.setValue("warframe:riven:${it.urlName}", it)
+        // 查询数据库最新数据
+        val dbRivenList = wfRivenService.selectAllRivenData()
+
+        // 获取 Redis 中已存在的 key
+        val redisKeys = redisService.getListKey("warframe:riven:*").toSet()
+
+        // 构建数据库中的 key 集合，并记录需要更新/新增的项
+        val dbKeys = mutableSetOf<String>()
+        val toUpdateOrInsert = mutableListOf<WfRivenEntity>()
+
+        val urlNameList = mutableListOf<String>()
+
+        dbRivenList.forEach { data ->
+            val urlName = data.urlName ?: return@forEach
+            val key = "warframe:riven:${urlName}"
+
+            dbKeys.add(key)
+            urlNameList.add(urlName)
+
+            if (!redisKeys.contains(key)) {
+                // 如果不存在，则新增
+                toUpdateOrInsert.add(data)
+            }
         }
 
-        val urlNameList = redisService.getListKey("warframe:riven:*").map { it.split(":")[2] }
+        // 写入有变更的数据到 Redis
+        if (toUpdateOrInsert.isNotEmpty()) {
+            logInfo("检测到 ${toUpdateOrInsert.size} 条紫卡数据发生变更，正在更新缓存...")
+            toUpdateOrInsert.forEach { data ->
+                redisService.setValue("warframe:riven:${data.urlName}", data)
+            }
+        }
+
+
+        // 删除 Redis 中已不存在于数据库中的 key
+        val toDelete = redisKeys.subtract(dbKeys)
+        if (toDelete.isNotEmpty()) {
+            logInfo("检测到 ${toDelete.size} 条废弃紫卡数据，正在清理缓存...")
+            redisService.deleteKey(toDelete)
+        }
+
+
         val rivenAvgList =
             if (!midnight) redisService.getListKey("warframe:rivenAvg:*").map { it.split(":")[2] } else emptyList()
         val newList = urlNameList.subtract(rivenAvgList.toSet()).toList()

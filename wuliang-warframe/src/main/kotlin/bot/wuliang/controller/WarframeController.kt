@@ -13,6 +13,10 @@ import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
+import bot.wuliang.exception.RespBeanEnum
+import bot.wuliang.httpUtil.HttpUtil
+import bot.wuliang.httpUtil.ProxyUtil
+import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
@@ -21,10 +25,9 @@ import bot.wuliang.utils.WfUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 
@@ -42,6 +45,9 @@ class WarframeController(
     @Autowired private val redisService: RedisService,
     @Autowired private val wfUtil: WfUtil
 ) {
+    @Autowired
+    private lateinit var proxyUtil: ProxyUtil
+
     /**
      * 新增别名
      */
@@ -54,6 +60,35 @@ class WarframeController(
         redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
         return RespBean.toReturn(wfLexiconService.insertOtherName(itemName, otherName))
     }
+
+    /**
+     * 新增别名
+     */
+    @GetMapping("/test")
+    fun test(): RespBean {
+        // 调用 proxyMain 获取代理列表
+        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
+
+        // 检查 proxyList 是否为空或无效
+        if (proxyList.isNullOrEmpty()) {
+            return RespBean.error(RespBeanEnum.ERROR)
+        }
+
+        // 将 ProxyInfo 列表转换为 Proxy 对象列表
+        val proxies = proxyList.map { proxyInfo ->
+            Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
+        }
+
+        // 使用随机代理发起请求
+        return RespBean.success(
+            HttpUtil.doGetJson(
+                "http://httpbin.org/ip",
+                headers = wfUtil.generateRandomHeaders(),
+                proxy = proxies.random()
+            )
+        )
+    }
+
 
     @ApiOperation("执刑官数据")
     @RequestMapping("/archonHunt")
