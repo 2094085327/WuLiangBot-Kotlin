@@ -64,4 +64,12 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * @param otherName 别名
      */
     fun updateOtherName(id: Int, otherName: String)
+
+    /**
+     * 词库超模糊查询
+     *
+     * @param key 关键字
+     * @return 查询结果
+     */
+    fun fuzzyQuery(key: String): List<WfLexiconEntity?>
 }

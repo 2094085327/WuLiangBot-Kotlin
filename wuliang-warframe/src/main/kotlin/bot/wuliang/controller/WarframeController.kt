@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.net.Socket
 import java.util.concurrent.TimeUnit
 
 
@@ -67,24 +68,33 @@ class WarframeController(
     @GetMapping("/test")
     fun test(): RespBean {
         // 调用 proxyMain 获取代理列表
-        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
-
-        // 检查 proxyList 是否为空或无效
-        if (proxyList.isNullOrEmpty()) {
-            return RespBean.error(RespBeanEnum.ERROR)
-        }
+//        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
+//
+//        // 检查 proxyList 是否为空或无效
+//        if (proxyList.isNullOrEmpty()) {
+//            return RespBean.error(RespBeanEnum.ERROR)
+//        }
 
         // 将 ProxyInfo 列表转换为 Proxy 对象列表
-        val proxies = proxyList.map { proxyInfo ->
-            Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
-        }
+//        val proxies = proxyList.map { proxyInfo ->
+//            Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
+//        }
+        val proxy = Proxy(Proxy.Type.SOCKS, InetSocketAddress("219.154.210.157", 9999))
 
+//        try {
+//            val socket = Socket(proxy)
+//            socket.connect(InetSocketAddress("api.warframe.market", 443), 10000)
+//            println("Connected successfully through SOCKS proxy.")
+//            socket.close()
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
         // 使用随机代理发起请求
         return RespBean.success(
-            HttpUtil.doGetJson(
-                "http://httpbin.org/ip",
-                headers = wfUtil.generateRandomHeaders(),
-                proxy = proxies.random()
+            HttpUtil.doGetStr(
+                "https://api.warframe.market/v1/items/111/orders",
+//                headers = wfUtil.generateRandomHeaders(),
+                proxy = proxy
             )
         )
     }

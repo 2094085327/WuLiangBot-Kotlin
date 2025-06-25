@@ -17,9 +17,9 @@ class ProxyUtil {
     private lateinit var redisService: RedisService
 
     // api 接口
-    val api = "http://49.232.127.250:3751/api/v2/http"
+    val api = "https://proxy.scdn.io/api/get_proxy.php?protocol=socks5&count=20"
 
-    @Scheduled(cron = "0 30 * * * ?")
+    @Scheduled(cron = "0 55 * * * ?")
     fun proxyMain(): List<ProxyInfo>? {
         // 从 Redis 获取已存储的代理列表
         val proxies = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
@@ -27,7 +27,7 @@ class ProxyUtil {
         // 检查是否需要更新代理池
         if (proxies.isNullOrEmpty() || validateProxies(proxies).size < 5) {
             // 获取新的代理列表
-            val newProxies = getProxyApi()
+            val newProxies = fetchMultipleProxyLists()
 
             // 验证新代理的有效性
             val validateProxies = validateProxies(newProxies)
@@ -36,8 +36,33 @@ class ProxyUtil {
         return null
     }
 
+    fun fetchMultipleProxyLists(): List<ProxyInfo> {
+        val totalProxies = mutableListOf<ProxyInfo>()
+        val requestCount = 5
+
+        repeat(requestCount) {
+            val jsonNode: JsonNode = HttpUtil.doGetJson(api).get("data").get("proxies")
+
+            val pattern = Regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}:\\d{1,5}$")
+
+            val proxies = jsonNode.mapNotNull { node ->
+                val text = node.asText()
+                if (pattern.matches(text)) {
+                    val ipPort = text.split(":")
+                    ProxyInfo(ip = ipPort[0], port = ipPort[1].toInt())
+                } else {
+                    null
+                }
+            }
+
+            totalProxies.addAll(proxies)
+        }
+
+        return totalProxies.distinct() // 去重
+    }
+
     fun getProxyApi(): List<ProxyInfo> {
-        val jsonNode: JsonNode = HttpUtil.doGetJson(api).get("proxies")
+        val jsonNode: JsonNode = HttpUtil.doGetJson(api).get("data").get("proxies")
 
         // 定义 ip:port 正则表达式
         val pattern = Regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}:\\d{1,5}$")
@@ -60,9 +85,10 @@ class ProxyUtil {
         val results = runBlocking {
             proxyList.map { proxy ->
                 scope.async {
-                    val proxyAddress = Proxy(Proxy.Type.HTTP, InetSocketAddress(proxy.ip, proxy.port!!))
+                    val proxyAddress = Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxy.ip, proxy.port!!))
                     return@async try {
-                        HttpUtil.doGetStrNoLog("http://httpbin.org/ip", proxy = proxyAddress)
+                        // 用于校验代理的临时解决方案
+                        HttpUtil.doGetStrNoLog("https://api.warframe.market/v1/items/sentient_concourse_scene/orders", headers = mutableMapOf("Platform" to "xbox"), proxy = proxyAddress)
                         proxy
                     } catch (e: Exception) {
                         null

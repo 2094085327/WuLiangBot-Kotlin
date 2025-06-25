@@ -1,6 +1,7 @@
 package bot.wuliang.httpUtil
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
+import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.httpUtil.HttpBase.UrlUtil.urlEncode
 import bot.wuliang.jacksonUtil.JacksonUtil
 import com.fasterxml.jackson.databind.JsonNode
@@ -21,6 +22,10 @@ import java.io.IOException
 import java.net.Proxy
 import java.net.URI
 import java.net.URLEncoder
+import java.security.cert.X509Certificate
+import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 
 /**
@@ -40,11 +45,42 @@ open class HttpBase {
 
     protected open val client = OkHttpClient()
 
-    // 带代理的 client 工厂方法
-    infix fun createClientWithProxy(proxy: Proxy): OkHttpClient {
-        return OkHttpClient.Builder()
-            .proxy(proxy)
-            .build()
+//    // 带代理的 client 工厂方法
+//    infix fun createClientWithProxy(proxy: Proxy): OkHttpClient {
+//        return OkHttpClient.Builder()
+//            .proxy(proxy)
+//            .connectTimeout(10, TimeUnit.SECONDS)
+//            .readTimeout(30, TimeUnit.SECONDS)
+//            .writeTimeout(10, TimeUnit.SECONDS)
+//            .build()
+//    }
+
+    companion object {
+        private val proxyClients = mutableMapOf<Proxy, OkHttpClient>()
+
+        fun getClientWithProxy(proxy: Proxy): OkHttpClient {
+            val trustManager = object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            }
+
+            val sslContext = SSLContext.getInstance("SSL").apply {
+                init(null, arrayOf(trustManager), null)
+            }
+
+            return proxyClients.getOrPut(proxy) {
+                OkHttpClient.Builder()
+                    .sslSocketFactory(sslContext.socketFactory, trustManager)
+                    .hostnameVerifier { _, _ -> true }
+                    .proxy(proxy)
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .callTimeout(60, TimeUnit.SECONDS)
+                    .build()
+            }
+        }
     }
 
     /**
@@ -158,6 +194,39 @@ open class HttpBase {
      * @param headers 请求头
      * @return 请求结果
      */
+//    @Throws(IOException::class)
+//    fun doGetStr(
+//        url: String,
+//        params: Map<String, Any>? = null,
+//        headers: MutableMap<String, Any>? = null,
+//        proxy: Proxy? = null
+//    ): String {
+//        val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
+//
+//        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
+//
+//        val requestBuilder = Request.Builder()
+//            .url(fullUrl)
+//            .get()
+//
+//        headers?.forEach { (key, value) ->
+//            requestBuilder.addHeader(key, value.toString())
+//        }
+//        val request = requestBuilder.build()
+//
+//        val response = clientToUse.newCall(request).execute()
+//logInfo("响应：$response")
+//        return response.use {
+//            if (it.isSuccessful) {
+//                it.body.string()
+//            } else {
+//                val errorResponse = it.body.string()
+//                logError("Get请求失败: ${it.code} $request")
+//                throw HttpException(it.code, errorResponse)
+//            }
+//        }
+//    }
+
     @Throws(IOException::class)
     fun doGetStr(
         url: String,
@@ -167,30 +236,45 @@ open class HttpBase {
     ): String {
         val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
 
-        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
+        logInfo("准备发起请求到: $fullUrl")
+        logInfo("使用代理: $proxy")
 
-        val requestBuilder = Request.Builder()
-            .url(fullUrl)
-            .get()
+        val clientToUse = if (proxy == null) client else getClientWithProxy(proxy)
 
+        val requestBuilder = Request.Builder().url(fullUrl).get()
         headers?.forEach { (key, value) ->
             requestBuilder.addHeader(key, value.toString())
         }
+
         val request = requestBuilder.build()
 
-        val response = clientToUse.newCall(request).execute()
+        logInfo("请求构建完成，开始执行: ${request.url}")
+        var call: Call? = null
+        var response: Response? = null
+        try {
+            call = clientToUse.newCall(request)
+            response = call.execute()
+            logInfo("收到响应: ${response.code} - ${response.message}")
 
-        return response.use {
-            if (it.isSuccessful) {
-                it.body.string()
+            if (response.isSuccessful) {
+                val body = response.body?.string() ?: ""
+                logInfo("响应成功，内容长度: ${body.length}")
+                return body
             } else {
-                val errorResponse = it.body.string()
-                logError("Get请求失败: ${it.code} $request")
-                throw HttpException(it.code, errorResponse)
+                val errorResponse = response.body?.string() ?: ""
+                logError("Get请求失败: ${response.code} - ${response.message}, URL: ${request.url}")
+                logError("错误响应内容: $errorResponse")
+                throw HttpException(response.code, errorResponse)
             }
+        } catch (e: Exception) {
+            call?.cancel()
+            logError("请求执行异常: ${e.message}, URL: ${request.url}, 代理: $proxy")
+            throw e
+        } finally {
+            // 确保关闭连接
+            response?.close()
         }
     }
-
     @Throws(IOException::class)
     fun doGetStrNoLog(
         url: String,
@@ -200,7 +284,7 @@ open class HttpBase {
     ): String {
         val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
 
-        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
+        val clientToUse = if (proxy == null) client else getClientWithProxy(proxy)
 
         val requestBuilder = Request.Builder()
             .url(fullUrl)
