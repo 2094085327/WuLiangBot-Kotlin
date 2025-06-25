@@ -265,4 +265,67 @@ class WfMarketController @Autowired constructor(
         )
         webImgUtil.sendNewImage(context, imgData)
     }
+
+    @SystemLog(businessName = "获取物品对应翻译")
+    @AParameter
+    @Executor(action = "(?i)\\b(翻译 (.*))\\b")
+    fun translation(context: BotUtils.Context, matcher: Matcher) {
+        val inputText = matcher.group(1).trim()
+
+        // 判断输入语言类型
+        val hasChinese = Regex("[\\u4e00-\\u9fa5]").containsMatchIn(inputText)
+        val hasEnglish = Regex("[A-Za-z]").containsMatchIn(inputText)
+
+        if (hasEnglish && hasChinese) {
+            context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+            return
+        }
+
+        // 封装查找和模糊搜索逻辑
+        fun findTranslation(
+            query: String,
+            directLookup: (String) -> String?,
+            fuzzyLookup: (String) -> List<String?>
+        ): Boolean {
+            val directResult = directLookup(query)
+            if (directResult != null) {
+                context.sendMsg(directResult)
+                return true
+            }
+
+            val fuzzyResults = fuzzyLookup(query)
+                .filterNotNull()
+                .takeIf { it.isNotEmpty() }
+                ?.let { otherUtil.findMatchingStrings(query, it) }
+
+            if (fuzzyResults != null && fuzzyResults.isNotEmpty()) {
+                context.sendMsg("${WarframeRespEnum.SEARCH_NOT_FOUND.message}${fuzzyResults.joinToString(", ")}")
+                return true
+            }
+
+            return false
+        }
+
+        // 根据输入语言执行翻译逻辑
+        when {
+            hasChinese -> {
+                if (!findTranslation(inputText, wfLexiconService::getZhName) { key ->
+                        wfLexiconService.fuzzyQuery(key).map { it?.zhItemName }
+                    }) {
+                    context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                }
+            }
+
+            hasEnglish -> {
+                if (!findTranslation(inputText, wfLexiconService::getOtherName) { key ->
+                        wfLexiconService.fuzzyQuery(key).map { it?.enItemName }
+                    }) {
+                    context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                }
+            }
+
+            else -> context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+        }
+    }
+
 }
