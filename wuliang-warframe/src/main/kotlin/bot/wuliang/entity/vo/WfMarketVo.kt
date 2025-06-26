@@ -106,5 +106,5 @@ class WfMarketVo {
      * @property name 紫卡名称
      * @property value 价格
      */
-    data class RivenRank(val name: String? = null, val value: String? = null) : Serializable
+    data class RivenRank(val name: String? = null, val value: Double? = null) : Serializable
 }

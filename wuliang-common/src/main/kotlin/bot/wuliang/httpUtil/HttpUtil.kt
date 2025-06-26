@@ -75,9 +75,9 @@ open class HttpBase {
                     .hostnameVerifier { _, _ -> true }
                     .proxy(proxy)
                     .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
                     .writeTimeout(10, TimeUnit.SECONDS)
-                    .callTimeout(60, TimeUnit.SECONDS)
+                    .callTimeout(90, TimeUnit.SECONDS)
                     .build()
             }
         }
@@ -194,39 +194,6 @@ open class HttpBase {
      * @param headers 请求头
      * @return 请求结果
      */
-//    @Throws(IOException::class)
-//    fun doGetStr(
-//        url: String,
-//        params: Map<String, Any>? = null,
-//        headers: MutableMap<String, Any>? = null,
-//        proxy: Proxy? = null
-//    ): String {
-//        val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
-//
-//        val clientToUse = if (proxy == null) this.client else HttpUtil createClientWithProxy(proxy)
-//
-//        val requestBuilder = Request.Builder()
-//            .url(fullUrl)
-//            .get()
-//
-//        headers?.forEach { (key, value) ->
-//            requestBuilder.addHeader(key, value.toString())
-//        }
-//        val request = requestBuilder.build()
-//
-//        val response = clientToUse.newCall(request).execute()
-//logInfo("响应：$response")
-//        return response.use {
-//            if (it.isSuccessful) {
-//                it.body.string()
-//            } else {
-//                val errorResponse = it.body.string()
-//                logError("Get请求失败: ${it.code} $request")
-//                throw HttpException(it.code, errorResponse)
-//            }
-//        }
-//    }
-
     @Throws(IOException::class)
     fun doGetStr(
         url: String,
@@ -235,9 +202,6 @@ open class HttpBase {
         proxy: Proxy? = null
     ): String {
         val fullUrl = if (params != null) buildUrlWithParams(url, params) else url
-
-        logInfo("准备发起请求到: $fullUrl")
-        logInfo("使用代理: $proxy")
 
         val clientToUse = if (proxy == null) client else getClientWithProxy(proxy)
 
@@ -248,22 +212,17 @@ open class HttpBase {
 
         val request = requestBuilder.build()
 
-        logInfo("请求构建完成，开始执行: ${request.url}")
         var call: Call? = null
         var response: Response? = null
         try {
             call = clientToUse.newCall(request)
             response = call.execute()
-            logInfo("收到响应: ${response.code} - ${response.message}")
 
             if (response.isSuccessful) {
-                val body = response.body?.string() ?: ""
-                logInfo("响应成功，内容长度: ${body.length}")
+                val body = response.body.string()
                 return body
             } else {
-                val errorResponse = response.body?.string() ?: ""
-                logError("Get请求失败: ${response.code} - ${response.message}, URL: ${request.url}")
-                logError("错误响应内容: $errorResponse")
+                val errorResponse = response.body.string()
                 throw HttpException(response.code, errorResponse)
             }
         } catch (e: Exception) {

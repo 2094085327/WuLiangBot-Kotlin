@@ -284,8 +284,7 @@ class WarframeController(
 
 
     @RequestMapping("/allRivenPrice")
-    @Suppress("UNCHECKED_CAST")
     fun allRivenPrice(): Any? {
-        return redisService.getValue("warframe:rivenRanking") as List<WfMarketVo.RivenRank>
+        return redisService.getValueTyped<List<WfMarketVo.RivenRank>>("warframe:rivenRanking")
     }
 }
