@@ -37,6 +37,10 @@ object WfMarketConfig {
      * 虚空商人缓存
      */
     const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader"
+    /**
+     * 虚空商人到来缓存
+     */
+    const val WF_VOID_TRADER_COME_KEY = WF_MARKET_CACHE_KEY + "voidTraderCome"
 
     /**
      * 玄骸缓存
@@ -52,4 +56,39 @@ object WfMarketConfig {
      * 入侵缓存
      */
     const val WF_INVASIONS_KEY = WF_MARKET_CACHE_KEY + "invasions"
+
+    /**
+     * 本周灵化
+     */
+    const val WF_INCARNON_KEY = WF_MARKET_CACHE_KEY + "incarnon"
+
+    /**
+     * 本周灵化武器紫卡价格
+     */
+    const val WF_INCARNON_RIVEN_KEY = WF_MARKET_CACHE_KEY + "incarnonRiven"
+
+    /**
+     * 火卫二
+     */
+    const val WF_PHOBOS_STATUS_KEY = WF_MARKET_CACHE_KEY + "phobosStatus"
+
+    /**
+     * 夜灵平原
+     */
+    const val WF_CETUS_CYCLE_KEY = WF_MARKET_CACHE_KEY + "cetusCycle"
+
+    /**
+     * 地球
+     */
+    const val WF_EARTH_CYCLE_KEY = WF_MARKET_CACHE_KEY + "earthCycle"
+
+    /**
+     * 金星平原
+     */
+    const val WF_VENUS_STATUS_KEY = WF_MARKET_CACHE_KEY + "venusStatus"
+
+    /**
+     * 双衍平原
+     */
+    const val WF_MOODSPIRALS_KEY = WF_MARKET_CACHE_KEY + "moodSpirals"
 }

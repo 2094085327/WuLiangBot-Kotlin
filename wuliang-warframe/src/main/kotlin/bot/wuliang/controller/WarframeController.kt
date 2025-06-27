@@ -2,9 +2,12 @@ package bot.wuliang.controller
 
 import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
@@ -61,44 +64,6 @@ class WarframeController(
         redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
         return RespBean.toReturn(wfLexiconService.insertOtherName(itemName, otherName))
     }
-
-    /**
-     * 新增别名
-     */
-    @GetMapping("/test")
-    fun test(): RespBean {
-        // 调用 proxyMain 获取代理列表
-//        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
-//
-//        // 检查 proxyList 是否为空或无效
-//        if (proxyList.isNullOrEmpty()) {
-//            return RespBean.error(RespBeanEnum.ERROR)
-//        }
-
-        // 将 ProxyInfo 列表转换为 Proxy 对象列表
-//        val proxies = proxyList.map { proxyInfo ->
-//            Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
-//        }
-        val proxy = Proxy(Proxy.Type.SOCKS, InetSocketAddress("219.154.210.157", 9999))
-
-//        try {
-//            val socket = Socket(proxy)
-//            socket.connect(InetSocketAddress("api.warframe.market", 443), 10000)
-//            println("Connected successfully through SOCKS proxy.")
-//            socket.close()
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-        // 使用随机代理发起请求
-        return RespBean.success(
-            HttpUtil.doGetStr(
-                "https://api.warframe.market/v1/items/111/orders",
-//                headers = wfUtil.generateRandomHeaders(),
-                proxy = proxy
-            )
-        )
-    }
-
 
     @ApiOperation("执刑官数据")
     @RequestMapping("/archonHunt")
@@ -211,13 +176,13 @@ class WarframeController(
 
     @RequestMapping("/incarnon")
     fun incarnon(): WfStatusVo.IncarnonEntity? {
-        var (expiry, incarnonEntity) = redisService.getExpireAndValue("warframe:incarnon")
+        var (expiry, incarnonEntity) = redisService.getExpireAndValue(WF_INCARNON_KEY)
         if (expiry == null) expiry = -1L
         incarnonEntity as WfStatusVo.IncarnonEntity
         // 更新时间为当前时间（秒）
         incarnonEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
-            "warframe:incarnon",
+            WF_INCARNON_KEY,
             incarnonEntity,
             expiry,
             TimeUnit.SECONDS
@@ -228,18 +193,18 @@ class WarframeController(
     @RequestMapping("/incarnonRiven")
     @Suppress("UNCHECKED_CAST")
     fun incarnonRiven(): Map<String, String>? {
-        return redisService.getValue("warframe:incarnonRiven") as Map<String, String>?
+        return redisService.getValue(WF_INCARNON_RIVEN_KEY) as Map<String, String>?
     }
 
     @RequestMapping("/spirals")
     fun spirals(): WfStatusVo.MoodSpiralsEntity? {
-        var (expiry, moodSpiralsEntity) = redisService.getExpireAndValue("warframe:moodSpirals")
+        var (expiry, moodSpiralsEntity) = redisService.getExpireAndValue(WF_MOODSPIRALS_KEY)
         if (expiry == null) expiry = -1L
         moodSpiralsEntity as WfStatusVo.MoodSpiralsEntity
         // 更新时间为当前时间（秒）
         moodSpiralsEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
-            "warframe:moodSpirals",
+            WF_MOODSPIRALS_KEY,
             moodSpiralsEntity,
             expiry,
             TimeUnit.SECONDS
@@ -250,18 +215,18 @@ class WarframeController(
     @RequestMapping("/allOtherName")
     @Suppress("UNCHECKED_CAST")
     fun allOtherName(): RespBean {
-        if (redisService.getValue("warframe:allOtherName") == null) {
+        if (redisService.getValue(WF_ALL_OTHER_NAME_KEY) == null) {
             val allOtherName = wfLexiconService.selectAllOtherName()
-            redisService.setValue("warframe:allOtherName", allOtherName)
+            redisService.setValue(WF_ALL_OTHER_NAME_KEY, allOtherName)
             return RespBean.success(allOtherName)
-        } else return RespBean.success(redisService.getValue("warframe:allOtherName") as List<WfOtherNameEntity>)
+        } else return RespBean.success(redisService.getValue(WF_ALL_OTHER_NAME_KEY) as List<WfOtherNameEntity>)
     }
 
     @RequestMapping("/deleteOtherName")
     fun deleteOtherName(@RequestParam("other_name_id") id: Int): RespBean {
         try {
             wfLexiconService.deleteOtherName(id)
-            redisService.deleteKey("warframe:allOtherName")
+            redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
             return RespBean.success()
         } catch (e: Exception) {
             return RespBean.error(WarframeRespEnum.DELETE_OTHER_NAME_ERROR)
@@ -275,7 +240,7 @@ class WarframeController(
     ): RespBean {
         try {
             wfLexiconService.updateOtherName(id, otherName)
-            redisService.deleteKey("warframe:allOtherName")
+            redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
             return RespBean.success()
         } catch (e: Exception) {
             return RespBean.error(WarframeRespEnum.UPDATE_OTHER_NAME_ERROR)

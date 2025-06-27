@@ -45,16 +45,6 @@ open class HttpBase {
 
     protected open val client = OkHttpClient()
 
-//    // 带代理的 client 工厂方法
-//    infix fun createClientWithProxy(proxy: Proxy): OkHttpClient {
-//        return OkHttpClient.Builder()
-//            .proxy(proxy)
-//            .connectTimeout(10, TimeUnit.SECONDS)
-//            .readTimeout(30, TimeUnit.SECONDS)
-//            .writeTimeout(10, TimeUnit.SECONDS)
-//            .build()
-//    }
-
     companion object {
         private val proxyClients = mutableMapOf<Proxy, OkHttpClient>()
 

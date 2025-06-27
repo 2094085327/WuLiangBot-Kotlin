@@ -3,12 +3,28 @@ package bot.wuliang.controller
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
+import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOID_TRADER_COME_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
+import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
@@ -23,6 +39,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -85,7 +103,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:ordinary")) {
+        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "ordinary")) {
             val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
             val filteredFissures = fissuresJson.filter { eachJson ->
                 !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
@@ -106,7 +124,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:hard")) {
+        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "hard")) {
             val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
             val filteredFissures = fissuresJson.filter { eachJson ->
                 !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
@@ -127,7 +145,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "九重天")
     fun getEmpyreanFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:empyrean")) {
+        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "empyrean")) {
             val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
             val filteredFissures = fissuresJson.filter { eachJson ->
                 eachJson["isStorm"].booleanValue()
@@ -149,7 +167,7 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "奸商")
     fun findVoidTrader(context: BotUtils.Context) {
         // 先从Redis中判断商人是否还未到来
-        val (expiry, getLocation) = redisService.getExpireAndValue("warframe:voidTraderCome")
+        val (expiry, getLocation) = redisService.getExpireAndValue(WF_VOID_TRADER_COME_KEY)
         if (expiry != -2L) {
             // 根据缓存过期时间更新提示
             val startString = wfUtil.formatTimeBySecond(expiry!!)
@@ -159,8 +177,22 @@ class WfStatusController @Autowired constructor(
 
         // 当Redis中商人到来的缓存不存在时可以判断商人已经回归，尝试通过Redis获取缓存
         // 当Redis中商人的缓存不存在时，尝试通过API获取数据
-        if (!redisService.hasKey("warframe:voidTrader")) {
-            val traderJson = HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, params = mapOf("language" to "zh"))
+        if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
+            val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
+            val proxies = proxyList?.takeIf { it.isNotEmpty() }?.map { proxyInfo ->
+                Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
+            }
+            val traderJson =
+                try {
+                    if (proxies != null) {
+                        HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxies.random())
+                    } else {
+                        HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
+                    }
+                } catch (e: Exception) {
+                    // 如果使用代理的请求失败，则尝试使用无代理方式
+                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
+                }
 
             val startString = traderJson["startString"].asText().replaceTime()
             val endString = traderJson["endString"].asText().replaceTime()
@@ -170,7 +202,7 @@ class WfStatusController @Autowired constructor(
                 context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
                 // 向Redis中写入缓存，用于提示
                 redisService.setValueWithExpiry(
-                    "warframe:voidTraderCome",
+                    WF_VOID_TRADER_COME_KEY,
                     location,
                     startString.parseDuration(),
                     TimeUnit.SECONDS
@@ -200,7 +232,7 @@ class WfStatusController @Autowired constructor(
                 )
 
                 redisService.setValueWithExpiry(
-                    "warframe:voidTrader",
+                    WF_VOIDTRADER_KEY,
                     voidTraderEntity,
                     endString.parseDuration(),
                     TimeUnit.SECONDS
@@ -223,7 +255,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "钢铁")
     fun getSteelPath(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:steelPath")) {
+        if (!redisService.hasKey(WF_STEELPATH_KEY)) {
 
             val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
 
@@ -253,7 +285,7 @@ class WfStatusController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:steelPath",
+                WF_STEELPATH_KEY,
                 steelPathEntity,
                 remaining.parseDuration(),
                 TimeUnit.SECONDS
@@ -274,7 +306,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "突击")
     fun getSortie(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:sortie")) {
+        if (!redisService.hasKey(WF_SORTIE_KEY)) {
             val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
 
             val variantsList = sortieJson["variants"]
@@ -298,7 +330,7 @@ class WfStatusController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:sortie",
+                WF_SORTIE_KEY,
                 sortieEntity,
                 eta.parseDuration(),
                 TimeUnit.SECONDS
@@ -318,7 +350,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:archonHunt")) {
+        if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
             val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
 
             val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
@@ -351,7 +383,7 @@ class WfStatusController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:archonHunt",
+                WF_ARCHONHUNT_KEY,
                 archonHuntEntity,
                 eta.parseDuration(),
                 TimeUnit.SECONDS
@@ -372,7 +404,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
     fun getNightWave(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:nightWave")) {
+        if (!redisService.hasKey(WF_NIGHTWAVE_KEY)) {
             val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
 
             val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
@@ -404,7 +436,7 @@ class WfStatusController @Autowired constructor(
                 }
             )
 
-            redisService.setValueWithExpiry("warframe:nightWave", nightWaveEntity, expiryTime, TimeUnit.SECONDS)
+            redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expiryTime, TimeUnit.SECONDS)
         }
 
         val imgData = WebImgUtil.ImgData(
@@ -421,11 +453,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     fun phobosStatus(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:phobosStatus")
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_PHOBOS_STATUS_KEY)
         if (wordStatus == null) {
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
             redisService.setValueWithExpiry(
-                "warframe:phobosStatus",
+                WF_PHOBOS_STATUS_KEY,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration(),
                 TimeUnit.SECONDS
@@ -444,12 +476,12 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     fun cetusCycle(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:cetusCycle")
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_CETUS_CYCLE_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)
             redisService.setValueWithExpiry(
-                "warframe:cetusCycle",
+                WF_CETUS_CYCLE_KEY,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),// 似乎在一定条件下剩余时间会变为负数产生报错
                 TimeUnit.SECONDS
@@ -470,12 +502,12 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
     fun earthCycle(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:earthCycle")
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_EARTH_CYCLE_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)
             redisService.setValueWithExpiry(
-                "warframe:earthCycle",
+                WF_EARTH_CYCLE_KEY,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
@@ -496,12 +528,12 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
     fun venusStatus(context: BotUtils.Context?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>("warframe:venusStatus")
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_VENUS_STATUS_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)
             redisService.setValueWithExpiry(
-                "warframe:venusStatus",
+                WF_VENUS_STATUS_KEY,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
@@ -540,7 +572,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:invasions")) {
+        if (!redisService.hasKey(WF_INVASIONS_KEY)) {
             val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
             val invasionsList = mutableListOf<WfStatusVo.InvasionsEntity>()
             invasionsArray.forEach { invasionsJson ->
@@ -564,7 +596,7 @@ class WfStatusController @Autowired constructor(
                     invasionsList.add(entity)
                 }
             }
-            redisService.setValueWithExpiry("warframe:invasions", invasionsList, 3L, TimeUnit.MINUTES)
+            redisService.setValueWithExpiry(WF_INVASIONS_KEY, invasionsList, 3L, TimeUnit.MINUTES)
         }
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/invasions",
@@ -581,7 +613,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: BotUtils.Context) {
-        var incarnon = redisService.getValueTyped<WfStatusVo.IncarnonEntity>("warframe:incarnon")
+        var incarnon = redisService.getValueTyped<WfStatusVo.IncarnonEntity>(WF_INCARNON_KEY)
 
         if (incarnon == null) {
             val mapper = jacksonObjectMapper()
@@ -636,7 +668,7 @@ class WfStatusController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:incarnon",
+                WF_INCARNON_KEY,
                 incarnonEntity,
                 incarnonEntity.remainTime!!.parseDuration(),
                 TimeUnit.SECONDS
@@ -645,12 +677,12 @@ class WfStatusController @Autowired constructor(
             incarnon = incarnonEntity
         }
 
-        if (!redisService.hasKey("warframe:incarnonRiven")) {
+        if (!redisService.hasKey(WF_INCARNON_RIVEN_KEY)) {
             // 根据 灵化武器紫卡价格 给出每周推荐武器
             var incarnonRiven = wfUtil.getIncarnonRiven(incarnon.thisWeekData?.steel)
             if (incarnonRiven == null) incarnonRiven = mapOf()
             redisService.setValueWithExpiry(
-                "warframe:incarnonRiven",
+                WF_INCARNON_RIVEN_KEY,
                 incarnonRiven,
                 30L,
                 TimeUnit.MINUTES
@@ -672,7 +704,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
     fun moodSpirals(context: BotUtils.Context) {
-        if (!redisService.hasKey("warframe:moodSpirals")) {
+        if (!redisService.hasKey(WF_MOODSPIRALS_KEY)) {
             val jsonFile = File(WARFRAME_MOOD_SPIRALS)
             val mapper = jacksonObjectMapper()
             var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
@@ -738,7 +770,7 @@ class WfStatusController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:moodSpirals",
+                WF_MOODSPIRALS_KEY,
                 moodSpiralsEntity,
                 moodSpiralsEntity.remainTime!!.replace(" ", "").parseDuration(),
                 TimeUnit.SECONDS
