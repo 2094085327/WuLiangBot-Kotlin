@@ -19,10 +19,6 @@ class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(
         return directivesMapper.selectDirectivesMatch(match)
     }
 
-    override fun addDirectives(directivesEntity: DirectivesEntity): Int {
-        return directivesMapper.insert(directivesEntity)
-    }
-
     override fun batchAddDirectives(directivesList: List<DirectivesEntity>): Int {
         return directivesMapper.batchAddDirectives(directivesList)
     }
