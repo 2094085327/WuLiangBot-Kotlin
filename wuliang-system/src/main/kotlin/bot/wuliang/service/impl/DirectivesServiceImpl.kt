@@ -26,4 +26,8 @@ class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(
     override fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity> {
         return directivesMapper.findByCategoryIds(categoryIds)
     }
+
+    override fun deleteDirective(id: Long): Int {
+        return directivesMapper.deleteDirectiveById(id)
+    }
 }

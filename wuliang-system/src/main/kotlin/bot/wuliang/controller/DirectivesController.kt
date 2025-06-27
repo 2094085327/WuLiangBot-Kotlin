@@ -68,6 +68,7 @@ class DirectivesController @Autowired constructor(
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.updateById(directivesEntity))
     }
+
     /**
      * 更新指令
      */
@@ -76,6 +77,16 @@ class DirectivesController @Autowired constructor(
     fun updateBatchDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.updateBatchById(directivesEntity))
+    }
+
+    /**
+     * 删除指令
+     */
+    @ApiOperation("删除单个指令")
+    @DeleteMapping("/delete/{id}")
+    fun deleteDirectives(@PathVariable id: Long): RespBean {
+        redisService.deleteKey(DIRECTIVES_KEY)
+        return RespBean.toReturn(directivesService.deleteDirective(id))
     }
 
     /**

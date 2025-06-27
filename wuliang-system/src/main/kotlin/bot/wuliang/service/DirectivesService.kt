@@ -30,4 +30,9 @@ interface DirectivesService : IService<DirectivesEntity?> {
      * @return
      */
     fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity>
+
+    /**
+     * 删除指令
+     */
+    fun deleteDirective(id: Long): Int
 }
