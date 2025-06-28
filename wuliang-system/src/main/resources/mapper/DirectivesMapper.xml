@@ -43,6 +43,7 @@
             <if test="regex != null">AND bd.regex = #{regex}</if>
             <if test="enable != null">AND bd.enable = #{enable}</if>
             <if test="categoryId != null">AND bd.category_id = #{categoryId}</if>
+            AND bd.del_status = 0
         </where>
     </select>
 
@@ -71,6 +72,7 @@
         <foreach item="id" collection="categoryIds" open="(" separator="," close=")">
             #{id}
         </foreach>
+        AND bd.del_status = 0
     </select>
 
     <select id="selectDirectivesMatch" resultType="bot.wuliang.entity.DirectivesEntity">
@@ -78,6 +80,13 @@
         <where>
             enable = 1
             AND #{match} REGEXP regex
+            AND bd.del_status = 0
         </where>
     </select>
+
+    <update id="deleteDirectiveById">
+        UPDATE bot_directives
+        SET del_status = 1
+        WHERE id = #{id}
+    </update>
 </mapper>

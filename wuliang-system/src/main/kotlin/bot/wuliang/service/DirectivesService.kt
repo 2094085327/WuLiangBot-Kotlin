@@ -17,14 +17,6 @@ interface DirectivesService : IService<DirectivesEntity?> {
     fun selectDirectivesMatch(match: String): MutableList<DirectivesEntity>
 
     /**
-     * 添加指令
-     *
-     * @param directivesEntity 指令实体
-     * @return
-     */
-    fun addDirectives(directivesEntity: DirectivesEntity): Int
-
-    /**
      * 批量插入指令
      *
      * @param directivesList
@@ -38,4 +30,9 @@ interface DirectivesService : IService<DirectivesEntity?> {
      * @return
      */
     fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity>
+
+    /**
+     * 删除指令
+     */
+    fun deleteDirective(id: Long): Int
 }

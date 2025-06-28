@@ -32,4 +32,9 @@ interface DirectivesMapper : BaseMapper<DirectivesEntity?> {
      * 返回指令匹配列表
      */
     fun selectDirectivesMatch(@Param("match") match: String): MutableList<DirectivesEntity>
+
+    /**
+     * 删除指令
+     */
+    fun deleteDirectiveById(id: Long): Int
 }

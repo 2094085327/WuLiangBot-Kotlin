@@ -1,10 +1,7 @@
 package bot.wuliang.entity
 
 import com.alibaba.fastjson2.annotation.JSONField
-import com.baomidou.mybatisplus.annotation.FieldFill
-import com.baomidou.mybatisplus.annotation.TableField
-import com.baomidou.mybatisplus.annotation.TableId
-import com.baomidou.mybatisplus.annotation.TableName
+import com.baomidou.mybatisplus.annotation.*
 import com.fasterxml.jackson.annotation.JsonFormat
 import java.io.Serializable
 import java.util.*
@@ -14,7 +11,8 @@ data class DirectivesEntity(
     /***
      * 指令ID
      */
-    @TableId(value = "id")
+
+    @TableId(value = "id", type = IdType.AUTO)
     var id: Long? = null,
 
     /**
@@ -63,7 +61,7 @@ data class DirectivesEntity(
     /**
      * 是否启用
      */
-    @TableField(value = "enable")
+    @TableField(value = "enable", fill = FieldFill.INSERT)
     val enable: Int? = null,
 
     /**

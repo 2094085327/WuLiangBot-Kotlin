@@ -19,15 +19,15 @@ class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(
         return directivesMapper.selectDirectivesMatch(match)
     }
 
-    override fun addDirectives(directivesEntity: DirectivesEntity): Int {
-        return directivesMapper.insert(directivesEntity)
-    }
-
     override fun batchAddDirectives(directivesList: List<DirectivesEntity>): Int {
         return directivesMapper.batchAddDirectives(directivesList)
     }
 
     override fun findByCategoryIds(categoryIds: List<Long>): List<DirectivesEntity> {
         return directivesMapper.findByCategoryIds(categoryIds)
+    }
+
+    override fun deleteDirective(id: Long): Int {
+        return directivesMapper.deleteDirectiveById(id)
     }
 }

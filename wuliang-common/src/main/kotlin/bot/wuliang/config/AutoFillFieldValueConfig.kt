@@ -17,6 +17,10 @@ class AutoFillFieldValueConfig :MetaObjectHandler {
      * 更新时间字段
      */
     private val updateTime: String = "updateTime"
+    /**
+     * 启用字段
+     */
+    private val enable: String = "enable"
 
     /**
      * 删除字段
@@ -28,6 +32,7 @@ class AutoFillFieldValueConfig :MetaObjectHandler {
         val now = Date()
         this.setFieldValByName(createTime, now, metaObject)
         this.setFieldValByName(updateTime, now, metaObject)
+        this.setFieldValByName(enable, 1, metaObject)
         this.setFieldValByName(delStatus, 0, metaObject)
     }
 
