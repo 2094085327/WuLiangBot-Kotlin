@@ -683,7 +683,7 @@ class WfUtil {
         url: String,
         stateMap: Map<String, String>? = null
     ): WfStatusVo.WordStatus {
-        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "zh"))
+        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "zh"), proxy = proxyUtil.randomProxy())
         val activation = statusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
         val timeLeft = statusJson["timeLeft"].textValue().replaceTime()

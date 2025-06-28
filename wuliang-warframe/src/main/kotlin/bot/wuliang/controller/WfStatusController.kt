@@ -24,7 +24,7 @@ import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.httpUtil.entity.ProxyInfo
+import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
@@ -39,8 +39,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -64,6 +62,9 @@ class WfStatusController @Autowired constructor(
     private val redisService: RedisService
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+
+    @Autowired
+    private lateinit var proxyUtil: ProxyUtil
 
 
     /**
@@ -96,7 +97,7 @@ class WfStatusController @Autowired constructor(
         }
         thisFissureList.fissureType = type
         val typeMap = mapOf("普通裂缝" to "ordinary", "钢铁裂缝" to "hard", "九重天" to "empyrean")
-        redisService.setValueWithExpiry("warframe:${typeMap[type]}", thisFissureList, 1L, TimeUnit.MINUTES)
+        redisService.setValueWithExpiry(WF_MARKET_CACHE_KEY + "${typeMap[type]}", thisFissureList, 1L, TimeUnit.MINUTES)
     }
 
     @SystemLog(businessName = "获取普通裂缝信息")
@@ -104,7 +105,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(裂缝|裂隙)\\b")
     fun getOrdinaryFissures(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "ordinary")) {
-            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val fissuresJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_FISSURES,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
             val filteredFissures = fissuresJson.filter { eachJson ->
                 !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
             }
@@ -125,7 +130,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
     fun getHardFissures(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "hard")) {
-            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val fissuresJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_FISSURES,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
             val filteredFissures = fissuresJson.filter { eachJson ->
                 !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
             }
@@ -146,7 +155,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "九重天")
     fun getEmpyreanFissures(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "empyrean")) {
-            val fissuresJson = HttpUtil.doGetJson(WARFRAME_STATUS_FISSURES, params = mapOf("language" to "zh"))
+            val fissuresJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_FISSURES,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
             val filteredFissures = fissuresJson.filter { eachJson ->
                 eachJson["isStorm"].booleanValue()
             }
@@ -178,17 +191,9 @@ class WfStatusController @Autowired constructor(
         // 当Redis中商人到来的缓存不存在时可以判断商人已经回归，尝试通过Redis获取缓存
         // 当Redis中商人的缓存不存在时，尝试通过API获取数据
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
-            val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
-            val proxies = proxyList?.takeIf { it.isNotEmpty() }?.map { proxyInfo ->
-                Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
-            }
             val traderJson =
                 try {
-                    if (proxies != null) {
-                        HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxies.random())
-                    } else {
-                        HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
-                    }
+                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxyUtil.randomProxy())
                 } catch (e: Exception) {
                     // 如果使用代理的请求失败，则尝试使用无代理方式
                     HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
@@ -257,7 +262,11 @@ class WfStatusController @Autowired constructor(
     fun getSteelPath(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_STEELPATH_KEY)) {
 
-            val steelPath = HttpUtil.doGetJson(WARFRAME_STATUS_STEEL_PATH, params = mapOf("language" to "zh"))
+            val steelPath = HttpUtil.doGetJson(
+                WARFRAME_STATUS_STEEL_PATH,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
 
             val currentReward = steelPath["currentReward"]
             val currentName = currentReward["name"].asText()
@@ -307,7 +316,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "突击")
     fun getSortie(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_SORTIE_KEY)) {
-            val sortieJson = HttpUtil.doGetJson(WARFRAME_STATUS_SORTIE, params = mapOf("language" to "zh"))
+            val sortieJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_SORTIE,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
 
             val variantsList = sortieJson["variants"]
             val taskList = variantsList.map { item ->
@@ -351,7 +364,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
-            val archonHuntJson = HttpUtil.doGetJson(WARFRAME_STATUS_ARCHON_HUNT, params = mapOf("language" to "zh"))
+            val archonHuntJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_ARCHON_HUNT,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
 
             val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
             val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
@@ -405,7 +422,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(电波|午夜电波)\\b")
     fun getNightWave(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_NIGHTWAVE_KEY)) {
-            val nightWaveJson = HttpUtil.doGetJson(WARFRAME_STATUS_NIGHT_WAVE, params = mapOf("language" to "zh"))
+            val nightWaveJson = HttpUtil.doGetJson(
+                WARFRAME_STATUS_NIGHT_WAVE,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
 
             val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
             val expiryString = nightWaveJson["expiry"].textValue().replace("T", " ").replace(".000Z", "")
@@ -573,7 +594,11 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_INVASIONS_KEY)) {
-            val invasionsArray = HttpUtil.doGetJson(WARFRAME_STATUS_INVASIONS, params = mapOf("language" to "zh"))
+            val invasionsArray = HttpUtil.doGetJson(
+                WARFRAME_STATUS_INVASIONS,
+                params = mapOf("language" to "zh"),
+                proxy = proxyUtil.randomProxy()
+            )
             val invasionsList = mutableListOf<WfStatusVo.InvasionsEntity>()
             invasionsArray.forEach { invasionsJson ->
                 if (!invasionsJson["completed"].booleanValue()) {

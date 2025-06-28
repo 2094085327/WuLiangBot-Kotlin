@@ -32,9 +32,17 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
      * 从词库获取中文名称
      *
      * @param key 输入的关键字
-     * @return 英文名称
+     * @return 中文名称
      */
     fun getZhName(key: String): String?
+
+    /**
+     * 从词库获取英文名称
+     *
+     * @param key 输入的关键字
+     * @return 英文名称
+     */
+    fun getEnName(key: String): String?
 
     /**
      * 插入别名

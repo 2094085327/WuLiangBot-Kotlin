@@ -34,4 +34,7 @@ object CommonConfig {
     const val USER_TICKET_KEY = "Wuliang:userTicket:"
 
     const val BOT_CONFIG_KEY = "Wuliang:botConfig:"
+
+    /** 代理缓存 */
+    const val PROXY_CACHE_KEY = "Wuliang:http:proxy"
 }

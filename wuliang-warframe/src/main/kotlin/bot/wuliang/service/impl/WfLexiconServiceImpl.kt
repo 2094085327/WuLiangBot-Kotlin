@@ -52,14 +52,25 @@ class WfLexiconServiceImpl : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), 
     }
 
     /**
-     * 从词库获取中文名称
+     * 通过英文获取中文名称
      *
      * @param key 输入的关键字
-     * @return 英文名称
+     * @return 中文名称
      */
     override fun getZhName(key: String): String? {
         val queryWrapper = QueryWrapper<WfLexiconEntity>().eq("en_item_name", key)
         return lexiconMapper.selectList(queryWrapper)?.firstOrNull()?.zhItemName
+    }
+
+    /**
+     * 通过中文获取英文名称
+     *
+     * @param key 输入的关键字
+     * @return 英文名称
+     */
+    override fun getEnName(key: String): String? {
+        val queryWrapper = QueryWrapper<WfLexiconEntity>().eq("zh_item_name", key)
+        return lexiconMapper.selectList(queryWrapper)?.firstOrNull()?.enItemName
     }
 
     /**
@@ -109,9 +120,9 @@ class WfLexiconServiceImpl : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), 
         // 构造正则表达式用于模糊查询
         val regex = key.replace("", ".*").drop(2).dropLast(2)
         val queryWrapper = QueryWrapper<WfLexiconEntity>()
-            .apply("zh_name REGEXP {0}", regex)
+            .apply("zh_item_name REGEXP {0}", regex)
             .or()
-            .like("en_name", "%$key%")
+            .like("en_item_name", "%$key%")
         return lexiconMapper.selectList(queryWrapper)
     }
 }

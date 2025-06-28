@@ -56,6 +56,15 @@ class RespBean(
         }
 
         /**
+         * 返回结果
+         *
+         * @param result 布尔类型
+         */
+        fun toReturn(result: Boolean,obj: Any?): RespBean {
+            return if (result) success(obj) else error()
+        }
+
+        /**
          * 响应返回结果
          *
          * @param rows 影响行数
@@ -63,6 +72,15 @@ class RespBean(
          */
         fun toReturn(rows:Int): RespBean {
            return if (rows > 0) success() else error();
+        }
+        /**
+         * 响应返回结果
+         *
+         * @param rows 影响行数
+         * @return 操作结果
+         */
+        fun toReturn(rows:Int,obj: Any?): RespBean {
+           return if (rows > 0) success(obj) else error();
         }
     }
 }

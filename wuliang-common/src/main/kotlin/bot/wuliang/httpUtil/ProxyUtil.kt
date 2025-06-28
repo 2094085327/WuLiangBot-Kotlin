@@ -1,5 +1,6 @@
 package bot.wuliang.httpUtil
 
+import bot.wuliang.config.CommonConfig.PROXY_CACHE_KEY
 import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.redis.RedisService
 import com.fasterxml.jackson.databind.JsonNode
@@ -22,7 +23,7 @@ class ProxyUtil {
     @Scheduled(cron = "0 55 * * * ?")
     fun proxyMain(): List<ProxyInfo>? {
         // 从 Redis 获取已存储的代理列表
-        val proxies = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
+        val proxies = redisService.getValueTyped<List<ProxyInfo>>(PROXY_CACHE_KEY)
 
         // 检查是否需要更新代理池
         if (proxies.isNullOrEmpty() || validateProxies(proxies).size < 5) {
@@ -88,7 +89,11 @@ class ProxyUtil {
                     val proxyAddress = Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxy.ip, proxy.port!!))
                     return@async try {
                         // 用于校验代理的临时解决方案
-                        HttpUtil.doGetStrNoLog("https://api.warframe.market/v1/items/sentient_concourse_scene/orders", headers = mutableMapOf("Platform" to "xbox"), proxy = proxyAddress)
+                        HttpUtil.doGetStrNoLog(
+                            "https://api.warframe.market/v1/items/sentient_concourse_scene/orders",
+                            headers = mutableMapOf("Platform" to "xbox"),
+                            proxy = proxyAddress
+                        )
                         proxy
                     } catch (e: Exception) {
                         null
@@ -97,9 +102,17 @@ class ProxyUtil {
             }.awaitAll()
         }.filterNotNull()
 
-        redisService.setValueWithExpiry("Wuliang:http:proxy", results, 2L, TimeUnit.DAYS)
+        redisService.setValueWithExpiry(PROXY_CACHE_KEY, results, 2L, TimeUnit.DAYS)
         return results
     }
 
 
+    fun randomProxy(): Proxy? {
+        val proxies = redisService.getValueTyped<List<ProxyInfo>>(PROXY_CACHE_KEY) ?: return null
+        if (proxies.isEmpty()) return null
+
+        // 随机选择一个代理
+        val randomProxy = proxies.random()
+        return Proxy(Proxy.Type.SOCKS, InetSocketAddress(randomProxy.ip, randomProxy.port!!))
+    }
 }

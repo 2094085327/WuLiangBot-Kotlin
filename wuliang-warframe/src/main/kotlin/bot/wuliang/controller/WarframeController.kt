@@ -16,10 +16,7 @@ import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
-import bot.wuliang.exception.RespBeanEnum
-import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
-import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
@@ -28,10 +25,10 @@ import bot.wuliang.utils.WfUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.*
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.Socket
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.util.concurrent.TimeUnit
 
 
@@ -122,8 +119,9 @@ class WarframeController(
 
     @ApiOperation("裂缝信息")
     @RequestMapping("/fissureList")
-    fun fissureList(@RequestParam("type") type: String): WfStatusVo.FissureList? {
-        return redisService.getValueTyped<WfStatusVo.FissureList>(WF_MARKET_CACHE_KEY + type)
+    fun fissureList(@RequestParam("type") type: String):RespBean {
+        val fissureList = redisService.getValueTyped<WfStatusVo.FissureList>(WF_MARKET_CACHE_KEY + type)
+        return RespBean.toReturn(fissureList != null, fissureList)
     }
 
     @ApiOperation("虚空商人信息")
@@ -170,8 +168,10 @@ class WarframeController(
 
     @ApiOperation("入侵信息")
     @RequestMapping("/invasions")
-    fun invasions(): List<WfStatusVo.IncarnonEntity>? {
-        return redisService.getValueTyped<List<WfStatusVo.IncarnonEntity>>(WF_INVASIONS_KEY)
+    @Suppress("UNCHECKED_CAST")
+    fun invasions(): RespBean {
+        val invasions = redisService.getValue(WF_INVASIONS_KEY) as List<WfStatusVo.IncarnonEntity>
+        return RespBean.toReturn(invasions.size, invasions)
     }
 
     @RequestMapping("/incarnon")

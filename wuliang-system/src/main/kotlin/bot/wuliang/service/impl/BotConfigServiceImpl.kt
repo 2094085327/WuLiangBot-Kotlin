@@ -35,7 +35,7 @@ class BotConfigServiceImpl : ServiceImpl<BotConfigMapper?, BotConfigEntity?>(), 
 
     override fun selectConfigByKey(configKey: String): String? {
         val cacheConfigKey = botConfigUtil.getCacheKey(configKey)
-        val redisValue = Convert.toStr(redisService.getValueTyped<String>(CommonConfig.BOT_CONFIG_KEY +cacheConfigKey))
+        val redisValue = Convert.toStr(redisService.getValueTyped<String>(cacheConfigKey))
         if (!redisValue.isNullOrBlank()) {
             return redisValue
         }
