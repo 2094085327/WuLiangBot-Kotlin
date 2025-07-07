@@ -3,7 +3,6 @@ package bot.wuliang.controller
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
-import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
@@ -14,9 +13,7 @@ import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
-import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOID_TRADER_COME_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
@@ -29,6 +26,7 @@ import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
+import bot.wuliang.scheduled.WfStatusScheduled
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
@@ -45,7 +43,6 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.regex.Pattern
 
 
 /**
@@ -65,6 +62,9 @@ class WfStatusController @Autowired constructor(
 
     @Autowired
     private lateinit var proxyUtil: ProxyUtil
+
+    @Autowired
+    private lateinit var wfStatusScheduled: WfStatusScheduled
 
 
     /**
@@ -179,70 +179,22 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "奸商")
     fun findVoidTrader(context: BotUtils.Context) {
-        // 先从Redis中判断商人是否还未到来
         val (expiry, getLocation) = redisService.getExpireAndValue(WF_VOID_TRADER_COME_KEY)
+
         if (expiry != -2L) {
-            // 根据缓存过期时间更新提示
             val startString = wfUtil.formatTimeBySecond(expiry!!)
             context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $getLocation")
             return
         }
 
-        // 当Redis中商人到来的缓存不存在时可以判断商人已经回归，尝试通过Redis获取缓存
-        // 当Redis中商人的缓存不存在时，尝试通过API获取数据
-        if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
-            val traderJson =
-                try {
-                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxyUtil.randomProxy())
-                } catch (e: Exception) {
-                    // 如果使用代理的请求失败，则尝试使用无代理方式
-                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
-                }
+        val voidTraderData = wfStatusScheduled.getVoidTraderData()
 
-            val startString = traderJson["startString"].asText().replaceTime()
-            val endString = traderJson["endString"].asText().replaceTime()
-            val location = traderJson["location"].asText().turnZhHans()
-
-            if (traderJson["inventory"].isEmpty) {
-                context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $location")
-                // 向Redis中写入缓存，用于提示
-                redisService.setValueWithExpiry(
-                    WF_VOID_TRADER_COME_KEY,
-                    location,
-                    startString.parseDuration(),
-                    TimeUnit.SECONDS
-                )
-                return
-            } else {
-                // 定义一个正则表达式用于匹配中文字符
-                val chinesePattern = Pattern.compile("[\\u4e00-\\u9fff]+")
-
-                val itemList = traderJson["inventory"].map { item ->
-                    val regex = Regex("000$")
-                    WfStatusVo.VoidTraderItem(
-                        item = wfLexiconService.getZhName(item["item"].asText()) ?: item["item"].asText(),
-                        ducats = item["ducats"].asInt(),
-                        credits = regex.replace(item["credits"].asText(), "k")
-                    )
-                }
-
-                // 使用sortedWith根据item是否包含中文进行排序
-                val sortedItemList = itemList.sortedWith(compareByDescending {
-                    it.item?.let { it1 -> chinesePattern.matcher(it1).find() }
-                })
-                val voidTraderEntity = WfStatusVo.VoidTraderEntity(
-                    time = endString,
-                    location = location,
-                    items = sortedItemList
-                )
-
-                redisService.setValueWithExpiry(
-                    WF_VOIDTRADER_KEY,
-                    voidTraderEntity,
-                    endString.parseDuration(),
-                    TimeUnit.SECONDS
-                )
-            }
+        if (voidTraderData == null) {
+            // 如果 Redis 中仍然未存在商人的缓存，则使用到来缓存信息
+            val (cachedExpiry, cachedLocation) = redisService.getExpireAndValue(WF_VOID_TRADER_COME_KEY)
+            val startString = wfUtil.formatTimeBySecond(cachedExpiry!!)
+            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $cachedLocation")
+            return
         }
 
         // 当Redis中商人的缓存存在时，直接发送图片
@@ -253,53 +205,13 @@ class WfStatusController @Autowired constructor(
         )
 
         webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
     }
 
     @SystemLog(businessName = "获取钢铁之路兑换信息")
     @AParameter
     @Executor(action = "钢铁")
     fun getSteelPath(context: BotUtils.Context) {
-        if (!redisService.hasKey(WF_STEELPATH_KEY)) {
-
-            val steelPath = HttpUtil.doGetJson(
-                WARFRAME_STATUS_STEEL_PATH,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val currentReward = steelPath["currentReward"]
-            val currentName = currentReward["name"].asText()
-            val currentCost = currentReward["cost"].asInt()
-
-            // 寻找下一个奖励
-            val rotation = steelPath["rotation"]
-            val currentIndex = rotation.indexOfFirst { it["name"].asText() == currentName }
-            val nextReward = if (currentIndex != -1 && currentIndex < rotation.size() - 1) {
-                rotation[currentIndex + 1]
-            } else rotation[0]
-
-            // 获取下一个奖励
-            val nextName = nextReward["name"].asText()
-            val nextCost = nextReward["cost"].asInt()
-
-            val remaining = steelPath["remaining"].asText().replaceTime()
-
-            val steelPathEntity = WfStatusVo.SteelPathEntity(
-                currentName = currentName,
-                currentCost = currentCost,
-                nextName = nextName,
-                nextCost = nextCost,
-                remaining = remaining
-            )
-
-            redisService.setValueWithExpiry(
-                WF_STEELPATH_KEY,
-                steelPathEntity,
-                remaining.parseDuration(),
-                TimeUnit.SECONDS
-            )
-        }
+        wfStatusScheduled.getSteelPathData()
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/steelPath",
@@ -363,49 +275,7 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: BotUtils.Context) {
-        if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
-            val archonHuntJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_ARCHON_HUNT,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
-            val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
-
-            val bossIndex = bosses.indexOf(archonHuntJson["boss"].asText().replaceFaction())
-            val boss = if (bossIndex != -1) bosses[bossIndex] else "未知"
-            val rewardItem = if (bossIndex != -1) rewards[bossIndex] else "未知"
-            val nextBoss = if (bossIndex != -1) bosses[(bossIndex + 1) % bosses.size] else "未知"
-            val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
-
-            val taskList = archonHuntJson["missions"].map { item ->
-                WfStatusVo.Missions(
-                    node = item["node"].asText().turnZhHans(),
-                    type = item["type"].asText().turnZhHans()
-                )
-            }
-
-            val faction = archonHuntJson["factionKey"].asText().replaceFaction()
-            val eta = archonHuntJson["eta"].asText().replaceTime()
-
-            val archonHuntEntity = WfStatusVo.ArchonHuntEntity(
-                faction = faction,
-                boss = boss,
-                eta = eta,
-                taskList = taskList,
-                rewardItem = rewardItem,
-                nextBoss = nextBoss,
-                nextRewardItem = nextRewardItem
-            )
-
-            redisService.setValueWithExpiry(
-                WF_ARCHONHUNT_KEY,
-                archonHuntEntity,
-                eta.parseDuration(),
-                TimeUnit.SECONDS
-            )
-        }
+        wfStatusScheduled.getArchonHuntData()
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/archonHunt",
