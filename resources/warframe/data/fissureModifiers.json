@@ -1,0 +1,26 @@
+{
+  "VoidT1": {
+    "value": "古纪",
+    "num": 1
+  },
+  "VoidT2": {
+    "value": "前纪",
+    "num": 2
+  },
+  "VoidT3": {
+    "value": "中纪",
+    "num": 3
+  },
+  "VoidT4": {
+    "value": "后纪",
+    "num": 4
+  },
+  "VoidT5": {
+    "value": "安魂",
+    "num": 5
+  },
+  "VoidT6": {
+    "value": "全能",
+    "num": 6
+  }
+}

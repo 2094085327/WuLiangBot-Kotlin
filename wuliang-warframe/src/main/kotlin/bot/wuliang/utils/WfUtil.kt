@@ -26,17 +26,22 @@ import bot.wuliang.utils.WfStatus.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
+import com.github.houbb.opencc4j.util.ZhConverterUtil
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.io.File
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -1160,5 +1165,50 @@ class WfUtil {
         val fullCycles = durationSinceStart.toDays() / interval.toDays()
         val lastRefresh = startDate.plus(interval.multipliedBy(fullCycles))
         return if (lastRefresh.isBefore(now)) lastRefresh.plus(interval) else lastRefresh
+    }
+
+    /**
+     * 转换json文件简繁
+     */
+    fun processJsonFilesZh(directoryPath: String) {
+        val directory = File(directoryPath)
+        if (!directory.exists() || !directory.isDirectory) {
+            println("无效的目录路径")
+            return
+        }
+
+        // 创建固定大小的线程池
+        val executorService: ExecutorService = Executors.newFixedThreadPool(4)
+
+        // 遍历目录中的所有 JSON 文件
+        val files = directory.walkTopDown()
+            .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
+            .toList()
+
+        // 为每个文件创建一个任务
+        val futures = files.map { file ->
+            CompletableFuture.runAsync({
+                try {
+                    // 读取文件内容
+                    val original = file.readText(Charsets.UTF_8)
+
+                    // 调用工具类进行中文转换
+                    val result = ZhConverterUtil.toSimple(original)
+
+                    // 将处理后的内容写回文件
+                    file.writeText(result, Charsets.UTF_8)
+
+                    println("已处理文件：${file.name}")
+                } catch (e: Exception) {
+                    System.err.println("处理文件 ${file.name} 时出错: ${e.message}")
+                }
+            }, executorService)
+        }
+
+        // 等待所有任务完成
+        CompletableFuture.allOf(*futures.toTypedArray()).join()
+
+        // 关闭线程池
+        executorService.shutdown()
     }
 }

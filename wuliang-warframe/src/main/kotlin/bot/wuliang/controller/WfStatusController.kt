@@ -28,6 +28,7 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.scheduled.WfStatusScheduled
 import bot.wuliang.service.WfLexiconService
+import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfStatus.replaceTime
@@ -66,6 +67,8 @@ class WfStatusController @Autowired constructor(
     @Autowired
     private lateinit var wfStatusScheduled: WfStatusScheduled
 
+    @Autowired
+    private lateinit var parseDataUtil: ParseDataUtil
 
     /**
      * 获取裂缝信息
@@ -228,38 +231,8 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "突击")
     fun getSortie(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_SORTIE_KEY)) {
-            val sortieJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_SORTIE,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val variantsList = sortieJson["variants"]
-            val taskList = variantsList.map { item ->
-                WfStatusVo.Variants(
-                    missionType = item["missionType"].asText().turnZhHans(),
-                    modifier = item["modifier"].asText().turnZhHans(),
-                    node = item["node"].asText().turnZhHans()
-                )
-            }
-
-            val faction = sortieJson["factionKey"].asText().replaceFaction()
-            val boss = sortieJson["boss"].asText()
-            val eta = sortieJson["eta"].asText().replaceTime()
-
-            val sortieEntity = WfStatusVo.SortieEntity(
-                faction = faction,
-                boss = boss,
-                eta = eta,
-                taskList = taskList
-            )
-
-            redisService.setValueWithExpiry(
-                WF_SORTIE_KEY,
-                sortieEntity,
-                eta.parseDuration(),
-                TimeUnit.SECONDS
-            )
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseSorties(data["Sorties"])
         }
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/sortie",

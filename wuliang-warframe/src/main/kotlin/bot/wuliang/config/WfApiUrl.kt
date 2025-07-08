@@ -9,12 +9,16 @@ const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
+const val WARFRAME_STATUS_URL = "https://content.warframe.com/dynamic/worldState.php"
+
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
 const val WARFRAME_MOOD_SPIRALS = "$WARFRAME_RESOURCES/mood_spirals.json"
 const val WARFRAME_AMP_PNG = "$WARFRAME_RESOURCES/img/amp.png"
 const val WARFRAME_CETUS_WISP_PNG = "$WARFRAME_RESOURCES/img/cetusWisp.png"
+
+const val WARFRAME_DATA = "$WARFRAME_RESOURCES/data"
 
 /**
  * Market 物品

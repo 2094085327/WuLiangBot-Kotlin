@@ -1,5 +1,10 @@
 package bot.wuliang.redis
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.springframework.cache.annotation.CachingConfigurer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -27,7 +32,18 @@ class RedisConfig : CachingConfigurer {
     fun redisTemplate(lettuceConnectionFactory: LettuceConnectionFactory): RedisTemplate<String, Any> {
         val redisTemplate = RedisTemplate<String, Any>()
         val stringRedisSerializer = StringRedisSerializer()
-        val jackson2JsonRedisSerializer = GenericJackson2JsonRedisSerializer()
+        val om: ObjectMapper = JsonMapper.builder()
+            .addModule(JavaTimeModule())
+            .build()
+            .apply {
+                val ptv = BasicPolymorphicTypeValidator.builder()
+                    .allowIfSubType(Any::class.java)
+                    .build()
+
+                // 使用属性格式而不是数组格式
+                activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.EVERYTHING, JsonTypeInfo.As.PROPERTY)
+            }
+        val jackson2JsonRedisSerializer = GenericJackson2JsonRedisSerializer(om)
         redisTemplate.apply {
             // 配置连接工厂
             setConnectionFactory(lettuceConnectionFactory)

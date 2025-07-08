@@ -17,10 +17,12 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.ProxyUtil
+import bot.wuliang.moudles.Sortie
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
@@ -48,6 +50,9 @@ class WarframeController(
 ) {
     @Autowired
     private lateinit var proxyUtil: ProxyUtil
+
+    @Autowired
+    private lateinit var parseDataUtil: ParseDataUtil
 
     /**
      * 新增别名
@@ -82,21 +87,15 @@ class WarframeController(
 
     @ApiOperation("每日突击数据")
     @RequestMapping("/sortie")
-    fun sortie(): WfStatusVo.SortieEntity? {
+    fun sortie(): RespBean {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, sortieEntity) = redisService.getExpireAndValue(WF_SORTIE_KEY)
+        var (expiry, sortieEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_SORTIE_KEY)
         if (expiry == null) expiry = -1L
-        sortieEntity as WfStatusVo.SortieEntity
         // 更新时间为当前时间（秒）
+        if (sortieEntity == null) return RespBean.error()
         sortieEntity.eta = wfUtil.formatTimeBySecond(expiry)
 
-        redisService.setValueWithExpiry(
-            WF_SORTIE_KEY,
-            sortieEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return sortieEntity
+        return RespBean.success(sortieEntity)
     }
 
     @ApiOperation("钢路奖励")
@@ -119,7 +118,7 @@ class WarframeController(
 
     @ApiOperation("裂缝信息")
     @RequestMapping("/fissureList")
-    fun fissureList(@RequestParam("type") type: String):RespBean {
+    fun fissureList(@RequestParam("type") type: String): RespBean {
         val fissureList = redisService.getValueTyped<WfStatusVo.FissureList>(WF_MARKET_CACHE_KEY + type)
         return RespBean.toReturn(fissureList != null, fissureList)
     }

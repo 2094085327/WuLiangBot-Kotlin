@@ -1,0 +1,27 @@
+{
+  "tags": {
+    "KelaEvent": {
+      "value": "行动代号：Rathuum"
+    },
+    "KelaEventB": {
+      "value": "行动代号：Rathuum 第二部"
+    },
+    "KelaEventBonus": {
+      "value": "无尽Rathuum"
+    }
+  },
+  "scoreVariables": {
+    "KelaEvent": {
+      "value": {
+        "value": "100裁定点数"
+      }
+    }
+  },
+  "scoreMaxTags": {
+    "KelaEventMax": {
+      "value": {
+        "value": "100裁定点数"
+      }
+    }
+  }
+}

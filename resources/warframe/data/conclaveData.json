@@ -1,0 +1,425 @@
+{
+  "modes": {
+    "PVPMODE_ALL": {
+      "value": "任意模式"
+    },
+    "PVPMODE_DEATHMATCH": {
+      "value": "剿灭"
+    },
+    "PVPMODE_TEAMDEATHMATCH": {
+      "value": "团队歼夺"
+    },
+    "PVPMODE_NONE": {
+      "value": "无"
+    },
+    "PVPMODE_CAPTURETHEFLAG": {
+      "value": "夺取中枢"
+    },
+    "PVPMODE_SPEEDBALL": {
+      "value": "月动球"
+    }
+  },
+  "categories": {
+    "PVPChallengeTypeCategory_WEEKLY": {
+      "value": "周",
+      "description": "每周"
+    },
+    "PVPChallengeTypeCategory_WEEKLY_ROOT": {
+      "value": "周根目录",
+      "description": "每周挑战"
+    },
+    "PVPChallengeTypeCategory_DAILY": {
+      "value": "日",
+      "description": "每日"
+    },
+    "PVPChallengeTypeCategory_DAILY_ROOT": {
+      "value": "天根目录",
+      "description": "每日挑战"
+    },
+    "PVPChallengeTypeCategory_MODEAFFECTOR": {
+      "value": "修改回合",
+      "description": "修改回合"
+    }
+  },
+  "challenges": {
+    "PVPTimedChallengeKillsPrimaryEASY": {
+      "title": "首要目标",
+      "description": "以主武器击杀1个敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsPrimaryMEDIUM": {
+      "title": "首要目标",
+      "description": "以主武器击杀4个敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsPrimaryHARD": {
+      "title": "专注首要目标",
+      "description": "于一场竞赛中, 以主武器击杀3个敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsSecondaryEASY": {
+      "title": "次要目标",
+      "description": "以副武器击杀1个敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsSecondaryMEDIUM": {
+      "title": "次要目标",
+      "description": "以副武器击杀4个敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsSecondaryHARD": {
+      "title": "专注次要目标",
+      "description": "于一场竞赛中, 以副武器击杀3个敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsWhileSlidingEASY": {
+      "title": "滑行突击",
+      "description": "滑行时击杀1个敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsWhileSlidingMEDIUM": {
+      "title": "滑行突击",
+      "description": "滑行时击杀4个敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsWhileSlidingHARD": {
+      "title": "专注滑行突击",
+      "description": "于一场竞赛中, 滑行时击杀3个敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsComboEASY": {
+      "title": "技巧熟练",
+      "description": "使用近战武器、枪炮或能力任意两种组合击杀了1名对手",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsComboMEDIUM": {
+      "title": "技巧熟练",
+      "description": "使用近战武器、枪炮或能力任意两种组合击杀了4名对手",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsComboHARD": {
+      "title": "专注熟练技巧",
+      "description": "在一场比赛中, 使用近战武器、枪炮或能力任意两种组合击杀 3 名对手",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsMultiEASY": {
+      "title": "技巧熟练",
+      "description": "使用近战武器、枪炮或能力任意两种击杀 1 名对手",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsMultiMEDIUM": {
+      "title": "技巧熟练",
+      "description": "使用近战武器、枪炮或能力任意两种击杀 4 名对手",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsMultiHARD": {
+      "title": "专注技巧熟练",
+      "description": "在一场比赛中, 使用近战武器、枪炮或能力任意两种击杀 3 名对手",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsStreakEASY": {
+      "title": "连续击杀",
+      "description": "获得 1 次连续击杀",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsStreakMEDIUM": {
+      "title": "连续击杀",
+      "description": "获得 3 次连续击杀",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsStreakHARD": {
+      "title": "专注连续击杀",
+      "description": "在一场比赛中, 获得 2 次连续击杀",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsStreakStopped_EASY": {
+      "title": "连续击杀终结",
+      "description": "击杀 1 名正在连续击杀状态中的敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsStreakStoppedEASY": {
+      "title": "连续击杀终结",
+      "description": "击杀 1 名正在连续击杀状态中的敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsStreakStopped_MEDIUM": {
+      "title": "连续击杀终结",
+      "description": "击杀 3 名正在连续击杀状态中的敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsStreakStoppedMEDIUM": {
+      "title": "连续击杀终结",
+      "description": "击杀 3 名正在连续击杀状态中的敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsStreakStopped_HARD": {
+      "title": "专注连续击杀终结",
+      "description": "在一场比赛中, 击杀 2 名正在连续击杀状态中的敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsStreakStoppedHARD": {
+      "title": "专注连续击杀终结",
+      "description": "在一场比赛中, 击杀 2 名正在连续击杀状态中的敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsTargetInAirEASY": {
+      "title": "反空袭",
+      "description": "击杀 1 名空中的敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsTargetInAirMEDIUM": {
+      "title": "反空袭",
+      "description": "击杀 4 名空中的敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsTargetInAirHARD": {
+      "title": "专注反空袭",
+      "description": "在一场比赛中, 击杀 3 名空中的敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsWhileInAirEASY": {
+      "title": "空袭",
+      "description": "滞留空中时击杀 1 名敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsWhileInAirMEDIUM": {
+      "title": "空袭",
+      "description": "滞留空中时击杀 4 名敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsWhileInAirHARD": {
+      "title": "专注空袭",
+      "description": "在一场比赛中, 滞留空中时击杀 3 名敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsMeleeEASY": {
+      "title": "角斗士",
+      "description": "以近战击杀敌人 1 次",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsMeleeMEDIUM": {
+      "title": "角斗士",
+      "description": "以近战击杀敌人 4 次",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsMeleeHARD": {
+      "title": "专注角斗士",
+      "description": "在一场比赛中, 以近战击杀敌人 3 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsPowerEASY": {
+      "title": "虚空绘师",
+      "description": "以Warframe的能力击杀敌人 1 次",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsPowerMEDIUM": {
+      "title": "虚空绘师",
+      "description": "以Warframe的能力击杀敌人 4 次",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsPowerHARD": {
+      "title": "专注虚空绘师",
+      "description": "在一场比赛中, 以Warframe的能力击杀敌人 3 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsHeadShotsEASY": {
+      "title": "神枪手",
+      "description": "爆头击杀 1 次",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsHeadShotsMEDIUM": {
+      "title": "神枪手",
+      "description": "爆头击杀 4 次",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsHeadShotsHARD": {
+      "title": "专注神枪手",
+      "description": "在一场比赛中, 爆头击杀 3 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsStreakDominationEASY": {
+      "title": "支配",
+      "description": "在不被他们击杀的情况下, 击杀 1 名对手",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsStreakDominationMEDIUM": {
+      "title": "支配",
+      "description": "在不被他们击杀的情况下, 击杀 4 名对手",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsStreakDominationHARD": {
+      "title": "专注支配",
+      "description": "在一场比赛中, 在不被他们击杀的情况下, 击杀 3 名对手",
+      "standing": 3000
+    },
+    "PVPTimedChallengeKillsPaybackEASY": {
+      "title": "复仇",
+      "description": "击杀 1 名曾经杀掉你的敌人",
+      "standing": 500
+    },
+    "PVPTimedChallengeKillsPaybackMEDIUM": {
+      "title": "复仇",
+      "description": "击杀 4 名曾经杀掉你的敌人",
+      "standing": 1500
+    },
+    "PVPTimedChallengeKillsPaybackHARD": {
+      "title": "专注复仇",
+      "description": "在一场比赛中, 击杀 3 名曾经杀掉你的敌人",
+      "standing": 3000
+    },
+    "PVPTimedChallengeFlagReturnEASY": {
+      "title": "救星",
+      "description": "将队上的中枢归还 1 次",
+      "standing": 500
+    },
+    "PVPTimedChallengeFlagReturnMEDIUM": {
+      "title": "救星",
+      "description": "将队上的中枢归还 4 次",
+      "standing": 1500
+    },
+    "PVPTimedChallengeFlagCaptureEASY": {
+      "title": "恶棍",
+      "description": "夺取 1 个中枢",
+      "standing": 500
+    },
+    "PVPTimedChallengeFlagCaptureMEDIUM": {
+      "title": "恶棍",
+      "description": "夺取 4 个中枢",
+      "standing": 1500
+    },
+    "PVPTimedChallengeSpeedballCatchesEASY": {
+      "title": "注意!",
+      "description": "传球给队友 3 次",
+      "standing": 1000
+    },
+    "PVPTimedChallengeSpeedballCatchesMEDIUM": {
+      "title": "注意!",
+      "description": "传球给队友 10 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballCatchesHARD": {
+      "title": "集中注意!",
+      "description": "在一场比赛中, 传球给队友 6 次",
+      "standing": 6000
+    },
+    "PVPTimedChallengeSpeedballInterceptionsEASY": {
+      "title": "拦截",
+      "description": "拦球 3 次",
+      "standing": 1000
+    },
+    "PVPTimedChallengeSpeedballInterceptionsMEDIUM": {
+      "title": "拦截",
+      "description": "拦球 6 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballInterceptionsHARD": {
+      "title": "专注拦截",
+      "description": "在一场比赛中, 拦球 3 次",
+      "standing": 6000
+    },
+    "PVPTimedChallengeSpeedballStealsEASY": {
+      "title": "夺取",
+      "description": "偷球 3 次",
+      "standing": 1000
+    },
+    "PVPTimedChallengeSpeedballStealsMEDIUM": {
+      "title": "夺取",
+      "description": "偷球 6 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballStealsHARD": {
+      "title": "专注夺取",
+      "description": "在一场比赛中, 偷球 3 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballChecksEASY": {
+      "title": "门都没有!",
+      "description": "殴打带球的对手 3 次",
+      "standing": 1000
+    },
+    "PVPTimedChallengeSpeedballChecksMEDIUM": {
+      "title": "门都没有!",
+      "description": "殴打带球的对手 10 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballChecksHARD": {
+      "title": "专注门都没有!",
+      "description": "在一场比赛中, 殴打带球的对手 6 次",
+      "standing": 6000
+    },
+    "PVPTimedChallengeSpeedballPassesEASY": {
+      "title": "使命必达!",
+      "description": "成功传球给队友 3 次",
+      "standing": 1000
+    },
+    "PVPTimedChallengeSpeedballPassesMEDIUM": {
+      "title": "使命必达!",
+      "description": "成功传球给队友 6 次",
+      "standing": 3000
+    },
+    "PVPTimedChallengeSpeedballPassesHARD": {
+      "title": "专注使命必达!",
+      "description": "在一场比赛中, 成功传球给队友 3 次",
+      "standing": 6000
+    },
+    "PVPTimedChallengeSpeedballGoalsEASY": {
+      "title": "进球!",
+      "description": "获得 2 分",
+      "standing": 1000
+    },
+    "PVPTimedChallengeMatchCompleteEASY": {
+      "title": "紧盯目标",
+      "description": "完成 1 次比赛",
+      "standing": 500
+    },
+    "PVPTimedChallengeMatchCompleteMEDIUM": {
+      "title": "紧盯目标",
+      "description": "完成 4 次比赛",
+      "standing": 1500
+    },
+    "PVPTimedChallengeWeeklyStandardSet": {
+      "title": "每周任务",
+      "description": "每周任务",
+      "standing": 50000
+    },
+    "PVPTimedChallengeGameModeWins": {
+      "title": "竞赛胜利",
+      "description": "在任何模式中赢得 6 场比赛",
+      "standing": 0
+    },
+    "PVPTimedChallengeGameModeComplete": {
+      "title": "竞赛完成",
+      "description": "在任何模式中完成 20 场比赛",
+      "standing": 0
+    },
+    "PVPTimedChallengeOtherChallengeCompleteANY": {
+      "title": "状态",
+      "description": "完成 10 项日常挑战",
+      "standing": 0
+    },
+    "PVPTimedChallengeSpeedballGoalsHARD": {
+      "title": "专注进球!",
+      "description": "在一场比赛中, 获得 2 分",
+      "standing": 6000
+    },
+    "PVPTimedChallengeKillsPayback_MEDIUM": {
+      "title": "复仇",
+      "description": "击杀 3 名曾经杀掉你的敌人",
+      "standing": 1500
+    }
+  },
+  "affectors": {
+    "PVPTimedAffectorSuperEnergy": {
+      "title": "能量覆涌",
+      "description": "能量覆涌 – 能量生成加快"
+    },
+    "PVPTimedAffectorSuperMeleeDamage": {
+      "title": "额外近战伤害",
+      "description": "额外近战伤害 – 近战伤害增加"
+    },
+    "PVPTimedAffectorSuperEverything": {
+      "title": "每回合额外伤害",
+      "description": "每回合额外伤害 – 伤害增加"
+    }
+  }
+}

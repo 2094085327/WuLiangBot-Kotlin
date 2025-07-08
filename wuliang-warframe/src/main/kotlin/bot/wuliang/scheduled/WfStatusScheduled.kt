@@ -37,18 +37,16 @@ class WfStatusScheduled {
     @Autowired
     private lateinit var wfLexiconService: WfLexiconService
 
-    private val httpUtil = HttpUtil
-
-    @Scheduled(cron = "${warframe.status.trader - cron}")
+    @Scheduled(cron = "${warframe.status.trader-cron}")
     fun getVoidTraderData(): WfStatusVo.VoidTraderEntity? {
         // 当Redis中商人的缓存不存在时，尝试通过API获取数据
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
             val traderJson =
                 try {
-                    httpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxyUtil.randomProxy())
+                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER, proxy = proxyUtil.randomProxy())
                 } catch (e: Exception) {
                     // 如果使用代理的请求失败，则尝试使用无代理方式
-                    httpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
+                    HttpUtil.doGetJson(WARFRAME_STATUS_VOID_TRADER)
                 }
 
             val startString = traderJson["startString"].asText().replaceTime()

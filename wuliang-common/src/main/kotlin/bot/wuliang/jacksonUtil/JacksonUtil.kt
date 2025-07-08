@@ -98,6 +98,42 @@ object JacksonUtil {
         @Suppress("UNCHECKED_CAST")
         return objectMapper.convertValue(jsonNode, Map::class.java) as Map<T, Y>
     }
+
+
+    fun <T> parseArray(
+        parser: (JsonNode) -> T,
+        dataArray: JsonNode,     // JSON数组节点
+        uniqueField: String? = null
+    ): List<T> {
+        val arr = dataArray.map { parser(it) }
+
+        return if (uniqueField != null) {
+            val distinctMap = mutableMapOf<String, T>()
+            arr.sortedBy { it?.getFieldValue<String>(uniqueField) } // 扩展函数获取字段值
+                .forEach { item ->
+                    if (item != null) {
+                        item.getFieldValue<String?>(uniqueField)?.let { key ->
+                            distinctMap[key] = item
+                        }
+                    }
+                }
+            distinctMap.values.toList()
+        } else {
+            arr
+        }
+    }
+
+    // 扩展函数：通过反射获取字段值
+    inline fun <reified R> Any.getFieldValue(fieldName: String): R? {
+        return try {
+            javaClass.getDeclaredField(fieldName).let {
+                it.isAccessible = true
+                it.get(this) as? R
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
 
 

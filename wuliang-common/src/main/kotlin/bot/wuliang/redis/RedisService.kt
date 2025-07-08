@@ -91,6 +91,21 @@ class RedisService {
         return Pair(expiry, value)
     }
 
+    /**
+     * 泛型版本的 getExpireAndValue 方法
+     * @param key Redis 键
+     * @return 返回一个 Pair，第一个元素是过期时间（毫秒），第二个元素是值
+     */
+    fun <T> getExpireAndValueTyped(key: String): Pair<Long?, T?> {
+        val expiry = redisTemplate.opsForValue().operations.getExpire(key)
+        val value = getValueTyped<T>(key)
+        return if (expiry == -1L || value == null) {
+            Pair(expiry, null)
+        } else {
+            Pair(expiry, value)
+        }
+    }
+
     fun hasKey(key: String): Boolean {
         return redisTemplate.hasKey(key)
     }
@@ -125,5 +140,16 @@ class RedisService {
      */
     fun getListKey(prefix: String): MutableSet<String> {
         return redisTemplate.keys(prefix)
+    }
+
+    /**
+     * 判断是否存在任意一个符合前缀的key
+     *
+     * @param prefix key前缀
+     * @return 是否存在匹配的key
+     */
+    fun hasKeyWithPrefix(prefix: String): Boolean {
+        val keys = redisTemplate.keys(prefix)
+        return keys.isNotEmpty()
     }
 }

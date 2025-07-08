@@ -1,0 +1,86 @@
+{
+  "ArbitersSyndicate": {
+    "name": "均衡仲裁者"
+  },
+  "CephalonSudaSyndicate": {
+    "name": "中枢苏达"
+  },
+  "NewLokaSyndicate": {
+    "name": "新世间"
+  },
+  "PerrinSyndicate": {
+    "name": "佩兰数列"
+  },
+  "SteelMeridianSyndicate": {
+    "name": "钢铁防线"
+  },
+  "RedVeilSyndicate": {
+    "name": "血色面纱"
+  },
+  "CetusSyndicate": {
+    "name": "Ostrons"
+  },
+  "QuillsSyndicate": {
+    "name": "夜羽"
+  },
+  "AssassinsSyndicate": {
+    "name": "刺客"
+  },
+  "EventSyndicate": {
+    "name": "集团"
+  },
+  "SolarisSyndicate": {
+    "name": "索拉里斯联盟"
+  },
+  "VoxSyndicate": {
+    "name": "索里拉斯之声"
+  },
+  "VentKidsSyndicate": {
+    "name": "通风小子"
+  },
+  "EntratiSyndicate": {
+    "name": "英择谛"
+  },
+  "NecraloidSyndicate": {
+    "name": "殁世械灵"
+  },
+  "KahlSyndicate": {
+    "name": "卡尔驻军"
+  },
+  "ZarimanSyndicate": {
+    "name": "坚守者"
+  },
+  "RadioLegionSyndicate": {
+    "name": "土星六号之狼"
+  },
+  "RadioLegion2Syndicate": {
+    "name": "使徒"
+  },
+  "RadioLegion3Syndicate": {
+    "name": "玻璃匠"
+  },
+  "RadioLegionIntermissionSyndicate": {
+    "name": "间歇"
+  },
+  "RadioLegionIntermission2Syndicate": {
+    "name": "间歇II"
+  },
+  "RadioLegionIntermission3Syndicate": {
+    "name": "间歇III"
+  },
+  "RadioLegionIntermission4Syndicate": {
+    "name": "Nora 的精选"
+  },
+  "RadioLegionIntermission5Syndicate": {
+    "name": "Nora 的混选 Vol. 1"
+  },
+  "RadioLegionIntermission6Syndicate": {
+    "name": "Nora 的混选 Vol. 2"
+  },
+  "EntratiLabSyndicate": {
+    "name": "科维兽"
+  },
+  "HexSyndicate": {
+    "name": "The Hex"
+  }
+}

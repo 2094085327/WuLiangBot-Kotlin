@@ -41,7 +41,7 @@ object WfStatus {
 
     fun String.parseDuration(): Long {
         // 定义正则表达式，匹配天数、小时数、分钟数和秒数
-        val regex = Regex("(?:(\\d+)天)?(?:(\\d+)小时)?(?:(\\d+)分)?(?:(\\d+)秒)?")
+        val regex = Regex("(?:(\\d+)\\s*天)?(?:\\s*(\\d+)\\s*小时)?(?:\\s*(\\d+)\\s*(?:分|分钟))?(?:\\s*(\\d+)\\s*秒)?")
 
         // 使用正则表达式进行匹配
         val matchResult = regex.find(this) ?: return 0L
