@@ -37,7 +37,7 @@ class WfStatusScheduled {
     @Autowired
     private lateinit var wfLexiconService: WfLexiconService
 
-    @Scheduled(cron = "${warframe.status.trader-cron}")
+    @Scheduled(cron = "\${warframe.status.trader-cron}")
     fun getVoidTraderData(): WfStatusVo.VoidTraderEntity? {
         // 当Redis中商人的缓存不存在时，尝试通过API获取数据
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
@@ -97,53 +97,6 @@ class WfStatusScheduled {
         } else {
             // 从Redis获取缓存数据
             return redisService.getValueTyped<WfStatusVo.VoidTraderEntity>(WF_VOIDTRADER_KEY)
-        }
-    }
-
-    @Scheduled(cron = "10 0 8 * * 1")
-    fun getSteelPathData(): WfStatusVo.SteelPathEntity? {
-        if (!redisService.hasKey(WF_STEELPATH_KEY)) {
-
-            val steelPath = HttpUtil.doGetJson(
-                WARFRAME_STATUS_STEEL_PATH,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val currentReward = steelPath["currentReward"]
-            val currentName = currentReward["name"].asText()
-            val currentCost = currentReward["cost"].asInt()
-
-            // 寻找下一个奖励
-            val rotation = steelPath["rotation"]
-            val currentIndex = rotation.indexOfFirst { it["name"].asText() == currentName }
-            val nextReward = if (currentIndex != -1 && currentIndex < rotation.size() - 1) {
-                rotation[currentIndex + 1]
-            } else rotation[0]
-
-            // 获取下一个奖励
-            val nextName = nextReward["name"].asText()
-            val nextCost = nextReward["cost"].asInt()
-
-            val remaining = steelPath["remaining"].asText().replaceTime()
-
-            val steelPathEntity = WfStatusVo.SteelPathEntity(
-                currentName = currentName,
-                currentCost = currentCost,
-                nextName = nextName,
-                nextCost = nextCost,
-                remaining = remaining
-            )
-
-            redisService.setValueWithExpiry(
-                WF_STEELPATH_KEY,
-                steelPathEntity,
-                remaining.parseDuration(),
-                TimeUnit.SECONDS
-            )
-            return steelPathEntity
-        } else {
-            return redisService.getValueTyped<WfStatusVo.SteelPathEntity>(WF_STEELPATH_KEY)
         }
     }
 

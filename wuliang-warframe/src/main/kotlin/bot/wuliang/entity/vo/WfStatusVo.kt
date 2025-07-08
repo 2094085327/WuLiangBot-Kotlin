@@ -58,19 +58,6 @@ class WfStatusVo {
     )
 
     /**
-     * 突击任务信息
-     *
-     * @property missionType 任务类型
-     * @property modifier 敌方强化
-     * @property node 任务地点
-     */
-    data class Variants(
-        val missionType: String? = null,
-        val modifier: String? = null,
-        val node: String? = null,
-    )
-
-    /**
      * 执刑官任务信息
      *
      * @property node 任务地点
@@ -98,38 +85,6 @@ class WfStatusVo {
         var eta: String? = null,
         val nextBoss: String? = null,
         val nextRewardItem: String? = null
-    )
-
-    /**
-     * 每日突击信息
-     *
-     * @property faction 阵营
-     * @property boss Boss名称
-     * @property taskList 任务列表
-     * @property eta 剩余时间
-     */
-    data class SortieEntity(
-        val faction: String? = null,
-        val boss: String? = null,
-        val taskList: List<Variants>? = null,
-        var eta: String? = null
-    )
-
-    /**
-     * 钢铁之路信息
-     *
-     * @property currentName 当前可兑换物品名称
-     * @property currentCost 当前可兑换物品价格
-     * @property remaining 剩余时间
-     * @property nextName 下一个可兑换物品名称
-     * @property nextCost 下一个可兑换物品价格
-     */
-    data class SteelPathEntity(
-        val currentName: String? = null,
-        val currentCost: Int? = null,
-        var remaining: String? = null,
-        val nextName: String? = null,
-        val nextCost: Int? = null
     )
 
     /**

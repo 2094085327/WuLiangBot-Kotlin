@@ -214,8 +214,6 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "钢铁")
     fun getSteelPath(context: BotUtils.Context) {
-        wfStatusScheduled.getSteelPathData()
-
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",

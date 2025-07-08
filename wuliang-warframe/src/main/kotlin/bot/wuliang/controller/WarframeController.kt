@@ -10,7 +10,6 @@ import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
@@ -100,20 +99,12 @@ class WarframeController(
 
     @ApiOperation("钢路奖励")
     @RequestMapping("/steelPath")
-    fun steelPath(): WfStatusVo.SteelPathEntity? {
-        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, steelPathEntity) = redisService.getExpireAndValue(WF_STEELPATH_KEY)
+    fun steelPath(): RespBean {
+        var (expiry, steelPathEntity) = parseDataUtil.parseSteelPath()
         if (expiry == null) expiry = -1L
-        steelPathEntity as WfStatusVo.SteelPathEntity
-        // 更新时间为当前时间（秒）
-        steelPathEntity.remaining = wfUtil.formatTimeBySecond(expiry)
-        redisService.setValueWithExpiry(
-            WF_STEELPATH_KEY,
-            steelPathEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return steelPathEntity
+        steelPathEntity!!.eta = wfUtil.formatTimeBySecond(expiry)
+
+        return RespBean.success(steelPathEntity)
     }
 
     @ApiOperation("裂缝信息")

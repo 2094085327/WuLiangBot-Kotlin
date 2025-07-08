@@ -24,6 +24,7 @@ class WfDataInit {
         initSortie()
         initMissionType()
         initNodes()
+        initSteelPath()
     }
 
     /**
@@ -71,5 +72,14 @@ class WfDataInit {
             )
             redisService.setValue("${WF_MARKET_CACHE_KEY}Node:${key}", node)
         }
+    }
+
+    /**
+     * 初始化钢铁之路奖励池
+     */
+    private fun initSteelPath() {
+        if (redisService.hasKey("${WF_MARKET_CACHE_KEY}SteelPath:Rotation")) return
+        val steelPathJson = objectMapper.readTree(File("$WARFRAME_DATA/steelPath.json"))
+        redisService.setValue("${WF_MARKET_CACHE_KEY}SteelPath:Rotation", steelPathJson["rotation"])
     }
 }
