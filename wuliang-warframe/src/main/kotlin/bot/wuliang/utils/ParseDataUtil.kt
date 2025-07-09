@@ -2,6 +2,7 @@ package bot.wuliang.utils
 
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.jacksonUtil.JacksonUtil
@@ -31,7 +32,7 @@ class ParseDataUtil {
     private fun parseCommonSortie(
         sortiesJson: JsonNode,
         cacheKey: String,
-        missionKey:String
+        missionKey: String
     ): Sortie? {
         if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<Sortie>(cacheKey)
         val keyPrefix = WF_MARKET_CACHE_KEY
@@ -59,28 +60,21 @@ class ParseDataUtil {
                     sortieRewards[nextIndex].reward
                 )
             }
-            else -> Triple(null,null,null)
+
+            else -> Triple(null, null, null)
         }
 
 
         val sortieEntity = Sortie(
             id = sortie["_id"]["\$oid"].asText(),
-            activation = sortie["Activation"]["\$date"]["\$numberLong"].asText()
-                ?.let { Instant.ofEpochMilli(it.toLong()) },
-            expiry = sortie["Expiry"]["\$date"]["\$numberLong"].asText()
-                ?.let { Instant.ofEpochMilli(it.toLong()) },
+            activation = parseTimestamp(sortie["Activation"]),
+            expiry = parseTimestamp(sortie["Expiry"]),
             boss = boss?.name,
             rewardItem = rewardItem,
             nextBoss = nextBoss,
             nextRewardItem = nextRewardItem,
             faction = boss?.faction!!.replaceFaction(),
-            eta = wfUtil.formatDuration(
-                Duration.between(
-                    Instant.now(),
-                    sortie["Expiry"]["\$date"]["\$numberLong"].asText()
-                        ?.let { Instant.ofEpochMilli(it.toLong()) }
-                )
-            ),
+            eta = wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(sortie["Expiry"]))),
             variants = JacksonUtil.parseArray({ variant ->
                 Variants(
                     missionType = redisService.getValueTyped<String>("${keyPrefix}MissionType:${variant["missionType"]?.asText()}"),
@@ -104,14 +98,14 @@ class ParseDataUtil {
      * 解析每日突击任务
      */
     fun parseSorties(sortiesJson: JsonNode): Sortie? {
-        return parseCommonSortie(sortiesJson, WF_SORTIE_KEY,"Variants")
+        return parseCommonSortie(sortiesJson, WF_SORTIE_KEY, "Variants")
     }
 
     /**
      * 解析周突击任务
      */
     fun parseArchonHunt(sortiesJson: JsonNode): Sortie? {
-        return parseCommonSortie(sortiesJson, WF_ARCHONHUNT_KEY,"Missions")
+        return parseCommonSortie(sortiesJson, WF_ARCHONHUNT_KEY, "Missions")
     }
 
     @Scheduled(cron = "1 0 8 * * 1")
@@ -150,6 +144,62 @@ class ParseDataUtil {
             TimeUnit.SECONDS
         )
         return Pair(steelPathEntity.eta?.parseDuration(), steelPathEntity)
+    }
+
+    private fun parseTimestamp(dateNode: JsonNode?): Instant? {
+        return dateNode?.get("\$date")?.get("\$numberLong")?.asText()
+            ?.toLongOrNull()
+            ?.let { Instant.ofEpochMilli(it) }
+    }
+
+    private fun parseChallenges(challengesNode: JsonNode?): List<Challenges> {
+        return challengesNode?.let {
+            JacksonUtil.parseArray({ challenge ->
+                val challengeText = challenge["Challenge"]?.asText() ?: ""
+                val isDaily = challenge["Daily"]?.asBoolean() ?: false
+                val isElite = challengeText.lowercase().contains("hard")
+
+                Challenges(
+                    id = challenge["_id"]?.get("\$oid")?.asText() ?: "",
+                    isDaily = isDaily,
+                    isElite = isElite,
+                    isPermanent = challenge["Permanent"]?.asBoolean() ?: false,
+                    title = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${challengeText.lowercase()}")?.value
+                        ?: StringUtils.formatWithSpaces(challengeText.split("/").lastOrNull() ?: ""),
+                    desc = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${challengeText.lowercase()}")?.desc
+                        ?: StringUtils.formatWithSpaces(challengeText.split("/").lastOrNull() ?: ""),
+                    reputation = when {
+                        isDaily -> 1000
+                        isElite -> 7000
+                        else -> 4500
+                    }
+                )
+            }, it)
+        } ?: emptyList()
+    }
+
+
+    fun parseNightWave(nightWaveJson: JsonNode): NightWave? {
+        if (redisService.hasKey(WF_NIGHTWAVE_KEY)) return redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY)
+        val expiryTime = parseTimestamp(nightWaveJson["Expiry"])
+        val activation = parseTimestamp(nightWaveJson["Activation"])
+        val nightWaveEntity = NightWave(
+            id = "nightwave${parseTimestamp(nightWaveJson["Expiry"])}",
+            activation = activation,
+            expiry = expiryTime,
+            eta = wfUtil.formatDuration(Duration.between(Instant.now(), expiryTime)),
+            startTime = wfUtil.formatDuration(Duration.between(Instant.now(), activation)),
+            tag = nightWaveJson["AffiliationTag"].asText(),
+            season = nightWaveJson["Season"].asInt(),
+            phase = nightWaveJson["Phase"].asInt(),
+            params = nightWaveJson["Params"].asText(),
+            possibleChallenges = nightWaveJson["Challenges"]?.let { parseChallenges(it) },
+            activeChallenges = parseChallenges(nightWaveJson["ActiveChallenges"])
+        )
+
+        val expire = Duration.between(Instant.now(), wfUtil.getStartOfNextDay()).seconds
+        redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expire, TimeUnit.SECONDS)
+        return nightWaveEntity
     }
 
 }

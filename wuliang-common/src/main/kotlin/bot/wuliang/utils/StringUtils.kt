@@ -380,4 +380,22 @@ object StringUtils : org.apache.commons.lang3.StringUtils() {
         }
         return false
     }
+
+    /**
+     * 将类似 "SeasonDailyKillEnemiesWithCorrosive" 的字符串转换为每个单词以空格分隔的形式，
+     * 例如："Season Daily Kill Enemies With Corrosive"
+     *
+     * @param input 输入字符串
+     * @return 转换后的字符串
+     */
+    fun formatWithSpaces(input: String): String {
+        val result = StringBuilder()
+        for ((index, char) in input.withIndex()) {
+            if (index > 0 && char.isUpperCase()) {
+                result.append(' ')
+            }
+            result.append(char)
+        }
+        return result.toString()
+    }
 }

@@ -70,37 +70,6 @@ class WfStatusVo {
         val items: List<VoidTraderItem>? = null
     )
 
-    /**
-     * 午夜电波任务信息
-     *
-     * @property title 任务名称
-     * @property desc 任务描述
-     * @property reputation 声望
-     * @property daily 是否为日常任务
-     */
-    data class NightWaveChallenges(
-        val title: String? = null,
-        val desc: String? = null,
-        val reputation: Int? = null,
-        val daily: Boolean? = null
-    )
-
-    /**
-     * 午夜电波信息
-     *
-     * @property activation 开始后过去的时间
-     * @property startString 开始时间
-     * @property expiry 结束时间
-     * @property expiryString 剩余时间的字符串
-     * @property activeChallenges 任务列表
-     */
-    data class NightWaveEntity(
-        val activation: String? = null,
-        val startString: String? = null,
-        val expiry: String? = null,
-        val expiryString: String? = null,
-        val activeChallenges: List<NightWaveChallenges>? = null
-    )
 
     /**
      * 入侵信息

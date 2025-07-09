@@ -1246,6 +1246,17 @@ class WfUtil {
             .toInstant()
     }
 
+    fun getStartOfNextDay(): Instant {
+        val now = Instant.now().atOffset(ZoneOffset.UTC)
+        return now
+            .plusDays(1) // 先将时间加一天
+            .withHour(0) // 设置为当天的 00:00:00
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0)
+            .toInstant()
+    }
+
     fun getEndOfDay(): Instant {
         val now = Instant.now().atOffset(ZoneOffset.UTC)
         return now

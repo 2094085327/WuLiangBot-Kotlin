@@ -16,6 +16,7 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.ProxyUtil
+import bot.wuliang.moudles.NightWave
 import bot.wuliang.moudles.Sortie
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
@@ -30,6 +31,8 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 
@@ -147,8 +150,13 @@ class WarframeController(
 
     @ApiOperation("电波信息")
     @RequestMapping("/nightWave")
-    fun nightWave(): WfStatusVo.NightWaveEntity? {
-        return redisService.getValueTyped<WfStatusVo.NightWaveEntity>(WF_NIGHTWAVE_KEY)
+    fun nightWave(): RespBean {
+        val nightWaveEntity = redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY) ?: return RespBean.error()
+        nightWaveEntity.eta = wfUtil.formatTimeBySecond(Duration.between(Instant.now(), nightWaveEntity.expiry).seconds)
+        nightWaveEntity.startTime =
+            wfUtil.formatTimeBySecond(Duration.between(nightWaveEntity.activation, Instant.now()).seconds)
+
+        return RespBean.success(nightWaveEntity)
     }
 
     @ApiOperation("入侵信息")

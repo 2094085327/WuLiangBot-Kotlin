@@ -40,7 +40,6 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -265,42 +264,8 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(电波|午夜电波)\\b")
     fun getNightWave(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_NIGHTWAVE_KEY)) {
-            val nightWaveJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_NIGHT_WAVE,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val activation = nightWaveJson["activation"].textValue().replace("T", " ").replace(".000Z", "")
-            val expiryString = nightWaveJson["expiry"].textValue().replace("T", " ").replace(".000Z", "")
-
-            // 定义时间格式化器
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            val nowTime = LocalDateTime.now()
-            val tomorrow: LocalDate = nowTime.toLocalDate().plus(1, ChronoUnit.DAYS)  // 明天的日期
-            val tomorrowMorning: LocalDateTime = LocalDateTime.of(tomorrow, LocalTime.of(8, 0))  // 明天早上8点
-
-
-            val timeDifference = wfUtil.formatTimeDifference(nowTime, LocalDateTime.parse(expiryString, formatter))
-
-            // 以当前时间到第二天早上的时间为Redis过期时间
-            val expiryTime = ChronoUnit.SECONDS.between(nowTime, tomorrowMorning)
-            val nightWaveEntity = WfStatusVo.NightWaveEntity(
-                activation = activation,
-                startString = nightWaveJson["startString"].textValue().replaceTime().replace("-", ""),
-                expiry = expiryString,
-                expiryString = timeDifference,
-                activeChallenges = nightWaveJson["activeChallenges"].map { item ->
-                    WfStatusVo.NightWaveChallenges(
-                        title = item["title"].textValue().turnZhHans(),
-                        desc = item["desc"].textValue().turnZhHans(),
-                        reputation = item["reputation"].intValue(),
-                        daily = item["isDaily"].booleanValue()
-                    )
-                }
-            )
-
-            redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expiryTime, TimeUnit.SECONDS)
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseNightWave(data["SeasonInfo"])
         }
 
         val imgData = WebImgUtil.ImgData(

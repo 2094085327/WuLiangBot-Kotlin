@@ -3,6 +3,7 @@ package bot.wuliang.postInit
 import bot.wuliang.config.WARFRAME_DATA
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.moudles.Boss
+import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.Nodes
 import bot.wuliang.redis.RedisService
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -25,6 +26,7 @@ class WfDataInit {
         initMissionType()
         initNodes()
         initSteelPath()
+        initLanguage()
     }
 
     /**
@@ -81,5 +83,19 @@ class WfDataInit {
         if (redisService.hasKey("${WF_MARKET_CACHE_KEY}SteelPath:Rotation")) return
         val steelPathJson = objectMapper.readTree(File("$WARFRAME_DATA/steelPath.json"))
         redisService.setValue("${WF_MARKET_CACHE_KEY}SteelPath:Rotation", steelPathJson["rotation"])
+    }
+
+    /**
+     * 初始化内部翻译
+     */
+    private fun initLanguage() {
+        if (redisService.hasKeyWithPrefix("${WF_MARKET_CACHE_KEY}Languages:*")) return
+        val languageJson = objectMapper.readTree(File("$WARFRAME_DATA/languages.json"))
+        languageJson.fields().forEach { (key, value) ->
+            redisService.setValue(
+                "${WF_MARKET_CACHE_KEY}Languages:${key}",
+                Info(value = value["value"]?.textValue(), desc = value["desc"]?.textValue())
+            )
+        }
     }
 }
