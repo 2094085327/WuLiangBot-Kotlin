@@ -3,6 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
+import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
@@ -27,7 +28,6 @@ import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.scheduled.WfStatusScheduled
-import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
@@ -56,7 +56,6 @@ import java.util.concurrent.TimeUnit
 class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
-    private val wfLexiconService: WfLexiconService,
     private val redisService: RedisService
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -246,7 +245,10 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     fun getArchonHunt(context: BotUtils.Context) {
-        wfStatusScheduled.getArchonHuntData()
+        if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseArchonHunt(data["LiteSorties"])
+        }
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/archonHunt",

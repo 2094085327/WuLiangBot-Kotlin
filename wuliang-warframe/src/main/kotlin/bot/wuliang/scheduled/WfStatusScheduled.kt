@@ -1,10 +1,6 @@
 package bot.wuliang.scheduled
 
-import bot.wuliang.config.WARFRAME_STATUS_ARCHON_HUNT
-import bot.wuliang.config.WARFRAME_STATUS_STEEL_PATH
 import bot.wuliang.config.WARFRAME_STATUS_VOID_TRADER
-import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
-import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOID_TRADER_COME_KEY
 import bot.wuliang.entity.vo.WfStatusVo
@@ -14,7 +10,6 @@ import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.WfStatus.parseDuration
-import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfStatus.replaceTime
 import bot.wuliang.utils.WfUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -99,57 +94,4 @@ class WfStatusScheduled {
             return redisService.getValueTyped<WfStatusVo.VoidTraderEntity>(WF_VOIDTRADER_KEY)
         }
     }
-
-    @Scheduled(cron = "5 0 8 * * 1")
-    fun getArchonHuntData(): WfStatusVo.ArchonHuntEntity? {
-        if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
-
-            val archonHuntJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_ARCHON_HUNT,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-
-            val bosses = arrayOf("欺谋狼主", "混沌蛇主", "诡文枭主")
-            val rewards = arrayOf("深红源力石", "琥珀源力石", "蔚蓝源力石")
-
-            val bossIndex = bosses.indexOf(archonHuntJson["boss"].asText().replaceFaction())
-            val boss = if (bossIndex != -1) bosses[bossIndex] else "未知"
-            val rewardItem = if (bossIndex != -1) rewards[bossIndex] else "未知"
-            val nextBoss = if (bossIndex != -1) bosses[(bossIndex + 1) % bosses.size] else "未知"
-            val nextRewardItem = if (bossIndex != -1) rewards[(bossIndex + 1) % rewards.size] else "未知"
-
-            val taskList = archonHuntJson["missions"].map { item ->
-                WfStatusVo.Missions(
-                    node = item["node"].asText().turnZhHans(),
-                    type = item["type"].asText().turnZhHans()
-                )
-            }
-
-            val faction = archonHuntJson["factionKey"].asText().replaceFaction()
-            val eta = archonHuntJson["eta"].asText().replaceTime()
-
-            val archonHuntEntity = WfStatusVo.ArchonHuntEntity(
-                faction = faction,
-                boss = boss,
-                eta = eta,
-                taskList = taskList,
-                rewardItem = rewardItem,
-                nextBoss = nextBoss,
-                nextRewardItem = nextRewardItem
-            )
-
-            redisService.setValueWithExpiry(
-                WF_ARCHONHUNT_KEY,
-                archonHuntEntity,
-                eta.parseDuration(),
-                TimeUnit.SECONDS
-            )
-            return archonHuntEntity
-        } else {
-            return redisService.getValueTyped<WfStatusVo.ArchonHuntEntity>(WF_ARCHONHUNT_KEY)
-        }
-    }
-
-
 }

@@ -58,36 +58,6 @@ class WfStatusVo {
     )
 
     /**
-     * 执刑官任务信息
-     *
-     * @property node 任务地点
-     * @property type 任务类型
-     */
-    data class Missions(
-        val node: String? = null,
-        val type: String? = null,
-    )
-
-    /**
-     * 执刑官突击信息
-     *
-     * @property faction 阵营
-     * @property boss Boss名称
-     * @property rewardItem 奖励物品
-     * @property taskList 任务列表
-     * @property eta 剩余时间
-     */
-    data class ArchonHuntEntity(
-        val faction: String? = null,
-        val boss: String? = null,
-        val rewardItem: String? = null,
-        val taskList: List<Missions>? = null,
-        var eta: String? = null,
-        val nextBoss: String? = null,
-        val nextRewardItem: String? = null
-    )
-
-    /**
      * 虚空商人信息
      *
      * @property location 地点

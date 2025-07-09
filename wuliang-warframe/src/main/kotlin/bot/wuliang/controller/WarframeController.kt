@@ -68,20 +68,15 @@ class WarframeController(
 
     @ApiOperation("执刑官数据")
     @RequestMapping("/archonHunt")
-    fun archonHunt(): WfStatusVo.ArchonHuntEntity? {
+    fun archonHunt(): RespBean {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, archonHuntEntity) = redisService.getExpireAndValue(WF_ARCHONHUNT_KEY)
+        var (expiry, archonHuntEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_ARCHONHUNT_KEY)
         if (expiry == null) expiry = -1L
-        archonHuntEntity as WfStatusVo.ArchonHuntEntity
         // 更新时间为当前时间（秒）
+        if (archonHuntEntity == null) return RespBean.error()
         archonHuntEntity.eta = wfUtil.formatTimeBySecond(expiry)
-        redisService.setValueWithExpiry(
-            WF_ARCHONHUNT_KEY,
-            archonHuntEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return archonHuntEntity
+
+        return RespBean.success(archonHuntEntity)
     }
 
     @ApiOperation("每日突击数据")

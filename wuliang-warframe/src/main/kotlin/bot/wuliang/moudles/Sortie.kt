@@ -21,11 +21,26 @@ data class Sortie(
      */
     val expiry: Instant? = null,
 
+    /**
+     * 奖励
+     */
+    val rewardItem: String? = null,
+
+    /**
+     * 下周奖励
+     */
+    val nextRewardItem: String? = null,
+
 
     /**
      * 突击boss
      */
     val boss: String? = null,
+
+    /**
+     * 下周boss
+     */
+    val nextBoss: String? = null,
 
     /**
      * 剩余时间
