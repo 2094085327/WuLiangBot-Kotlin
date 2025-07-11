@@ -1,6 +1,7 @@
 package bot.wuliang.utils
 
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
@@ -12,6 +13,8 @@ import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -200,6 +203,51 @@ class ParseDataUtil {
         val expire = Duration.between(Instant.now(), wfUtil.getStartOfNextDay()).seconds
         redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expire, TimeUnit.SECONDS)
         return nightWaveEntity
+    }
+
+    fun parseFissureArray(fissureJson: JsonNode, isStorm: Boolean = false): List<Fissure> {
+        val fissureEntity = JacksonUtil.parseArray({ fissure ->
+            val node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${fissure["Node"]?.asText()}")
+            val expiry = parseTimestamp(fissure["Expiry"])
+            val modifierNum =
+                redisService.getValueTyped<Modifiers>("${WF_MARKET_CACHE_KEY}FissureModifier:${fissure[if (isStorm) "ActiveMissionTier" else "Modifier"]?.asText()}")
+            println(redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}"))
+            Fissure(
+                id = fissure["_id"]?.get("\$oid")?.asText() ?: "",
+                activation = parseTimestamp(fissure["Activation"]),
+                expiry = expiry,
+                eta = wfUtil.formatDuration(Duration.between(Instant.now(), expiry)).replace("\\s+".toRegex(), ""),
+                node = node!!.name,
+                missionType = redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}")
+                    ?: node.type
+                    ?: redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:MT_DEFAULT"),
+                faction = node.faction?.replaceFaction(),
+                modifier = modifierNum!!.value,
+                modifierValue = modifierNum.num,
+                hard = fissure["Hard"]?.asBoolean() ?: false,
+                storm = isStorm
+            )
+        }, fissureJson)
+        return fissureEntity
+    }
+
+    suspend fun parseFissure(fissureJson: JsonNode, stormFissureJson: JsonNode): List<Fissure?>? {
+        if (redisService.hasKey(WF_FISSURE_KEY)) return redisService.getValueTyped<List<Fissure?>>(WF_FISSURE_KEY)
+
+        return coroutineScope {
+            val fissureJob = async { parseFissureArray(fissureJson) }
+            val stormFissureJob = async { parseFissureArray(stormFissureJson, true) }
+            val fissureList = fissureJob.await() + stormFissureJob.await()
+            val filteredFissureList = fissureList.filter {
+                it.eta?.parseDuration() != null && it.eta!!.parseDuration() >= 0
+            }.sortedBy { it.modifierValue }
+            val expire = filteredFissureList
+                .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
+                ?.coerceAtMost(300)
+                ?.coerceAtLeast(30) ?: 300
+            redisService.setValueWithExpiry(WF_FISSURE_KEY, filteredFissureList, expire, TimeUnit.SECONDS)
+            filteredFissureList
+        }
     }
 
 }

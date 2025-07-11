@@ -53,6 +53,11 @@ object WfMarketConfig {
     const val WF_NIGHTWAVE_KEY = WF_MARKET_CACHE_KEY + "nightWave"
 
     /**
+     * 电波缓存
+     */
+    const val WF_FISSURE_KEY = WF_MARKET_CACHE_KEY + "fissure"
+
+    /**
      * 入侵缓存
      */
     const val WF_INVASIONS_KEY = WF_MARKET_CACHE_KEY + "invasions"

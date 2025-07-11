@@ -6,10 +6,10 @@ import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
@@ -31,9 +31,7 @@ import bot.wuliang.scheduled.WfStatusScheduled
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
-import bot.wuliang.utils.WfStatus.replaceTime
 import bot.wuliang.utils.WfUtil
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -68,56 +66,26 @@ class WfStatusController @Autowired constructor(
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
 
-    /**
-     * 获取裂缝信息
-     *
-     * @param filteredFissures 筛选后的裂缝信息
-     * @return 发送内容
-     */
-    private fun getSendFissureList(filteredFissures: List<JsonNode>, type: String) {
-        val thisFissureList = WfStatusVo.FissureList()
-        val filteredFissuresActive = filteredFissures.filter { fissures ->
-            fissures["active"].asBoolean()
-        }
-        filteredFissuresActive.forEach { fissures ->
-            val fissureDetail = WfStatusVo.FissureDetail(
-                eta = fissures["eta"].textValue().replaceTime(),
-                node = fissures["node"].textValue().turnZhHans(),
-                missionType = fissures["missionType"].textValue().turnZhHans(),
-                enemyKey = fissures["enemyKey"].textValue().replaceFaction()
-            )
-
-            when (fissures["tierNum"].intValue()) {
-                1 -> thisFissureList.tierLich.add(fissureDetail)
-                2 -> thisFissureList.tierMeso.add(fissureDetail)
-                3 -> thisFissureList.tierNeo.add(fissureDetail)
-                4 -> thisFissureList.tierAxi.add(fissureDetail)
-                5 -> thisFissureList.tierRequiem.add(fissureDetail)
-                6 -> thisFissureList.tierOmnia.add(fissureDetail)
-            }
-        }
-        thisFissureList.fissureType = type
-        val typeMap = mapOf("普通裂缝" to "ordinary", "钢铁裂缝" to "hard", "九重天" to "empyrean")
-        redisService.setValueWithExpiry(WF_MARKET_CACHE_KEY + "${typeMap[type]}", thisFissureList, 1L, TimeUnit.MINUTES)
-    }
-
-    @SystemLog(businessName = "获取普通裂缝信息")
+    @SystemLog(businessName = "获取裂缝信息")
     @AParameter
-    @Executor(action = "\\b(裂缝|裂隙)\\b")
-    fun getOrdinaryFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "ordinary")) {
-            val fissuresJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_FISSURES,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-            val filteredFissures = fissuresJson.filter { eachJson ->
-                !eachJson["isStorm"].booleanValue() && !eachJson["isHard"].booleanValue()
-            }
-            getSendFissureList(filteredFissures, "普通裂缝")
+    @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
+    suspend fun getFissures(context: BotUtils.Context, fissureType: String) {
+        // 检查 Redis 缓存是否存在，若不存在则从网络获取数据
+        if (!redisService.hasKey(WF_FISSURE_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
         }
+
+        // 根据不同的裂缝类型构造图片的 URL
+        val urlSuffix = when (fissureType) {
+            "普通" -> "ordinary"
+            "钢铁" -> "hard"
+            "九重天" -> "storm"
+            else -> "ordinary"
+        }
+
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList?type=ordinary",
+            url = "http://localhost:16666/fissureList?type=$urlSuffix",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "body"
         )
@@ -126,55 +94,6 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    @SystemLog(businessName = "获取钢铁裂缝信息")
-    @AParameter
-    @Executor(action = "\\b(钢铁裂缝|钢铁裂隙)\\b")
-    fun getHardFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "hard")) {
-            val fissuresJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_FISSURES,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-            val filteredFissures = fissuresJson.filter { eachJson ->
-                !eachJson["isStorm"].booleanValue() && eachJson["isHard"].booleanValue()
-            }
-            getSendFissureList(filteredFissures, "钢铁裂缝")
-        }
-        val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList?type=hard",
-            imgName = "fissureList-${UUID.randomUUID()}",
-            element = "body"
-        )
-
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
-    }
-
-    @SystemLog(businessName = "获取九重天裂缝信息")
-    @AParameter
-    @Executor(action = "九重天")
-    fun getEmpyreanFissures(context: BotUtils.Context) {
-        if (!redisService.hasKey(WF_MARKET_CACHE_KEY + "empyrean")) {
-            val fissuresJson = HttpUtil.doGetJson(
-                WARFRAME_STATUS_FISSURES,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-            val filteredFissures = fissuresJson.filter { eachJson ->
-                eachJson["isStorm"].booleanValue()
-            }
-            getSendFissureList(filteredFissures, "九重天")
-        }
-        val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList?type=empyrean",
-            imgName = "fissureList-${UUID.randomUUID()}",
-            element = "body"
-        )
-
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
-    }
 
     @SystemLog(businessName = "获取奸商信息")
     @AParameter

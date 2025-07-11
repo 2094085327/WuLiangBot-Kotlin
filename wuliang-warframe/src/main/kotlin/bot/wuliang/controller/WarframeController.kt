@@ -1,12 +1,13 @@
 package bot.wuliang.controller
 
+import bot.wuliang.config.WARFRAME_STATUS_URL
 import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
@@ -15,7 +16,9 @@ import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
+import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
+import bot.wuliang.moudles.Fissure
 import bot.wuliang.moudles.NightWave
 import bot.wuliang.moudles.Sortie
 import bot.wuliang.redis.RedisService
@@ -107,9 +110,30 @@ class WarframeController(
 
     @ApiOperation("裂缝信息")
     @RequestMapping("/fissureList")
-    fun fissureList(@RequestParam("type") type: String): RespBean {
-        val fissureList = redisService.getValueTyped<WfStatusVo.FissureList>(WF_MARKET_CACHE_KEY + type)
-        return RespBean.toReturn(fissureList != null, fissureList)
+    suspend fun fissureList(@RequestParam("type") type: String): RespBean {
+        if (!redisService.hasKey(WF_FISSURE_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
+        }
+        val fissureList = redisService.getValueTyped<List<Fissure?>>(WF_FISSURE_KEY)
+            ?: return RespBean.error()
+
+        val filterPredicate = when (type.lowercase()) {
+            "ordinary" -> { fissure: Fissure -> fissure.storm != true && fissure.hard != true }
+            "hard" -> { fissure: Fissure -> fissure.hard == true }
+            "storm" -> { fissure: Fissure -> fissure.storm == true }
+            else -> return RespBean.error()
+        }
+
+        val now = Instant.now()
+        val result = fissureList
+            .filterNotNull()
+            .filter(filterPredicate)
+            .onEach { fissure ->
+                fissure.eta = wfUtil.formatDuration(Duration.between(now, fissure.expiry))
+            }
+
+        return RespBean.toReturn(result.size, result)
     }
 
     @ApiOperation("虚空商人信息")

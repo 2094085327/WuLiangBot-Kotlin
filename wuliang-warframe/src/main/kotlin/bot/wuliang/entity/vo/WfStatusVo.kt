@@ -10,41 +10,6 @@ import bot.wuliang.utils.WfUtil
  */
 class WfStatusVo {
     /**
-     * 裂缝信息
-     *
-     * @property tierLich  古纪
-     * @property tierMeso 前纪
-     * @property tierNeo 中纪
-     * @property tierAxi 后纪
-     * @property tierRequiem 安魂
-     * @property tierOmnia 全能
-     */
-    data class FissureList(
-        var tierLich: MutableList<FissureDetail> = mutableListOf(),
-        var tierMeso: MutableList<FissureDetail> = mutableListOf(),
-        var tierNeo: MutableList<FissureDetail> = mutableListOf(),
-        var tierAxi: MutableList<FissureDetail> = mutableListOf(),
-        var tierRequiem: MutableList<FissureDetail> = mutableListOf(),
-        var tierOmnia: MutableList<FissureDetail> = mutableListOf(),
-        var fissureType: String? = ""
-    )
-
-    /**
-     * 裂缝详情
-     *
-     * @property eta 截止时间
-     * @property node 地点
-     * @property missionType 任务类型
-     * @property enemyKey 敌人类型
-     */
-    data class FissureDetail(
-        val eta: String? = null,
-        val node: String? = null,
-        val missionType: String? = null,
-        val enemyKey: String? = null,
-    )
-
-    /**
      * 虚空商人货物
      *
      * @property item 物品名
