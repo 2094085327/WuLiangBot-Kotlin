@@ -1,0 +1,254 @@
+# Web相关配置
+web_config:
+  # 服务端口
+  port: 5555
+  # 图床路径
+  img_bed_path: "https://your-image-bed-domain.com"
+
+
+# 七牛云对象存储配置
+qi_niu:
+  cos:
+    # 七牛云访问密钥
+    access_key: "your_qiniu_access_key"
+    # 七牛云私钥
+    secret_key: "your_qiniu_secret_key"
+    # 存储桶名称
+    bucket: "your_bucket_name"
+    # 七牛云域名
+    url: "http://your-domain.com/"
+    # 路径前缀
+    path: "img/"
+    # 策略过期时间(秒)
+    policy_expire: 3600
+
+# 腾讯云对象存储配置
+tencent:
+  cos:
+    # 腾讯云密钥ID
+    secret_id: "your_tencent_secret_id"
+    # 腾讯云密钥
+    secret_key: "your_tencent_secret_key"
+    # 地域
+    region: "your_region"
+    # 存储桶名称
+    bucket: "your_bucket_name"
+    # 腾讯云COS域名
+    url: "https://your-cos-domain.com/"
+    # 路径前缀
+    path: "img/"
+    # 策略过期时间(秒)
+    policy_expire: 3600
+    # 编码格式
+    code_format: "UTF-8"
+
+
+# gensokyo框架配置
+gensokyo_config:
+  # 端口号
+  port: 15630
+
+# 图片加载配置
+image_load:
+  # 图片加载密钥
+  key: "your_image_load_key"
+
+
+# 天气API配置
+weather:
+  # 天气API密钥
+  key: "your_weather_key"
+
+# GitHub配置
+github:
+  # GitHub用户名
+  owner: "your_github_owner"
+  # 仓库名称
+  repo: "your_repo_name"
+  # GitHub访问令牌
+  access-token: "your_github_access_token"
+
+# 项目自定义配置
+wuLiang:
+  config:
+    # 图床路径，用于自动更新图片
+    gallery: "https://your-gallery-domain.com/"
+    # 原神本地图片路径
+    localPath: "resources/Image/Genshin/"
+    # 后台管理账号密码
+    userName: "your_admin_username"
+    password: "your_admin_password"
+
+# Swagger API文档配置
+swagger:
+  # 是否启用Swagger
+  enabled: true
+  # 路径映射
+  pathMapping:
+
+# Spring框架配置
+##配置数据源
+spring:
+  # MongoDB配置
+  data:
+    mongodb:
+      # MongoDB连接URI
+      uri: mongodb://username:password@host:port/database
+  # Servlet配置
+  servlet:
+    multipart:
+      # 是否启用文件上传
+      enabled: true
+      # 最大文件大小
+      max-file-size: 1024MB
+      # 最大请求大小
+      max-request-size: 1024MB
+  # Redis配置
+  redis:
+    # Redis主机地址
+    host: your_redis_host
+    # Redis端口
+    port: your_redis_port
+    # Redis密码
+    password: "your_redis_password"
+  # Thymeleaf模板引擎配置
+  thymeleaf:
+    # 模板前缀
+    prefix: classpath:/templates/
+    # 编码格式
+    encoding: UTF-8
+    # 模板模式
+    mode: HTML5
+    # 是否启用缓存
+    cache: false
+  # 数据源配置
+  datasource:
+    # 数据库驱动类名
+    driver-class-name: org.mariadb.jdbc.Driver
+    # 数据库连接URL
+    url: jdbc:mariadb://your_host:port/database
+    # 数据库用户名
+    username: your_database_username
+    # 数据库密码
+    password: your_database_password
+    # 数据源类型
+    type: com.alibaba.druid.pool.DruidDataSource
+    # 初始化连接数
+    initialSize: 5
+    # 最小空闲连接数
+    minIdle: 5
+    # 最大活跃连接数
+    maxActive: 20
+    # 获取连接等待超时的时间
+    maxWait: 60000
+    # 空闲时是否验证连接有效性
+    testWhileIdle: true
+    # 获取连接时是否验证有效性
+    testOnBorrow: true
+    # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接(毫秒)
+    timeBetweenEvictionRunsMillis: 60000
+    # 配置一个连接在池中最小生存的时间(毫秒)
+    minEvictableIdleTimeMillis: 300000
+    # Druid连接池配置
+    druid:
+      test-on-borrow: false
+      # SQL验证语句
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+    # 防火墙配置
+    filter:
+      wall:
+        config:
+          # 是否显示允许的SQL
+          show-allow: true
+    # Web统计过滤器配置
+    web-stat-filter:
+      # 是否启用
+      enabled: true
+      # URL匹配模式
+      url-pattern: /*
+      # 设置不统计哪些URL
+      exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+      # 是否开启session统计功能
+      session-stat-enable: true
+      # session统计最大个数
+      session-stat-max-count: 100
+    # StatViewServlet配置(用于监控页面)
+    stat-view-servlet:
+      # 是否启用
+      enabled: true
+      # URL匹配模式
+      url-pattern: /druid/*
+      # 是否允许重置统计
+      reset-enable: true
+      # 监控页面登录用户名
+      login-username: your_druid_username
+      # 监控页面登录密码
+      login-password: your_druid_password
+      # 允许访问的IP地址
+      allow: 127.0.0.1
+  # RabbitMQ消息队列配置
+  rabbitmq:
+    # RabbitMQ主机地址
+    host: your_rabbitmq_host
+    # RabbitMQ端口
+    port: your_rabbitmq_port
+    # RabbitMQ用户名
+    username: your_rabbitmq_username
+    # RabbitMQ密码
+    password: your_rabbitmq_password
+    # 消息发送到交换机确认机制
+    publisher-confirm-type: correlated
+    # 消息发送到队列确认机制
+    publisher-returns: true
+    # 虚拟主机
+    virtual-host: /
+    # 监听器配置
+    listener:
+      simple:
+        # 消费者最小数量
+        concurrency: 10
+        # 最大消费者数量
+        max-concurrency: 10
+        # 每次处理消息数量
+        prefetch: 1
+        # 启动时是否默认启动容器
+        auto-startup: true
+        # 被拒绝时重新进入队列
+        default-requeue-rejected: true
+
+# MyBatis-Plus配置
+mybatis-plus:
+  # Mapper XML文件位置
+  mapper-locations: classpath*:mapper/*.xml, classpath:mapper/log/*.xml
+  # 别名包扫描路径
+  type-aliases-package: bot.wuliang.entity
+  # 全局配置
+  global-config:
+    db-config:
+      # 主键类型
+      id-type: auto
+      # 字段验证策略
+      field-strategy: NOT_EMPTY
+      # 数据库类型
+      db-type: MYSQL
+  # MyBatis原生配置
+  configuration:
+    # 默认执行器类型
+    default-executor-type: simple
+    # 允许JDBC支持自动生成主键
+    use-generated-keys: true
+    # 是否开启驼峰命名规则映射
+    map-underscore-to-camel-case: true
+    # 当查询结果为空值时，是否调用Setter方法
+    call-setters-on-nulls: true
+
+# 日志配置
+logging:
+  level:
+    # 项目日志级别
+    bot.demo.txbot: error
+    # 腾讯云SDK日志级别
+    com.qcloud: error
