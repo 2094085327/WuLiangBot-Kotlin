@@ -59,7 +59,7 @@ WuLiangBot-Kotlin 是一个功能丰富的QQ机器人，集成了多个游戏和
 ### 环境要求
 - JDK 17 或更高版本
 - Maven 3.6+ (用于构建项目)
-- MySQL 5.7+ (用于数据存储)
+- MySQL 8.0+ (用于数据存储)
 
 ### 构建项目
 #### 克隆项目
@@ -74,11 +74,6 @@ cd WuLiangBot-Kotlin
 ```bash
 ./mvnw clean install
 ```
-
-## 特别鸣谢
-
-- [`MisakaTAT/Shiro`](https://github.com/MisakaTAT/Shiro/blob/main/README.md):
-  本项目采用了MisakaTAT编写的框架,使用此框架实现对QQ机器人官方的实现.
 
 ## 配置文件
 
