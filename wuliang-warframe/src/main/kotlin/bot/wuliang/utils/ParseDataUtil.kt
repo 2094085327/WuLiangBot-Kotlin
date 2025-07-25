@@ -9,6 +9,7 @@ import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
+import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 @Component
 class ParseDataUtil {
@@ -28,6 +30,9 @@ class ParseDataUtil {
 
     @Autowired
     private lateinit var redisService: RedisService
+
+    @Autowired
+    private lateinit var wfLexiconService: WfLexiconService
 
     /**
      * 通用解析常规突击任务（每日突击与周突击）
@@ -211,7 +216,6 @@ class ParseDataUtil {
             val expiry = parseTimestamp(fissure["Expiry"])
             val modifierNum =
                 redisService.getValueTyped<Modifiers>("${WF_MARKET_CACHE_KEY}FissureModifier:${fissure[if (isStorm) "ActiveMissionTier" else "Modifier"]?.asText()}")
-            println(redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}"))
             Fissure(
                 id = fissure["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(fissure["Activation"]),
@@ -250,4 +254,95 @@ class ParseDataUtil {
         }
     }
 
+    fun parseVoidTraders(voidTradersJsonNode: JsonNode): List<VoidTrader> {
+        val untranslatedItems = mutableMapOf<String, String>()
+        val translatedItems = mutableMapOf<String, String>()
+        val englishOnlyPattern = Regex("^[a-zA-Z\\s\\-.'·]+$")
+        val itemMap = mapOf(
+            "Skin" to "外观",
+            "New Year Free" to "迎新春",
+            "Sigil" to "纹章",
+            "Glyph" to "浮印",
+            "Display" to "展示图",
+            "Booster" to "加成",
+            "Weapon" to "武器",
+            "<ARCHWING>" to ""
+        )
+
+        return JacksonUtil.parseArray({ voidTrader ->
+            val activationTime = parseTimestamp(voidTrader["Activation"])
+            val isActive = activationTime?.let {
+                Instant.now().isAfter(it)
+            } ?: false
+
+            // 先收集所有需要翻译的物品ID
+            val itemsToTranslate = mutableListOf<String>()
+            voidTrader["Manifest"]?.forEach { item ->
+                val voidItem = item["ItemType"]?.asText() ?: ""
+                itemsToTranslate.add(voidItem)
+
+                // 从缓存获取翻译
+                val translatedValue =
+                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${voidItem.lowercase()}")?.value
+
+                if (translatedValue != null && !englishOnlyPattern.matches(translatedValue)) {
+                    translatedItems[voidItem] = translatedValue
+                } else {
+                    translatedValue?.let { untranslatedItems[voidItem] = it }
+                }
+            }
+
+            // 尝试从数据库获取未翻译项的翻译
+            if (untranslatedItems.isNotEmpty()) {
+                // untranslatedItems的value是英文名，需要获取英文名到中文名的映射
+                val translatedDbItems = wfLexiconService.getZhNamesMap(untranslatedItems.values.toList())
+
+                // 遍历untranslatedItems，建立voidItem到中文翻译的映射
+                untranslatedItems.forEach { (voidItem, englishName) ->
+                    // 使用英文名获取中文翻译
+                    val chineseName = translatedDbItems[englishName.lowercase()]
+                    // 选择最优的翻译：中文 > 英文 > 格式化名称
+                    translatedItems[voidItem] = chineseName ?: englishName
+                }
+            }
+
+
+            // 现在再创建物品列表，此时translatedItems已包含所有可能的翻译
+            val inventory = voidTrader["Manifest"]?.let { manifest ->
+                JacksonUtil.parseArray({ voidTraderItem ->
+                    val voidItem = voidTraderItem["ItemType"]?.asText() ?: ""
+                    val formattedItem = StringUtils.formatWithSpaces(voidItem.split("/").lastOrNull() ?: "")
+
+                    // 获取翻译后的物品名称
+                    val baseItemName = (translatedItems[voidItem] ?: formattedItem)
+
+                    // 检查并替换itemMap中定义的关键词
+                    val finalItemName = itemMap.entries.fold(baseItemName) { itemName, (key, value) ->
+                        itemName.replace(key, value)
+                    }
+
+                    VoidTraderItem(
+                        item = finalItemName,
+                        ducats = voidTraderItem["PrimePrice"].asInt(),
+                        credits = voidTraderItem["RegularPrice"].asInt(),
+                    )
+                }, manifest)
+                    .filter { item -> !item.item.isNullOrBlank() }
+                    .sortedWith(compareByDescending {
+                        it.item?.let { it1 -> Pattern.compile("[\\u4e00-\\u9fff]+").matcher(it1).find() }
+                    })
+            }
+
+            VoidTrader(
+                id = voidTrader["_id"]?.get("\$oid")?.asText() ?: "",
+                activation = parseTimestamp(voidTrader["Activation"]),
+                expiry = parseTimestamp(voidTrader["Expiry"]),
+                eta = wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Expiry"]))),
+                isActive = isActive,
+                node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${voidTrader["Node"]?.asText()}")?.name
+                    ?: voidTrader["Node"]?.asText(),
+                inventory = inventory
+            )
+        }, voidTradersJsonNode)
+    }
 }

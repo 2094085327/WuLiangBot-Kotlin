@@ -17,14 +17,12 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.moudles.Fissure
 import bot.wuliang.moudles.NightWave
 import bot.wuliang.moudles.Sortie
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
-import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
 import io.swagger.annotations.Api
@@ -49,13 +47,9 @@ import java.util.concurrent.TimeUnit
 @RequestMapping("/warframe")
 class WarframeController(
     @Autowired private val wfLexiconService: WfLexiconService,
-    @Autowired private val wfRivenService: WfRivenService,
     @Autowired private val redisService: RedisService,
     @Autowired private val wfUtil: WfUtil
 ) {
-    @Autowired
-    private lateinit var proxyUtil: ProxyUtil
-
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
 

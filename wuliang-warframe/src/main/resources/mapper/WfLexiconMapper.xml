@@ -21,6 +21,15 @@
         WHERE LOWER(wf_other_name.other_name) = LOWER(#{otherName})
     </select>
 
+    <select id="selectZhNamesList" parameterType="java.util.List" resultType="java.util.HashMap">
+        SELECT zh_item_name, LOWER(en_item_name) as enItemName
+        FROM wf_lexicon
+        WHERE LOWER(en_item_name) IN
+        <foreach item="item" index="index" collection="list" open="(" separator=", " close=")">
+            LOWER(#{item})
+        </foreach>
+    </select>
+
     <select id="selectByEnItemName" parameterType="java.lang.String" resultType="java.lang.String">
         SELECT wf_other_name.other_name
         FROM wf_other_name

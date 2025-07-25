@@ -8,7 +8,6 @@ import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
-import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
@@ -429,17 +428,18 @@ class WfStatusController @Autowired constructor(
             incarnon = incarnonEntity
         }
 
-        if (!redisService.hasKey(WF_INCARNON_RIVEN_KEY)) {
-            // 根据 灵化武器紫卡价格 给出每周推荐武器
-            var incarnonRiven = wfUtil.getIncarnonRiven(incarnon.thisWeekData?.steel)
-            if (incarnonRiven == null) incarnonRiven = mapOf()
-            redisService.setValueWithExpiry(
-                WF_INCARNON_RIVEN_KEY,
-                incarnonRiven,
-                30L,
-                TimeUnit.MINUTES
-            )
-        }
+        // TODO 暂时移除每周武器推荐，其基于频繁查询WM紫卡价格，导致被WM禁止访问，找到解决方法后再优化
+//        if (!redisService.hasKey(WF_INCARNON_RIVEN_KEY)) {
+//            // 根据 灵化武器紫卡价格 给出每周推荐武器
+//            var incarnonRiven = wfUtil.getIncarnonRiven(incarnon.thisWeekData?.steel)
+//            if (incarnonRiven == null) incarnonRiven = mapOf()
+//            redisService.setValueWithExpiry(
+//                WF_INCARNON_RIVEN_KEY,
+//                incarnonRiven,
+//                30L,
+//                TimeUnit.MINUTES
+//            )
+//        }
 
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/incarono",

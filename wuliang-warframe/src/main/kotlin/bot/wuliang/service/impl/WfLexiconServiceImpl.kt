@@ -1,7 +1,6 @@
 package bot.wuliang.service.impl
 
 import bot.wuliang.entity.WfLexiconEntity
-import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.mapper.WfLexiconMapper
 import bot.wuliang.service.WfLexiconService
@@ -51,6 +50,19 @@ class WfLexiconServiceImpl : ServiceImpl<WfLexiconMapper?, WfLexiconEntity?>(), 
         return lexiconMapper.selectByEnItemName(en)?.firstOrNull()
     }
 
+    /**
+     * 批量从词库获取中文名称与英文的映射
+     *
+     * @param keys 输入的关键字
+     * @return 中文名称
+     */
+    override fun getZhNamesMap(keys: List<String>): Map<String?, String?> {
+        if (keys.isEmpty()) {
+            return emptyMap()
+        }
+        val results = lexiconMapper.selectZhNamesList(keys)
+        return results.associate { it["enItemName"] to it["zh_item_name"] }
+    }
     /**
      * 通过英文获取中文名称
      *

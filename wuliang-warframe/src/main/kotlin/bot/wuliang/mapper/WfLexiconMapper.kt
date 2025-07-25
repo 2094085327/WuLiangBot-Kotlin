@@ -13,6 +13,8 @@ interface WfLexiconMapper : BaseMapper<WfLexiconEntity?> {
 
     fun selectByEnItemName(@Param("enItemName") enItemName: String): List<String>?
 
+    fun selectZhNamesList(keys:List<String>): List<Map<String, String>>
+
     fun insertOrUpdateBatch(wfLexiconEntityList: List<WfLexiconEntity>)
 
     fun insertNewOtherName(@Param("enItemName") enItemName: String, @Param("otherName") otherName: String): Int

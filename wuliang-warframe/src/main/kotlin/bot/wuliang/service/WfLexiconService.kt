@@ -37,6 +37,14 @@ interface WfLexiconService : IService<WfLexiconEntity?> {
     fun getZhName(key: String): String?
 
     /**
+     * 批量从词库获取中文名称与英文的映射
+     *
+     * @param keys 输入的关键字列表
+     * @return 中文名称
+     */
+    fun getZhNamesMap(keys: List<String>): Map<String?, String?>
+
+    /**
      * 从词库获取英文名称
      *
      * @param key 输入的关键字

@@ -12,7 +12,7 @@ import com.baomidou.mybatisplus.annotation.TableName
  * @property zhItemName 中文词条名
  * @property urlName 词条URL名
  */
-@TableName("wfLexicon")
+@TableName("wf_lexicon")
 data class WfLexiconEntity(
     /***
      * 词条ID
