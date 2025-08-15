@@ -337,7 +337,11 @@ class ParseDataUtil {
                 id = voidTrader["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(voidTrader["Activation"]),
                 expiry = parseTimestamp(voidTrader["Expiry"]),
-                eta = wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Expiry"]))),
+                eta = if (isActive) {
+                    wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Expiry"])))
+                } else {
+                    wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Activation"])))
+                },
                 isActive = isActive,
                 node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${voidTrader["Node"]?.asText()}")?.name
                     ?: voidTrader["Node"]?.asText(),
