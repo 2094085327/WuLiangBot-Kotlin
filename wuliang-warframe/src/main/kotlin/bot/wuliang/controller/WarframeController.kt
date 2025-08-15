@@ -20,6 +20,7 @@ import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.moudles.Fissure
 import bot.wuliang.moudles.NightWave
 import bot.wuliang.moudles.Sortie
+import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
@@ -132,21 +133,20 @@ class WarframeController(
 
     @ApiOperation("虚空商人信息")
     @RequestMapping("/voidTrader")
-    fun voidTrader(): WfStatusVo.VoidTraderEntity? {
-        // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
-        var (expiry, voidTraderEntity) = redisService.getExpireAndValue(WF_VOIDTRADER_KEY)
-        if (expiry == null) expiry = -1L
-        voidTraderEntity as WfStatusVo.VoidTraderEntity
-        // 更新时间为当前时间（秒）
-        voidTraderEntity.time = wfUtil.formatTimeBySecond(expiry)
+    fun voidTrader():RespBean{
+        if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseVoidTraders(data["VoidTraders"])
+        }
+        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
+            ?: return RespBean.error()
 
-        redisService.setValueWithExpiry(
-            WF_VOIDTRADER_KEY,
-            voidTraderEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return voidTraderEntity
+        val result = voidTraderList
+            .onEach { fissure ->
+                fissure.eta = wfUtil.formatDuration(Duration.between(Instant.now(), fissure.expiry))
+            }
+
+        return RespBean.success(result)
     }
 
     @ApiOperation("玄骸武器信息")

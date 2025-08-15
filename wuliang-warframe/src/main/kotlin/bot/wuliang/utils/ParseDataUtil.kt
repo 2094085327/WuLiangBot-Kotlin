@@ -6,6 +6,7 @@ import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
@@ -269,7 +270,7 @@ class ParseDataUtil {
             "<ARCHWING>" to ""
         )
 
-        return JacksonUtil.parseArray({ voidTrader ->
+        val voidTradersList = JacksonUtil.parseArray({ voidTrader ->
             val activationTime = parseTimestamp(voidTrader["Activation"])
             val isActive = activationTime?.let {
                 Instant.now().isAfter(it)
@@ -348,5 +349,10 @@ class ParseDataUtil {
                 inventory = inventory
             )
         }, voidTradersJsonNode)
+        val expire = voidTradersList
+            .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
+            ?.coerceAtLeast(30)  ?: 300
+        redisService.setValueWithExpiry(WF_VOIDTRADER_KEY, voidTradersList, expire, TimeUnit.SECONDS)
+        return voidTradersList
     }
 }
