@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.lang.reflect.Method
 import java.util.regex.Matcher
@@ -19,14 +20,18 @@ import java.util.regex.Matcher
  */
 @Component
 class Addition(
-    @Autowired private val actionFactory: ActionFactory
+    @Autowired private val actionFactory: ActionFactory,
+    @Autowired private val applicationContext: ApplicationContext
 ) {
 
     fun doRequest(action: String, context: BotUtils.Context): String {
         val ad: ActionDefinition = actionFactory.newInstance().getActionDefinition(action)
             ?: throw IllegalAccessException("方法 $action 未定义")
 
-        val `object`: Any = ad.getObject()
+
+        // 通过 Spring ApplicationContext 获取 Bean 实例，确保依赖注入正常工作
+        val beanClass = ad.getObject()::class.java
+        val `object` = applicationContext.getBean(beanClass)
         val method: Method = ad.getMethod()
 
         // 检查方法上是否有 @AParameter 注解

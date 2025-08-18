@@ -74,8 +74,8 @@ class WfStatusController @Autowired constructor(
 
         // 根据不同的裂缝类型构造图片的 URL
         val urlSuffix = when (fissureType) {
-            "普通" -> "ordinary"
-            "钢铁" -> "hard"
+            "裂缝","裂隙" -> "ordinary"
+            "钢铁裂缝","钢铁裂隙" -> "hard"
             "九重天" -> "storm"
             else -> "ordinary"
         }
