@@ -52,15 +52,11 @@ import java.util.concurrent.TimeUnit
 class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
-    private val redisService: RedisService
+    private val redisService: RedisService,
+    private val proxyUtil: ProxyUtil,
+    private val parseDataUtil: ParseDataUtil
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-
-    @Autowired
-    private lateinit var proxyUtil: ProxyUtil
-
-    @Autowired
-    private lateinit var parseDataUtil: ParseDataUtil
 
     @SystemLog(businessName = "获取裂缝信息")
     @AParameter
