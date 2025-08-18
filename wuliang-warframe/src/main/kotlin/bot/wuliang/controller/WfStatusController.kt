@@ -14,7 +14,7 @@ import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
-import bot.wuliang.config.WfMarketConfig.WF_VOID_TRADER_COME_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -23,10 +23,10 @@ import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
+import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
-import bot.wuliang.scheduled.WfStatusScheduled
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
@@ -58,9 +58,6 @@ class WfStatusController @Autowired constructor(
 
     @Autowired
     private lateinit var proxyUtil: ProxyUtil
-
-    @Autowired
-    private lateinit var wfStatusScheduled: WfStatusScheduled
 
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
@@ -98,21 +95,21 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "奸商")
     fun findVoidTrader(context: BotUtils.Context) {
-        val (expiry, getLocation) = redisService.getExpireAndValue(WF_VOID_TRADER_COME_KEY)
-
-        if (expiry != -2L) {
-            val startString = wfUtil.formatTimeBySecond(expiry!!)
-            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $getLocation")
-            return
+        if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseVoidTraders(data["VoidTraders"])
         }
 
-        val voidTraderData = wfStatusScheduled.getVoidTraderData()
+        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
 
-        if (voidTraderData == null) {
-            // 如果 Redis 中仍然未存在商人的缓存，则使用到来缓存信息
-            val (cachedExpiry, cachedLocation) = redisService.getExpireAndValue(WF_VOID_TRADER_COME_KEY)
-            val startString = wfUtil.formatTimeBySecond(cachedExpiry!!)
-            context.sendMsg("虚空商人仍未回归...\n也许将在 $startString 后抵达 $cachedLocation")
+        if (voidTraderList.isNullOrEmpty()) {
+            context.sendMsg("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
+            return
+         }
+
+        val activeVoidList = voidTraderList.filter { it.isActive==true }
+        if (activeVoidList.isEmpty()) {
+            context.sendMsg("虚空商人仍未回归...\n也许将在 ${voidTraderList.first().eta} 后抵达 ${voidTraderList.first().node}")
             return
         }
 
