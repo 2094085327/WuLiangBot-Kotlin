@@ -1,11 +1,11 @@
 package bot.wuliang.totalDistribution
 
-import bot.wuliang.TencentBotKotlinApplication
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
+import bot.wuliang.command.CommandRegistry
 import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -62,6 +63,10 @@ class TotalDistribution @Autowired constructor(
     private val botConfigService: BotConfigService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil
 ) {
+
+    @Autowired
+    private lateinit var applicationContext: ApplicationContext
+
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
@@ -101,11 +106,20 @@ class TotalDistribution @Autowired constructor(
     }
 
 
+    @PostConstruct
+    fun initCommandRegistry() {
+        // 初始化命令注册中心
+        CommandRegistry.init(applicationContext)
+        // 扫描命令
+        CommandRegistry.scanCommands("bot.wuliang")
+    }
+
+
     @Order(0)
     @AnyMessageHandler
     @Suppress("UNCHECKED_CAST")
     @MessageHandlerFilter(cmd = "(.*)")
-    fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    suspend fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
         val startTime: Long = System.currentTimeMillis()
         val context = BotUtils().initialize(event, bot)
 
@@ -161,8 +175,27 @@ class TotalDistribution @Autowired constructor(
         }
 
 
-        // 扫描包，这里直接扫描Demo所在的包
-        actionFactory.newInstance().scanAction(TencentBotKotlinApplication::class.java)
-        addition.doRequest(match, context)
+        // 使用命令模式替代的反射调用，支持正则表达式
+        val commandWithMatcher = CommandRegistry.getCommandWithMatcher(match)
+        if (commandWithMatcher != null) {
+            try {
+                val (command, cmdMatcher, isRegex) = commandWithMatcher
+                // 如果命令是ReflectiveBotCommand并且是正则匹配，则调用带matcher的execute方法
+                val result = if (command is CommandRegistry.ReflectiveBotCommand && isRegex) {
+                    command.execute(context, cmdMatcher)
+                } else {
+                    command.execute(context)
+                }
+                // 如果命令返回了结果，发送给用户
+                if (result.isNotEmpty()) {
+                    context.sendMsg(result)
+                }
+            } catch (e: Exception) {
+                context.sendMsg("执行命令时发生错误: ${e.message}")
+                e.printStackTrace()
+            }
+        } else {
+            context.sendMsg("找不到命令")
+        }
     }
 }

@@ -28,7 +28,6 @@ class Addition(
         val ad: ActionDefinition = actionFactory.newInstance().getActionDefinition(action)
             ?: throw IllegalAccessException("方法 $action 未定义")
 
-
         // 通过 Spring ApplicationContext 获取 Bean 实例，确保依赖注入正常工作
         val beanClass = ad.getObject()::class.java
         val `object` = applicationContext.getBean(beanClass)
@@ -43,14 +42,12 @@ class Addition(
 
         // 设置方法可访问，解决IllegalAccessException问题
         method.isAccessible = true
+
         // 处理 suspend 函数
         val result = if (isSuspendFunction(method)) {
             // 如果是 suspend 函数，使用协程执行
-            runBlocking {
-                val deferred = CoroutineScope(Dispatchers.Default).async {
-                    method.invoke(`object`, *parameters)
-                }
-                deferred.await()
+            runBlocking(Dispatchers.Default) {
+                method.invoke(`object`, *parameters)
             }
         } else {
             // 普通函数直接执行

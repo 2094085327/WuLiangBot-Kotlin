@@ -32,6 +32,8 @@ import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -65,7 +67,7 @@ class WfStatusController @Autowired constructor(
         // 检查 Redis 缓存是否存在，若不存在则从网络获取数据
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
-            parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
+                parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
         }
 
         // 根据不同的裂缝类型构造图片的 URL
