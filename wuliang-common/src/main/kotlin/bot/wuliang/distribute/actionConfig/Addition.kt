@@ -34,6 +34,8 @@ class Addition(
             throw IllegalAccessException("参数注解 ${AParameter::class.java.name} 缺失")
         }
 
+        // 设置方法可访问，解决IllegalAccessException问题
+        method.isAccessible = true
         val result = method.invoke(`object`, *parameters)
         return result?.toString() ?: ""
     }
