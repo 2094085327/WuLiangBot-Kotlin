@@ -2,8 +2,11 @@ package bot.wuliang.distribute.actionConfig
 
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.botUtil.BotUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.lang.reflect.Method
 import java.util.regex.Matcher
@@ -16,7 +19,6 @@ import java.util.regex.Matcher
  */
 @Component
 class Addition(
-    @Autowired private var applicationContext: ApplicationContext,
     @Autowired private val actionFactory: ActionFactory
 ) {
 
@@ -36,8 +38,26 @@ class Addition(
 
         // 设置方法可访问，解决IllegalAccessException问题
         method.isAccessible = true
-        val result = method.invoke(`object`, *parameters)
+        // 处理 suspend 函数
+        val result = if (isSuspendFunction(method)) {
+            // 如果是 suspend 函数，使用协程执行
+            runBlocking {
+                val deferred = CoroutineScope(Dispatchers.Default).async {
+                    method.invoke(`object`, *parameters)
+                }
+                deferred.await()
+            }
+        } else {
+            // 普通函数直接执行
+            method.invoke(`object`, *parameters)
+        }
         return result?.toString() ?: ""
+    }
+
+    private fun isSuspendFunction(method: Method): Boolean {
+        // suspend 函数的最后一个参数类型是 Continuation
+        return method.parameterTypes.isNotEmpty() &&
+                method.parameterTypes.last().simpleName == "Continuation"
     }
 
     private fun getParameterArr(
