@@ -150,24 +150,31 @@ object CommandRegistry {
      * 构建方法调用参数数组
      */
     private fun getParameterArr(context: BotUtils.Context, method: Method, matcher: Matcher?): Array<Any?> {
-        return method.parameters.map { param ->
-            when (param.type) {
+        val params = method.parameters
+        val result = arrayOfNulls<Any?>(params.size)
+
+        // 对于suspend函数，最后一个参数是Continuation
+        val isSuspend = isSuspendFunction(method)
+        val loopSize = if (isSuspend) params.size - 1 else params.size
+
+        for (i in 0 until loopSize) {
+            result[i] = when (params[i].type) {
                 BotUtils.Context::class.java -> context
                 Matcher::class.java -> matcher
                 else -> null
             }
-        }.toTypedArray()
-    }
+        }
 
+        return result
+    }
 
     /**
      * 判断方法是否为挂起函数
      */
     private fun isSuspendFunction(method: Method): Boolean {
         return method.parameterTypes.isNotEmpty() &&
-                method.parameterTypes.last().simpleName == "Continuation"
+                method.parameterTypes.last().name == "kotlin.coroutines.Continuation"
     }
-
 
     /**
      * 调用挂起函数（反射方式）
@@ -178,18 +185,10 @@ object CommandRegistry {
         parameters: Array<Any?>
     ): String = suspendCancellableCoroutine { continuation ->
         try {
-            // 添加 Continuation 作为最后一个参数
-            val suspendParams = parameters + object : kotlin.coroutines.Continuation<Any> {
-                override val context: kotlin.coroutines.CoroutineContext
-                    get() = continuation.context
-
-                override fun resumeWith(result: Result<Any>) {
-                    result.fold(
-                        onSuccess = { continuation.resume(it.toString()) },
-                        onFailure = { continuation.resumeWithException(it) }
-                    )
-                }
-            }
+            // 对于suspend函数，最后一个参数必须是Continuation
+            // 将传入的continuation作为最后一个参数
+            val suspendParams = parameters.copyOf(parameters.size + 1)
+            suspendParams[suspendParams.size - 1] = continuation
 
             // 执行反射调用
             val result = method.invoke(bean, *suspendParams)
