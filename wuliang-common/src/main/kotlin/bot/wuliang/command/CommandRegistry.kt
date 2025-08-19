@@ -4,6 +4,7 @@ package bot.wuliang.command
 import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.otherUtil.PackageScanner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.springframework.context.ApplicationContext
@@ -119,21 +120,21 @@ object CommandRegistry {
             return invokeMethod(method, bean, parameters)
         }
 
-        suspend fun execute(context: BotUtils.Context, matcher: Matcher): String {
+        fun execute(context: BotUtils.Context, matcher: Matcher): String {
             // 新的调用方式，传递matcher
             val parameters = getParameterArr(context, method, matcher)
 
             return invokeMethod(method, bean, parameters)
         }
 
-        private suspend fun invokeMethod(method: Method, bean: Any, parameters: Array<Any?>): String {
+        private fun invokeMethod(method: Method, bean: Any, parameters: Array<Any?>): String {
             try {
                 // 设置方法可访问
                 method.isAccessible = true
 
                 return if (isSuspendFunction(method)) {
                     // 对于suspend函数，使用专门的调用方法确保在适当的协程上下文中执行
-                    callSuspendMethod(bean, method, parameters)
+                    runBlocking(Dispatchers.Default) { callSuspendMethod(bean, method, parameters) }
                 } else {
                     method.invoke(bean, *parameters)?.toString() ?: ""
                 }
@@ -179,11 +180,12 @@ object CommandRegistry {
         try {
             // 添加 Continuation 作为最后一个参数
             val suspendParams = parameters + object : kotlin.coroutines.Continuation<Any> {
-                override val context: kotlin.coroutines.CoroutineContext = continuation.context
+                override val context: kotlin.coroutines.CoroutineContext
+                    get() = continuation.context
 
                 override fun resumeWith(result: Result<Any>) {
                     result.fold(
-                        onSuccess = { continuation.resume(it?.toString() ?: "") },
+                        onSuccess = { continuation.resume(it.toString()) },
                         onFailure = { continuation.resumeWithException(it) }
                     )
                 }
