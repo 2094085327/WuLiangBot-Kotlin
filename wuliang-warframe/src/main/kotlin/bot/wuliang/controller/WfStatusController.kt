@@ -32,8 +32,6 @@ import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File

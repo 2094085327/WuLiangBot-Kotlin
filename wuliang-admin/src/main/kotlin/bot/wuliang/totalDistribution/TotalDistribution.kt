@@ -10,8 +10,6 @@ import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.dailyAcitve.DailyActive
-import bot.wuliang.distribute.actionConfig.ActionFactory
-import bot.wuliang.distribute.actionConfig.Addition
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.otherUtil.OtherUtil
@@ -54,8 +52,6 @@ import javax.annotation.PostConstruct
 @Component
 @ActionService
 class TotalDistribution @Autowired constructor(
-    private val actionFactory: ActionFactory,
-    private val addition: Addition,
     private val redisService: RedisService,
     private val logService: LogServiceImpl,
     private val dailyActive: DailyActive,

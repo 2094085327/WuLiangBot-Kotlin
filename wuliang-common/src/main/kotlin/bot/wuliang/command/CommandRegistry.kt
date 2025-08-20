@@ -113,18 +113,21 @@ object CommandRegistry {
         private val bean: Any,
         private val method: Method
     ) : BotCommand {
-        override suspend fun execute(context: BotUtils.Context): String {
-            // 对于旧的调用方式，我们不传递matcher
-            val parameters = getParameterArr(context, method, null)
+        // Spring 上下文引用
+        private val applicationContext = CommandRegistry.applicationContext
 
-            return invokeMethod(method, bean, parameters)
+        override suspend fun execute(context: BotUtils.Context): String {
+            // 实时获取 Bean 实例
+            val targetBean = applicationContext.getBean(bean.javaClass)
+            val parameters = getParameterArr(context, method, null)
+            return invokeMethod(method, targetBean, parameters)
         }
 
         fun execute(context: BotUtils.Context, matcher: Matcher): String {
-            // 新的调用方式，传递matcher
+            // 实时获取 Bean 实例
+            val targetBean = applicationContext.getBean(bean.javaClass)
             val parameters = getParameterArr(context, method, matcher)
-
-            return invokeMethod(method, bean, parameters)
+            return invokeMethod(method, targetBean, parameters)
         }
 
         private fun invokeMethod(method: Method, bean: Any, parameters: Array<Any?>): String {
