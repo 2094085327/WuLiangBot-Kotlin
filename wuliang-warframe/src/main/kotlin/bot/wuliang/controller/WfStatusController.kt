@@ -84,7 +84,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/fissureList?type=$urlSuffix",
             imgName = "fissureList-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -119,7 +119,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/voidTrader",
             imgName = "voidTrader-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -132,7 +132,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -150,7 +150,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/sortie",
             imgName = "sortie-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -169,7 +169,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/archonHunt",
             imgName = "archonHuntInfo-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -188,7 +188,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/nightWave",
             imgName = "nightWave-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -351,7 +351,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -443,7 +443,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/incarono",
             imgName = "incarnon-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -531,7 +531,7 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/spirals",
             imgName = "spirals-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)

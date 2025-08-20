@@ -121,7 +121,7 @@ class DailyActive {
         initDailyActive()
         val imageData = WebImgUtil.ImgData(
             imgName = "dailyActive-${UUID.randomUUID()}",
-            element = "body",
+            element = "#app",
             url = "http://localhost:${webImgUtil.usePort}/dailyActive"
         )
         webImgUtil.sendNewImage(context, imageData)

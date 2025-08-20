@@ -130,7 +130,7 @@ class WfMarketController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/riven",
             imgName = "riven-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -212,7 +212,7 @@ class WfMarketController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/lich?url_name=${itemEntity.urlName}&damage=${damage}&element=${element}&ephemera=${ephemera}",
             imgName = "lich-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -227,7 +227,7 @@ class WfMarketController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://localhost:16666/allRivenPrice",
             imgName = "allRivenPrice-${UUID.randomUUID()}",
-            element = "body"
+            element = "#app"
         )
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)

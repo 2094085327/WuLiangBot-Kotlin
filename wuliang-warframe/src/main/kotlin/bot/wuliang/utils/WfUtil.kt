@@ -754,7 +754,6 @@ class WfUtil {
      * 定时更新紫卡数据
      *
      */
-    @Scheduled(cron = "0 0 11 * * ?")
     fun getAllRivenPriceTiming() {
         updateRivenData()
     }
