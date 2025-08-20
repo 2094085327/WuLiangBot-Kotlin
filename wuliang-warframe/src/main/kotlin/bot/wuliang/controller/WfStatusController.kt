@@ -41,6 +41,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.regex.Matcher
 
 
 /**
@@ -62,7 +63,8 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取裂缝信息")
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
-    fun getFissures(context: BotUtils.Context, fissureType: String) {
+    fun getFissures(context: BotUtils.Context, matcher: Matcher) {
+        val fissureType = matcher.group(1)
         // 检查 Redis 缓存是否存在，若不存在则从网络获取数据
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
