@@ -123,7 +123,7 @@ object CommandRegistry {
             return invokeMethod(method, targetBean, parameters)
         }
 
-        fun execute(context: BotUtils.Context, matcher: Matcher): String {
+       override fun execute(context: BotUtils.Context, matcher: Matcher): String {
             // 实时获取 Bean 实例
             val targetBean = applicationContext.getBean(bean.javaClass)
             val parameters = getParameterArr(context, method, matcher)

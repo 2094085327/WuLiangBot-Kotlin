@@ -32,6 +32,7 @@ import bot.wuliang.utils.WfStatus.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -61,11 +62,13 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取裂缝信息")
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
-    suspend fun getFissures(context: BotUtils.Context, fissureType: String) {
+    fun getFissures(context: BotUtils.Context, fissureType: String) {
         // 检查 Redis 缓存是否存在，若不存在则从网络获取数据
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            runBlocking {
                 parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
+            }
         }
 
         // 根据不同的裂缝类型构造图片的 URL
@@ -97,7 +100,8 @@ class WfStatusController @Autowired constructor(
         }
 
         val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
-
+        println(voidTraderList)
+        context.sendMsg(voidTraderList.toString())
         if (voidTraderList.isNullOrEmpty()) {
             context.sendMsg("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
             return
