@@ -103,7 +103,6 @@ class WfStatusController @Autowired constructor(
         }
 
         val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
-        context.sendMsg(voidTraderList.toString())
         if (voidTraderList.isNullOrEmpty()) {
             context.sendMsg("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
             return
@@ -111,7 +110,8 @@ class WfStatusController @Autowired constructor(
 
         val activeVoidList = voidTraderList.filter { it.isActive==true }
         if (activeVoidList.isEmpty()) {
-            context.sendMsg("虚空商人仍未回归...\n也许将在 ${voidTraderList.first().eta} 后抵达 ${voidTraderList.first().node}")
+            val etaTime = wfUtil.formatDuration(Duration.between(Instant.now(), voidTraderList.first().expiry))
+            context.sendMsg("虚空商人仍未回归...\n也许将在 $etaTime 后抵达 ${voidTraderList.first().node}")
             return
         }
 
