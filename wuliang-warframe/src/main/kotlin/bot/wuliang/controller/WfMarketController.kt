@@ -128,7 +128,7 @@ class WfMarketController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/riven",
+            url = "http://${webImgUtil.frontendAddress}/riven",
             imgName = "riven-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -210,7 +210,7 @@ class WfMarketController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/lich?url_name=${itemEntity.urlName}&damage=${damage}&element=${element}&ephemera=${ephemera}",
+            url = "http://${webImgUtil.frontendAddress}/lich?url_name=${itemEntity.urlName}&damage=${damage}&element=${element}&ephemera=${ephemera}",
             imgName = "lich-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -225,7 +225,7 @@ class WfMarketController @Autowired constructor(
     fun getRivenRanking(context: BotUtils.Context, matcher: Matcher) {
         wfUtil.getAllRivenPriceTiming()
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/allRivenPrice",
+            url = "http://${webImgUtil.frontendAddress}/allRivenPrice",
             imgName = "allRivenPrice-${UUID.randomUUID()}",
             element = "#app"
         )

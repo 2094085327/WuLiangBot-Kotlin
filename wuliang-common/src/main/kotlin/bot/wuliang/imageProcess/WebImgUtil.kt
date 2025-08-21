@@ -38,13 +38,21 @@ import javax.imageio.stream.FileImageOutputStream
 @Component
 class WebImgUtil(
     @Value("\${web_config.port}") var usePort: String,
-    @Value("\${web_config.img_bed_path}") var imgBedPath: String
+    @Value("\${web_config.img_bed_path}") var imgBedPath: String,
+    @Value("\${frontend.port}") var frontendPort: String,
+    @Value("\${frontend.host}") var frontendHost: String
 ) {
     @Autowired
     private lateinit var qiNiuService: QiNiuService
 
     @Autowired
     private lateinit var txCosService: CosFileServiceImpl
+
+    /**
+     * 返回前端服务器完整地址(host:port)
+     */
+    val frontendAddress: String
+        get() = "$frontendHost:$frontendPort"
 
     /**
      * 图片相关数据

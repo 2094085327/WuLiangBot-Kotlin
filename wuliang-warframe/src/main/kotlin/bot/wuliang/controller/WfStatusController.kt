@@ -49,6 +49,7 @@ import java.util.regex.Matcher
  * @author Nature Zero
  * @date 2024/6/9 上午12:35
  */
+@Suppress("HttpUrlsUsage")
 @Component
 @ActionService
 class WfStatusController @Autowired constructor(
@@ -82,7 +83,7 @@ class WfStatusController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/fissureList?type=$urlSuffix",
+            url = "http://${webImgUtil.frontendAddress}/fissureList?type=$urlSuffix",
             imgName = "fissureList-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -102,7 +103,6 @@ class WfStatusController @Autowired constructor(
         }
 
         val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
-        println(voidTraderList)
         context.sendMsg(voidTraderList.toString())
         if (voidTraderList.isNullOrEmpty()) {
             context.sendMsg("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
@@ -117,7 +117,7 @@ class WfStatusController @Autowired constructor(
 
         // 当Redis中商人的缓存存在时，直接发送图片
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/voidTrader",
+            url = "http://${webImgUtil.frontendAddress}/voidTrader",
             imgName = "voidTrader-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -130,7 +130,7 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "钢铁")
     fun getSteelPath(context: BotUtils.Context) {
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/steelPath",
+            url = "http://${webImgUtil.frontendAddress}/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -148,7 +148,7 @@ class WfStatusController @Autowired constructor(
             parseDataUtil.parseSorties(data["Sorties"])
         }
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/sortie",
+            url = "http://${webImgUtil.frontendAddress}/sortie",
             imgName = "sortie-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -167,7 +167,7 @@ class WfStatusController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/archonHunt",
+            url = "http://${webImgUtil.frontendAddress}/archonHunt",
             imgName = "archonHuntInfo-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -186,7 +186,7 @@ class WfStatusController @Autowired constructor(
         }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/nightWave",
+            url = "http://${webImgUtil.frontendAddress}/nightWave",
             imgName = "nightWave-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -349,7 +349,7 @@ class WfStatusController @Autowired constructor(
             redisService.setValueWithExpiry(WF_INVASIONS_KEY, invasionsList, 3L, TimeUnit.MINUTES)
         }
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/invasions",
+            url = "http://${webImgUtil.frontendAddress}/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -441,7 +441,7 @@ class WfStatusController @Autowired constructor(
 //        }
 
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/incarono",
+            url = "http://${webImgUtil.frontendAddress}/incarono",
             imgName = "incarnon-${UUID.randomUUID()}",
             element = "#app"
         )
@@ -529,7 +529,7 @@ class WfStatusController @Autowired constructor(
         }
         // 生成和发送图像
         val imgData = WebImgUtil.ImgData(
-            url = "http://localhost:16666/spirals",
+            url = "http://${webImgUtil.frontendAddress}/spirals",
             imgName = "spirals-${UUID.randomUUID()}",
             element = "#app"
         )

@@ -8,6 +8,10 @@ spring:
       matching-strategy: ant-path-matcher
   profiles.active: prod
 
+frontend:
+  port: 16666
+  host: localhost
+
 gensokyo_config:
   port: 15630
 

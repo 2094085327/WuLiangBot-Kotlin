@@ -940,7 +940,7 @@ class LifeRestartUtil @Autowired constructor(
     ) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${realId}-LifeStart-${UUID.randomUUID()}",
-            url = "http://localhost:16666/game/lifeRestart?game_userId=${realId}"
+            url = "http://${webImgUtil.frontendAddress}/game/lifeRestart?game_userId=${realId}"
         )
 
         webImgUtil.sendNewImage(context, imageData)
@@ -1019,7 +1019,7 @@ class LifeRestartUtil @Autowired constructor(
     fun sendGameEnd(context: BotUtils.Context, userInfo: UserInfoEntity) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
-            url = "http://localhost:16666/game/lifeRestart?game_userId=${userInfo.userId}"
+            url = "http://${webImgUtil.frontendAddress}/game/lifeRestart?game_userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(context, imageData)
 
@@ -1042,7 +1042,7 @@ class LifeRestartUtil @Autowired constructor(
 
         val gameOverImgData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
-            url = "http://localhost:16666/game/lifeRestartEndGame?game_userId=${userInfo.userId}"
+            url = "http://${webImgUtil.frontendAddress}/game/lifeRestartEndGame?game_userId=${userInfo.userId}"
         )
         webImgUtil.sendNewImage(context, gameOverImgData)
 

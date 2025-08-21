@@ -89,7 +89,7 @@ class LifeRestartMainController @Autowired constructor(
 
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStartTalent-${UUID.randomUUID()}",
-            url = "http://localhost:16666/game/lifeRestartTalent?game_userId=${userInfo.userId}",
+            url = "http://${webImgUtil.frontendAddress}/game/lifeRestartTalent?game_userId=${userInfo.userId}",
             element = "#app"
         )
         webImgUtil.sendNewImage(context, imageData)

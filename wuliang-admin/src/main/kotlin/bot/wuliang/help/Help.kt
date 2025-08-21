@@ -44,7 +44,7 @@ class Help @Autowired constructor(
         val imageData = WebImgUtil.ImgData(
             imgName = imgName,
             element = "#app",
-            url = "http://localhost:16666/system/help"
+            url = "http://${webImgUtil.frontendAddress}/system/help"
         )
         webImgUtil.sendNewImage(context, imageData)
     }

@@ -12,7 +12,6 @@ import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
@@ -23,7 +22,8 @@ import kotlin.coroutines.resumeWithException
  */
 object CommandRegistry {
     private val commands = ConcurrentHashMap<String, Pair<Class<*>, Method>>() // 存储类和方法
-    private val patternCommands = ConcurrentHashMap<Pattern, Pair<Pair<Class<*>, Method>, String>>() // 存储Pattern和原始regex
+    private val patternCommands =
+        ConcurrentHashMap<Pattern, Pair<Pair<Class<*>, Method>, String>>() // 存储Pattern和原始regex
     private lateinit var applicationContext: ApplicationContext
 
 
@@ -123,7 +123,7 @@ object CommandRegistry {
             return invokeMethod(method, targetBean, parameters)
         }
 
-       override fun execute(context: BotUtils.Context, matcher: Matcher): String {
+        override fun execute(context: BotUtils.Context, matcher: Matcher): String {
             // 实时获取 Bean 实例
             val targetBean = applicationContext.getBean(bean.javaClass)
             val parameters = getParameterArr(context, method, matcher)
@@ -194,15 +194,8 @@ object CommandRegistry {
             suspendParams[suspendParams.size - 1] = continuation
 
             // 执行反射调用
-            val result = method.invoke(bean, *suspendParams)
+            method.invoke(bean, *suspendParams)
 
-            // 检查是否挂起
-            if (result === kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED) {
-                // 等待 Continuation 回调
-            } else {
-                // 直接返回结果
-                continuation.resume(result?.toString() ?: "")
-            }
         } catch (ex: Exception) {
             // 处理反射调用异常
             val cause = ex.cause ?: ex
