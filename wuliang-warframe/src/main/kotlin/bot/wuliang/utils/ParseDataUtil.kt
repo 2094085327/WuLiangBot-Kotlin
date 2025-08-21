@@ -11,7 +11,8 @@ import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
-import bot.wuliang.utils.WfStatus.parseDuration
+import bot.wuliang.utils.TimeUtils.getInstantNow
+import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -83,7 +84,7 @@ class ParseDataUtil {
             nextBoss = nextBoss,
             nextRewardItem = nextRewardItem,
             faction = boss?.faction!!.replaceFaction(),
-            eta = wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(sortie["Expiry"]))),
+            eta = wfUtil.formatDuration(Duration.between(getInstantNow(), parseTimestamp(sortie["Expiry"]))),
             variants = JacksonUtil.parseArray({ variant ->
                 Variants(
                     missionType = redisService.getValueTyped<String>("${keyPrefix}MissionType:${variant["missionType"]?.asText()}"),
@@ -140,7 +141,7 @@ class ParseDataUtil {
             id = "spi:${wfUtil.getStartOfDay().toEpochMilli()}",
             activation = activation,
             expiry = expiry,
-            eta = wfUtil.formatDuration(Duration.between(Instant.now(), expiry)),
+            eta = wfUtil.formatDuration(Duration.between(getInstantNow(), expiry)),
             currentItem = rotationJson!!.get(ind)["name"].asText(),
             currentCost = rotationJson.get(ind)["cost"].asInt(),
             nextItem = rotationJson.get(nextInd)["name"].asText(),
@@ -192,12 +193,13 @@ class ParseDataUtil {
         if (redisService.hasKey(WF_NIGHTWAVE_KEY)) return redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY)
         val expiryTime = parseTimestamp(nightWaveJson["Expiry"])
         val activation = parseTimestamp(nightWaveJson["Activation"])
+        val now = getInstantNow()
         val nightWaveEntity = NightWave(
             id = "nightwave${parseTimestamp(nightWaveJson["Expiry"])}",
             activation = activation,
             expiry = expiryTime,
-            eta = wfUtil.formatDuration(Duration.between(Instant.now(), expiryTime)),
-            startTime = wfUtil.formatDuration(Duration.between(Instant.now(), activation)),
+            eta = wfUtil.formatDuration(Duration.between(now, expiryTime)),
+            startTime = wfUtil.formatDuration(Duration.between(now, activation)),
             tag = nightWaveJson["AffiliationTag"].asText(),
             season = nightWaveJson["Season"].asInt(),
             phase = nightWaveJson["Phase"].asInt(),
@@ -206,7 +208,7 @@ class ParseDataUtil {
             activeChallenges = parseChallenges(nightWaveJson["ActiveChallenges"])
         )
 
-        val expire = Duration.between(Instant.now(), wfUtil.getStartOfNextDay()).seconds
+        val expire = Duration.between(now, wfUtil.getStartOfNextDay()).seconds
         redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expire, TimeUnit.SECONDS)
         return nightWaveEntity
     }
@@ -221,7 +223,7 @@ class ParseDataUtil {
                 id = fissure["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(fissure["Activation"]),
                 expiry = expiry,
-                eta = wfUtil.formatDuration(Duration.between(Instant.now(), expiry)).replace("\\s+".toRegex(), ""),
+                eta = wfUtil.formatDuration(Duration.between(getInstantNow(), expiry)).replace("\\s+".toRegex(), ""),
                 node = node!!.name,
                 missionType = redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}")
                     ?: node.type
@@ -273,7 +275,7 @@ class ParseDataUtil {
         val voidTradersList = JacksonUtil.parseArray({ voidTrader ->
             val activationTime = parseTimestamp(voidTrader["Activation"])
             val isActive = activationTime?.let {
-                Instant.now().isAfter(it)
+                getInstantNow().isAfter(it)
             } ?: false
 
             // 先收集所有需要翻译的物品ID
@@ -334,14 +336,16 @@ class ParseDataUtil {
                     })
             }
 
+            val now = getInstantNow()
+
             VoidTrader(
                 id = voidTrader["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(voidTrader["Activation"]),
                 expiry = parseTimestamp(voidTrader["Expiry"]),
                 eta = if (isActive) {
-                    wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Expiry"])))
+                    wfUtil.formatDuration(Duration.between(now, parseTimestamp(voidTrader["Expiry"])))
                 } else {
-                    wfUtil.formatDuration(Duration.between(Instant.now(), parseTimestamp(voidTrader["Activation"])))
+                    wfUtil.formatDuration(Duration.between(now, parseTimestamp(voidTrader["Activation"])))
                 },
                 isActive = isActive,
                 node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${voidTrader["Node"]?.asText()}")?.name

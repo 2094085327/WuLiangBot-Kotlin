@@ -25,6 +25,7 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.ParseDataUtil
+import bot.wuliang.utils.TimeUtils.formatTimeBySecond
 import bot.wuliang.utils.WfUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
@@ -75,7 +76,7 @@ class WarframeController(
         if (expiry == null) expiry = -1L
         // 更新时间为当前时间（秒）
         if (archonHuntEntity == null) return RespBean.error()
-        archonHuntEntity.eta = wfUtil.formatTimeBySecond(expiry)
+        archonHuntEntity.eta = formatTimeBySecond(expiry)
 
         return RespBean.success(archonHuntEntity)
     }
@@ -88,7 +89,7 @@ class WarframeController(
         if (expiry == null) expiry = -1L
         // 更新时间为当前时间（秒）
         if (sortieEntity == null) return RespBean.error()
-        sortieEntity.eta = wfUtil.formatTimeBySecond(expiry)
+        sortieEntity.eta = formatTimeBySecond(expiry)
 
         return RespBean.success(sortieEntity)
     }
@@ -98,7 +99,7 @@ class WarframeController(
     fun steelPath(): RespBean {
         var (expiry, steelPathEntity) = parseDataUtil.parseSteelPath()
         if (expiry == null) expiry = -1L
-        steelPathEntity!!.eta = wfUtil.formatTimeBySecond(expiry)
+        steelPathEntity!!.eta = formatTimeBySecond(expiry)
 
         return RespBean.success(steelPathEntity)
     }
@@ -170,9 +171,8 @@ class WarframeController(
     @RequestMapping("/nightWave")
     fun nightWave(): RespBean {
         val nightWaveEntity = redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY) ?: return RespBean.error()
-        nightWaveEntity.eta = wfUtil.formatTimeBySecond(Duration.between(Instant.now(), nightWaveEntity.expiry).seconds)
-        nightWaveEntity.startTime =
-            wfUtil.formatTimeBySecond(Duration.between(nightWaveEntity.activation, Instant.now()).seconds)
+        nightWaveEntity.eta = formatTimeBySecond(Duration.between(Instant.now(), nightWaveEntity.expiry).seconds)
+        nightWaveEntity.startTime = formatTimeBySecond(Duration.between(nightWaveEntity.activation, Instant.now()).seconds)
 
         return RespBean.success(nightWaveEntity)
     }
@@ -191,7 +191,7 @@ class WarframeController(
         if (expiry == null) expiry = -1L
         incarnonEntity as WfStatusVo.IncarnonEntity
         // 更新时间为当前时间（秒）
-        incarnonEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
+        incarnonEntity.remainTime = formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
             WF_INCARNON_KEY,
             incarnonEntity,
@@ -213,7 +213,7 @@ class WarframeController(
         if (expiry == null) expiry = -1L
         moodSpiralsEntity as WfStatusVo.MoodSpiralsEntity
         // 更新时间为当前时间（秒）
-        moodSpiralsEntity.remainTime = wfUtil.formatTimeBySecond(expiry)
+        moodSpiralsEntity.remainTime = formatTimeBySecond(expiry)
         redisService.setValueWithExpiry(
             WF_MOODSPIRALS_KEY,
             moodSpiralsEntity,

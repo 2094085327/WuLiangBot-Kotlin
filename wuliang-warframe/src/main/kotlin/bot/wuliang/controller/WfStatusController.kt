@@ -28,7 +28,10 @@ import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.utils.ParseDataUtil
-import bot.wuliang.utils.WfStatus.parseDuration
+import bot.wuliang.utils.TimeUtils
+import bot.wuliang.utils.TimeUtils.formatTimeDifference
+import bot.wuliang.utils.TimeUtils.getNextRefreshTime
+import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -110,7 +113,7 @@ class WfStatusController @Autowired constructor(
 
         val activeVoidList = voidTraderList.filter { it.isActive==true }
         if (activeVoidList.isEmpty()) {
-            val etaTime = wfUtil.formatDuration(Duration.between(Instant.now(), voidTraderList.first().expiry))
+            val etaTime = wfUtil.formatDuration(Duration.between(TimeUtils.getInstantNow(), voidTraderList.first().expiry))
             context.sendMsg("虚空商人仍未回归...\n也许将在 $etaTime 后抵达 ${voidTraderList.first().node}")
             return
         }
@@ -404,7 +407,7 @@ class WfStatusController @Autowired constructor(
             // 设置时间为下周一早上8点
             val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
 
-            val remainTime = wfUtil.formatTimeDifference(currentTime, nextMondayAt8)
+            val remainTime = formatTimeDifference(currentTime, nextMondayAt8)
             val incarnonEntity = WfStatusVo.IncarnonEntity(
                 thisWeekData = WfUtil.Data(
                     ordinary = listOf(currentOrdinaryWeek),
@@ -553,9 +556,9 @@ class WfStatusController @Autowired constructor(
 
         val now = LocalDateTime.now()
         // 每4天刷新一次，计算剩余刷新时间
-        val tenetNextRefresh = wfUtil.getNextRefreshTime(tenetStartDate, now, refreshInterval)
+        val tenetNextRefresh = getNextRefreshTime(tenetStartDate, now, refreshInterval)
         // 计算下一次终幕刷新时间
-        val codaNextRefresh = wfUtil.getNextRefreshTime(codaStartDate, now, refreshInterval)
+        val codaNextRefresh = getNextRefreshTime(codaStartDate, now, refreshInterval)
 
         // 计算剩余时间
         val tenetRemainingTime = Duration.between(now, tenetNextRefresh)

@@ -21,7 +21,7 @@ import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
-import bot.wuliang.utils.WfStatus.replaceTime
+import bot.wuliang.utils.TimeUtils.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
@@ -29,7 +29,6 @@ import com.github.houbb.opencc4j.util.ZhConverterUtil
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.io.File
 import java.net.InetSocketAddress
@@ -703,52 +702,6 @@ class WfUtil {
         )
     }
 
-    // 计算时间差并格式化为字符串
-    fun formatTimeDifference(nowTime: LocalDateTime, endTime: LocalDateTime): String {
-        val timeDifference = StringBuilder()
-
-        // 计算各个时间单位
-        val units = listOf(
-            ChronoUnit.MONTHS to "个月",
-            ChronoUnit.DAYS to "天",
-            ChronoUnit.HOURS to "小时",
-            ChronoUnit.MINUTES to "分",
-            ChronoUnit.SECONDS to "秒",
-        )
-
-        var tempTime = nowTime
-
-        for ((unit, unitName) in units) {
-            val amount = unit.between(tempTime, endTime)
-            if (amount > 0) {
-                timeDifference.append("$amount$unitName")
-                tempTime = tempTime.plus(amount, unit) // 更新临时时间
-            }
-        }
-
-        return timeDifference.toString()
-    }
-
-    fun formatTimeBySecond(seconds: Long): String {
-        val timeDifference = StringBuilder()
-
-        val days = seconds / (24 * 60 * 60)
-        var remainingSeconds = seconds % (24 * 60 * 60)
-
-        val hours = remainingSeconds / (60 * 60)
-        remainingSeconds %= (60 * 60)
-
-        val minutes = remainingSeconds / 60
-        val secondsLeft = remainingSeconds % 60
-
-        if (days > 0) timeDifference.append("${days}天")
-        if (hours > 0) timeDifference.append("${hours}小时")
-        if (minutes > 0) timeDifference.append("${minutes}分钟")
-        timeDifference.append("${secondsLeft}秒")
-
-        return timeDifference.toString()
-    }
-
 
     /**
      * 定时更新紫卡数据
@@ -1157,13 +1110,6 @@ class WfUtil {
         }
 
         return null
-    }
-
-    fun getNextRefreshTime(startDate: LocalDateTime, now: LocalDateTime, interval: Duration): LocalDateTime {
-        val durationSinceStart = Duration.between(startDate, now)
-        val fullCycles = durationSinceStart.toDays() / interval.toDays()
-        val lastRefresh = startDate.plus(interval.multipliedBy(fullCycles))
-        return if (lastRefresh.isBefore(now)) lastRefresh.plus(interval) else lastRefresh
     }
 
     /**
