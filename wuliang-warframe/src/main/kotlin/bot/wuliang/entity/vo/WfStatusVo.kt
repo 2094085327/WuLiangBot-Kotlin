@@ -9,32 +9,6 @@ import bot.wuliang.utils.WfUtil
  * @date 2024/8/21 上午9:38
  */
 class WfStatusVo {
-    /**
-     * 虚空商人货物
-     *
-     * @property item 物品名
-     * @property ducats 杜卡德金币
-     * @property credits 现金
-     */
-    data class VoidTraderItem(
-        val item: String? = null,
-        val ducats: Int? = null,
-        val credits: String? = null
-    )
-
-    /**
-     * 虚空商人信息
-     *
-     * @property location 地点
-     * @property time 离开时间
-     * @property items 带来的物品
-     */
-    data class VoidTraderEntity(
-        val location: String? = null,
-        var time: String? = null,
-        val items: List<VoidTraderItem>? = null
-    )
-
 
     /**
      * 入侵信息

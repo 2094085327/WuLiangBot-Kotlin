@@ -12,6 +12,7 @@ import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
@@ -579,5 +580,24 @@ class WfStatusController @Autowired constructor(
 
         // 发送消息
         context.sendMsg("信条下一次刷新时间: $formattedTenetNextRefresh  剩余时间: $formattedTenetRemainingTime\n终幕下一次刷新时间: $formattedCodaNextRefresh  剩余时间: $formattedCodaRemainingTime")
+    }
+
+    @SystemLog(businessName = "获取圣殿结合仪式目标")
+    @AParameter
+    @Executor(action = "\\b(结合仪式)\\b")
+    fun sanctuarySynthesisTargets(context: BotUtils.Context) {
+        if (!redisService.hasKey(WF_SIMARIS_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseSimaris(data["LibraryInfo"])
+        }
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/simaris",
+            imgName = "simaris-${UUID.randomUUID()}",
+            element = "#app"
+        )
+
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
     }
 }

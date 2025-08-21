@@ -4,6 +4,7 @@ import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
@@ -11,8 +12,14 @@ import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
+import bot.wuliang.utils.StringUtils.formatSpacesToUnderline
 import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getInstantNow
+import bot.wuliang.utils.TimeUtils.getLastDayOfWeek
+import bot.wuliang.utils.TimeUtils.getStartOfDay
+import bot.wuliang.utils.TimeUtils.getStartOfNextDay
+import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
+import bot.wuliang.utils.TimeUtils.getFirstDayOfWeek
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
@@ -29,8 +36,6 @@ import java.util.regex.Pattern
 
 @Component
 class ParseDataUtil {
-    private val wfUtil = WfUtil()
-
     @Autowired
     private lateinit var redisService: RedisService
 
@@ -135,11 +140,11 @@ class ParseDataUtil {
         // 计算下周的索引
         val nextInd = (ind + 1) % 8 // 共有8个周期
 
-        val activation = wfUtil.getFirstDayOfWeek()
-        val expiry = wfUtil.getLastDayOfWeek()
+        val activation = getFirstDayOfWeek()
+        val expiry = getLastDayOfWeek()
 
         val steelPathEntity = SteelPath(
-            id = "spi:${wfUtil.getStartOfDay().toEpochMilli()}",
+            id = "spi:${getStartOfDay().toEpochMilli()}",
             activation = activation,
             expiry = expiry,
             eta = formatDuration(Duration.between(getInstantNow(), expiry)),
@@ -209,7 +214,7 @@ class ParseDataUtil {
             activeChallenges = parseChallenges(nightWaveJson["ActiveChallenges"])
         )
 
-        val expire = Duration.between(now, wfUtil.getStartOfNextDay()).seconds
+        val expire = Duration.between(now, getStartOfNextDay()).seconds
         redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expire, TimeUnit.SECONDS)
         return nightWaveEntity
     }
@@ -258,7 +263,8 @@ class ParseDataUtil {
         }
     }
 
-    fun parseVoidTraders(voidTradersJsonNode: JsonNode): List<VoidTrader> {
+    fun parseVoidTraders(voidTradersJsonNode: JsonNode): List<VoidTrader>? {
+        if (redisService.hasKey(WF_VOIDTRADER_KEY)) return redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
         val untranslatedItems = mutableMapOf<String, String>()
         val translatedItems = mutableMapOf<String, String>()
         val englishOnlyPattern = Regex("^[a-zA-Z\\s\\-.'·]+$")
@@ -356,8 +362,32 @@ class ParseDataUtil {
         }, voidTradersJsonNode)
         val expire = voidTradersList
             .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
-            ?.coerceAtLeast(30)  ?: 300
+            ?.coerceAtLeast(30) ?: 300
         redisService.setValueWithExpiry(WF_VOIDTRADER_KEY, voidTradersList, expire, TimeUnit.SECONDS)
         return voidTradersList
+    }
+
+    fun parseSimaris(simarisJson: JsonNode): Simaris? {
+        if (redisService.hasKey(WF_SIMARIS_KEY)) return redisService.getValueTyped<Simaris>(WF_SIMARIS_KEY)
+        val targetItem = simarisJson["LastCompletedTargetType"].textValue().lowercase()
+        val target = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${targetItem}") ?: return null
+        var targetValue = target.value!!
+        if (targetValue == "远古堕落者") targetValue = "corrupted_ancient"
+        targetValue = targetValue.formatSpacesToUnderline().lowercase()
+        val simarisPersistent =
+            redisService.getValueTyped<SimarisPersistent>("${WF_MARKET_CACHE_KEY}SimarisPersistent:${targetValue}") ?: return null
+        val today = getStartOfDay()
+        val nextDay = getTimeOfNextDay(today)
+        val simaris = Simaris(
+            imageKey = simarisPersistent.imageKey,
+            name = simarisPersistent.name,
+            activation = today,
+            expiry = nextDay,
+            eta = formatDuration(Duration.between(getInstantNow(), nextDay)),
+            locations = simarisPersistent.locations,
+        )
+        val expire = simaris.eta?.parseDuration() ?: 300
+        redisService.setValueWithExpiry(WF_SIMARIS_KEY, simaris, expire, TimeUnit.SECONDS)
+        return simaris
     }
 }

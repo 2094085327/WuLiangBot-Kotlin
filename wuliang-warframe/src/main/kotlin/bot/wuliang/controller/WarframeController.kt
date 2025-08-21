@@ -10,6 +10,7 @@ import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.entity.WfOtherNameEntity
@@ -17,10 +18,7 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.moudles.Fissure
-import bot.wuliang.moudles.NightWave
-import bot.wuliang.moudles.Sortie
-import bot.wuliang.moudles.VoidTrader
+import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
@@ -262,4 +260,20 @@ class WarframeController(
     fun allRivenPrice(): Any? {
         return redisService.getValueTyped<List<WfMarketVo.RivenRank>>("warframe:rivenRanking")
     }
+
+    @ApiOperation("圣殿结合仪式目标信息")
+    @RequestMapping("/simaris")
+    fun simaris():RespBean{
+        if (!redisService.hasKey(WF_SIMARIS_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseSimaris(data["LibraryInfo"])
+        }
+        val simarisEntity = redisService.getValueTyped<Simaris>(WF_SIMARIS_KEY)
+            ?: return RespBean.error("圣殿结合仪式目标没有找到~")
+
+        simarisEntity.eta = formatDuration(Duration.between(getInstantNow(), simarisEntity.expiry))
+
+        return RespBean.success(simarisEntity)
+    }
+
 }

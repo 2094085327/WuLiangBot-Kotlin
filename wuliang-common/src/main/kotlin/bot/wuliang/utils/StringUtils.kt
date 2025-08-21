@@ -398,4 +398,11 @@ object StringUtils : org.apache.commons.lang3.StringUtils() {
         }
         return result.toString()
     }
+
+    /**
+     *  将字符串中的空格替换为下划线
+     */
+    fun String.formatSpacesToUnderline(): String {
+        return this.replace(' ', '_')
+    }
 }

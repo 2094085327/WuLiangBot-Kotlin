@@ -36,7 +36,6 @@ import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -1148,58 +1147,4 @@ class WfUtil {
         executorService.shutdown()
     }
 
-    /**
-     * 获取当前周的第一天（周一）的 UTC 时间
-     */
-    fun getFirstDayOfWeek(): Instant {
-        val now = Instant.now()
-
-        // 获取本周一的时间（UTC 00:00:00）
-        return now
-            .atOffset(ZoneOffset.UTC)
-            .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            .toInstant()
-    }
-
-    fun getLastDayOfWeek(): Instant {
-        val firstDay = getFirstDayOfWeek().atOffset(ZoneOffset.UTC)
-        return firstDay
-            .plusDays(6)
-            .withHour(23)
-            .withMinute(59)
-            .withSecond(59)
-            .withNano(0)
-            .toInstant()
-    }
-
-    fun getStartOfDay(): Instant {
-        val now = Instant.now().atOffset(ZoneOffset.UTC)
-        return now
-            .withHour(0)
-            .withMinute(0)
-            .withSecond(0)
-            .withNano(0)
-            .toInstant()
-    }
-
-    fun getStartOfNextDay(): Instant {
-        val now = Instant.now().atOffset(ZoneOffset.UTC)
-        return now
-            .plusDays(1) // 先将时间加一天
-            .withHour(0) // 设置为当天的 00:00:00
-            .withMinute(0)
-            .withSecond(0)
-            .withNano(0)
-            .toInstant()
-    }
-
-    fun getEndOfDay(): Instant {
-        val now = Instant.now().atOffset(ZoneOffset.UTC)
-        return now
-            .withHour(23)
-            .withMinute(59)
-            .withSecond(59)
-            .withNano(0)
-            .toInstant()
-    }
 }

@@ -92,4 +92,9 @@ object WfMarketConfig {
      * 双衍平原
      */
     const val WF_MOODSPIRALS_KEY = WF_MARKET_CACHE_KEY + "moodSpirals"
+
+    /**
+     * 结合仪式目标
+     */
+    const val WF_SIMARIS_KEY = WF_MARKET_CACHE_KEY + "simaris"
 }

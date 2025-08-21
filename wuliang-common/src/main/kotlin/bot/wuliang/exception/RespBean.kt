@@ -46,6 +46,10 @@ class RespBean(
             return RespBean(respCode.code, respCode.message, obj)
         }
 
+        fun error(obj: Any?): RespBean {
+            return RespBean(RespBeanEnum.ERROR.code, RespBeanEnum.ERROR.message, obj)
+        }
+
         /**
          * 返回结果
          *
@@ -60,7 +64,7 @@ class RespBean(
          *
          * @param result 布尔类型
          */
-        fun toReturn(result: Boolean,obj: Any?): RespBean {
+        fun toReturn(result: Boolean, obj: Any?): RespBean {
             return if (result) success(obj) else error()
         }
 
@@ -70,17 +74,18 @@ class RespBean(
          * @param rows 影响行数
          * @return 操作结果
          */
-        fun toReturn(rows:Int): RespBean {
-           return if (rows > 0) success() else error();
+        fun toReturn(rows: Int): RespBean {
+            return if (rows > 0) success() else error()
         }
+
         /**
          * 响应返回结果
          *
          * @param rows 影响行数
          * @return 操作结果
          */
-        fun toReturn(rows:Int,obj: Any?): RespBean {
-           return if (rows > 0) success(obj) else error();
+        fun toReturn(rows: Int, obj: Any?): RespBean {
+            return if (rows > 0) success(obj) else error()
         }
     }
 }

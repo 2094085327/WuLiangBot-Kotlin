@@ -2,11 +2,9 @@ package bot.wuliang.postInit
 
 import bot.wuliang.config.WARFRAME_DATA
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
-import bot.wuliang.moudles.Boss
-import bot.wuliang.moudles.Info
-import bot.wuliang.moudles.Modifiers
-import bot.wuliang.moudles.Nodes
+import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
+import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +28,7 @@ class WfDataInit {
             launch { initSteelPath() }
             launch { initLanguage() }
             launch { initFissureModifiers() }
+            launch { initSimaris() }
         }
     }
 
@@ -125,6 +124,36 @@ class WfDataInit {
             redisService.setValue(
                 "${WF_MARKET_CACHE_KEY}FissureModifier:${key}",
                 Modifiers(value = value["value"]?.textValue(), num = value["num"]?.asInt())
+            )
+        }
+    }
+
+    /**
+     * 初始化圣殿结合仪式目标与位置
+     */
+    private suspend fun initSimaris() {
+        if (redisService.hasKeyWithPrefix("${WF_MARKET_CACHE_KEY}Simaris:*")) return
+        val simarisJson = withContext(Dispatchers.IO) {
+            objectMapper.readTree(File("$WARFRAME_DATA/synthTargets.json"))
+        }
+
+        simarisJson.forEach { simaris ->
+            redisService.setValue(
+                "${WF_MARKET_CACHE_KEY}SimarisPersistent:${simaris["imageKey"].textValue()}",
+                SimarisPersistent(
+                    imageKey = simaris["imageKey"].textValue(),
+                    name = simaris["name"].textValue(),
+                    locations = simaris["locations"].map {
+                        SimarisLocation(
+                            level = it["level"].textValue(),
+                            faction = it["faction"].textValue().replaceFaction(),
+                            spawnRate = it["spawn_rate"].textValue(),
+                            mission = it["mission"].textValue(),
+                            planet = it["planet"].textValue(),
+                            type = it["type"].textValue(),
+                        )
+                    }
+                )
             )
         }
     }
