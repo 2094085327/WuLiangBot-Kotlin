@@ -37,10 +37,6 @@ object WfMarketConfig {
      * 虚空商人缓存
      */
     const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader"
-    /**
-     * 虚空商人到来缓存
-     */
-    const val WF_VOID_TRADER_COME_KEY = WF_MARKET_CACHE_KEY + "voidTraderCome"
 
     /**
      * 玄骸缓存

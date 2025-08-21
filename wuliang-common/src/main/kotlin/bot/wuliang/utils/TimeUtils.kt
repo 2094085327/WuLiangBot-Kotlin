@@ -21,12 +21,21 @@ object TimeUtils {
     )
 
     /**
-     * 获取当前时间的 Instant 对象，使用 Asia/Shanghai 时区
+     * 获取当前时间的 Instant 对象
      *
-     * @return 当前 Asia/Shanghai 时区的时间 Instant 对象
+     * @return 当前时间 Instant 对象
      */
     fun getInstantNow(): Instant {
-        return ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant()
+        return Instant.now()
+    }
+
+    fun formatDuration(duration: Duration): String {
+        return when {
+            duration.toDays() > 0 -> "${duration.toDays()} 天 ${duration.toHoursPart()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
+            duration.toHours() > 0 -> "${duration.toHours()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
+            duration.toMinutes() > 0 -> "${duration.toMinutes()} 分钟 ${duration.toSecondsPart()} 秒"
+            else -> "${duration.toSecondsPart()} 秒"
+        }
     }
 
     /**

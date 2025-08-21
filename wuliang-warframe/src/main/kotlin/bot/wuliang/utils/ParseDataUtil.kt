@@ -11,6 +11,7 @@ import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
+import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getInstantNow
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
@@ -84,7 +85,7 @@ class ParseDataUtil {
             nextBoss = nextBoss,
             nextRewardItem = nextRewardItem,
             faction = boss?.faction!!.replaceFaction(),
-            eta = wfUtil.formatDuration(Duration.between(getInstantNow(), parseTimestamp(sortie["Expiry"]))),
+            eta = formatDuration(Duration.between(getInstantNow(), parseTimestamp(sortie["Expiry"]))),
             variants = JacksonUtil.parseArray({ variant ->
                 Variants(
                     missionType = redisService.getValueTyped<String>("${keyPrefix}MissionType:${variant["missionType"]?.asText()}"),
@@ -141,7 +142,7 @@ class ParseDataUtil {
             id = "spi:${wfUtil.getStartOfDay().toEpochMilli()}",
             activation = activation,
             expiry = expiry,
-            eta = wfUtil.formatDuration(Duration.between(getInstantNow(), expiry)),
+            eta = formatDuration(Duration.between(getInstantNow(), expiry)),
             currentItem = rotationJson!!.get(ind)["name"].asText(),
             currentCost = rotationJson.get(ind)["cost"].asInt(),
             nextItem = rotationJson.get(nextInd)["name"].asText(),
@@ -198,8 +199,8 @@ class ParseDataUtil {
             id = "nightwave${parseTimestamp(nightWaveJson["Expiry"])}",
             activation = activation,
             expiry = expiryTime,
-            eta = wfUtil.formatDuration(Duration.between(now, expiryTime)),
-            startTime = wfUtil.formatDuration(Duration.between(now, activation)),
+            eta = formatDuration(Duration.between(now, expiryTime)),
+            startTime = formatDuration(Duration.between(now, activation)),
             tag = nightWaveJson["AffiliationTag"].asText(),
             season = nightWaveJson["Season"].asInt(),
             phase = nightWaveJson["Phase"].asInt(),
@@ -223,7 +224,7 @@ class ParseDataUtil {
                 id = fissure["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(fissure["Activation"]),
                 expiry = expiry,
-                eta = wfUtil.formatDuration(Duration.between(getInstantNow(), expiry)).replace("\\s+".toRegex(), ""),
+                eta = formatDuration(Duration.between(getInstantNow(), expiry)).replace("\\s+".toRegex(), ""),
                 node = node!!.name,
                 missionType = redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}")
                     ?: node.type
@@ -343,9 +344,9 @@ class ParseDataUtil {
                 activation = parseTimestamp(voidTrader["Activation"]),
                 expiry = parseTimestamp(voidTrader["Expiry"]),
                 eta = if (isActive) {
-                    wfUtil.formatDuration(Duration.between(now, parseTimestamp(voidTrader["Expiry"])))
+                    formatDuration(Duration.between(now, parseTimestamp(voidTrader["Expiry"])))
                 } else {
-                    wfUtil.formatDuration(Duration.between(now, parseTimestamp(voidTrader["Activation"])))
+                    formatDuration(Duration.between(now, parseTimestamp(voidTrader["Activation"])))
                 },
                 isActive = isActive,
                 node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${voidTrader["Node"]?.asText()}")?.name

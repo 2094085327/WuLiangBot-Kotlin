@@ -25,8 +25,9 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.ParseDataUtil
+import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeBySecond
-import bot.wuliang.utils.WfUtil
+import bot.wuliang.utils.TimeUtils.getInstantNow
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,7 +36,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 
@@ -50,7 +50,6 @@ import java.util.concurrent.TimeUnit
 class WarframeController(
     @Autowired private val wfLexiconService: WfLexiconService,
     @Autowired private val redisService: RedisService,
-    @Autowired private val wfUtil: WfUtil
 ) {
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
@@ -121,12 +120,12 @@ class WarframeController(
             else -> return RespBean.error()
         }
 
-        val now = Instant.now()
+        val now = getInstantNow()
         val result = fissureList
             .filterNotNull()
             .filter(filterPredicate)
             .onEach { fissure ->
-                fissure.eta = wfUtil.formatDuration(Duration.between(now, fissure.expiry))
+                fissure.eta = formatDuration(Duration.between(now, fissure.expiry))
             }
 
         return RespBean.toReturn(result.size, result)
@@ -144,7 +143,7 @@ class WarframeController(
 
         val result = voidTraderList
             .onEach { fissure ->
-                fissure.eta = wfUtil.formatDuration(Duration.between(Instant.now(), fissure.expiry))
+                fissure.eta = formatDuration(Duration.between(getInstantNow(), fissure.expiry))
             }
 
         return RespBean.success(result)
@@ -171,8 +170,8 @@ class WarframeController(
     @RequestMapping("/nightWave")
     fun nightWave(): RespBean {
         val nightWaveEntity = redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY) ?: return RespBean.error()
-        nightWaveEntity.eta = formatTimeBySecond(Duration.between(Instant.now(), nightWaveEntity.expiry).seconds)
-        nightWaveEntity.startTime = formatTimeBySecond(Duration.between(nightWaveEntity.activation, Instant.now()).seconds)
+        nightWaveEntity.eta = formatTimeBySecond(Duration.between(getInstantNow(), nightWaveEntity.expiry).seconds)
+        nightWaveEntity.startTime = formatTimeBySecond(Duration.between(nightWaveEntity.activation, getInstantNow()).seconds)
 
         return RespBean.success(nightWaveEntity)
     }

@@ -644,15 +644,6 @@ class WfUtil {
         }
     }
 
-    fun formatDuration(duration: Duration): String {
-        return when {
-            duration.toDays() > 0 -> "${duration.toDays()} 天 ${duration.toHoursPart()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
-            duration.toHours() > 0 -> "${duration.toHours()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"
-            duration.toMinutes() > 0 -> "${duration.toMinutes()} 分钟 ${duration.toSecondsPart()} 秒"
-            else -> "${duration.toSecondsPart()} 秒"
-        }
-    }
-
     fun getNpcLists(
         weatherData: WfUtilVo.SpiralsData,
         stateId: Int

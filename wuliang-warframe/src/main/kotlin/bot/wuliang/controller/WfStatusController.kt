@@ -29,6 +29,7 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
+import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeDifference
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.TimeUtils.parseDuration
@@ -113,7 +114,8 @@ class WfStatusController @Autowired constructor(
 
         val activeVoidList = voidTraderList.filter { it.isActive==true }
         if (activeVoidList.isEmpty()) {
-            val etaTime = wfUtil.formatDuration(Duration.between(TimeUtils.getInstantNow(), voidTraderList.first().expiry))
+            val arrivalTime = voidTraderList.first().expiry?.minus(Duration.ofDays(2))
+            val etaTime = formatDuration(Duration.between(TimeUtils.getInstantNow(), arrivalTime))
             context.sendMsg("虚空商人仍未回归...\n也许将在 $etaTime 后抵达 ${voidTraderList.first().node}")
             return
         }
@@ -501,7 +503,7 @@ class WfStatusController @Autowired constructor(
                 currentTime,
                 OffsetDateTime.parse(hoursLaterWeatherData.startTime, dateTimeFormatter).toLocalDateTime()
             )
-            val timeUntilNextWeatherFormatted = wfUtil.formatDuration(timeUntilNextWeather)
+            val timeUntilNextWeatherFormatted = formatDuration(timeUntilNextWeather)
 
             // 获取当前和下一个天气的 NPC 和排除场所信息
             val (npcList, excludeNpcList) = wfUtil.getNpcLists(weatherData, currentWeatherData.stateId)
@@ -565,8 +567,8 @@ class WfStatusController @Autowired constructor(
         val codaRemainingTime = Duration.between(now, codaNextRefresh)
 
         // 格式化剩余时间
-        val formattedTenetRemainingTime = wfUtil.formatDuration(tenetRemainingTime)
-        val formattedCodaRemainingTime = wfUtil.formatDuration(codaRemainingTime)
+        val formattedTenetRemainingTime = formatDuration(tenetRemainingTime)
+        val formattedCodaRemainingTime = formatDuration(codaRemainingTime)
 
         // 定义日期时间格式化器
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
