@@ -1,7 +1,7 @@
 package bot.wuliang.help
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService

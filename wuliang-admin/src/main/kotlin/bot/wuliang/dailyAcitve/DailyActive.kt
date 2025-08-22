@@ -3,7 +3,7 @@ package bot.wuliang.dailyAcitve
 import bot.wuliang.botLog.database.service.LogService
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.Executor

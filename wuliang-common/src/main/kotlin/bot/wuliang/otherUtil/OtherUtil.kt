@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
 import java.io.File
@@ -35,15 +34,8 @@ import java.security.MessageDigest
 @Suppress("unused")
 class OtherUtil {
     companion object {
-        var gskPort: String = ""
-
         // 文件数量
         var fileCount = 0
-    }
-
-    @Value("\${gensokyo_config.port}")
-    fun getPort(gensokyoPort: String) {
-        gskPort = gensokyoPort
     }
 
     /**

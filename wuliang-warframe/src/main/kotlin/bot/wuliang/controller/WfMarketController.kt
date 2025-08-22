@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
 import bot.wuliang.distribute.annotation.AParameter

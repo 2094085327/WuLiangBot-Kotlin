@@ -1,7 +1,7 @@
 package bot.wuliang.restart
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.CommonConfig.FILE_CACHE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.controller.SystemResourcesMain

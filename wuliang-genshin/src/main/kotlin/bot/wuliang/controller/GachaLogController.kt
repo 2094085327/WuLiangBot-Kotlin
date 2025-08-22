@@ -3,8 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.botUtil.GensokyoUtil.getRealId
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.GACHA_CACHE_PATH
 import bot.wuliang.config.GACHA_LOG_IMPORT
 import bot.wuliang.distribute.annotation.AParameter
@@ -17,9 +16,6 @@ import bot.wuliang.respEnum.GenshinRespEnum
 import bot.wuliang.service.GaChaLogService
 import bot.wuliang.user.service.UserService
 import bot.wuliang.utils.*
-import com.mikuac.shiro.common.utils.MsgUtils
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
-import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.ui.Model
@@ -64,7 +60,7 @@ class GachaLogController {
     fun recordQuery(context: BotUtils.Context, matcher: Matcher) {
         context.sendMsg(GenshinRespEnum.SEARCH_HISTORY.message)
         updateGachaResources.getDataMain(ResourceUpdateEvent(this))
-        val realId = context.getEvent().getRealId()
+        val realId = context.userId
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
         val gameUid = gameUidFromMatcher.takeIf { it?.isNotEmpty() == true }
             ?: userService.selectGenUidByRealId(realId)
@@ -91,7 +87,7 @@ class GachaLogController {
     @AParameter
     @Executor(action = "删除记录")
     fun deleteGachaLog(context: BotUtils.Context) {
-        val realId = context.getEvent().getRealId()
+        val realId = context.userId
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
@@ -111,27 +107,18 @@ class GachaLogController {
     }
 
     @SystemLog(businessName = "通过二维码获取抽卡记录")
-    @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "\\b抽卡记录\\b")
     fun getGachaLog(context: BotUtils.Context) {
-        val realId = context.getEvent().getRealId()
+        val realId = context.userId
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
 
         context.sendMsg(GenshinRespEnum.DISCLAIMER.message)
-        val sendMsg = MsgUtils.builder().img(webImgUtil.outputStreamToBase64(outputStream)).build()
-        val qrImageMsg = context.sendMsg(sendMsg)
+        webImgUtil.sendNewImage(context,outputStream)
 
         updateGachaResources.getDataMain(ResourceUpdateEvent(this))
 
-        GlobalScope.launch(Dispatchers.IO) {
-            delay(30000)
-            logInfo("撤回二维码")
-            if (qrImageMsg != null) {
-                context.deleteMsg(qrImageMsg.data.messageId)
-            }
-        }
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
             context.sendMsg(qrCodeStatus["message"].textValue())
@@ -172,7 +159,7 @@ class GachaLogController {
     @AParameter
     @Executor(action = "抽卡记录\\s*(\\S.*)")
     fun getGachaLogByUrlGroup(context: BotUtils.Context, matcher: Matcher) {
-        if ((context.getEvent() as AnyMessageEvent).groupId != null) {
+        if (context.groupId != null) {
             context.sendMsg(GenshinRespEnum.SEND_LINK_FAIL.message)
             return
         }
@@ -202,7 +189,7 @@ class GachaLogController {
 
             "0" -> {
                 context.sendMsg(GenshinRespEnum.LINK_SUCCESS.message)
-                val realId = context.getEvent().getRealId()
+                val realId = context.userId
                 MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
 
                 gachaLogUtil.getData(processingUrl)

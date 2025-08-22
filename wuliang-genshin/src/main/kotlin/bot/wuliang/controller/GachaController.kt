@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor

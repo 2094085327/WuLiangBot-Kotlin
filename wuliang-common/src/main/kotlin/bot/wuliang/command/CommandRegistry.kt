@@ -1,7 +1,7 @@
 package bot.wuliang.command
 
 
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.otherUtil.PackageScanner
 import kotlinx.coroutines.Dispatchers

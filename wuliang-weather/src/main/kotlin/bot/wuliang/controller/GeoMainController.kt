@@ -1,14 +1,13 @@
 package bot.wuliang.controller
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.config.GetGeoApi
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.RequestMapping

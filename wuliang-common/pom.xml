@@ -96,6 +96,15 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+
+
+        <!-- https://repo1.maven.org/maven2/io/github/kloping/bot-qqpd-java/ -->
+        <dependency>
+            <groupId>io.github.kloping</groupId>
+            <artifactId>bot-qqpd-java</artifactId>
+            <version>1.5.2-L3</version>
+        </dependency>
     </dependencies>
 
 </project>

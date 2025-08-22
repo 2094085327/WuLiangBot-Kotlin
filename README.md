@@ -96,27 +96,13 @@ spring:
     host: 127.0.0.1
     port: 6379
 
-gensokyo_config:
-  port: 15630
+frontend:
+  port: 16666
+  host: localhost
 
 swagger:
   enabled: true
   pathMapping:
-
-shiro:
-  ws:
-    # 该配置为正向连接示例
-    client:
-      enable: false
-      url: "ws://your-domain:port"
-    # 该配置为反向连接示例
-    server:
-      enable: true
-      url: "/ws/shiro"
-
-warframe:
-  status:
-    trader-cron: "0 40 9 ? * 5"
 
 logging:
   level:
@@ -226,6 +212,13 @@ github:
 
 # 项目自定义配置
 wuLiang:
+  bot-config:
+    # QQ开放平台appid
+    appid: "your_appid"
+    # QQ开放平台token
+    token: "your_token"
+    # QQ开放平台secret
+    secret: "your_secret"
   config:
     # 图床路径，用于自动更新图片
     gallery: "https://your-gallery-domain.com/"
@@ -483,7 +476,7 @@ logging:
 
 ## 特别鸣谢
 
-- [`MisakaTAT/Shiro`](https://github.com/MisakaTAT/Shiro/blob/main/README.md): 本项目采用了MisakaTAT编写的框架，使用此框架实现对QQ机器人官方的实现。
+- [`Kloping/qqpd-bot-java`](https://github.com/MisakaTAT/Shiro/blob/main/README.md): 本项目采用了Kloping编写的机器人SDK，使用此框架实现对QQ机器人官方的对接。
 
 ## 许可证
 

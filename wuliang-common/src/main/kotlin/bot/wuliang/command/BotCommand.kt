@@ -1,6 +1,6 @@
 package bot.wuliang.command
 
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import java.util.regex.Matcher
 
 interface BotCommand {

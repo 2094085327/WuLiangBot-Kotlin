@@ -3,8 +3,7 @@ package bot.wuliang.totalDistribution
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.botLog.logAop.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
+import bot.wuliang.utils.BotUtils.ContextUtil.initializeContext
 import bot.wuliang.command.CommandRegistry
 import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
@@ -20,17 +19,17 @@ import bot.wuliang.service.DirectivesService
 import bot.wuliang.text.Convert
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.mikuac.shiro.annotation.AnyMessageHandler
-import com.mikuac.shiro.annotation.MessageHandlerFilter
-import com.mikuac.shiro.annotation.common.Order
-import com.mikuac.shiro.annotation.common.Shiro
-import com.mikuac.shiro.core.Bot
-import com.mikuac.shiro.dto.event.message.AnyMessageEvent
+import io.github.kloping.qqbot.Starter
+import io.github.kloping.qqbot.api.Intents
+import io.github.kloping.qqbot.api.v2.MessageV2Event
+import io.github.kloping.qqbot.impl.ListenerHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
@@ -39,7 +38,6 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.regex.Matcher
 import javax.annotation.PostConstruct
 
 
@@ -48,7 +46,6 @@ import javax.annotation.PostConstruct
  * @author Nature Zero
  * @date 2024/7/13 下午8:41
  */
-@Shiro
 @Component
 @ActionService
 class TotalDistribution @Autowired constructor(
@@ -57,12 +54,16 @@ class TotalDistribution @Autowired constructor(
     private val dailyActive: DailyActive,
     private val directivesService: DirectivesService,
     private val botConfigService: BotConfigService,
-    @Qualifier("otherUtil") private val otherUtil: OtherUtil
+    @Qualifier("otherUtil") private val otherUtil: OtherUtil,
+    @Value("\${wuLiang.bot-config.appid}") private var appid: String,
+    @Value("\${wuLiang.bot-config.token}") private var token: String,
+    @Value("\${wuLiang.bot-config.secret}") private var secret: String
 ) {
 
     @Autowired
     private lateinit var applicationContext: ApplicationContext
 
+    private lateinit var starter: Starter
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val mapper = ObjectMapper() // 获取 ObjectMapper 对象
@@ -101,40 +102,26 @@ class TotalDistribution @Autowired constructor(
         logInfo("程序关闭...进行关键信息保存")
     }
 
-
     @PostConstruct
-    fun initCommandRegistry() {
-        // 初始化命令注册中心
-        CommandRegistry.init(applicationContext)
-        // 扫描命令
-        CommandRegistry.scanCommands("bot.wuliang")
+    fun initNewSdk() {
+        starter = Starter(appid, token, secret)
+        starter.config.code = Intents.PUBLIC_INTENTS.and(Intents.GROUP_INTENTS)
+        starter.run()
+        starter.registerListenerHost(object : ListenerHost() {
+            // 新SDK消息监听器
+            @EventReceiver
+            fun onMessage(event: MessageV2Event) {
+               runBlocking{
+                   handleNewSdkMessage(event)
+               }
+            }
+        })
     }
 
-
-    @Order(0)
-    @AnyMessageHandler
-    @Suppress("UNCHECKED_CAST")
-    @MessageHandlerFilter(cmd = "(.*)")
-    suspend fun totalDistribution(bot: Bot, event: AnyMessageEvent, matcher: Matcher) {
+    private suspend fun handleNewSdkMessage(event: MessageV2Event) {
         val startTime: Long = System.currentTimeMillis()
-        val context = BotUtils().initialize(event, bot)
-
-        val match = matcher.group(1)
-
-        // 这部分代码为Md帮助信息发送，目前无法使用
-        /*        // 检查帮助配置文件中的 checkCmd 配置，true 则开启未知指令拦截并发送帮助信息
-                val template = templateService.searchByBotIdAndTemplateName(bot.selfId, "help")
-                if (!CommandList.CHECK_COMMAND && template == null) return
-                val templateJson = template!!.content?.let { JacksonUtil.readTree(it) } as ObjectNode
-                val paramsArray = templateJson.with("markdown").withArray("params") as ArrayNode
-                paramsArray.forEach { param ->
-                    param as ObjectNode
-                    val key = param.get("key").asText()
-                    updateParam(param, key, matchedCommands, descriptions)
-                    //            val encodedInputBase64 =
-//                Base64.getEncoder().encodeToString(templateJson.toString().toByteArray())
-//            context.sendMsg(event, "[CQ:markdown,data=base64://$encodedInputBase64]", false)
-                }*/
+        val context =   initializeContext(event)
+        val match =  context.message
 
         val allEnableConfig =
             Convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
@@ -143,33 +130,31 @@ class TotalDistribution @Autowired constructor(
             return
         }
 
-
         val directivesMatch = directivesService.selectDirectivesMatch(match).any { directive ->
             directive.regex?.toRegex()?.matches(match) ?: false
         }
 
         if (!directivesMatch) {
-            val directivesList = redisService.getValue(DIRECTIVES_KEY) as List<DirectivesEntity>
-            val matchedCommands = otherUtil.findMatchingStrings(match, directivesList.map { it.directiveName!! })
+            val directivesList = redisService.getValueTyped<List<DirectivesEntity>>(DIRECTIVES_KEY)
+            val matchedCommands = directivesList?.let {directive-> otherUtil.findMatchingStrings(match, directive.map { it.directiveName!! }) }
             context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
             val endTime: Long = System.currentTimeMillis()
-            val contextVo = context.createContextVo()
+            // 简化处理新SDK的上下文信息
             val logEntity = LogEntity(
                 businessName = "未知指令",
                 classPath = "TotalDistribution",
-                methodName = "totalDistribution",
+                methodName = "handleNewSdkMessage",
                 cmdText = match,
-                eventType = contextVo.messageType,
-                groupId = contextVo.groupId,
-                userId = contextVo.userId,
-                botId = contextVo.botId,
+                eventType = context.messageType,
+                groupId = context.groupId,
+                userId = context.userId,
+                botId = context.botId,
                 costTime = endTime - startTime,
                 createTime = LocalDateTime.now()
             )
             logService.insertLog(logEntity)
             return
         }
-
 
         // 使用命令模式替代的反射调用，支持正则表达式
         val commandWithMatcher = CommandRegistry.getCommandWithMatcher(match)
@@ -193,5 +178,14 @@ class TotalDistribution @Autowired constructor(
         } else {
             context.sendMsg("找不到命令")
         }
+    }
+
+
+    @PostConstruct
+    fun initCommandRegistry() {
+        // 初始化命令注册中心
+        CommandRegistry.init(applicationContext)
+        // 扫描命令
+        CommandRegistry.scanCommands("bot.wuliang")
     }
 }

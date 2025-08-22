@@ -39,7 +39,7 @@ data class LogEntity(
     val userId: String? = null,
 
     @TableField(value = "bot_id")
-    val botId: Long? = null,
+    val botId: String? = null,
 
     @TableField(value = "cost_time")
     var costTime: Long? = null,

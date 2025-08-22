@@ -1,8 +1,7 @@
 package bot.wuliang.controller
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.botUtil.GensokyoUtil.getRealUserId
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.TALENT_SELECT_Limit
 import bot.wuliang.config.TALENT_SELECT_NOT_COMPLETE
 import bot.wuliang.distribute.annotation.AParameter
@@ -69,7 +68,7 @@ class LifeRestartMainController @Autowired constructor(
             return
         }
 
-        val realId = context.getEvent().getRealUserId()
+        val realId = context.userId
 
         val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
         val userInfo = UserInfoEntity(
@@ -102,7 +101,7 @@ class LifeRestartMainController @Autowired constructor(
     @AParameter
     @Executor(action = "天赋 (.*)")
     fun getTalent(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.getEvent().getRealUserId()
+        val realId = context.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.CHOOSE_TALENT)
@@ -138,7 +137,7 @@ class LifeRestartMainController @Autowired constructor(
     @AParameter
     @Executor(action = "随机")
     fun randomAttribute(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.getEvent().getRealUserId()
+        val realId = context.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.UNALLOCATED)
@@ -174,7 +173,7 @@ class LifeRestartMainController @Autowired constructor(
     @AParameter
     @Executor(action = "分配 (.*)")
     fun dealAttribute(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.getEvent().getRealUserId()
+        val realId = context.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
 
@@ -221,7 +220,7 @@ class LifeRestartMainController @Autowired constructor(
     @AParameter
     @Executor(action = "继续(.*)")
     fun continueGame(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.getEvent().getRealUserId()
+        val realId = context.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         // 判断错误状态

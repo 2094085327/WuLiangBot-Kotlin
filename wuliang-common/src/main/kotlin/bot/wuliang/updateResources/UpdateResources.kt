@@ -3,7 +3,7 @@ package bot.wuliang.updateResources
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.CommonConfig.HELP_JSON
 import bot.wuliang.config.CommonConfig.RESOURCES_PATH
 import bot.wuliang.distribute.annotation.AParameter

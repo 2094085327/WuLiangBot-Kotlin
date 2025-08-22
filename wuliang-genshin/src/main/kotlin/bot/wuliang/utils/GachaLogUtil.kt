@@ -3,7 +3,6 @@ package bot.wuliang.utils
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
-import bot.wuliang.botUtil.BotUtils
 import bot.wuliang.config.*
 import bot.wuliang.entity.GenShinItemEntity
 import bot.wuliang.httpUtil.HttpUtil

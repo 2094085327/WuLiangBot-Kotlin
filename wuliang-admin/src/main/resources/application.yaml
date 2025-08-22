@@ -12,27 +12,9 @@ frontend:
   port: 16666
   host: localhost
 
-gensokyo_config:
-  port: 15630
-
 swagger:
   enabled: true
   pathMapping:
-
-shiro:
-  ws:
-    # 该配置为正向连接示例
-    client:
-      enable: false
-      url: "ws://your-domain:port"
-    # 该配置为反向连接示例
-    server:
-      enable: true
-      url: "/ws/shiro"
-
-warframe:
-  status:
-    trader-cron: "0 40 9 ? * 5"
 
 logging:
   level:

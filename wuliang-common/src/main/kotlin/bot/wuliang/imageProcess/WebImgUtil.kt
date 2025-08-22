@@ -2,7 +2,7 @@ package bot.wuliang.imageProcess
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.botUtil.BotUtils.Context
+import bot.wuliang.utils.BotUtils.Context
 import bot.wuliang.config.CommonConfig.IMG_CACHE_PATH
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.qiNiuCos.QiNiuService
@@ -12,7 +12,8 @@ import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
-import com.mikuac.shiro.common.utils.MsgUtils
+import io.github.kloping.qqbot.entities.ex.Image
+import io.github.kloping.qqbot.entities.ex.MessageAsyncBuilder
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -347,8 +348,21 @@ class WebImgUtil(
      */
     fun sendNewImage(context: Context, imgData: ImgData) {
         val imgUrl = getImgUrl(imgData)
-        val sendMsg = MsgUtils.builder().img(imgUrl).build()
-        context.sendMsg(sendMsg)
+        val builder = MessageAsyncBuilder()
+        builder.append(Image(imgUrl))
+        context.sendMsg(builder)
+    }
+
+    /**
+     * 发送新图片
+     *
+     * @param context 上下文
+     * @param bytes 图片数据
+     */
+    fun sendNewImage(context: Context,  bytes:ByteArray) {
+        val builder = MessageAsyncBuilder()
+        builder.append(Image(bytes))
+        context.sendMsg(builder)
     }
 
 

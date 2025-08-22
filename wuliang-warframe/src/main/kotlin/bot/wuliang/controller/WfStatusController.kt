@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
 import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.botUtil.BotUtils
+import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY

@@ -1,10 +1,9 @@
 package bot.wuliang.botLog.logAop
 
-import bot.wuliang.botUtil.BotUtils
-import bot.wuliang.botUtil.vo.ContextVo
+import bot.wuliang.utils.BotUtils
 
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
-import bot.wuliang.botUtil.BotUtils.ContextUtil.createContextVo
+import bot.wuliang.utils.BotUtils.ContextUtil.initializeContext
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
@@ -57,14 +56,12 @@ class LogAspect {
         // 请求参数的json形式
         val args = joinPoint.args
 
-        var cmdText: String? = null
-        var contextVo: ContextVo? = null
+        var context: BotUtils.Context? = null
         args.forEach { arg ->
             run {
                 if (arg is BotUtils.Context) {
                     val event = arg.getEvent()
-                    cmdText = event.message
-                    contextVo = arg.createContextVo()
+                    context = initializeContext(event)
                 }
             }
         }
@@ -75,11 +72,11 @@ class LogAspect {
                 businessName = businessName,
                 classPath = classPath,
                 methodName = methodName,
-                cmdText = cmdText,
-                eventType = contextVo?.messageType,
-                groupId = contextVo?.groupId,
-                userId = contextVo?.userId,
-                botId = contextVo?.botId
+                cmdText = context?.message,
+                eventType = context?.messageType,
+                groupId = context?.groupId,
+                userId = context?.userId,
+                botId = context?.botId
             )
         )
     }
