@@ -103,7 +103,7 @@ class TotalDistribution @Autowired constructor(
     }
 
     @PostConstruct
-    fun initNewSdk() {
+    fun initJavaQQBotSdk() {
         starter = Starter(appid, token, secret)
         starter.config.code = Intents.PUBLIC_INTENTS.and(Intents.GROUP_INTENTS)
         starter.run()
@@ -112,13 +112,13 @@ class TotalDistribution @Autowired constructor(
             @EventReceiver
             fun onMessage(event: MessageV2Event) {
                runBlocking{
-                   handleNewSdkMessage(event)
+                   handleQQMessage(event)
                }
             }
         })
     }
 
-    private suspend fun handleNewSdkMessage(event: MessageV2Event) {
+    private suspend fun handleQQMessage(event: MessageV2Event) {
         val startTime: Long = System.currentTimeMillis()
         val context =   initializeContext(event)
         val match =  context.message

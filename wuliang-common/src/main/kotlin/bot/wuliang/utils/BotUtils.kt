@@ -56,7 +56,7 @@ class BotUtils {
         }
 
         val message: String
-            get() = event.message[0].toString()
+            get() = event.message[0].toString().trimStart()
 
         // 获取用户ID的方法
         val userId: String
