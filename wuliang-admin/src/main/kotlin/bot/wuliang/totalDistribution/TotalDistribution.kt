@@ -121,7 +121,7 @@ class TotalDistribution @Autowired constructor(
     private suspend fun handleQQMessage(event: MessageV2Event) {
         val startTime: Long = System.currentTimeMillis()
         val context =   initializeContext(event)
-        val match =  context.message
+        val match = context.message.replaceFirst("/", "")
 
         val allEnableConfig =
             Convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
