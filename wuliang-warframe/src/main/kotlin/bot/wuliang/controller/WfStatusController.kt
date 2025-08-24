@@ -37,6 +37,9 @@ import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -122,13 +125,19 @@ class WfStatusController @Autowired constructor(
         }
 
         // 当Redis中商人的缓存存在时，直接发送图片
-        val imgData = WebImgUtil.ImgData(
-            url = "http://${webImgUtil.frontendAddress}/voidTrader",
-            imgName = "voidTrader-${UUID.randomUUID()}",
-            element = "#app"
-        )
-
-        webImgUtil.sendNewImage(context, imgData)
+        // 使用协程并发处理多个激活的虚空商人
+        runBlocking {
+            List(activeVoidList.size) { index ->
+                async(Dispatchers.IO) {
+                    val imgData = WebImgUtil.ImgData(
+                        url = "http://${webImgUtil.frontendAddress}/voidTrader?activeNum=$index",
+                        imgName = "voidTrader-${UUID.randomUUID()}-$index",
+                        element = "#app"
+                    )
+                    webImgUtil.sendNewImage(context, imgData)
+                }
+            }.awaitAll()
+        }
     }
 
     @SystemLog(businessName = "获取钢铁之路兑换信息")

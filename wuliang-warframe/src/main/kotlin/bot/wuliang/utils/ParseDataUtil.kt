@@ -276,6 +276,7 @@ class ParseDataUtil {
             "Display" to "展示图",
             "Booster" to "加成",
             "Weapon" to "武器",
+            "Badge Item" to "徽章",
             "<ARCHWING>" to ""
         )
 
@@ -319,7 +320,7 @@ class ParseDataUtil {
 
             // 现在再创建物品列表，此时translatedItems已包含所有可能的翻译
             val inventory = voidTrader["Manifest"]?.let { manifest ->
-                JacksonUtil.parseArray({ voidTraderItem ->
+                val items = JacksonUtil.parseArray({ voidTraderItem ->
                     val voidItem = voidTraderItem["ItemType"]?.asText() ?: ""
                     val formattedItem = StringUtils.formatWithSpaces(voidItem.split("/").lastOrNull() ?: "")
 
@@ -338,10 +339,111 @@ class ParseDataUtil {
                     )
                 }, manifest)
                     .filter { item -> !item.item.isNullOrBlank() }
-                    .sortedWith(compareByDescending {
-                        it.item?.let { it1 -> Pattern.compile("[\\u4e00-\\u9fff]+").matcher(it1).find() }
-                    })
+
+                // 基于最长公共子串的前缀/后缀识别算法
+                fun longestCommonPrefix(s1: String, s2: String): String {
+                    val minLength = minOf(s1.length, s2.length)
+                    for (i in 0 until minLength) {
+                        if (s1[i] != s2[i]) {
+                            return s1.substring(0, i)
+                        }
+                    }
+                    return s1.substring(0, minLength)
+                }
+
+                fun longestCommonSuffix(s1: String, s2: String): String {
+                    val minLength = minOf(s1.length, s2.length)
+                    for (i in 1..minLength) {
+                        if (s1[s1.length - i] != s2[s2.length - i]) {
+                            return s1.substring(s1.length - i + 1)
+                        }
+                    }
+                    return s1.substring(s1.length - minLength)
+                }
+
+                // 计算所有物品之间的公共前缀和后缀
+                val prefixCount = mutableMapOf<String, Int>()
+                val suffixCount = mutableMapOf<String, Int>()
+
+                // 两两比较计算公共前缀和后缀
+                for (i in items.indices) {
+                    for (j in i + 1 until items.size) {
+                        val item1 = items[i].item ?: continue
+                        val item2 = items[j].item ?: continue
+
+                        val commonPrefix = longestCommonPrefix(item1.lowercase(), item2.lowercase())
+                        val commonSuffix = longestCommonSuffix(item1.lowercase(), item2.lowercase())
+
+                        // 只考虑有一定长度的公共前缀/后缀（至少2个字符）
+                        if (commonPrefix.length >= 2) {
+                            prefixCount[commonPrefix] = prefixCount.getOrDefault(commonPrefix, 0) + 1
+                        }
+
+                        if (commonSuffix.length >= 2) {
+                            suffixCount[commonSuffix] = suffixCount.getOrDefault(commonSuffix, 0) + 1
+                        }
+                    }
+                }
+
+                // 确定常见前缀和后缀（出现次数>=2）
+                val commonPrefixes = prefixCount.filter { it.value >= 2 }.keys
+                val commonSuffixes = suffixCount.filter { it.value >= 2 }.keys
+
+                // 找到物品的最佳匹配前缀/后缀
+                fun findBestPrefix(itemName: String): String {
+                    val lowerItemName = itemName.lowercase()
+                    return commonPrefixes
+                        .filter { lowerItemName.startsWith(it) }
+                        .maxByOrNull { it.length } ?: ""
+                }
+
+                fun findBestSuffix(itemName: String): String {
+                    val lowerItemName = itemName.lowercase()
+                    return commonSuffixes
+                        .filter { lowerItemName.endsWith(it) }
+                        .maxByOrNull { it.length } ?: ""
+                }
+
+                // 排序逻辑
+                items.sortedWith(compareBy<VoidTraderItem> { item ->
+                    // 首先将有分组的物品排在前面
+                    val hasCommonPrefix = findBestPrefix(item.item ?: "").isNotEmpty()
+                    val hasCommonSuffix = findBestSuffix(item.item ?: "").isNotEmpty()
+
+                    // 没有分组的物品排在后面（返回1），有分组的排在前面（返回0）
+                    if (hasCommonPrefix || hasCommonSuffix) 0 else 1
+                }.thenBy { item ->
+                    // 然后按前缀分组
+                    findBestPrefix(item.item ?: "")
+                }.thenBy { item ->
+                    // 再按后缀分组
+                    findBestSuffix(item.item ?: "")
+                }.thenBy { item ->
+                    // 再按基础名称排序（去除常见前缀和后缀）
+                    val itemName = item.item ?: ""
+                    val lowerItemName = itemName.lowercase()
+                    val bestPrefix = findBestPrefix(itemName)
+                    val bestSuffix = findBestSuffix(itemName)
+
+                    var result = lowerItemName
+                    if (bestPrefix.isNotEmpty()) {
+                        result = result.substring(bestPrefix.length).trim()
+                    }
+                    if (bestSuffix.isNotEmpty()) {
+                        if (result.endsWith(bestSuffix)) {
+                            result = result.substring(0, result.length - bestSuffix.length).trim()
+                        }
+                    }
+                    result
+                }.thenByDescending { item ->
+                    // 优先显示包含中文的物品
+                    item.item?.let { Pattern.compile("[\\u4e00-\\u9fff]+").matcher(it).find() } ?: false
+                }.thenBy { item ->
+                    // 最后按完整名称排序
+                    item.item?.lowercase() ?: ""
+                })
             }
+
 
             val now = getInstantNow()
 

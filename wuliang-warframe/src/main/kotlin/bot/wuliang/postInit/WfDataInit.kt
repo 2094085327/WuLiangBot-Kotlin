@@ -106,7 +106,7 @@ class WfDataInit {
         }
         languageJson.fields().forEach { (key, value) ->
             redisService.setValue(
-                "${WF_MARKET_CACHE_KEY}Languages:${key}",
+                "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}",
                 Info(value = value["value"]?.textValue(), desc = value["desc"]?.textValue())
             )
         }
