@@ -21,6 +21,7 @@ import bot.wuliang.utils.TimeUtils.getStartOfNextDay
 import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
 import bot.wuliang.utils.TimeUtils.getFirstDayOfWeek
 import bot.wuliang.utils.TimeUtils.parseDuration
+import bot.wuliang.utils.TimeUtils.toNow
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -33,6 +34,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 @Component
 class ParseDataUtil {
@@ -42,8 +44,14 @@ class ParseDataUtil {
     @Autowired
     private lateinit var wfLexiconService: WfLexiconService
 
+    @Autowired
+    private lateinit var wfUtil: WfUtil
+
     /**
      * 通用解析常规突击任务（每日突击与周突击）
+     * @param sortiesJson 突击任务数据
+     * @param cacheKey 缓存key
+     * @param missionKey 突击任务数据中的任务列表key
      */
     private fun parseCommonSortie(
         sortiesJson: JsonNode,
@@ -124,6 +132,10 @@ class ParseDataUtil {
         return parseCommonSortie(sortiesJson, WF_ARCHONHUNT_KEY, "Missions")
     }
 
+    /**
+     * 解析钢铁之路
+     * 每周一的 8:00 自动运行一次
+     */
     @Scheduled(cron = "1 0 8 * * 1")
     fun parseSteelPath(): Pair<Long?, SteelPath?> {
         if (redisService.hasKey(WF_STEELPATH_KEY)) return redisService.getExpireAndValueTyped<SteelPath>(
@@ -168,6 +180,11 @@ class ParseDataUtil {
             ?.let { Instant.ofEpochMilli(it) }
     }
 
+    /**
+     * 解析午夜电波挑战任务
+     *
+     * @param challengesNode 午夜电波挑战任务数据
+     */
     private fun parseChallenges(challengesNode: JsonNode?): List<Challenges> {
         return challengesNode?.let {
             JacksonUtil.parseArray({ challenge ->
@@ -180,10 +197,12 @@ class ParseDataUtil {
                     isDaily = isDaily,
                     isElite = isElite,
                     isPermanent = challenge["Permanent"]?.asBoolean() ?: false,
-                    title = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${challengeText.lowercase()}")?.value
-                        ?: StringUtils.formatWithSpaces(challengeText.split("/").lastOrNull() ?: ""),
-                    desc = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${challengeText.lowercase()}")?.desc
-                        ?: StringUtils.formatWithSpaces(challengeText.split("/").lastOrNull() ?: ""),
+                    title = wfUtil.getLanguageValue(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
+                        challengeText.split("/").lastOrNull() ?: ""
+                    ),
+                    desc = wfUtil.getLanguageDesc(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
+                        challengeText.split("/").lastOrNull() ?: ""
+                    ),
                     reputation = when {
                         isDaily -> 1000
                         isElite -> 7000
@@ -194,7 +213,10 @@ class ParseDataUtil {
         } ?: emptyList()
     }
 
-
+    /**
+     * 解析午夜电波
+     * @param nightWaveJson 午夜电波Json
+     */
     fun parseNightWave(nightWaveJson: JsonNode): NightWave? {
         if (redisService.hasKey(WF_NIGHTWAVE_KEY)) return redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY)
         val expiryTime = parseTimestamp(nightWaveJson["Expiry"])
@@ -219,6 +241,12 @@ class ParseDataUtil {
         return nightWaveEntity
     }
 
+
+    /**
+     * 解析裂缝
+     * @param fissureJson 裂缝数据
+     * @param isStorm 是否是九重天裂缝
+     */
     fun parseFissureArray(fissureJson: JsonNode, isStorm: Boolean = false): List<Fissure> {
         val fissureEntity = JacksonUtil.parseArray({ fissure ->
             val node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${fissure["Node"]?.asText()}")
@@ -244,6 +272,11 @@ class ParseDataUtil {
         return fissureEntity
     }
 
+    /**
+     * 解析裂缝
+     * @param fissureJson 裂缝数据
+     * @param stormFissureJson 九重天裂缝数据
+     */
     suspend fun parseFissure(fissureJson: JsonNode, stormFissureJson: JsonNode): List<Fissure?>? {
         if (redisService.hasKey(WF_FISSURE_KEY)) return redisService.getValueTyped<List<Fissure?>>(WF_FISSURE_KEY)
 
@@ -263,8 +296,14 @@ class ParseDataUtil {
         }
     }
 
+    /**
+     * 解析虚空交易
+     * @param voidTradersJsonNode 虚空商人Json数据Node
+     */
     fun parseVoidTraders(voidTradersJsonNode: JsonNode): List<VoidTrader>? {
-        if (redisService.hasKey(WF_VOIDTRADER_KEY)) return redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
+        if (redisService.hasKey(WF_VOIDTRADER_KEY)) return redisService.getValueTyped<List<VoidTrader>>(
+            WF_VOIDTRADER_KEY
+        )
         val untranslatedItems = mutableMapOf<String, String>()
         val translatedItems = mutableMapOf<String, String>()
         val englishOnlyPattern = Regex("^[a-zA-Z\\s\\-.'·]+$")
@@ -469,15 +508,19 @@ class ParseDataUtil {
         return voidTradersList
     }
 
+    /**
+     * 解析圣殿结合仪式目标信息
+     * @param simarisJson 圣殿结合仪式目标Json
+     */
     fun parseSimaris(simarisJson: JsonNode): Simaris? {
         if (redisService.hasKey(WF_SIMARIS_KEY)) return redisService.getValueTyped<Simaris>(WF_SIMARIS_KEY)
         val targetItem = simarisJson["LastCompletedTargetType"].textValue().lowercase()
-        val target = redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${targetItem}") ?: return null
-        var targetValue = target.value!!
-        if (targetValue == "远古堕落者") targetValue = "corrupted_ancient"
-        targetValue = targetValue.formatSpacesToUnderline().lowercase()
+        var target = wfUtil.getLanguageValue(targetItem) ?: return null
+        if (target == "远古堕落者") target = "corrupted_ancient"
+        target = target.formatSpacesToUnderline().lowercase()
         val simarisPersistent =
-            redisService.getValueTyped<SimarisPersistent>("${WF_MARKET_CACHE_KEY}SimarisPersistent:${targetValue}") ?: return null
+            redisService.getValueTyped<SimarisPersistent>("${WF_MARKET_CACHE_KEY}SimarisPersistent:${target}")
+                ?: return null
         val today = getStartOfDay()
         val nextDay = getTimeOfNextDay(today)
         val simaris = Simaris(
@@ -491,5 +534,63 @@ class ParseDataUtil {
         val expire = simaris.eta?.parseDuration() ?: 300
         redisService.setValueWithExpiry(WF_SIMARIS_KEY, simaris, expire, TimeUnit.SECONDS)
         return simaris
+    }
+
+    /**
+     * 解析入侵信息
+     * @param invasionsJson 入侵信息Json
+     */
+    fun parseInvasions(invasionsJson: JsonNode): List<Invasions>? {
+        val invasionsList = JacksonUtil.parseArray({ invasions ->
+            val count = invasions["Count"].intValue()
+            val activation = parseTimestamp(invasions["Activation"])
+            val completedRuns = abs(count)
+            val elapsedMillis = activation?.let { abs(toNow(it)) }
+            val requiredRuns = invasions["Goal"].intValue()
+            val remainingRuns = requiredRuns.minus(completedRuns)
+            val remainingTime = if (completedRuns > 0) {
+                remainingRuns.times((elapsedMillis?.div(completedRuns) ?: 0))
+            } else {
+                // 当还没有完成任何运行时，无法估算剩余时间
+                -9999L
+            }
+            val faction = invasions["Faction"].textValue()
+            val vsInfestation = faction == "FC_INFESTATION"
+
+            Invasions(
+                id = invasions["_id"].get("\$oid")?.asText(),
+                activation = activation,
+                eta = if (remainingTime != -9999L) remainingTime.let { Duration.ofMillis(it) }
+                    ?.let { formatDuration(it) } else "无法估算",
+                desc = wfUtil.getLanguageValue(invasions["LocTag"].asText().lowercase()),
+                faction = faction.replaceFaction(),
+                defenderFaction = invasions["DefenderFaction"].textValue().replaceFaction(),
+                node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${invasions["Node"]?.asText()}")?.name
+                    ?: invasions["Node"]?.asText(),
+                count = count,
+                requiredRuns = requiredRuns,
+                completion = if (vsInfestation) (1 + count / requiredRuns) * 100 else (1 + count / requiredRuns) * 50,
+                completed = invasions["Completed"].booleanValue(),
+                vsInfestation = vsInfestation,
+                attackerReward = if (invasions["AttackerReward"].has("countedItems")) JacksonUtil.parseArray({ item ->
+                    Modifiers(
+                        wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
+                        item["ItemCount"].intValue()
+                    )
+                }, invasions["AttackerReward"]["countedItems"]) else null,
+                defenderReward = JacksonUtil.parseArray({ item ->
+                    Modifiers(
+                        wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
+                        item["ItemCount"].intValue()
+                    )
+                }, invasions["DefenderReward"]["countedItems"]),
+            )
+        }, invasionsJson)
+
+        val expire = invasionsList
+            .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
+            ?.coerceAtMost(300)
+            ?.coerceAtLeast(30) ?: 300
+        return invasionsList
     }
 }

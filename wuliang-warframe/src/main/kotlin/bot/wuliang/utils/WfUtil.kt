@@ -6,6 +6,7 @@ import bot.wuliang.config.WARFRAME_MARKET_ITEMS
 import bot.wuliang.config.WARFRAME_MARKET_LICH_AUCTIONS
 import bot.wuliang.config.WARFRAME_MARKET_RIVEN_AUCTIONS
 import bot.wuliang.config.WARFRAME_MARKET_SISTER_AUCTIONS
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenEntity
@@ -16,6 +17,7 @@ import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyManager
 import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.httpUtil.entity.ProxyInfo
+import bot.wuliang.moudles.Info
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfMarketItemService
@@ -1144,6 +1146,17 @@ class WfUtil {
 
         // 关闭线程池
         executorService.shutdown()
+    }
+
+    fun getLanguageValue(key: String): String? {
+        return redisService.getValueTyped<Info>(
+            "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
+        )?.value
+    }
+    fun getLanguageDesc(key: String): String? {
+        return redisService.getValueTyped<Info>(
+            "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
+        )?.desc
     }
 
 }

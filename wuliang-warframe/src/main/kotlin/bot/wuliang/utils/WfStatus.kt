@@ -3,8 +3,11 @@ package bot.wuliang.utils
 object WfStatus {
     private val factionReplacements = mapOf(
         "Grineer" to "G系",
+        "FC_GRINEER" to "G系",
         "Corpus" to "C系",
+        "FC_CORPUS" to "C系",
         "Infested" to "I系",
+        "FC_INFESTATION" to "I系",
         "Infestation" to "I系",
         "Orokin" to "O系",
         "奥罗金" to "O系",

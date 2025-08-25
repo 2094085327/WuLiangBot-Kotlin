@@ -30,6 +30,20 @@ object TimeUtils {
         return Instant.now()
     }
 
+    /**
+     * 获取指定时间与当前时间的时间差
+     *
+     * @param instant 指定时间 instant 对象
+     */
+    fun toNow(instant: Instant):Long{
+        return Duration.between(getInstantNow(), instant).toMillis()
+    }
+
+    /**
+     * 格式化持续时间为可读字符串
+     *
+     * @param duration 持续时间
+     */
     fun formatDuration(duration: Duration): String {
         return when {
             duration.toDays() > 0 -> "${duration.toDays()} 天 ${duration.toHoursPart()} 小时 ${duration.toMinutesPart()} 分钟 ${duration.toSecondsPart()} 秒"

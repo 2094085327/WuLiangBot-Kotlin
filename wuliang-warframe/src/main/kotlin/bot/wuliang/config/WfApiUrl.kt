@@ -71,36 +71,6 @@ const val WARFRAME_MARKET_SISTER_WEAPONS = "$WARFRAME_MARKET_BASE_URL/sister/wea
 const val WARFRAME_MARKET_LOCATION = "$WARFRAME_MARKET_BASE_URL/locations"
 
 /**
- * 裂缝数据
- */
-const val WARFRAME_STATUS_FISSURES = "$WARFRAME_STATUS_BASE_URL/pc/fissures/"
-
-/**
- * 虚空商人
- */
-const val WARFRAME_STATUS_VOID_TRADER = "$WARFRAME_STATUS_BASE_URL/pc/voidTrader"
-
-/**
- * 钢铁之路
- */
-const val WARFRAME_STATUS_STEEL_PATH = "$WARFRAME_STATUS_BASE_URL/pc/steelPath"
-
-/**
- * 日常突击
- */
-const val WARFRAME_STATUS_SORTIE = "$WARFRAME_STATUS_BASE_URL/pc/sortie"
-
-/**
- * 执刑官突击
- */
-const val WARFRAME_STATUS_ARCHON_HUNT = "$WARFRAME_STATUS_BASE_URL/pc/archonHunt"
-
-/**
- * 午夜电波
- */
-const val WARFRAME_STATUS_NIGHT_WAVE = "$WARFRAME_STATUS_BASE_URL/pc/nightwave"
-
-/**
  * 火卫二世界状态
  */
 const val WARFRAME_STATUS_PHOBOS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cambionCycle"
