@@ -2,6 +2,9 @@ package bot.wuliang.updateResources
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class UpdateResourcesUtil {
@@ -58,6 +61,23 @@ class UpdateResourcesUtil {
         folder.listFiles()?.forEach { file ->
             logInfo("删除缓存：${file.name}")
             file.delete()
+        }
+    }
+
+    /**
+     * 等待资源准备就绪
+     */
+    suspend fun waitForResources(filePath: String) {
+        val helpJsonFile = File(filePath) // 根据实际路径调整
+        withContext(Dispatchers.IO) {
+            var attempts = 0
+            while (!helpJsonFile.exists() && attempts < 30) { // 最多等待30秒
+                delay(1000) // 等待1秒
+                attempts++
+            }
+            if (!helpJsonFile.exists()) {
+                throw RuntimeException("资源文件未准备就绪，初始化失败")
+            }
         }
     }
 }

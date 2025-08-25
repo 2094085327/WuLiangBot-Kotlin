@@ -4,6 +4,7 @@ import bot.wuliang.config.WARFRAME_DATA
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
+import bot.wuliang.updateResources.UpdateResourcesUtil
 import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
@@ -19,8 +20,12 @@ class WfDataInit {
     @Autowired
     private lateinit var redisService: RedisService
 
+    private val updateResources = UpdateResourcesUtil()
+
     @PostConstruct
     fun initData() = runBlocking {
+        updateResources.waitForResources("$WARFRAME_DATA/sortieData.json")
+
         coroutineScope {
             launch { initSortie() }
             launch { initMissionType() }
