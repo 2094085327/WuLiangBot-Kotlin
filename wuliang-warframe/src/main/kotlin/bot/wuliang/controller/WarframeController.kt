@@ -29,6 +29,7 @@ import bot.wuliang.utils.TimeUtils.getInstantNow
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -66,7 +67,7 @@ class WarframeController(
     }
 
     @ApiOperation("执刑官数据")
-    @RequestMapping("/archonHunt")
+    @GetMapping("/archonHunt")
     fun archonHunt(): RespBean {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, archonHuntEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_ARCHONHUNT_KEY)
@@ -79,7 +80,7 @@ class WarframeController(
     }
 
     @ApiOperation("每日突击数据")
-    @RequestMapping("/sortie")
+    @GetMapping("/sortie")
     fun sortie(): RespBean {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, sortieEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_SORTIE_KEY)
@@ -92,7 +93,7 @@ class WarframeController(
     }
 
     @ApiOperation("钢路奖励")
-    @RequestMapping("/steelPath")
+    @GetMapping("/steelPath")
     fun steelPath(): RespBean {
         var (expiry, steelPathEntity) = parseDataUtil.parseSteelPath()
         if (expiry == null) expiry = -1L
@@ -102,7 +103,7 @@ class WarframeController(
     }
 
     @ApiOperation("裂缝信息")
-    @RequestMapping("/fissureList")
+    @GetMapping("/fissureList")
     suspend fun fissureList(@RequestParam("type") type: String): RespBean {
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
@@ -130,8 +131,8 @@ class WarframeController(
     }
 
     @ApiOperation("虚空商人信息")
-    @RequestMapping("/voidTrader")
-    fun voidTrader():RespBean{
+    @GetMapping("/voidTrader")
+    fun voidTrader(): RespBean {
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseVoidTraders(data["VoidTraders"])
@@ -165,21 +166,28 @@ class WarframeController(
     }
 
     @ApiOperation("电波信息")
-    @RequestMapping("/nightWave")
+    @GetMapping("/nightWave")
     fun nightWave(): RespBean {
         val nightWaveEntity = redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY) ?: return RespBean.error()
         nightWaveEntity.eta = formatTimeBySecond(Duration.between(getInstantNow(), nightWaveEntity.expiry).seconds)
-        nightWaveEntity.startTime = formatTimeBySecond(Duration.between(nightWaveEntity.activation, getInstantNow()).seconds)
+        nightWaveEntity.startTime =
+            formatTimeBySecond(Duration.between(nightWaveEntity.activation, getInstantNow()).seconds)
 
         return RespBean.success(nightWaveEntity)
     }
 
     @ApiOperation("入侵信息")
-    @RequestMapping("/invasions")
-    @Suppress("UNCHECKED_CAST")
+    @GetMapping("/invasions")
     fun invasions(): RespBean {
-        val invasions = redisService.getValue(WF_INVASIONS_KEY) as List<WfStatusVo.IncarnonEntity>
-        return RespBean.toReturn(invasions.size, invasions)
+        if (!redisService.hasKey(WF_INVASIONS_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseInvasions(data["Invasions"])
+        }
+
+        val invasionsList = redisService.getValueTyped<List<Invasions>>(WF_INVASIONS_KEY)
+            ?: return RespBean.error()
+
+        return RespBean.toReturn(invasionsList.size, invasionsList)
     }
 
     @RequestMapping("/incarnon")
@@ -204,7 +212,7 @@ class WarframeController(
         return redisService.getValue(WF_INCARNON_RIVEN_KEY) as Map<String, String>?
     }
 
-    @RequestMapping("/spirals")
+    @GetMapping("/spirals")
     fun spirals(): WfStatusVo.MoodSpiralsEntity? {
         var (expiry, moodSpiralsEntity) = redisService.getExpireAndValue(WF_MOODSPIRALS_KEY)
         if (expiry == null) expiry = -1L
@@ -220,7 +228,7 @@ class WarframeController(
         return moodSpiralsEntity
     }
 
-    @RequestMapping("/allOtherName")
+    @GetMapping("/allOtherName")
     @Suppress("UNCHECKED_CAST")
     fun allOtherName(): RespBean {
         if (redisService.getValue(WF_ALL_OTHER_NAME_KEY) == null) {
@@ -262,8 +270,8 @@ class WarframeController(
     }
 
     @ApiOperation("圣殿结合仪式目标信息")
-    @RequestMapping("/simaris")
-    fun simaris():RespBean{
+    @GetMapping("/simaris")
+    fun simaris(): RespBean {
         if (!redisService.hasKey(WF_SIMARIS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSimaris(data["LibraryInfo"])

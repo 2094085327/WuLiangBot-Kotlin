@@ -2,6 +2,7 @@ package bot.wuliang.utils
 
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
@@ -541,6 +542,7 @@ class ParseDataUtil {
      * @param invasionsJson 入侵信息Json
      */
     fun parseInvasions(invasionsJson: JsonNode): List<Invasions>? {
+        if (redisService.hasKey(WF_INVASIONS_KEY)) return redisService.getValueTyped<List<Invasions>>(WF_INVASIONS_KEY)
         val invasionsList = JacksonUtil.parseArray({ invasions ->
             val count = invasions["Count"].intValue()
             val activation = parseTimestamp(invasions["Activation"])
@@ -569,7 +571,7 @@ class ParseDataUtil {
                     ?: invasions["Node"]?.asText(),
                 count = count,
                 requiredRuns = requiredRuns,
-                completion = if (vsInfestation) (1 + count / requiredRuns) * 100 else (1 + count / requiredRuns) * 50,
+                completion = if (vsInfestation) (1 + count.toDouble() / requiredRuns.toDouble()) * 100 else (1 + count.toDouble() / requiredRuns.toDouble()) * 50,
                 completed = invasions["Completed"].booleanValue(),
                 vsInfestation = vsInfestation,
                 attackerReward = if (invasions["AttackerReward"].has("countedItems")) JacksonUtil.parseArray({ item ->
@@ -586,11 +588,13 @@ class ParseDataUtil {
                 }, invasions["DefenderReward"]["countedItems"]),
             )
         }, invasionsJson)
+        val completedInvasions = invasionsList.filter { it.completed == false }
 
-        val expire = invasionsList
+        val expire = completedInvasions
             .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
-            ?.coerceAtMost(300)
-            ?.coerceAtLeast(30) ?: 300
-        return invasionsList
+            ?.coerceAtMost(10)
+            ?.coerceAtLeast(5) ?: 10
+        redisService.setValueWithExpiry(WF_INVASIONS_KEY, completedInvasions, expire, TimeUnit.MINUTES)
+        return completedInvasions
     }
 }

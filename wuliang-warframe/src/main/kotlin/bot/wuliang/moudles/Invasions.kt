@@ -53,7 +53,7 @@ data class Invasions(
     /**
      * 入侵的完成百分比。如果达到 0，防守方获胜 Grineer vs. Corpus 入侵从 50 开始，Infested 入侵从 100 开始
      */
-    var completion: Int? = null,
+    var completion: Double? = null,
 
     /**
      * 入侵是否结束
