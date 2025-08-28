@@ -93,7 +93,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/fissureList?type=$urlSuffix",
             imgName = "fissureList-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeFissure"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -147,7 +148,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".wfSteelPath"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -165,7 +167,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/sortie",
             imgName = "sortie-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeSortie"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -184,7 +187,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/archonHunt",
             imgName = "archonHuntInfo-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeArchonHunt"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -203,7 +207,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/nightWave",
             imgName = "nightWave-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeNightWave"
         )
 
         webImgUtil.sendNewImage(context, imgData)
@@ -340,7 +345,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/invasions",
             imgName = "invasions-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeInvasions"
         )
 
         webImgUtil.sendNewImage(context, imgData)

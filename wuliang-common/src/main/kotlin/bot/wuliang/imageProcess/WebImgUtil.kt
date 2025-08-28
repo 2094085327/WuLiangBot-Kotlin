@@ -70,6 +70,7 @@ class WebImgUtil(
     data class ImgData(
         val url: String,
         val element: String? = "body",
+        val waitElement: String? = element,
         val imgName: String? = null,
         val imgPath: String? = null,
         val width: Int? = null,
@@ -219,7 +220,7 @@ class WebImgUtil(
             var byteArray = thisPage.screenshot(Page.ScreenshotOptions().setFullPage(true))
 
             if (imgData.element != null) {
-                thisPage.waitForSelector(imgData.element)
+                thisPage.waitForSelector(imgData.waitElement)
                 val body: ElementHandle = thisPage.querySelector(imgData.element)!!
 
                 // 截图
