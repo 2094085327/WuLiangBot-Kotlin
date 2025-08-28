@@ -573,7 +573,7 @@ class WfStatusController @Autowired constructor(
 
     @SystemLog(businessName = "获取圣殿结合仪式目标")
     @AParameter
-    @Executor(action = "\\b(结合仪式)\\b")
+    @Executor(action = "\\b(结合仪式|结合|结合目标|大黄脸)\\b")
     fun sanctuarySynthesisTargets(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_SIMARIS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
@@ -583,7 +583,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/simaris",
             imgName = "simaris-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeSimaris"
         )
 
         webImgUtil.sendNewImage(context, imgData)
