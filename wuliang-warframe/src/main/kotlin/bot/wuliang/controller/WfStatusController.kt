@@ -334,34 +334,8 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b入侵\\b")
     fun invasions(context: BotUtils.Context) {
         if (!redisService.hasKey(WF_INVASIONS_KEY)) {
-            val invasionsArray = HttpUtil.doGetJson(
-                WARFRAME_STATUS_INVASIONS,
-                params = mapOf("language" to "zh"),
-                proxy = proxyUtil.randomProxy()
-            )
-            val invasionsList = mutableListOf<WfStatusVo.InvasionsEntity>()
-            invasionsArray.forEach { invasionsJson ->
-                if (!invasionsJson["completed"].booleanValue()) {
-                    val entity = WfStatusVo.InvasionsEntity(
-                        node = invasionsJson["node"].textValue().turnZhHans(),
-                        invasionsDetail = listOf(
-                            WfStatusVo.Invasions(
-                                itemString = if (invasionsJson["attacker"]["faction"].textValue() == "Infested") "无" else invasionsJson["attacker"]["reward"]["itemString"].textValue()
-                                    .turnZhHans(),
-                                factions = invasionsJson["attacker"]["faction"].textValue().replaceFaction()
-                            ),
-                            WfStatusVo.Invasions(
-                                itemString = if (invasionsJson["defender"]["faction"].textValue() == "Infested") "无" else invasionsJson["defender"]["reward"]["itemString"].textValue()
-                                    .turnZhHans(),
-                                factions = invasionsJson["defender"]["faction"].textValue().replaceFaction()
-                            )
-                        ),
-                        completion = invasionsJson["completion"].doubleValue()
-                    )
-                    invasionsList.add(entity)
-                }
-            }
-            redisService.setValueWithExpiry(WF_INVASIONS_KEY, invasionsList, 3L, TimeUnit.MINUTES)
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseInvasions(data["Invasions"])
         }
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/invasions",
