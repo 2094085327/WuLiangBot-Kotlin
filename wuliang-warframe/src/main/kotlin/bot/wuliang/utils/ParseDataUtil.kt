@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
@@ -135,9 +134,7 @@ class ParseDataUtil {
 
     /**
      * 解析钢铁之路
-     * 每周一的 8:00 自动运行一次
      */
-    @Scheduled(cron = "1 0 8 * * 1")
     fun parseSteelPath(): Pair<Long?, SteelPath?> {
         if (redisService.hasKey(WF_STEELPATH_KEY)) return redisService.getExpireAndValueTyped<SteelPath>(
             WF_STEELPATH_KEY
