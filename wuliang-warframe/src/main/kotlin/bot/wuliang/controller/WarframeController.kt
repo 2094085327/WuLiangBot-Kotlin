@@ -213,19 +213,14 @@ class WarframeController(
     }
 
     @GetMapping("/spirals")
-    fun spirals(): WfStatusVo.MoodSpiralsEntity? {
-        var (expiry, moodSpiralsEntity) = redisService.getExpireAndValue(WF_MOODSPIRALS_KEY)
+    fun spirals(): RespBean {
+        var (expiry, moodSpiralsEntity) = redisService.getExpireAndValueTyped<MoodSpirals>(WF_MOODSPIRALS_KEY)
         if (expiry == null) expiry = -1L
-        moodSpiralsEntity as WfStatusVo.MoodSpiralsEntity
+        if (moodSpiralsEntity == null) return RespBean.error()
         // 更新时间为当前时间（秒）
         moodSpiralsEntity.remainTime = formatTimeBySecond(expiry)
-        redisService.setValueWithExpiry(
-            WF_MOODSPIRALS_KEY,
-            moodSpiralsEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return moodSpiralsEntity
+
+        return RespBean.success(moodSpiralsEntity)
     }
 
     @GetMapping("/allOtherName")

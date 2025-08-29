@@ -24,8 +24,8 @@ import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
+import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.VoidTrader
-import bot.wuliang.otherUtil.OtherUtil.STConversion.turnZhHans
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.utils.ParseDataUtil
@@ -34,7 +34,6 @@ import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeDifference
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.TimeUtils.parseDuration
-import bot.wuliang.utils.WfStatus.replaceFaction
 import bot.wuliang.utils.WfUtil
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
@@ -503,7 +502,7 @@ class WfStatusController @Autowired constructor(
                     .map { it.name }
 
             // 创建 MoodSpiralsEntity 实例
-            val moodSpiralsEntity = WfStatusVo.MoodSpiralsEntity(
+            val moodSpiralsEntity = MoodSpirals(
                 currentState = currentWeatherState,
                 damageType = damageType,
                 npc = npcList,
@@ -526,7 +525,8 @@ class WfStatusController @Autowired constructor(
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/spirals",
             imgName = "spirals-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeSpirals"
         )
 
         webImgUtil.sendNewImage(context, imgData)
