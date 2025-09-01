@@ -10,6 +10,7 @@ const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
 const val WARFRAME_STATUS_URL = "https://content.warframe.com/dynamic/worldState.php"
+const val WARFRAME_WEEKLY_RIVEN_PC = "https://www-static.warframe.com/repos/weeklyRivensPC.json"
 
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
@@ -43,11 +44,9 @@ const val WARFRAME_MARKET_RIVEN_ATTRIBUTES = "$WARFRAME_MARKET_BASE_URL/riven/at
 const val WARFRAME_MARKET_RIVEN_AUCTIONS_BASE = "$WARFRAME_MARKET_BASE_URL/auctions"
 
 /**
- * 热门紫卡
+ * WM紫卡
  */
-const val WARFRAME_MARKET_RIVEN_AUCTIONS_HOT = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/popular"
 const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=riven"
-const val WARFRAME_WEEKLY_RIVEN = "https://www-static.warframe.com/repos/weeklyRivensPC.json"
 
 /**
  * Market 玄骸武器拍卖

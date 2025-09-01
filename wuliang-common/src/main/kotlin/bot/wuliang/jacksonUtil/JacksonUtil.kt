@@ -38,6 +38,26 @@ object JacksonUtil {
     }
 
     /**
+     * 转换单个JavaScript对象为标准JSON
+     */
+    fun convertSingleJsObjectToStandardJson(jsObject: String): String {
+        var result = jsObject
+
+        // 处理键值对，给键加上双引号
+        result = result.replace(Regex("""([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)([^:])""")) { match ->
+            "${match.groupValues[1]}\"${match.groupValues[2]}\"${match.groupValues[3]}${match.groupValues[4]}"
+        }
+
+        // 处理单引号字符串，替换为双引号
+        result = result.replace(Regex("""'([^']*)'""")) { match ->
+            "\"${match.groupValues[1].replace("\"", "\\\"")}\""
+        }
+
+        return result
+    }
+
+
+    /**
      * 将Json字符串转换为对象
      */
     fun readTree(content: Any): JsonNode {

@@ -1,18 +1,25 @@
 package bot.wuliang.utils
 
+import bot.wuliang.config.WARFRAME_WEEKLY_RIVEN_PC
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
+import bot.wuliang.entity.WfRivenEntity
+import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
+import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.StringUtils.formatSpacesToUnderline
 import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getInstantNow
@@ -21,6 +28,7 @@ import bot.wuliang.utils.TimeUtils.getStartOfDay
 import bot.wuliang.utils.TimeUtils.getStartOfNextDay
 import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
 import bot.wuliang.utils.TimeUtils.getFirstDayOfWeek
+import bot.wuliang.utils.TimeUtils.getNextMonday
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.TimeUtils.toNow
 import bot.wuliang.utils.WfStatus.replaceFaction
@@ -43,6 +51,9 @@ class ParseDataUtil {
 
     @Autowired
     private lateinit var wfLexiconService: WfLexiconService
+
+    @Autowired
+    private lateinit var wfRivenService: WfRivenService
 
     @Autowired
     private lateinit var wfUtil: WfUtil
@@ -593,5 +604,73 @@ class ParseDataUtil {
             ?.coerceAtLeast(5) ?: 10
         redisService.setValueWithExpiry(WF_INVASIONS_KEY, completedInvasions, expire, TimeUnit.MINUTES)
         return completedInvasions
+    }
+
+    fun parseWeeklyRiven() {
+        if (redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) && redisService.hasKey(WF_RIVEN_REROLLED_KEY)) return
+        val data = HttpUtil.doGetStr(WARFRAME_WEEKLY_RIVEN_PC)
+        val jsonData = JacksonUtil.readTree(JacksonUtil.convertSingleJsObjectToStandardJson(data))
+        val rawRivenList = JacksonUtil.parseArray({ eachRiven ->
+            Riven(
+                itemType = eachRiven["itemType"].textValue(),
+                compatibility = eachRiven["compatibility"].textValue(),
+                rerolled = eachRiven["rerolled"].booleanValue(),
+                avg = eachRiven["avg"].doubleValue(),
+                stddev = eachRiven["stddev"].doubleValue(),
+                min = eachRiven["min"].intValue(),
+                max = eachRiven["max"].intValue(),
+                pop = eachRiven["pop"].intValue(),
+                median = eachRiven["median"].doubleValue()
+            )
+        }, jsonData)
+
+        // itemType到中文的映射
+        val itemTypeToChineseMap = mapOf(
+            "Rifle Riven Mod" to "步枪未开",
+            "Pistol Riven Mod" to "手枪未开",
+            "Melee Riven Mod" to "近战未开",
+            "Shotgun Riven Mod" to "霰弹枪未开",
+            "Kitgun Riven Mod" to "组合枪未开",
+            "Zaw Riven Mod" to "Zaw未开",
+            "Archgun Riven Mod" to "Archgun未开"
+        )
+
+        // 批量获取所有需要转换的compatibility值
+        val compatibilityValues = rawRivenList.mapNotNull { it.compatibility }
+        val compatibilityMap = if (compatibilityValues.isNotEmpty()) {
+            if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
+                val entities = redisService.getValueTyped<List<WfRivenEntity>>(WF_MARKET_RIVEN_KEY)
+                entities?.associate { it.enName to it.zhName } ?: emptyMap()
+            } else {
+                // 批量查询数据库获取所有compatibility对应的中文名
+                val entities = wfRivenService.selectAllRivenData()
+                entities.associate { it.enName to it.zhName }
+            }
+        } else {
+            emptyMap()
+        }
+
+        // 使用映射表转换compatibility值
+        val rivenList = rawRivenList.map { riven ->
+            val compatibility = when {
+                riven.compatibility != null -> {
+                    compatibilityMap[riven.compatibility] ?: riven.compatibility
+                }
+                itemTypeToChineseMap.containsKey(riven.itemType) -> {
+                    itemTypeToChineseMap[riven.itemType]
+                }
+                else -> null
+            }
+            riven.copy(compatibility = compatibility)
+        }
+
+        // 根据rerolled字段将列表分成两个列表
+        val rerolledList = rivenList.filter { it.rerolled == true }
+        val unRerolledList = rivenList.filter { it.rerolled == false }
+
+        val expire = Duration.between(Instant.now(), getNextMonday()).seconds
+
+        redisService.setValueWithExpiry(WF_RIVEN_UN_REROLLED_KEY, unRerolledList, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(WF_RIVEN_REROLLED_KEY, rerolledList, expire, TimeUnit.SECONDS)
     }
 }

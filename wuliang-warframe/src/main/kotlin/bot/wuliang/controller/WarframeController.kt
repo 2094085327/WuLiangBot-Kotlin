@@ -10,6 +10,8 @@ import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
@@ -258,10 +260,31 @@ class WarframeController(
         }
     }
 
+    @ApiOperation("紫卡排行榜数据")
+    @GetMapping("/allRivenPrice")
+    fun allRivenPrice(
+        @RequestParam("type") type: String?,
+        @RequestParam("sort") sort: String? = "desc",
+        @RequestParam("rerolled") rerolled: Boolean = false
+    ): RespBean {
+        if (!redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) || !redisService.hasKey(WF_RIVEN_REROLLED_KEY)) {
+            parseDataUtil.parseWeeklyRiven()
+        }
 
-    @RequestMapping("/allRivenPrice")
-    fun allRivenPrice(): Any? {
-        return redisService.getValueTyped<List<WfMarketVo.RivenRank>>("warframe:rivenRanking")
+        val redisKey = if (rerolled) WF_RIVEN_REROLLED_KEY else WF_RIVEN_UN_REROLLED_KEY
+        val rivenList = redisService.getValueTyped<List<Riven>>(redisKey) ?: return RespBean.error()
+        val result = if (type != null) rivenList.filter { it.itemType == type } else rivenList
+
+        val filteredResult = result.filter { it.median != null }
+
+        val sortResult = when (sort ?: "desc") {
+            "asc" -> filteredResult.sortedWith(compareBy({ it.pop ?: 0 }, { it.median }))
+            "desc" -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0 }.thenByDescending { it.median })
+            else -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0 }.thenByDescending { it.median })
+        }
+
+
+        return RespBean.success(sortResult)
     }
 
     @ApiOperation("圣殿结合仪式目标信息")

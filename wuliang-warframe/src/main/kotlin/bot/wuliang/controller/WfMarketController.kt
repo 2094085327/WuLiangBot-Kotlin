@@ -219,20 +219,6 @@ class WfMarketController @Autowired constructor(
         webImgUtil.deleteImg(imgData = imgData)
     }
 
-    @SystemLog(businessName = "获取WM市场紫卡均价")
-    @AParameter
-    @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)\\b")
-    fun getRivenRanking(context: BotUtils.Context, matcher: Matcher) {
-        wfUtil.getAllRivenPriceTiming()
-        val imgData = WebImgUtil.ImgData(
-            url = "http://${webImgUtil.frontendAddress}/allRivenPrice",
-            imgName = "allRivenPrice-${UUID.randomUUID()}",
-            element = "#app"
-        )
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
-    }
-
     @SystemLog(businessName = "获取物品Wiki链接")
     @AParameter
     @Executor(action = "wiki (.*)")

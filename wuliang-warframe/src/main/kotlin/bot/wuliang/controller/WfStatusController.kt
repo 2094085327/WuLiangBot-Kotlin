@@ -12,6 +12,8 @@ import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
+import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
@@ -63,7 +65,6 @@ class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
     private val redisService: RedisService,
-    private val proxyUtil: ProxyUtil,
     private val parseDataUtil: ParseDataUtil
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -587,6 +588,27 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeSimaris"
         )
 
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
+    }
+
+    @SystemLog(businessName = "获取DE紫卡数据")
+    @AParameter
+    @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)(\\s+.*)?$")
+    fun getRivenRanking(context: BotUtils.Context, matcher: Matcher) {
+        if (!redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) || !redisService.hasKey(WF_RIVEN_REROLLED_KEY)) {
+            parseDataUtil.parseWeeklyRiven()
+        }
+
+        val params = matcher.group(2)?.trim() ?: ""
+        val urlParams = wfUtil.parseRivenParams(params)
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/allRivenPrice$urlParams",
+            imgName = "allRivenPrice-${UUID.randomUUID()}",
+            element = "#app",
+            waitElement = ".warframeRivenAllPrice"
+        )
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }

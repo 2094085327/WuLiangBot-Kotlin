@@ -4,6 +4,7 @@ import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.*
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -12,6 +13,7 @@ import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
+import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
@@ -39,6 +41,9 @@ class WfTranslateLexicon {
 
     @Autowired
     lateinit var wfMarketItemService: WfMarketItemService
+
+    @Autowired
+    lateinit var redisService: RedisService
 
     /**
      * 获取Json数据并进行格式化
@@ -330,7 +335,10 @@ class WfTranslateLexicon {
                     lexiconMap.clear()
                 }
                 val rivenJob = async {
-                    wfRivenService.insertRiven(getRivenList(rivenMap))
+                    redisService.deleteKey(WF_MARKET_RIVEN_KEY)
+                    val rivenList = getRivenList(rivenMap)
+                    redisService.setValue(WF_MARKET_RIVEN_KEY, rivenList)
+                    wfRivenService.insertRiven(rivenList)
                     logInfo("紫卡词库更新完成")
                     rivenMap.clear()
                 }

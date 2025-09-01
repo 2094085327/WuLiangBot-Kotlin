@@ -97,4 +97,19 @@ object WfMarketConfig {
      * 结合仪式目标
      */
     const val WF_SIMARIS_KEY = WF_MARKET_CACHE_KEY + "simaris"
+
+    /**
+     * 紫卡数据缓存，未洗
+     */
+    const val WF_RIVEN_UN_REROLLED_KEY = WF_MARKET_CACHE_KEY + "riven:unRerolled"
+
+    /**
+     * 紫卡数据缓存，已洗
+     */
+    const val WF_RIVEN_REROLLED_KEY = WF_MARKET_CACHE_KEY + "riven:rerolled"
+
+    /**
+     * 紫卡Market Riven数据
+     */
+    const val WF_MARKET_RIVEN_KEY = WF_MARKET_CACHE_KEY + "riven:market"
 }

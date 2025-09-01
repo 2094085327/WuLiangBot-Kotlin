@@ -31,6 +31,8 @@ class ScheduledInit {
         launch(Dispatchers.IO) { parseDataUtil.parseNightWave(data["SeasonInfo"]) }
         // 虚空商人
         launch(Dispatchers.IO) { parseDataUtil.parseVoidTraders(data["VoidTraders"]) }
+        // 每周紫卡数据
+        launch(Dispatchers.IO) { parseDataUtil.parseWeeklyRiven() }
     }
 
     @Scheduled(cron = "1 0 8 * * *")

@@ -35,7 +35,7 @@ object TimeUtils {
      *
      * @param instant 指定时间 instant 对象
      */
-    fun toNow(instant: Instant):Long{
+    fun toNow(instant: Instant): Long {
         return Duration.between(getInstantNow(), instant).toMillis()
     }
 
@@ -167,13 +167,29 @@ object TimeUtils {
     }
 
     /**
+     * 获取下一周的周一早上08：00的 UTC 时间
+     */
+    fun getNextMonday(): Instant {
+        val firstDay = getFirstDayOfWeek().atOffset(ZoneOffset.UTC)
+        return firstDay
+            .plusWeeks(1)
+            .withHour(8)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0)
+            .toInstant()
+
+    }
+
+    /**
      * 获取传入时间的下一天的 UTC 时间
      */
-    fun getTimeOfNextDay(instant:Instant): Instant {
+    fun getTimeOfNextDay(instant: Instant): Instant {
         return instant.atOffset(ZoneOffset.UTC)
             .plusDays(1) // 将时间加一天
             .toInstant()
     }
+
     /**
      * 获取下一天的 UTC 时间
      */

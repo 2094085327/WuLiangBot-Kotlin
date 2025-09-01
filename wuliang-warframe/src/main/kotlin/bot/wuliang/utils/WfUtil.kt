@@ -1,7 +1,6 @@
 package bot.wuliang.utils
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
-import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.config.WARFRAME_MARKET_ITEMS
 import bot.wuliang.config.WARFRAME_MARKET_LICH_AUCTIONS
 import bot.wuliang.config.WARFRAME_MARKET_RIVEN_AUCTIONS
@@ -9,14 +8,11 @@ import bot.wuliang.config.WARFRAME_MARKET_SISTER_AUCTIONS
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
-import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.httpUtil.ProxyManager
 import bot.wuliang.httpUtil.ProxyUtil
-import bot.wuliang.httpUtil.entity.ProxyInfo
 import bot.wuliang.moudles.Info
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
@@ -27,26 +23,17 @@ import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.github.houbb.opencc4j.util.ZhConverterUtil
-import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.io.File
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-import kotlin.coroutines.coroutineContext
-import kotlin.random.Random
-
 
 /**
  * @description: Warframe 工具类
@@ -352,44 +339,6 @@ class WfUtil {
     }
 
     /**
-     * 用于紫卡均价的拍卖数据格式化，计算均值和标准差，并使用2σ原则过滤异常值，返回正态分布结果
-     *
-     * @param rivenJson 紫卡Json数据
-     * @return 此物品正态分布价值
-     */
-    fun formatAuctionDataForNormalDist(rivenJson: JsonNode?): Double {
-        if (rivenJson == null) return 0.0
-        val orders = rivenJson["payload"]?.get("auctions") ?: return 0.0
-
-        val prices = orders.asSequence()
-            .map { it["starting_price"].doubleValue() }
-            .filter { it > 0 } // 过滤掉0或负价格
-            .toList()
-
-        if (prices.size < 3) return prices.average()
-
-        // 计算均值和标准差
-        val mean = prices.average()
-        val variance = prices.map { (it - mean) * (it - mean) }.average()
-        val stdDev = kotlin.math.sqrt(variance)
-
-        // 使用2σ原则过滤异常值（保留95%的正常数据）
-        val lowerBound = mean - 2 * stdDev
-        val upperBound = mean + 2 * stdDev
-
-        val filteredPrices = prices.filter { it in lowerBound..upperBound }
-
-        // 如果过滤后数据太少，放宽到3σ
-        return if (filteredPrices.size >= prices.size * 0.5) {
-            filteredPrices.average()
-        } else {
-            val lowerBound3 = mean - 3 * stdDev
-            val upperBound3 = mean + 3 * stdDev
-            prices.filter { it in lowerBound3..upperBound3 }.average()
-        }
-    }
-
-    /**
      * 获取拍卖数据
      *
      * @param parameterList 紫卡参数列表
@@ -439,26 +388,6 @@ class WfUtil {
             logError("WM查询错误:$e")
             null
         }
-    }
-
-    /**
-     * 获取紫卡拍卖数据
-     *
-     * @param itemEntityUrlName 物品Url名称
-     * @return Json数据
-     */
-    fun getAuctionsJsonForRiven(
-        itemEntityUrlName: String,
-        headers: MutableMap<String, Any>? = null,
-        proxy: Proxy? = null
-    ): JsonNode? {
-        val queryParams = createQueryParams(itemEntityUrlName, mutableListOf(), null, mapOf("re_rolls_max" to "0"))
-        return HttpUtil.doGetJson(
-            WARFRAME_MARKET_RIVEN_AUCTIONS,
-            params = queryParams,
-            headers = headers,
-            proxy = proxy
-        )
     }
 
     interface Week {
@@ -695,392 +624,6 @@ class WfUtil {
 
 
     /**
-     * 定时更新紫卡数据
-     *
-     */
-    fun getAllRivenPriceTiming() {
-        updateRivenData()
-    }
-
-
-    /**
-     * 更新紫卡排行数据
-     */
-    private fun updateRivenData() {
-
-        // 确保代理已加载
-        if (!redisService.hasKey("Wuliang:http:proxy")) {
-            proxyUtil.proxyMain()
-        }
-
-        val dbRivenList = wfRivenService.selectAllRivenData()
-        val redisKeys = redisService.getListKey("warframe:riven:*")
-
-        val dbKeys = mutableSetOf<String>()
-        val toUpdate = mutableListOf<WfRivenEntity>()
-        val urlNameList = mutableListOf<String>()
-
-        dbRivenList.forEach { data ->
-            val urlName = data.urlName ?: return@forEach
-            val key = "warframe:riven:${urlName}"
-
-            dbKeys.add(key)
-            urlNameList.add(urlName)
-
-            if (!redisKeys.contains(key)) {
-                toUpdate.add(data)
-            }
-        }
-
-        if (toUpdate.isNotEmpty()) {
-            logInfo("检测到 ${toUpdate.size} 条紫卡数据发生变更，正在更新缓存...")
-            toUpdate.forEach { data ->
-                redisService.setValue("warframe:riven:${data.urlName}", data)
-            }
-        }
-
-        val toDelete = redisKeys.subtract(dbKeys)
-        if (toDelete.isNotEmpty()) {
-            logInfo("检测到 ${toDelete.size} 条废弃紫卡数据，正在清理缓存...")
-            redisService.deleteKey(toDelete)
-        }
-
-        if (urlNameList.isNotEmpty()) {
-            runBlocking {
-                // 首先尝试获取新数据
-                val results = getAllRiven(urlNameList)
-                results?.let { cacheRivenAvg(it) }
-
-                // 然后尝试重试失败的数据
-                retryFailedItems(3)
-                // 获取已生成紫卡均价缓存并缓存排序后的紫卡排行
-                val riveAvgResult = redisService.getListKey("warframe:rivenAvg:*").mapNotNull { key ->
-                    val parts = key.split(":")
-                    if (parts.size >= 3) {
-                        val itemKey = parts[2]
-                        val value = redisService.getValue(key)?.toString()
-                        if (value != null) itemKey to value else null
-                    } else null
-                }.associate { it }
-                cacheRivenAvg(riveAvgResult)
-                cacheSortedRivenRanking(riveAvgResult)
-            }
-        }
-
-        System.gc()
-    }
-
-
-    /**
-     * 获取全部武器紫卡的平均价格
-     *
-     * @param weaponList 所有武器的列表
-     * @return Map<String, String>
-     */
-    fun getAllRiven(weaponList: List<String>?): Map<String, String>? = runBlocking {
-        if (weaponList.isNullOrEmpty()) return@runBlocking null
-
-        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
-        val proxies = proxyList?.takeIf { it.isNotEmpty() }?.map { proxyInfo ->
-            Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
-        } ?: return@runBlocking null
-
-        val proxyManager = ProxyManager(proxies)
-        val successfulResults = Collections.synchronizedMap(mutableMapOf<String, String>())
-        val failedItems = Collections.synchronizedSet(mutableSetOf<String>())
-
-        try {
-            val jobs = weaponList.map { weapon ->
-                async {
-                    try {
-                        val result = getAvgWithProxyManager(weapon, proxyManager)
-                        result[weapon]?.let { value ->
-                            successfulResults[weapon] = value
-                        } ?: run {
-                            failedItems.add(weapon)
-                        }
-                    } catch (e: Exception) {
-                        failedItems.add(weapon)
-                    }
-                }
-            }
-
-            // 等待全部完成
-            jobs.awaitAll()
-
-        } finally {
-            proxyManager.close()
-        }
-
-        if (failedItems.isNotEmpty()) {
-            recordFailedItems(failedItems)
-        }
-
-        successfulResults
-    }
-
-    /**
-     * 使用代理管理器的重试方法
-     */
-    suspend fun getAvgWithProxyManager(
-        item: String,
-        proxyManager: ProxyManager,
-        retries: Int = 3
-    ): Map<String, String> {
-        var lastException: Exception? = null
-        var currentProxy: Proxy? = null
-
-        for (attempt in 1..retries) {
-            try {
-                // 检查协程是否已取消
-                coroutineContext.ensureActive()
-
-                // 获取代理
-                currentProxy = proxyManager.acquireProxy()
-
-                // 执行请求
-                return withTimeout(60000L) {
-                    delay(Random.nextLong(50, 200))
-                    getAvgWithProxy(item, currentProxy!!)
-                }
-            } catch (e: Exception) {
-                lastException = e
-            } finally {
-                // 确保释放代理
-                currentProxy?.let { proxy ->
-                    proxyManager.releaseProxy(proxy)
-                }
-                currentProxy = null
-            }
-
-            // 非最终重试时等待
-            if (attempt < retries) {
-                delay(1000L + Random.nextLong(0, 1000))
-            }
-        }
-
-        throw lastException ?: Exception("$item: 未知错误")
-    }
-
-    /**
-     * 使用代理获取单个物品价格
-     */
-    suspend fun getAvgWithProxy(item: String, proxy: Proxy): Map<String, String> {
-        try {
-            // 添加随机延迟
-            delay(Random.nextLong(100, 300))
-
-            val rivenJson = getAuctionsJsonForRiven(
-                itemEntityUrlName = item,
-                generateRandomHeaders(),
-                proxy
-            )
-
-            val formatAuctionDataForAvg = formatAuctionDataForNormalDist(rivenJson)
-
-            return mapOf(item to String.format("%.2f", formatAuctionDataForAvg))
-
-        } catch (e: Exception) {
-            throw e
-        }
-    }
-
-
-    /**
-     * 获取并重试失败的物品
-     */
-    private suspend fun retryFailedItems(maxRetries: Int = 3) {
-        var remainingFailed = redisService.getValueTyped<Set<String>>("warframe:riven:failed") ?: emptySet()
-
-        if (remainingFailed.isNotEmpty()) {
-            for (attempt in 1..maxRetries) {
-                val results = getAllRiven(remainingFailed.toList())
-                if (results == null) {
-                    delay(5000L) // 等待后继续重试
-                    continue
-                }
-
-                // 异步缓存结果，不阻塞重试流程
-                CoroutineScope(Dispatchers.IO).launch {
-                    cacheRivenAvg(results)
-                }
-
-                remainingFailed = remainingFailed - results.keys
-                if (remainingFailed.isEmpty()) break
-                delay(10000L)
-            }
-
-            if (remainingFailed.isNotEmpty()) {
-                redisService.setValueWithExpiry("warframe:riven:failed", remainingFailed, 3600L, TimeUnit.SECONDS)
-            } else {
-                redisService.deleteKey("warframe:riven:failed")
-            }
-        }
-    }
-
-
-    /**
-     * 获取当前 灵化武器紫卡 的平均价格
-     *
-     * @param incarnonList 本周灵化武器列表
-     * @return Map<String, String>
-     */
-    fun getIncarnonRiven(incarnonList: List<SteelWeek>?): Map<String, String>? = runBlocking {
-        val items = incarnonList?.get(0)?.items ?: return@runBlocking null
-
-        // 获取所有物品的 URL 名称
-        val itemUrlNames = items.map { it.urlName!! }
-
-        // 从 Redis 缓存中获取已存在的数据
-        val cachedResults = itemUrlNames.associateWith { urlName ->
-            redisService.getValueTyped<String>("warframe:rivenAvg:$urlName")
-        }
-
-        // 分离出缓存中存在和不存在的物品
-        val cachedEntries = mutableMapOf<String, String>()
-        val uncachedItems = mutableListOf<SteelItem>()
-
-        for (item in items) {
-            val urlName = item.urlName!!
-            val cachedValue = cachedResults[urlName]
-            if (cachedValue != null) {
-                cachedEntries[urlName] = cachedValue
-            } else {
-                uncachedItems.add(item)
-            }
-        }
-
-        val proxyList = redisService.getValueTyped<List<ProxyInfo>>("Wuliang:http:proxy")
-        val proxies = proxyList?.takeIf { it.isNotEmpty() }?.map { proxyInfo ->
-            Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxyInfo.ip, proxyInfo.port!!))
-        } ?: return@runBlocking null
-        val proxyManager = ProxyManager(proxies)
-
-        // 对未缓存的物品并发获取平均价格
-        val uncachedResults = uncachedItems.map { item ->
-            async(Dispatchers.Default) {
-                getAvgWithProxyManager(item.urlName!!, proxyManager)
-            }
-        }.awaitAll().flatMap { it.entries }.associate { it.toPair() }
-
-        // 合并缓存中的结果与新获取的结果
-        (cachedEntries + uncachedResults).takeIf { it.isNotEmpty() }
-    }
-
-    /**
-     * 记录失败的物品，用于后续重试
-     */
-    private fun recordFailedItems(failedItems: Set<String>) {
-        val existingFailed = redisService.getValueTyped<Set<String>>("warframe:riven:failed") ?: emptySet()
-        val allFailed = existingFailed + failedItems
-        redisService.setValueWithExpiry("warframe:riven:failed", allFailed, 3600L, TimeUnit.SECONDS) // 1小时过期
-        logInfo("记录了 ${failedItems.size} 个失败物品，总计 ${allFailed.size} 个待重试")
-    }
-
-    /**
-     * 生成随机的请求头
-     *
-     * @return MutableMap<String, Any> 生成的请求头
-     */
-    fun generateRandomHeaders(): MutableMap<String, Any> {
-        val cookie = "JWT=${generateRandomJWT()}"
-        val userAgentRandom = "${
-            Random.nextInt(
-                90,
-                150
-            )
-        }.${Random.nextInt(0, 100)}"
-        val userAgent =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${userAgentRandom}.0.0 Safari/537.36 Edg/${userAgentRandom}.0.0"
-        return mutableMapOf(
-            "Cookie" to cookie,
-            "User-Agent" to userAgent
-        )
-    }
-
-    /**
-     * 生成随机的 JWT
-     *
-     * @return String 生成的随机 JWT
-     */
-    fun generateRandomJWT(): String {
-        val secretKey = "your_secret_key"
-        val issuer = "your_issuer"
-        val audience = "your_audience"
-
-        val currentTimeSeconds = System.currentTimeMillis() / 1000
-        val expirationTime = currentTimeSeconds + 3600 // 1小时有效期
-
-        val header = """{"alg":"HS256","typ":"JWT"}"""
-        val payload = buildString {
-            append("{")
-            append("\"sub\":\"${UUID.randomUUID()}\",")
-            append("\"iat\":$currentTimeSeconds,")
-            append("\"exp\":$expirationTime,")
-            append("\"iss\":\"$issuer\",")
-            append("\"aud\":\"$audience\"")
-            append("}")
-        }
-
-        try {
-            val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
-            val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-
-            val signature = sign("$encodedHeader.$encodedPayload", secretKey)
-
-            return "$encodedHeader.$encodedPayload.$signature"
-        } catch (e: Exception) {
-            logError("JWT生成失败: ${e.message}")
-            throw RuntimeException("JWT生成失败", e)
-        }
-    }
-
-    /**
-     * 对数据进行签名
-     *
-     * @param data 待前面数据
-     * @param secret 秘钥
-     * @return String 签名后的数据
-     */
-    fun sign(data: String, secret: String): String {
-        val hmacSha256 = Mac.getInstance("HmacSHA256")
-        val secretKey = SecretKeySpec(secret.toByteArray(), "HmacSHA256")
-        hmacSha256.init(secretKey)
-        val signature = hmacSha256.doFinal(data.toByteArray())
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(signature)
-    }
-
-    /**
-     * 缓存排序后的紫卡数据
-     *
-     */
-    private fun cacheSortedRivenRanking(avgMap: Map<String, String>) {
-        val sortedList = avgMap.mapNotNull { (key, value) ->
-            val rivenEntity = redisService.getValueTyped<WfRivenEntity>("warframe:riven:$key")
-            rivenEntity?.zhName?.let { name ->
-                WfMarketVo.RivenRank(name, value.toDoubleOrNull() ?: 0.0)
-            }
-        }.sortedByDescending { it.value }
-
-        // 缓存排序后的列表
-        redisService.setValueWithExpiry("warframe:rivenRanking", sortedList, 25L, TimeUnit.HOURS)
-    }
-
-    /**
-     *  缓存紫卡平均价格
-     *
-     * @param results 存入Redis的数据
-     */
-    private fun cacheRivenAvg(results: Map<String, Any>) {
-        val now = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
-        val expiryInSeconds = Duration.between(now, now.plusDays(1).withHour(11).withMinute(55).withSecond(0)).seconds
-
-        results.forEach { (key, value) ->
-            redisService.setValueWithExpiry("warframe:rivenAvg:$key", value, expiryInSeconds, TimeUnit.SECONDS)
-        }
-    }
-
-    /**
      * 根据物品名称获取物品数据
      *
      * @param key
@@ -1153,10 +696,79 @@ class WfUtil {
             "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
         )?.value
     }
+
     fun getLanguageDesc(key: String): String? {
         return redisService.getValueTyped<Info>(
             "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
         )?.desc
+    }
+
+    /**
+     * 解析紫卡参数
+     *
+     * @param params 参数字符串
+     * @return URL参数
+     */
+    fun parseRivenParams(params: String): String {
+        if (params.isEmpty()) return ""
+
+        val parts = params.trim().lowercase().split("\\s+".toRegex())
+        val urlParams = mutableListOf<String>()
+
+        // 支持的武器类型
+        val weaponTypes = mapOf(
+            "步枪" to "Rifle Riven Mod",
+            "手枪" to "Pistol Riven Mod",
+            "近战" to "Melee Riven Mod",
+            "霰弹枪" to "Shotgun Riven Mod",
+            "组合枪" to "Kitgun Riven Mod",
+            "zaw" to "Zaw Riven Mod",
+            "archgun" to "Archgun Riven Mod"
+        )
+
+        // 排序方向
+        val sortDirections = mapOf(
+            "正序" to "asc",
+            "倒序" to "desc"
+        )
+
+        var type: String? = null
+        var sort: String? = null
+        var rerolled: String? = null
+
+        for (part in parts) {
+            // 检查武器类型
+            weaponTypes.forEach { (key, value) ->
+                if (part.contains(key, ignoreCase = true)) {
+                    type = value
+                }
+            }
+
+            // 检查排序方向
+            sortDirections.forEach { (key, value) ->
+                if (part.contains(key, ignoreCase = true)) {
+                    sort = value
+                }
+            }
+
+            // 检查是否已洗
+            if (part.contains("0洗", ignoreCase = true) || part.contains("未洗", ignoreCase = true)) {
+                rerolled = "false"
+            } else if (part.contains("非0洗", ignoreCase = true) || part.contains("已洗", ignoreCase = true)) {
+                rerolled = "true"
+            }
+        }
+
+        // 构建URL参数
+        type?.let { urlParams.add("type=$it") }
+        sort?.let { urlParams.add("sort=$it") }
+        rerolled?.let { urlParams.add("rerolled=$it") }
+
+        return if (urlParams.isNotEmpty()) {
+            "?" + urlParams.joinToString("&")
+        } else {
+            ""
+        }
     }
 
 }
