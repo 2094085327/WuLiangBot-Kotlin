@@ -17,7 +17,6 @@ import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
-import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.moudles.*
@@ -28,6 +27,7 @@ import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeBySecond
 import bot.wuliang.utils.TimeUtils.getInstantNow
+import bot.wuliang.utils.TimeUtils.getNextMonday
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
-import java.util.concurrent.TimeUnit
+import java.time.Instant
 
 
 /**
@@ -192,20 +192,19 @@ class WarframeController(
         return RespBean.toReturn(invasionsList.size, invasionsList)
     }
 
-    @RequestMapping("/incarnon")
-    fun incarnon(): WfStatusVo.IncarnonEntity? {
-        var (expiry, incarnonEntity) = redisService.getExpireAndValue(WF_INCARNON_KEY)
-        if (expiry == null) expiry = -1L
-        incarnonEntity as WfStatusVo.IncarnonEntity
-        // 更新时间为当前时间（秒）
-        incarnonEntity.remainTime = formatTimeBySecond(expiry)
-        redisService.setValueWithExpiry(
-            WF_INCARNON_KEY,
-            incarnonEntity,
-            expiry,
-            TimeUnit.SECONDS
-        )
-        return incarnonEntity
+    @ApiOperation("回廊信息")
+    @GetMapping("/incarnon")
+    fun incarnon(): RespBean {
+        val incarnonEntity =
+            if (!redisService.hasKey(WF_INCARNON_KEY)) {
+                parseDataUtil.parseIncarnon()
+            } else {
+                val redisIncarnon = redisService.getValueTyped<Incarnon>(WF_INCARNON_KEY) ?: return RespBean.error()
+                redisIncarnon.eta = formatTimeBySecond(Duration.between(Instant.now(), getNextMonday()).seconds)
+                redisIncarnon
+            }
+
+        return RespBean.success(incarnonEntity)
     }
 
     @RequestMapping("/incarnonRiven")
@@ -279,7 +278,10 @@ class WarframeController(
 
         val sortResult = when (sort ?: "desc") {
             "asc" -> filteredResult.sortedWith(compareBy({ it.pop ?: 0 }, { it.median }))
-            "desc" -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0 }.thenByDescending { it.median })
+            "desc" -> filteredResult.sortedWith(compareByDescending<Riven> {
+                it.pop ?: 0
+            }.thenByDescending { it.median })
+
             else -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0 }.thenByDescending { it.median })
         }
 

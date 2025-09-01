@@ -65,10 +65,24 @@ object JacksonUtil {
     }
 
     /**
+     * 将Json字符串转换为对象
+     */
+    fun readTree(content: File): JsonNode {
+        return objectMapper.readTree(content)
+    }
+
+    /**
      * 将Json字符串转换为clazz对象
      */
     fun <T> readValue(json: String, clazz: Class<T>): T {
         return objectMapper.readValue(json, clazz)
+    }
+
+    /**
+     * 将Json字符串转换为clazz对象
+     */
+    fun <T> readValue(file: File, clazz: Class<T>): T {
+        return objectMapper.readValue(file, clazz)
     }
 
     /**

@@ -24,7 +24,6 @@ import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.VoidTrader
@@ -33,7 +32,6 @@ import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
 import bot.wuliang.utils.TimeUtils.formatDuration
-import bot.wuliang.utils.TimeUtils.formatTimeDifference
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfUtil
@@ -47,7 +45,6 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
@@ -358,87 +355,15 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     fun incarnon(context: BotUtils.Context) {
-        var incarnon = redisService.getValueTyped<WfStatusVo.IncarnonEntity>(WF_INCARNON_KEY)
-
-        if (incarnon == null) {
-            val mapper = jacksonObjectMapper()
-            // 使用redis缓存后只需要每周从原始数据更新一次数据至当前时间即可
-            // 原代码也同样需要更新一次数据，所以可以省略
-            val jsonFile = File(WARFRAME_INCARNON)
-
-            // 读取并解析 JSON 文件
-            val data: WfUtil.Data = mapper.readValue(jsonFile, WfUtil.Data::class.java)
-
-            // 当前日期
-            val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
-
-            val oneWeekLater = currentTime.plusWeeks(1)
-
-            // 更新 week 的 startTime
-            val updatedOrdinaryWeeks = wfUtil.updateWeeks(data, currentTime)
-
-            // 查找当前周的数据
-            val currentOrdinaryWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.ordinary, currentTime)
-            val currentSteelWeek = wfUtil.findCurrentWeek(updatedOrdinaryWeeks.steel, currentTime)
-
-            // 更新 下周 的 startTime
-            val updatedNextWeeks = wfUtil.updateWeeks(data, oneWeekLater)
-
-            // 查找下周的数据
-            val nextOrdinaryWeek = wfUtil.findCurrentWeek(updatedNextWeeks.ordinary, oneWeekLater)
-            val nextSteelWeek = wfUtil.findCurrentWeek(updatedNextWeeks.steel, oneWeekLater)
-
-            if (currentOrdinaryWeek == null || currentSteelWeek == null || nextOrdinaryWeek == null || nextSteelWeek == null) {
-                context.sendMsg(WarframeRespEnum.INCARNON_ERROR.message)
-                return
-            }
-
-            // 获取下周一的日期
-            val nextMonday = currentTime.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
-
-            // 设置时间为下周一早上8点
-            val nextMondayAt8 = nextMonday.withHour(8).withMinute(0).withSecond(0).withNano(0)
-
-            val remainTime = formatTimeDifference(currentTime, nextMondayAt8)
-            val incarnonEntity = WfStatusVo.IncarnonEntity(
-                thisWeekData = WfUtil.Data(
-                    ordinary = listOf(currentOrdinaryWeek),
-                    steel = listOf(currentSteelWeek)
-                ),
-                nextWeekData = WfUtil.Data(
-                    ordinary = listOf(nextOrdinaryWeek),
-                    steel = listOf(nextSteelWeek)
-                ),
-                remainTime = remainTime
-            )
-
-            redisService.setValueWithExpiry(
-                WF_INCARNON_KEY,
-                incarnonEntity,
-                incarnonEntity.remainTime!!.parseDuration(),
-                TimeUnit.SECONDS
-            )
-
-            incarnon = incarnonEntity
+        if (!redisService.hasKey(WF_INCARNON_KEY)) {
+            parseDataUtil.parseIncarnon()
         }
 
-        // TODO 暂时移除每周武器推荐，其基于频繁查询WM紫卡价格，导致被WM禁止访问，找到解决方法后再优化
-//        if (!redisService.hasKey(WF_INCARNON_RIVEN_KEY)) {
-//            // 根据 灵化武器紫卡价格 给出每周推荐武器
-//            var incarnonRiven = wfUtil.getIncarnonRiven(incarnon.thisWeekData?.steel)
-//            if (incarnonRiven == null) incarnonRiven = mapOf()
-//            redisService.setValueWithExpiry(
-//                WF_INCARNON_RIVEN_KEY,
-//                incarnonRiven,
-//                30L,
-//                TimeUnit.MINUTES
-//            )
-//        }
-
         val imgData = WebImgUtil.ImgData(
-            url = "http://${webImgUtil.frontendAddress}/incarono",
+            url = "http://${webImgUtil.frontendAddress}/incarnon",
             imgName = "incarnon-${UUID.randomUUID()}",
-            element = "#app"
+            element = "#app",
+            waitElement = ".warframeIncarnon"
         )
 
         webImgUtil.sendNewImage(context, imgData)

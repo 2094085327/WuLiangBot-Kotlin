@@ -1,8 +1,10 @@
 package bot.wuliang.utils
 
+import bot.wuliang.config.WARFRAME_INCARNON
 import bot.wuliang.config.WARFRAME_WEEKLY_RIVEN_PC
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
@@ -38,6 +40,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.io.File
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -606,6 +609,9 @@ class ParseDataUtil {
         return completedInvasions
     }
 
+    /**
+     * 解析DE紫卡周榜信息
+     */
     fun parseWeeklyRiven() {
         if (redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) && redisService.hasKey(WF_RIVEN_REROLLED_KEY)) return
         val data = HttpUtil.doGetStr(WARFRAME_WEEKLY_RIVEN_PC)
@@ -642,7 +648,7 @@ class ParseDataUtil {
                 val entities = redisService.getValueTyped<List<WfRivenEntity>>(WF_MARKET_RIVEN_KEY)
                 entities?.associate { it.enName to it.zhName } ?: emptyMap()
             } else {
-                // 批量查询数据库获取所有compatibility对应的中文名
+                // 查询数据库获取所有compatibility对应的中文名
                 val entities = wfRivenService.selectAllRivenData()
                 entities.associate { it.enName to it.zhName }
             }
@@ -656,9 +662,11 @@ class ParseDataUtil {
                 riven.compatibility != null -> {
                     compatibilityMap[riven.compatibility] ?: riven.compatibility
                 }
+
                 itemTypeToChineseMap.containsKey(riven.itemType) -> {
                     itemTypeToChineseMap[riven.itemType]
                 }
+
                 else -> null
             }
             riven.copy(compatibility = compatibility)
@@ -672,5 +680,93 @@ class ParseDataUtil {
 
         redisService.setValueWithExpiry(WF_RIVEN_UN_REROLLED_KEY, unRerolledList, expire, TimeUnit.SECONDS)
         redisService.setValueWithExpiry(WF_RIVEN_REROLLED_KEY, rerolledList, expire, TimeUnit.SECONDS)
+    }
+
+    fun parseIncarnon(): Incarnon? {
+        if (redisService.hasKey(WF_INCARNON_KEY)) return redisService.getValueTyped<Incarnon>(WF_INCARNON_KEY)
+
+        val incarnonJson = JacksonUtil.readTree(File(WARFRAME_INCARNON))
+        val ordinaryJson = incarnonJson["ordinary"]
+        val steelJson = incarnonJson["steel"]
+        val ordinaryStart = Instant.parse(ordinaryJson[0]["startTime"].textValue())
+        val steelStart = Instant.parse(steelJson[0]["startTime"].textValue())
+
+        // 获取到现在经过的秒数
+        val now = Instant.now()
+        val ordinarySeconds = Duration.between(ordinaryStart, now).seconds
+        val steelSeconds = Duration.between(steelStart, now).seconds
+        val sevenDays = 604800
+        val ordinarySize = ordinaryJson.size()
+        val steelSize = steelJson.size()
+        val ordinaryWeeks = ordinarySize * sevenDays
+        val steelWeeks = steelSize * sevenDays
+        // 使用模运算和除法计算当前处于第几个7天周期
+        val ordinaryInd = ((ordinarySeconds % ordinaryWeeks) / sevenDays).toInt()
+        val steelInd = ((steelSeconds % steelWeeks) / sevenDays).toInt()
+
+        // 计算下周的索引
+        val ordinaryNextInd = (ordinaryInd + 1) % ordinarySize
+        val steelNextInd = (steelInd + 1) % steelSize
+
+        val activation = getFirstDayOfWeek()
+        val expiry = getLastDayOfWeek()
+
+        // 缓存获取灵化武器紫卡映射
+        val rivenMap = if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
+            val entities = redisService.getValueTyped<List<WfRivenEntity>>(WF_MARKET_RIVEN_KEY)
+            entities?.associate { it.urlName to it.zhName } ?: emptyMap()
+        } else {
+            // 查询数据库获取所有Riven数据
+            val entities = wfRivenService.selectAllRivenData()
+            val map = entities.associate { it.urlName to it.zhName }
+            redisService.setValue(WF_MARKET_RIVEN_KEY, entities)
+            map
+        }
+
+        val rivenPriceList = redisService.getValueTyped<List<Riven>>(WF_RIVEN_UN_REROLLED_KEY)
+
+        fun processSteelItems(steelJsonNode: JsonNode): List<Incarnon.SteelItem> {
+            return steelJsonNode["items"].map { item ->
+                val urlName = item["url_name"].textValue()
+                val zhName = rivenMap[urlName]
+                Incarnon.SteelItem(
+                    name = item["name"].textValue(),
+                    riven = item["riven"].doubleValue(),
+                    urlName = urlName,
+                    rivenPrice = rivenPriceList?.find { it.compatibility == zhName }?.median ?: 0.0,
+                )
+            }.toList()
+        }
+
+        val incarnon = Incarnon(
+            thisWeek = Incarnon.IncarnonData(
+                ordinary = Incarnon.WeekData(
+                    week = ordinaryInd + 1,
+                    items = ordinaryJson[ordinaryInd]["items"].map { it.textValue() },
+                ),
+                steel = Incarnon.WeekData(
+                    week = steelInd + 1,
+                    items = processSteelItems(steelJson[steelInd]),
+                )
+            ),
+            nextWeek = Incarnon.IncarnonData(
+                ordinary = Incarnon.WeekData(
+                    week = ordinaryNextInd + 1,
+                    items = ordinaryJson[ordinaryNextInd]["items"].map { it.textValue() },
+                ),
+                steel = Incarnon.WeekData(
+                    week = steelNextInd + 1,
+                    items = processSteelItems(steelJson[steelNextInd])
+                )
+            ),
+            activation = activation,
+            expiry = expiry,
+            eta = formatDuration(Duration.between(getInstantNow(), expiry))
+        )
+
+        val expire = Duration.between(Instant.now(), getNextMonday()).seconds
+
+        redisService.setValueWithExpiry(WF_INCARNON_KEY, incarnon, expire, TimeUnit.SECONDS)
+        return incarnon
     }
 }

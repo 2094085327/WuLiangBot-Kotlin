@@ -20,7 +20,6 @@ import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.TimeUtils.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 import com.github.houbb.opencc4j.util.ZhConverterUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -390,115 +389,8 @@ class WfUtil {
         }
     }
 
-    interface Week {
-        val week: Int?
-        var startTime: String?
-        fun copyWithNewStartTime(newStartTime: String?): Week
-    }
-
-    data class OrdinaryWeek(
-        override val week: Int? = null,
-        val items: List<String>? = null,
-        override var startTime: String? = null
-    ) : Week {
-        override fun copyWithNewStartTime(newStartTime: String?): OrdinaryWeek {
-            return copy(startTime = newStartTime)
-        }
-    }
-
-    data class SteelItem(
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("riven") val riven: Double? = null,
-        @JsonProperty("url_name") val urlName: String? = null
-    )
-
-    data class SteelWeek(
-        override val week: Int? = null,
-        val items: List<SteelItem>? = null,
-        override var startTime: String? = null
-    ) : Week {
-        override fun copyWithNewStartTime(newStartTime: String?): SteelWeek {
-            return copy(startTime = newStartTime)
-        }
-    }
-
-    data class Data(val ordinary: List<OrdinaryWeek>? = null, val steel: List<SteelWeek>? = null)
-
-
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-    fun <T : Week> findCurrentWeek(weeks: List<T>?, currentDate: LocalDateTime): T? {
-        return weeks!!
-            .sortedBy { it.startTime }
-            .asSequence() // 使用序列，以便更高效地处理过滤和获取最后一项
-            .filter { week ->
-                week.startTime?.let { startTime ->
-                    val startDateTime = OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
-                    startDateTime.isBefore(currentDate)
-                } ?: true
-            }
-            .lastOrNull()
-    }
-
-    fun updateWeeks(data: Data, currentDate: LocalDateTime): Data {
-        // 获取 steel 列表中最晚的开始时间及其索引
-        val (maxSteelIndex, maxSteelStartTime) = findLatestWeekAndIndex(data.steel!!)
-        // 获取 ordinary 列表中最晚的开始时间及其索引
-        val (maxOrdinaryIndex, maxOrdinaryStartTime) = findLatestWeekAndIndex(data.ordinary!!)
-
-        // 更新数据中的 steel 和 ordinary 列表
-        return data.copy(
-            steel = updateWeekTimes(data.steel, maxSteelStartTime, maxSteelIndex, currentDate),
-            ordinary = updateWeekTimes(data.ordinary, maxOrdinaryStartTime, maxOrdinaryIndex, currentDate)
-        )
-    }
-
-    // 辅助函数：查找列表中最晚的开始时间及其对应的索引
-    private fun findLatestWeekAndIndex(weeks: List<Week>): Pair<Int, LocalDateTime> {
-        return weeks.withIndex().maxByOrNull { (_, week) ->
-            // 解析 startTime，并转换为 LocalDateTime，若为空则使用 LocalDateTime.MIN
-            week.startTime?.let { startTime ->
-                OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
-            } ?: LocalDateTime.MIN
-        }?.let { (index, week) ->
-            index to (week.startTime?.let { startTime ->
-                OffsetDateTime.parse(startTime, dateTimeFormatter).toLocalDateTime()
-            } ?: LocalDateTime.MIN)
-        } ?: (0 to LocalDateTime.MIN)
-    }
-
-    // 更新每周时间的函数，根据当前时间和最晚时间进行调整
-    private fun <T : Week> updateWeekTimes(
-        weeks: List<T>,
-        maxTime: LocalDateTime?, // 传入的最晚时间
-        maxIndex: Int, // 对应的索引
-        currentDate: LocalDateTime // 当前时间，用于计算时间差
-    ): List<T> {
-        if (maxTime == null) return weeks // 如果最晚时间为空，返回原始列表
-
-        val daysSinceMax = Duration.between(maxTime, currentDate).toDays().toInt() // 计算从最晚时间到当前时间的天数
-        if (daysSinceMax < 0) return weeks // 如果天数为负，不需要更新，直接返回原始列表
-
-        val weekCount = weeks.size
-        // 一次性计算需要更新的所有周数
-        // 每周7天
-        val weeksToUpdate = daysSinceMax / 7 // 计算总共需要推进的周数
-        val offsetDays = daysSinceMax % 7 // 计算剩余的天数
-
-        // 当前时间所在的周索引
-        val nowWeekIndex = (maxIndex + weeksToUpdate) % weekCount
-
-        return weeks.mapIndexed { i, week ->
-            // 计算每个周的时间偏移量，确保每个周的时间一次性推进所有周数
-            val offsetWeeks = i - nowWeekIndex
-            val totalWeeksOffset = weeksToUpdate + offsetWeeks // 一次性推进所有周数
-            val updatedDateTime = maxTime.plusWeeks(totalWeeksOffset.toLong()).plusDays(offsetDays.toLong())
-
-            // 更新 startTime 并返回新的 week 对象
-            week.startTime = formatDateTime(updatedDateTime)
-            week
-        }
-    }
 
     // 格式化 LocalDateTime 为字符串
     private fun formatDateTime(dateTime: LocalDateTime): String {
