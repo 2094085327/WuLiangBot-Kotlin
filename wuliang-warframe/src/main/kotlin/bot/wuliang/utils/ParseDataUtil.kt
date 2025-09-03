@@ -113,13 +113,13 @@ class ParseDataUtil {
             nextRewardItem = nextRewardItem,
             faction = boss?.faction!!.replaceFaction(),
             eta = formatDuration(Duration.between(getInstantNow(), parseTimestamp(sortie["Expiry"]))),
-            variants = JacksonUtil.parseArray({ variant ->
+            variants = sortie[missionKey].map { variant ->
                 Variants(
                     missionType = redisService.getValueTyped<String>("${keyPrefix}MissionType:${variant["missionType"]?.asText()}"),
                     modifierType = redisService.getValueTyped<String>("${keyPrefix}ModifierType:${variant["modifierType"]?.asText()}"),
                     node = redisService.getValueTyped<Nodes>("${keyPrefix}Node:${variant["node"]?.asText()}")!!.name
                 )
-            }, sortie[missionKey])
+            },
         )
 
         redisService.setValueWithExpiry(
@@ -198,30 +198,28 @@ class ParseDataUtil {
      * @param challengesNode 午夜电波挑战任务数据
      */
     private fun parseChallenges(challengesNode: JsonNode?): List<Challenges> {
-        return challengesNode?.let {
-            JacksonUtil.parseArray({ challenge ->
-                val challengeText = challenge["Challenge"]?.asText() ?: ""
-                val isDaily = challenge["Daily"]?.asBoolean() ?: false
-                val isElite = challengeText.lowercase().contains("hard")
+        return challengesNode?.map { challenge ->
+            val challengeText = challenge["Challenge"]?.asText() ?: ""
+            val isDaily = challenge["Daily"]?.asBoolean() ?: false
+            val isElite = challengeText.lowercase().contains("hard")
 
-                Challenges(
-                    id = challenge["_id"]?.get("\$oid")?.asText() ?: "",
-                    isDaily = isDaily,
-                    isElite = isElite,
-                    isPermanent = challenge["Permanent"]?.asBoolean() ?: false,
-                    title = wfUtil.getLanguageValue(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
-                        challengeText.split("/").lastOrNull() ?: ""
-                    ),
-                    desc = wfUtil.getLanguageDesc(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
-                        challengeText.split("/").lastOrNull() ?: ""
-                    ),
-                    reputation = when {
-                        isDaily -> 1000
-                        isElite -> 7000
-                        else -> 4500
-                    }
-                )
-            }, it)
+            Challenges(
+                id = challenge["_id"]?.get("\$oid")?.asText() ?: "",
+                isDaily = isDaily,
+                isElite = isElite,
+                isPermanent = challenge["Permanent"]?.asBoolean() ?: false,
+                title = wfUtil.getLanguageValue(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
+                    challengeText.split("/").lastOrNull() ?: ""
+                ),
+                desc = wfUtil.getLanguageDesc(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
+                    challengeText.split("/").lastOrNull() ?: ""
+                ),
+                reputation = when {
+                    isDaily -> 1000
+                    isElite -> 7000
+                    else -> 4500
+                }
+            )
         } ?: emptyList()
     }
 
@@ -260,7 +258,7 @@ class ParseDataUtil {
      * @param isStorm 是否是九重天裂缝
      */
     fun parseFissureArray(fissureJson: JsonNode, isStorm: Boolean = false): List<Fissure> {
-        val fissureEntity = JacksonUtil.parseArray({ fissure ->
+        val fissureEntity = fissureJson.map { fissure ->
             val node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${fissure["Node"]?.asText()}")
             val expiry = parseTimestamp(fissure["Expiry"])
             val modifierNum =
@@ -280,7 +278,7 @@ class ParseDataUtil {
                 hard = fissure["Hard"]?.asBoolean() ?: false,
                 storm = isStorm
             )
-        }, fissureJson)
+        }
         return fissureEntity
     }
 
@@ -331,7 +329,7 @@ class ParseDataUtil {
             "<ARCHWING>" to ""
         )
 
-        val voidTradersList = JacksonUtil.parseArray({ voidTrader ->
+        val voidTradersList = voidTradersJsonNode.map { voidTrader ->
             val activationTime = parseTimestamp(voidTrader["Activation"])
             val isActive = activationTime?.let {
                 getInstantNow().isAfter(it)
@@ -371,7 +369,7 @@ class ParseDataUtil {
 
             // 现在再创建物品列表，此时translatedItems已包含所有可能的翻译
             val inventory = voidTrader["Manifest"]?.let { manifest ->
-                val items = JacksonUtil.parseArray({ voidTraderItem ->
+                val items = manifest.map { voidTraderItem ->
                     val voidItem = voidTraderItem["ItemType"]?.asText() ?: ""
                     val formattedItem = StringUtils.formatWithSpaces(voidItem.split("/").lastOrNull() ?: "")
 
@@ -388,7 +386,7 @@ class ParseDataUtil {
                         ducats = voidTraderItem["PrimePrice"].asInt(),
                         credits = voidTraderItem["RegularPrice"].asInt(),
                     )
-                }, manifest)
+                }
                     .filter { item -> !item.item.isNullOrBlank() }
 
                 // 基于最长公共子串的前缀/后缀识别算法
@@ -512,7 +510,8 @@ class ParseDataUtil {
                     ?: voidTrader["Node"]?.asText(),
                 inventory = inventory
             )
-        }, voidTradersJsonNode)
+        }
+
         val expire = voidTradersList
             .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
             ?.coerceAtLeast(30) ?: 300
@@ -554,7 +553,7 @@ class ParseDataUtil {
      */
     fun parseInvasions(invasionsJson: JsonNode): List<Invasions>? {
         if (redisService.hasKey(WF_INVASIONS_KEY)) return redisService.getValueTyped<List<Invasions>>(WF_INVASIONS_KEY)
-        val invasionsList = JacksonUtil.parseArray({ invasions ->
+        val invasionsList = invasionsJson.map { invasions ->
             val count = invasions["Count"].intValue()
             val activation = parseTimestamp(invasions["Activation"])
             val completedRuns = abs(count)
@@ -585,20 +584,20 @@ class ParseDataUtil {
                 completion = if (vsInfestation) (1 + count.toDouble() / requiredRuns.toDouble()) * 100 else (1 + count.toDouble() / requiredRuns.toDouble()) * 50,
                 completed = invasions["Completed"].booleanValue(),
                 vsInfestation = vsInfestation,
-                attackerReward = if (invasions["AttackerReward"].has("countedItems")) JacksonUtil.parseArray({ item ->
+                attackerReward = if (invasions["AttackerReward"].has("countedItems")) invasions["AttackerReward"]["countedItems"].map { item ->
                     Modifiers(
                         wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
                         item["ItemCount"].intValue()
                     )
-                }, invasions["AttackerReward"]["countedItems"]) else null,
-                defenderReward = JacksonUtil.parseArray({ item ->
+                } else null,
+                defenderReward = invasions["DefenderReward"]["countedItems"].map { item ->
                     Modifiers(
                         wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
                         item["ItemCount"].intValue()
                     )
-                }, invasions["DefenderReward"]["countedItems"]),
+                },
             )
-        }, invasionsJson)
+        }
         val completedInvasions = invasionsList.filter { it.completed == false }
 
         val expire = completedInvasions
@@ -616,7 +615,7 @@ class ParseDataUtil {
         if (redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) && redisService.hasKey(WF_RIVEN_REROLLED_KEY)) return
         val data = HttpUtil.doGetStr(WARFRAME_WEEKLY_RIVEN_PC)
         val jsonData = JacksonUtil.readTree(JacksonUtil.convertSingleJsObjectToStandardJson(data))
-        val rawRivenList = JacksonUtil.parseArray({ eachRiven ->
+        val rawRivenList = jsonData.map { eachRiven ->
             Riven(
                 itemType = eachRiven["itemType"].textValue(),
                 compatibility = eachRiven["compatibility"].textValue(),
@@ -628,7 +627,7 @@ class ParseDataUtil {
                 pop = eachRiven["pop"].intValue(),
                 median = eachRiven["median"].doubleValue()
             )
-        }, jsonData)
+        }
 
         // itemType到中文的映射
         val itemTypeToChineseMap = mapOf(
@@ -682,6 +681,9 @@ class ParseDataUtil {
         redisService.setValueWithExpiry(WF_RIVEN_REROLLED_KEY, rerolledList, expire, TimeUnit.SECONDS)
     }
 
+    /**
+     * 解析回廊相关信息
+     */
     fun parseIncarnon(): Incarnon? {
         if (redisService.hasKey(WF_INCARNON_KEY)) return redisService.getValueTyped<Incarnon>(WF_INCARNON_KEY)
 

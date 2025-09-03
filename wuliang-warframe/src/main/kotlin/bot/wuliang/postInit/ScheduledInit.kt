@@ -33,6 +33,8 @@ class ScheduledInit {
         launch(Dispatchers.IO) { parseDataUtil.parseVoidTraders(data["VoidTraders"]) }
         // 每周紫卡数据
         launch(Dispatchers.IO) { parseDataUtil.parseWeeklyRiven() }
+        // 每周回廊数据
+        launch(Dispatchers.IO) { parseDataUtil.parseIncarnon() }
     }
 
     @Scheduled(cron = "1 0 8 * * *")
