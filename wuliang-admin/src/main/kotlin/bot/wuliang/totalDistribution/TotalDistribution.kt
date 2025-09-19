@@ -85,7 +85,10 @@ class TotalDistribution @Autowired constructor(
             val restartFile = File(RESTART_CONFIG)
             if (!restartFile.exists()) {
                 restartFile.createNewFile()
-                restartFile.writeText("""{"jar_file":"${Restart().getNowJarName()}"}""".trimIndent())
+                val jarPath = Restart().getNowJarName()
+                val restartJson = mapper.createObjectNode()
+                restartJson.put("jar_file", jarPath)
+                mapper.writeValue(restartFile, restartJson)
                 logInfo("重启配置文件缺失，已自动创建")
             } else {
                 val restartJson = mapper.readTree(restartFile) as ObjectNode

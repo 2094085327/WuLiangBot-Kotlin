@@ -7,7 +7,6 @@ import bot.wuliang.config.CommonConfig.IMG_CACHE_PATH
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.qiNiuCos.QiNiuService
 import bot.wuliang.tencentCos.CosFileServiceImpl
-import com.idrsolutions.image.png.PngCompressor
 import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
@@ -288,13 +287,6 @@ class WebImgUtil(
         } catch (e: IOException) {
             throw RuntimeException(e)
         }
-    }
-
-    @Suppress("unused")
-    fun compressImage(imagePath: String) {
-        val file = File(imagePath)
-        val outfile = File(imagePath)
-        PngCompressor.compress(file, outfile)
     }
 
     @Suppress("unused")

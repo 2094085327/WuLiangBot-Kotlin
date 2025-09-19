@@ -989,7 +989,7 @@ class LifeRestartUtil @Autowired constructor(
                 val next = judgeList[i + 1]
                 val nextMin = next.min ?: continue
 
-                if (input in currentMin..<nextMin) {
+                if (input in currentMin .. nextMin) {
                     return current
                 }
             }

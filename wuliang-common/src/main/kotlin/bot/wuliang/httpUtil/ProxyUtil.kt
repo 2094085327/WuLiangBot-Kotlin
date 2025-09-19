@@ -6,7 +6,6 @@ import bot.wuliang.redis.RedisService
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -20,7 +19,6 @@ class ProxyUtil {
     // api 接口
     val api = "https://proxy.scdn.io/api/get_proxy.php?protocol=socks5&count=20"
 
-    @Scheduled(cron = "0 55 * * * ?")
     fun proxyMain(): List<ProxyInfo>? {
         // 从 Redis 获取已存储的代理列表
         val proxies = redisService.getValueTyped<List<ProxyInfo>>(PROXY_CACHE_KEY)
@@ -89,8 +87,8 @@ class ProxyUtil {
                     val proxyAddress = Proxy(Proxy.Type.SOCKS, InetSocketAddress(proxy.ip, proxy.port!!))
                     return@async try {
                         // 用于校验代理的临时解决方案
-                        HttpUtil.doGetStrNoLog(
-                            "https://api.warframe.market/v1/items/sentient_concourse_scene/orders",
+                        HttpUtil.doGetJson(
+                            api,
                             headers = mutableMapOf("Platform" to "xbox"),
                             proxy = proxyAddress
                         )

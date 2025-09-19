@@ -1,8 +1,6 @@
 package bot.wuliang.utils
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
-import bot.wuliang.imageProcess.WebImgUtil
-import cn.hutool.extra.qrcode.QrCodeUtil
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
@@ -19,7 +17,6 @@ import java.io.ByteArrayOutputStream
  */
 @Component
 class QRLoginUtil(
-    @Autowired val webImgUtil: WebImgUtil,
     @Autowired val mysApiTools: MysApiTools
 ) {
 
@@ -44,13 +41,7 @@ class QRLoginUtil(
         val url = ticketUrl["data"]["url"].textValue()
         val ticket = url.substringAfter("ticket=")
         val outputStream = ByteArrayOutputStream()
-        QrCodeUtil.generate(
-            url,
-            300,
-            300,
-            "jpg",
-            outputStream
-        )
+        QrCodeUtils.encode(url, outputStream)
 
         return Pair(outputStream.toByteArray(), ticket)
     }

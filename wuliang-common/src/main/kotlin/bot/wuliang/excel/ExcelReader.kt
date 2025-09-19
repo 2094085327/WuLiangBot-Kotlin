@@ -1,5 +1,6 @@
 package bot.wuliang.excel
 
+import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
@@ -11,7 +12,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.text.DecimalFormat
-import java.util.logging.Logger
 
 
 /**
@@ -21,7 +21,6 @@ import java.util.logging.Logger
  */
 @Suppress("UNUSED")
 class ExcelReader {
-    private val logger: Logger = Logger.getLogger(ExcelReader::class.java.getName()) // 日志打印类
 
     /**
      * 根据文件后缀名类型获取对应的工作簿对象
@@ -55,7 +54,7 @@ class ExcelReader {
         // 获取Excel文件
         val excelFile = File(fileName)
         if (!excelFile.exists()) {
-            logger.warning("指定的Excel文件:${fileName}不存在！")
+            logError("指定的Excel文件:${fileName}不存在！")
             return null
         }
 
@@ -87,7 +86,7 @@ class ExcelReader {
             val firstRowNum = sheet.firstRowNum
             val firstRow = sheet.getRow(firstRowNum)
             if (null == firstRow) {
-                logger.warning("解析Excel失败，在第一行没有读取到任何数据！")
+                logError("解析Excel失败，在第一行没有读取到任何数据！")
             }
 
             // 解析每一行的数据，构造数据对象

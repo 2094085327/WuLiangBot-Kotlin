@@ -1,5 +1,6 @@
 package bot.wuliang.utils
 
+import org.apache.commons.lang3.StringUtils
 import org.springframework.util.AntPathMatcher
 import java.util.*
 import kotlin.collections.ArrayList
@@ -8,7 +9,7 @@ import kotlin.collections.HashSet
 /**
  * 字符串工具类
  */
-object StringUtils : org.apache.commons.lang3.StringUtils() {
+object StringUtils {
     /** 空字符串 */
     private const val NULLSTR = ""
 
@@ -235,7 +236,7 @@ object StringUtils : org.apache.commons.lang3.StringUtils() {
     fun inStringIgnoreCase(str: String, vararg strs: String): Boolean {
         if (str.isNotEmpty() && strs.isNotEmpty()) {
             for (s in strs) {
-                if (str.equals(trim(s), ignoreCase = true)) {
+                if (str.equals(StringUtils.trim(s), ignoreCase = true)) {
                     return true
                 }
             }
@@ -344,7 +345,7 @@ object StringUtils : org.apache.commons.lang3.StringUtils() {
                 return name
             }
         }
-        return capitalize(name)
+        return StringUtils.capitalize(name)
     }
 
     /**

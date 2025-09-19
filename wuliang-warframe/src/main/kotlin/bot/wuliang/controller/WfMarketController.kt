@@ -9,7 +9,7 @@ import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.vo.WfMarketVo
-import bot.wuliang.httpUtil.HttpBase.UrlUtil.urlEncode
+import bot.wuliang.httpUtil.HttpUtil.urlEncode
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
