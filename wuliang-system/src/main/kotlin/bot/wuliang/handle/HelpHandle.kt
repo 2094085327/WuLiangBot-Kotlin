@@ -1,4 +1,4 @@
-package bot.wuliang.help
+package bot.wuliang.handle
 
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.utils.BotUtils
@@ -13,12 +13,10 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.service.DirectivesService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.stereotype.Controller
 
 @Component
-@Controller
 @ActionService
-class Help @Autowired constructor(
+class HelpHandle @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val redisService: RedisService,
     private val directivesService: DirectivesService
@@ -39,7 +37,8 @@ class Help @Autowired constructor(
             }
         }
 
-        imgName += directivesList?.toMd5() ?: ""
+        imgName += directivesList?.toMd5() ?: System.currentTimeMillis().toString()
+
 
         val imageData = WebImgUtil.ImgData(
             imgName = imgName,
