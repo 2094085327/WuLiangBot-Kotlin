@@ -229,4 +229,14 @@ object JacksonUtil {
         return objectMapper.convertValue(jsonNode, Map::class.java) as Map<T, Y> // 使用全局 objectMapper
     }
 
+    /**
+     * 将JsonNode转换为Float类型，如果转换失败则返回默认值
+     *
+     * @param default 当JsonNode为null、不是文本类型或无法转换为Float时返回的默认值
+     * @return 转换成功的Float值或默认值
+     */
+    fun JsonNode?.asFloatOrDefault(default: Float): Float {
+        return this?.textValue()?.toFloatOrNull() ?: default
+    }
+
 }

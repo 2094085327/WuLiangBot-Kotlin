@@ -59,12 +59,16 @@ class WebImgUtil(
      *
      * @param url 网址链接
      * @param element 指定截图元素
+     * @param waitElement 等待此元素出现后执行截图
      * @param imgName 图片名称
      * @param imgPath 图片存储路径
      * @param width 图片宽度
      * @param height 图片高度
      * @param scale 缩放等级
+     * @param imageType 图片格式
      * @param sleepTime 等待时间
+     * @param openCache 启用缓存 默认启用 在七牛云图床中使用 目前弃用
+     * @param local 是否为本地图片
      */
     data class ImgData(
         val url: String,
