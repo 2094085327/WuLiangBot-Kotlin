@@ -17,8 +17,17 @@ swagger:
   pathMapping:
 
 logging:
+  logfile:
+    # 日志文件名
+    name: WuLiang
+    # 日志文件路径
+    root-path: logs
+    # 日志文件最大大小
+    max-size: 50MB
   level:
     bot.wuliang: debug
+    # 日志文件配置
+  config: classpath:logback-spring.xml
 
 mybatis-plus:
   # xml扫描，多个目录用逗号或者分号分隔（告诉 Mapper 所对应的 XML 文件位置）
