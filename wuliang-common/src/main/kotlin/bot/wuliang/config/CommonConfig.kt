@@ -16,9 +16,6 @@ object CommonConfig {
     /**进程pid路径*/
     const val APP_PID_PATH = "$RESOURCES_PATH/app.pid"
 
-    /**日活数据路径*/
-    const val DAILY_ACTIVE_PATH = "$RESOURCES_OTHER/daily_active.json"
-
     /**重启配置路径*/
     const val RESTART_CONFIG = "$RESOURCES_OTHER/restart_config.json"
 

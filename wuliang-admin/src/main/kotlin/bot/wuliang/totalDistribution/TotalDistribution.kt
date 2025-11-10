@@ -121,7 +121,12 @@ class TotalDistribution @Autowired constructor(
 
         if (!directivesMatch) {
             val directivesList = redisService.getValueTyped<List<DirectivesEntity>>(DIRECTIVES_KEY)
-            val matchedCommands = directivesList?.let {directive-> otherUtil.findMatchingStrings(match, directive.map { it.directiveName!! }) }
+            val matchedCommands = directivesList?.let { directive ->
+                otherUtil.findMatchingStrings(
+                    match,
+                    directive.filter { it.enable == 1 }.map { it.directiveName!! }
+                )
+            }
             context.sendMsg("未知指令，你可能在找这些指令：$matchedCommands")
             val endTime: Long = System.currentTimeMillis()
             // 简化处理新SDK的上下文信息
