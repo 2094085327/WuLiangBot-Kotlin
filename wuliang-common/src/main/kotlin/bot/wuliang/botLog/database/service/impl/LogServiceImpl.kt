@@ -2,7 +2,7 @@ package bot.wuliang.botLog.database.service.impl
 
 import bot.wuliang.botLog.database.mapper.LogMapper
 import bot.wuliang.botLog.database.service.LogService
-import bot.wuliang.botLog.logAop.LogEntity
+import bot.wuliang.botLog.database.entity.LogEntity
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.core.metadata.IPage
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
@@ -34,7 +34,7 @@ class LogServiceImpl : ServiceImpl<LogMapper?, LogEntity?>(), LogService {
         return logMapper.selectLogByTime(timeRanges)
     }
 
-    override fun selectList(page:IPage<LogEntity>,logEntity: LogEntity): IPage<LogEntity> {
+    override fun selectList(page:IPage<LogEntity>, logEntity: LogEntity): IPage<LogEntity> {
         return logMapper.selectLogList(page,logEntity)
     }
 }

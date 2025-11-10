@@ -1,7 +1,7 @@
 package bot.wuliang.botLog.database.controller
 
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
-import bot.wuliang.botLog.logAop.LogEntity
+import bot.wuliang.botLog.database.entity.LogEntity
 import bot.wuliang.core.page.TableDataInfo
 import bot.wuliang.utils.PageUtils
 import io.swagger.annotations.Api

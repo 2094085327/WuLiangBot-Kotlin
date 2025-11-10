@@ -1,14 +1,12 @@
 package bot.wuliang.totalDistribution
 
 import bot.wuliang.botLog.database.service.impl.LogServiceImpl
-import bot.wuliang.botLog.logAop.LogEntity
+import bot.wuliang.botLog.database.entity.LogEntity
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.utils.BotUtils.ContextUtil.initializeContext
 import bot.wuliang.command.CommandRegistry
-import bot.wuliang.config.CommonConfig.DAILY_ACTIVE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
-import bot.wuliang.dailyAcitve.DailyActive
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.otherUtil.OtherUtil
@@ -36,8 +34,6 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.io.File
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.annotation.PostConstruct
 
 
@@ -51,7 +47,6 @@ import javax.annotation.PostConstruct
 class TotalDistribution @Autowired constructor(
     private val redisService: RedisService,
     private val logService: LogServiceImpl,
-    private val dailyActive: DailyActive,
     private val directivesService: DirectivesService,
     private val botConfigService: BotConfigService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
@@ -71,17 +66,6 @@ class TotalDistribution @Autowired constructor(
     @PostConstruct
     fun creatDailyActiveFile() {
         scope.launch {
-            val file = File(DAILY_ACTIVE_PATH)
-            if (!file.exists()) {
-                file.createNewFile()
-                // 当前日期
-                val currentTime =
-                    LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                val json =
-                    """{"data":[{"date":"$currentTime","dailyActiveUsers":0,"totalUpMessages":0}]}""".trimIndent()
-                file.writeText(json)
-                logInfo("日活日志文件缺失，已自动创建")
-            }
             val restartFile = File(RESTART_CONFIG)
             if (!restartFile.exists()) {
                 restartFile.createNewFile()
@@ -100,8 +84,6 @@ class TotalDistribution @Autowired constructor(
 
     @EventListener
     fun endEventListenerShutdown(event: ContextClosedEvent) {
-        // 保存日活日志
-        dailyActive.initDailyActive()
         logInfo("程序关闭...进行关键信息保存")
     }
 

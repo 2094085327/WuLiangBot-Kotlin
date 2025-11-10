@@ -1,6 +1,6 @@
 package bot.wuliang.botLog.database.service
 
-import bot.wuliang.botLog.logAop.LogEntity
+import bot.wuliang.botLog.database.entity.LogEntity
 import com.baomidou.mybatisplus.core.metadata.IPage
 import java.time.LocalDateTime
 
@@ -23,5 +23,5 @@ interface LogService {
      * @param logEntity 实体类
      * @return
      */
-    fun selectList(page: IPage<LogEntity>,logEntity: LogEntity):IPage<LogEntity>
+    fun selectList(page: IPage<LogEntity>, logEntity: LogEntity):IPage<LogEntity>
 }

@@ -1,8 +1,11 @@
 package bot.wuliang.botLog.logAop
 
+import bot.wuliang.botLog.database.entity.LogEntity
+import bot.wuliang.botLog.database.entity.PlatformStats
+import bot.wuliang.botLog.database.service.LogService
+import bot.wuliang.botLog.database.service.PlatformStatsService
 import bot.wuliang.utils.BotUtils
 
-import bot.wuliang.botLog.database.service.impl.LogServiceImpl
 import bot.wuliang.utils.BotUtils.ContextUtil.initializeContext
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.aspectj.lang.ProceedingJoinPoint
@@ -22,9 +25,10 @@ import java.time.LocalDateTime
  */
 @Aspect
 @Component
-class LogAspect {
-    @Autowired
-    private lateinit var logService: LogServiceImpl
+class LogAspect(
+    @Autowired private val logService: LogService,
+    @Autowired private val platformStatsService: PlatformStatsService
+) {
 
     @Pointcut("@annotation(bot.wuliang.botLog.logAop.SystemLog)")
     fun pc() {
@@ -82,7 +86,6 @@ class LogAspect {
     }
 
 
-    @Throws(JsonProcessingException::class)
     private fun handleAfter(start: Long, logParam: LogEntity) {
         // 设置核心方法执行时长
         val end = System.currentTimeMillis()
@@ -92,6 +95,16 @@ class LogAspect {
         logParam.createTime = LocalDateTime.now()
         // 往数据库插入日志
         logService.insertLog(logParam)
+
+        val platformStats = PlatformStats(
+            // 时间桶，将当前时间格式化为整点小时
+            timestamp = LocalDateTime.now().withMinute(0).withSecond(0).withNano(0),
+            count = 1
+        )
+
+        // 插入或更新 存在对应时间时将count+1
+        platformStatsService.insertOrUpdatePlatformStats(platformStats)
+
     }
 
     /**

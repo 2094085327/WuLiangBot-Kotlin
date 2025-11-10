@@ -1,6 +1,6 @@
 package bot.wuliang.botLog.database.mapper
 
-import bot.wuliang.botLog.logAop.LogEntity
+import bot.wuliang.botLog.database.entity.LogEntity
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import com.baomidou.mybatisplus.core.metadata.IPage
 import org.apache.ibatis.annotations.Mapper
@@ -17,5 +17,5 @@ import java.time.LocalDateTime
 interface LogMapper : BaseMapper<LogEntity?> {
     fun selectLogByTime(@Param("timeRanges") timeRanges: MutableList<Map<String, LocalDateTime>>): List<LogEntity>
 
-    fun selectLogList(page: IPage<LogEntity>,logEntity: LogEntity): IPage<LogEntity>
+    fun selectLogList(page: IPage<LogEntity>, logEntity: LogEntity): IPage<LogEntity>
 }

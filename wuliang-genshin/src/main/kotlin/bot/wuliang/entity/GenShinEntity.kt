@@ -10,7 +10,7 @@ import java.time.LocalDateTime
  *@Date 2023/10/4 11:26
  *@User 86188
  */
-@TableName("genshinInfo")
+@TableName("genshin_info")
 data class GenShinEntity(
     /**
      * 用户UID

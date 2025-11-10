@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.botLog.database.mapper.PlatformStatsMapper">
+
+    <insert id="insertOrUpdatePlatformStats" parameterType="bot.wuliang.botLog.database.entity.PlatformStats">
+        INSERT INTO bot_platform_stats (timestamp, count)
+        VALUES (#{timestamp}, #{count})
+        ON DUPLICATE KEY UPDATE count = count + VALUES(count)
+    </insert>
+
+    <select id="selectPlatformStatsWithOffset" parameterType="int"
+            resultType="bot.wuliang.botLog.database.entity.PlatformStats">
+        SELECT * FROM bot_platform_stats
+        <where>
+            timestamp >= UNIX_TIMESTAMP() - #{offset}
+            ORDER BY timestamp ASC
+        </where>
+    </select>
+
+    <select id="selectAllMsgCount" resultType="int">
+        SELECT SUM(count)
+        FROM bot_platform_stats
+    </select>
+
+</mapper>

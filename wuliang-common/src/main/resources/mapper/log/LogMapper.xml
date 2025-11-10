@@ -17,7 +17,7 @@
         from bot_log
     </sql>
 
-    <select id="selectLogByTime" resultType="bot.wuliang.botLog.logAop.LogEntity">
+    <select id="selectLogByTime" resultType="bot.wuliang.botLog.database.entity.LogEntity">
         <include refid="logEntity"/>
         <where>
             <foreach collection="timeRanges" item="timeRange" separator="OR">
@@ -25,7 +25,7 @@
             </foreach>
         </where>
     </select>
-   <select id="selectLogList" resultType="bot.wuliang.botLog.logAop.LogEntity">
+   <select id="selectLogList" resultType="bot.wuliang.botLog.database.entity.LogEntity">
     <include refid="logEntity"/>
     <where>
         <if test="logEntity.botId != null">

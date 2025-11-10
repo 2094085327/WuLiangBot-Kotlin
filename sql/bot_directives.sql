@@ -1,17 +1,17 @@
 /*
  Navicat Premium Data Transfer
 
- Source Server         : wuliang
- Source Server Type    : MySQL
- Source Server Version : 80017
- Source Host           : localhost:3306
+ Source Server         : 122.51.5.228
+ Source Server Type    : MariaDB
+ Source Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
+ Source Host           : 122.51.5.228:3306
  Source Schema         : wuliang
 
- Target Server Type    : MySQL
- Target Server Version : 80017
+ Target Server Type    : MariaDB
+ Target Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
  File Encoding         : 65001
 
- Date: 08/04/2025 21:57:12
+ Date: 06/11/2025 09:13:52
 */
 
 SET NAMES utf8mb4;
@@ -28,24 +28,24 @@ CREATE TABLE `bot_directives`  (
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '显示描述',
   `detail` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '具体描述',
   `regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '指令校验正则',
-  `enable` tinyint(1) NULL DEFAULT 0 COMMENT '是否启用  0为否 1为是',
+  `enable` tinyint(1) NULL DEFAULT 1 COMMENT '是否启用  0为否 1为是',
   `del_status` tinyint(1) NULL DEFAULT 0 COMMENT '是否删除  0为否 1为是',
   `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 45 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of bot_directives
 -- ----------------------------
-INSERT INTO `bot_directives` VALUES (2, 1, '帮助/菜单/help', '帮助信息', '获取帮助信息', '\\b(帮助|菜单|help)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (2, 1, '帮助/菜单/help', '帮助信息', '获取帮助信息', '\\b(帮助|菜单|help)\\b', 0, 0, '2025-04-06 10:44:40', '2025-11-03 15:07:45');
 INSERT INTO `bot_directives` VALUES (3, 1, '天气 城市', '查询城市的天气', '如使用「天气 北京」来查询北京当前的天气情况', '\\b^天气\\s(\\S+)', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (4, 1, '地理 城市', '查询城市的地理信息', '如使用「地理 北京」来查询北京的地理信息', '\\b^地理\\s(\\S+)', 1, 0, '2025-04-06 10:44:40', NULL);
-INSERT INTO `bot_directives` VALUES (5, 1, '清除缓存', '清除机器人的缓存', '使用指令清除机器人的一些缓存内容', '\\b清除缓存\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (5, 1, '清除缓存', '清除机器人的缓存', '使用指令清除机器人的一些缓存内容', '\\b清除缓存\\b', 1, 0, '2025-04-06 10:44:40', '2025-06-02 13:36:15');
 INSERT INTO `bot_directives` VALUES (6, 1, '更新资源', '更新机器人用到的资源', '更新机器人用到的资源，可以保持机器人的功能为最新', '\\b更新资源\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (7, 1, '无量姬状态', '获取无量姬的运行状态', '获取无量姬在当前系统中的运行状态', '\\b无量姬状态\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (8, 1, '重载指令', '重新加载指令列表', '重新加载指令列表，刷新可用指令', '\\b重载指令\\b', 1, 0, '2025-04-06 10:44:40', NULL);
-INSERT INTO `bot_directives` VALUES (9, 1, '日活', '查看无量姬当前的日活~', '查看无量姬当前的日活~', '\\b(日活)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (9, 1, '日活', '查看无量姬当前的日活~', '查看无量姬当前的日活~', '\\b(日活)\\b', 0, 0, '2025-04-06 10:44:40', '2025-08-15 16:17:32');
 INSERT INTO `bot_directives` VALUES (10, 2, '更新词库', '更新Warframe词库', '更新Warframe中英文翻译的词库', '\\b更新词库\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (11, 2, 'wm', 'wm市场物品查询', '使用指令「wm 物品名」来查询Warframe Market上的物品订单\n如「wm Saryn Prime Set」，支持中文模糊查询', '(?i)\\bwm\\s*(\\S+.*)$', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (12, 2, 'wr', 'wm市场紫卡查询', '使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\n如「wr 战刃 暴击 无负」，支持中文模糊查询', '(?i)\\b(wr|wmr)\\s*(\\S+.*)$', 1, 0, '2025-04-06 10:44:40', NULL);
@@ -64,9 +64,9 @@ INSERT INTO `bot_directives` VALUES (24, 2, '地球状态', '查看地球昼夜�
 INSERT INTO `bot_directives` VALUES (25, 2, '金星状态', '查看金星平原状态', '查询 Warframe 金星平原当前状态\n可以使用指令 金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜 进行查询', '\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (26, 2, '双衍状态', '查看双衍平原当前状态', '查询 Warframe 双衍平原状态 可以使用指令 双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态 进行查询', '\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (27, 2, '平原', '查看全部平原的状态信息', '查询 Warframe 所有平原当前状态\n可以使用指令 平原|全部平原|平原时间 进行查询', '\\b(平原|全部平原|平原时间)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
-INSERT INTO `bot_directives` VALUES (28, 2, '入侵', '查询当前的入侵信息', '查询 Warframe 当前的入侵信息', '\\b入侵\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (28, 2, '入侵', '查询当前的入侵信息', '查询 Warframe 当前的入侵信息', '\\b入侵\\b', 1, 0, '2025-04-06 10:44:40', '2025-06-28 09:00:20');
 INSERT INTO `bot_directives` VALUES (29, 2, '本周灵化', '查看本周回廊的灵化信息', '查询 Warframe 本周回廊信息\n可以使用指令 本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊 进行查询', '\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
-INSERT INTO `bot_directives` VALUES (30, 2, '紫卡排行', '查看今天的紫卡价格排行榜', '查询 Warframe 今天的紫卡价格排行榜\n可以使用指令 紫卡价格|紫卡排行|紫卡 进行查询', '\\b(紫卡价格|紫卡排行|紫卡)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (30, 2, '紫卡排行', '查看紫卡价格排行榜', '查询 DE官方公布的 Warframe 的紫卡成交价格排行榜\n可以使用指令 「紫卡价格|紫卡排行|紫卡」进行查询', '\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)(\\s+.*)?$', 1, 0, '2025-04-06 10:44:40', '2025-09-01 09:34:33');
 INSERT INTO `bot_directives` VALUES (31, 2, '增幅器', '查看增幅器部件', '查询 Warframe 增幅器序号与功能\n可以使用指令 增幅器|指挥官|指挥官武器|amp 进行查询', '(?i)\\b(增幅器|指挥官|指挥官武器|amp)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (32, 2, '希图斯幽魂', '查看幽魂快速获取路线', '查看 Warframe 在希图斯平原快速获取幽魂的路线\n可以使用指令 幽魂|希图斯幽魂 进行查询', '(?i)\\b(幽魂|希图斯幽魂)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (33, 2, '信条/终幕轮换', '查看信条和终幕武器轮换时间', '查看 Warframe 在佩兰数列购买的武器和终幕武器的轮换时间\n可以使用指令 信条|终幕|终幕轮换|信条轮换 进行查询', '(?i)\\b(信条|终幕|终幕轮换|信条轮换)\\b', 1, 0, '2025-04-06 10:44:40', NULL);
@@ -81,5 +81,7 @@ INSERT INTO `bot_directives` VALUES (41, 4, '十连', '进行原神模拟抽卡'
 INSERT INTO `bot_directives` VALUES (42, 4, '历史记录\r', '查看原神抽卡历史记录', '使用「历史记录 你的原神uid」来查询你存在机器人上的抽卡记录\n如果已经绑定过机器人，可以直接使用「历史记录」来查询自己的抽卡记录', '\\b^历史记录\\s*(\\S*)?', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (43, 4, '抽卡记录', '获取原神抽卡记录', '直接使用指令「抽卡记录」，使用米游社扫码来获取你的原神抽卡记录\n若私聊向机器人使用「抽卡记录 获取的抽卡链接」也同样可用获取到抽卡记录\n抽卡链接方式见指令「抽卡链接」', '\\b^抽卡记录\\s*(\\S.*)', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (44, 4, '抽卡链接', '获取原神抽卡链接', '复制并且黏贴到电脑Powershell中\n打开原神抽卡记录页面，Ctrl+A全选，Ctrl+C复制，然后在Powershell中Ctrl+V粘贴并回车\n即可获取到抽卡链接', '\\b抽卡链接\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (45, 2, '翻译', '获取物品对应翻译', '输入需要翻译的中文/英文，进行对应的转换', '(?i)\\b(翻译 (.*))\\b', 1, 0, '2025-06-27 10:05:16', '2025-08-15 16:18:06');
+INSERT INTO `bot_directives` VALUES (46, 2, '结合仪式', '今日圣殿结合仪式目标', '用于获取今日圣殿结合仪式目标，查看出没任务，可用指令「结合仪式|结合|结合目标|大黄脸」', '\\b(结合仪式|结合|结合目标|大黄脸)\\b', 1, 0, '2025-08-21 15:41:22', '2025-08-28 16:27:21');
 
 SET FOREIGN_KEY_CHECKS = 1;
