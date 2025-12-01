@@ -12,7 +12,7 @@
             resultType="bot.wuliang.botLog.database.entity.PlatformStats">
         SELECT * FROM bot_platform_stats
         <where>
-            timestamp >= UNIX_TIMESTAMP() - #{offset}
+            timestamp >= DATE_SUB(NOW(), INTERVAL #{offset} SECOND)
             ORDER BY timestamp ASC
         </where>
     </select>
