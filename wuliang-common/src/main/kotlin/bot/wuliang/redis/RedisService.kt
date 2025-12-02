@@ -59,7 +59,11 @@ class RedisService {
     // 作用: 向 Redis 中存储一个键值对，并设置其过期时间
     // timeout 指定时间量，timeUnit 指定时间单位
     fun setValueWithExpiry(key: String, value: Any, timeout: Long, timeUnit: TimeUnit) {
-        redisTemplate.opsForValue()[key, value, timeout] = timeUnit
+        var expiryTime = timeout
+        if (timeout <= 0) {
+            expiryTime = 1
+        }
+        redisTemplate.opsForValue()[key, value, expiryTime] = timeUnit
     }
 
     fun incrementValue(key: String): Int? {

@@ -15,6 +15,7 @@ import bot.wuliang.restart.Restart
 import bot.wuliang.service.BotConfigService
 import bot.wuliang.service.DirectivesService
 import bot.wuliang.text.Convert
+import bot.wuliang.utils.BotUtils
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.github.kloping.qqbot.Starter
@@ -103,11 +104,19 @@ class TotalDistribution @Autowired constructor(
         })
     }
 
+    private fun extractMatchOrReplyError(context: BotUtils.Context): String? {
+        val msg = context.messageContent
+        if (msg.text.isEmpty() && msg.emojis.isEmpty()) {
+            context.sendMsg("无量姬当前所有的指令都被关闭了，可能正在维护中~")
+            return null
+        }
+        return msg.text.removePrefix("/")
+    }
+
     private suspend fun handleQQMessage(event: MessageV2Event) {
         val startTime: Long = System.currentTimeMillis()
-        val context =   initializeContext(event)
-        val match = context.message.replaceFirst("/", "")
-
+        val context = initializeContext(event)
+        val match = extractMatchOrReplyError(context) ?: return
         val allEnableConfig =
             Convert.toBool(botConfigService.selectConfigByKey("bot.directives.allEnable"))
         if (!allEnableConfig) {
