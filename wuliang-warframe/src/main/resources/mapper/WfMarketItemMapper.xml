@@ -5,14 +5,15 @@
 <mapper namespace="bot.wuliang.mapper.WfMarketItemMapper">
 
     <insert id="insertMarketItem" parameterType="java.util.List">
-        INSERT INTO wf_market_item (id, en_name, zh_name, url_name, use_count) VALUES
+        INSERT INTO wf_market_item (id, en_name, zh_name, url_name,ducats, use_count) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.id}, #{item.enName}, #{item.zhName}, #{item.urlName}, #{item.useCount})
+            (#{item.id}, #{item.enName}, #{item.zhName}, #{item.urlName}, #{item.ducats}, #{item.useCount})
         </foreach>
         ON DUPLICATE KEY UPDATE
         en_name = VALUES(en_name),
         zh_name = VALUES(zh_name),
         url_name = VALUES(url_name),
+        ducats = VALUES(ducats),
         use_count = VALUES(use_count);
     </insert>
 
@@ -42,5 +43,14 @@
             OR en_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
             OR url_name LIKE CONCAT('%', #{paramsMap.zh}, '%')
                   );
+    </select>
+
+    <select id="batchSelectByZhNameList" parameterType="java.util.List" resultType="bot.wuliang.entity.WfMarketItemEntity">
+        SELECT id, en_name, zh_name, url_name, use_count
+        FROM wf_market_item
+        WHERE zh_name IN
+        <foreach collection="zhNameList" item="zhName" open="(" separator="," close=")">
+            #{zhName}
+        </foreach>
     </select>
 </mapper>

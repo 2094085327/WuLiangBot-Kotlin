@@ -7,6 +7,8 @@ val LANGUAGE_EN_HANS: MutableMap<String, Any> = mutableMapOf("language" to "en")
 
 const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 
+const val WARFRAME_MARKET_BASE_URL_V2 = "https://api.warframe.market/v2"
+
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
 const val WARFRAME_STATUS_URL = "https://content.warframe.com/dynamic/worldState.php"
@@ -25,18 +27,19 @@ const val WARFRAME_DATA = "$WARFRAME_RESOURCES/data"
  * Market 物品
  */
 const val WARFRAME_MARKET_ITEMS = "$WARFRAME_MARKET_BASE_URL/items"
+const val WARFRAME_MARKET_ITEMS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/items"
 
 const val WARFRAME_STATUS_ITEM = "$WARFRAME_STATUS_BASE_URL/items"
 
 /**
  * Market 紫卡武器
  */
-const val WARFRAME_MARKET_RIVEN_ITEMS = "$WARFRAME_MARKET_BASE_URL/riven/items"
+const val WARFRAME_MARKET_RIVEN_ITEMS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/riven/weapons"
 
 /**
  * Market 紫卡属性
  */
-const val WARFRAME_MARKET_RIVEN_ATTRIBUTES = "$WARFRAME_MARKET_BASE_URL/riven/attributes"
+const val WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2 = "$WARFRAME_MARKET_BASE_URL_V2/riven/attributes"
 
 /**
  * Market 最新紫卡拍卖

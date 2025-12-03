@@ -1,13 +1,11 @@
 package bot.wuliang.utils
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
-import bot.wuliang.config.WARFRAME_MARKET_ITEMS
-import bot.wuliang.config.WARFRAME_MARKET_LICH_AUCTIONS
-import bot.wuliang.config.WARFRAME_MARKET_RIVEN_AUCTIONS
-import bot.wuliang.config.WARFRAME_MARKET_SISTER_AUCTIONS
+import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
+import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
@@ -663,4 +661,56 @@ class WfUtil {
         }
     }
 
+    fun getMarketItems(): List<WfMarketItemEntity> {
+        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
+        val items = json["data"]
+
+        return items.map { item ->
+            val i18n = item["i18n"]
+
+            WfMarketItemEntity(
+                id = item["id"].textValue(),
+                urlName = item["slug"].textValue(),
+                zhName = i18n["zh-hans"]["name"]?.textValue(),
+                enName = i18n["en"]["name"].textValue(),
+                ducats = item["ducats"]?.intValue()
+            )
+        }
+    }
+
+    fun getRivenItems(): List<WfRivenEntity> {
+        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
+        val items = json["data"]
+
+        return items.map { item ->
+            val i18n = item["i18n"]
+            WfRivenEntity(
+                id = item["id"].textValue(),
+                urlName = item["slug"].textValue(),
+                zhName = i18n["zh-hans"]["name"]?.textValue(),
+                enName = i18n["en"]["name"].textValue(),
+                rGroup = item["group"].textValue(),
+                reqMasteryRank = item["reqMasteryRank"].floatValue(),
+                rivenType = item["rivenType"].textValue(),
+                disposition = item["disposition"].floatValue(),
+                attributesBool = 0
+            )
+        }
+    }
+
+    fun getRivenAttributes(): List<WfRivenEntity> {
+        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2, headers = LANGUAGE_ZH_HANS)
+        val items = json["data"]
+
+        return items.map { item ->
+            WfRivenEntity(
+                id = item["id"].textValue(),
+                urlName = item["slug"].textValue(),
+                zhName = item["i18n"]["zh-hans"]["name"].textValue(),
+                enName = item["i18n"]["en"]["name"].textValue(),
+                rGroup = item["group"].textValue(),
+                attributesBool = 1
+            )
+        }
+    }
 }

@@ -26,7 +26,14 @@ data class WfMarketItemEntity(
      * 词条URL名
      */
     @TableField("url_name")
-    val urlName: String? = null,
+    var urlName: String? = null,
+
+    /**
+     * 物品对应的杜卡德金币值
+     * 可能为null
+     */
+    @TableField("ducats")
+    var ducats: Int? = null,
 
     /**
      * 被使用到的次数

@@ -22,6 +22,27 @@ data class WfRivenEntity(
     val id: String? = null,
 
     /**
+     * 紫卡组
+     */
+    @JsonProperty("rgroup")
+    @TableField(value = "r_group")
+    val rGroup: String? = null,
+
+    /**
+     * 精通段位
+     */
+    @JsonProperty("reqMasteryRank")
+    @TableField(value = "req_mastery_rank")
+    val reqMasteryRank: Float? = null,
+
+    /**
+     * 紫卡类型
+     */
+    @JsonProperty("rivenType")
+    @TableField(value = "riven_type")
+    val rivenType: String? = null,
+
+    /**
      * 词条URL名
      */
     @JsonProperty("urlName")
@@ -42,12 +63,13 @@ data class WfRivenEntity(
     @TableField(value = "zh")
     var zhName: String? = null,
 
+
     /**
-     * 紫卡组
+     * 倾向
      */
-    @JsonProperty("rgroup")
-    @TableField(value = "r_group")
-    val rGroup: String? = null,
+    @JsonProperty("disposition")
+    @TableField(value = "disposition")
+    var disposition: Float? = null,
 
     /**
      * 是否为紫卡属性

@@ -17,6 +17,7 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.utils.WfUtil
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -45,6 +46,9 @@ class WfTranslateLexicon {
     @Autowired
     lateinit var redisService: RedisService
 
+    @Autowired
+    lateinit var wfUtil: WfUtil
+
     /**
      * 获取Json数据并进行格式化
      *
@@ -66,43 +70,6 @@ class WfTranslateLexicon {
         updateStatusLexicon(lexiconMap, WARFRAME_STATUS_ITEM, "zh", true)
 
         return lexiconMap.values.toMutableList()
-    }
-
-    /**
-     * 获取Json数据并进行格式化
-     *
-     * @param lexiconMap 词库Map
-     * @return 格式化后的词库List
-     */
-    fun getMarketItem(lexiconMap: MutableMap<String, WfMarketItemEntity>): MutableList<WfMarketItemEntity> {
-        updateLexicon2(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_EN_HANS, "items", "item_name")
-        updateLexicon2(lexiconMap, WARFRAME_MARKET_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true)
-
-
-        return lexiconMap.values.toMutableList()
-    }
-
-
-    /**
-     * 获取紫卡列表
-     *
-     * @param rivenMap 词库Map
-     * @return 紫卡列表
-     */
-    fun getRivenList(rivenMap: MutableMap<String, WfRivenEntity>): MutableList<WfRivenEntity> {
-        updateRiven(rivenMap, WARFRAME_MARKET_RIVEN_ITEMS, LANGUAGE_EN_HANS, "items", "item_name")
-        updateRiven(rivenMap, WARFRAME_MARKET_RIVEN_ITEMS, LANGUAGE_ZH_HANS, "items", "item_name", isChinese = true)
-        updateRiven(rivenMap, WARFRAME_MARKET_RIVEN_ATTRIBUTES, LANGUAGE_EN_HANS, "attributes", "effect")
-        updateRiven(
-            rivenMap,
-            WARFRAME_MARKET_RIVEN_ATTRIBUTES,
-            LANGUAGE_ZH_HANS,
-            "attributes",
-            "effect",
-            isChinese = true
-        )
-
-        return rivenMap.values.toMutableList()
     }
 
     /**
@@ -158,43 +125,6 @@ class WfTranslateLexicon {
         }
     }
 
-    /**
-     * 更新紫卡词库
-     *
-     * @param marketItemMap 词库Map
-     * @param url 请求URL
-     * @param language 请求语言
-     * @param listKey 词库列表Key
-     * @param nameKey 词库名称Key
-     * @param isChinese 是否为中文
-     */
-    private fun updateLexicon2(
-        marketItemMap: MutableMap<String, WfMarketItemEntity>,
-        url: String,
-        language: MutableMap<String, Any>,
-        listKey: String,
-        nameKey: String,
-        isChinese: Boolean = false,
-    ) {
-        val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
-        items.forEach { item ->
-            val id = item["id"].textValue()
-            val entity = marketItemMap[id] ?: WfMarketItemEntity(
-                id = id,
-                enName = if (!isChinese) item[nameKey].textValue() else null,
-                urlName = item["url_name"].textValue(),
-                zhName = if (isChinese) item[nameKey].textValue() else null,
-                useCount = 0
-            )
-            if (isChinese) {
-                entity.zhName = item[nameKey].textValue()
-            } else {
-                entity.enName = item[nameKey].textValue()
-            }
-            marketItemMap[id] = entity
-        }
-    }
-
     fun updateStatusLexicon(
         lexiconMap: MutableMap<String, WfLexiconEntity>,
         url: String,
@@ -226,44 +156,6 @@ class WfTranslateLexicon {
                 }
                 lexiconMap[id] = entity
             }
-        }
-    }
-
-    /**
-     * 更新紫卡词库
-     *
-     * @param rivenMap 词库Map
-     * @param url 请求URL
-     * @param language 语言
-     * @param listKey 词库列表Key
-     * @param nameKey 物品名称Key
-     * @param isChinese 是否为中文
-     */
-    private fun updateRiven(
-        rivenMap: MutableMap<String, WfRivenEntity>,
-        url: String,
-        language: MutableMap<String, Any>,
-        listKey: String,
-        nameKey: String,
-        isChinese: Boolean = false
-    ) {
-        val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
-        items.forEach { item ->
-            val id = item["id"].textValue()
-            val entity = rivenMap[id] ?: WfRivenEntity(
-                id = id,
-                rGroup = item["group"].textValue(),
-                enName = if (!isChinese) item[nameKey].textValue() else "",
-                urlName = item["url_name"].textValue(),
-                zhName = if (isChinese) item[nameKey].textValue() else "",
-                attributesBool = if (url == WARFRAME_MARKET_RIVEN_ATTRIBUTES) 1 else 0
-            )
-            if (isChinese) {
-                entity.zhName = item[nameKey].textValue()
-            } else {
-                entity.enName = item[nameKey].textValue()
-            }
-            rivenMap[id] = entity
         }
     }
 
@@ -324,21 +216,23 @@ class WfTranslateLexicon {
 
                 // 使用async并行执行插入操作
                 val marketJob = async {
-                    wfMarketItemService.updateMarketItem(getMarketItem(marketItemMap))
+                    val marketItems = wfUtil.getMarketItems()
+                    wfMarketItemService.updateMarketItem(marketItems)
                     logInfo("Market更新完成")
                     marketItemMap.clear()
                 }
 
                 val lexiconJob = async {
-                    wfLexiconService.insertLexicon(getLexiconList(lexiconMap))
+//                    wfLexiconService.insertLexicon(getLexiconList(lexiconMap))
                     logInfo("词库更新完成")
                     lexiconMap.clear()
                 }
                 val rivenJob = async {
                     redisService.deleteKey(WF_MARKET_RIVEN_KEY)
-                    val rivenList = getRivenList(rivenMap)
+                    val rivenList = wfUtil.getRivenItems()
                     redisService.setValue(WF_MARKET_RIVEN_KEY, rivenList)
                     wfRivenService.insertRiven(rivenList)
+                    wfRivenService.insertRiven(wfUtil.getRivenAttributes())
                     logInfo("紫卡词库更新完成")
                     rivenMap.clear()
                 }

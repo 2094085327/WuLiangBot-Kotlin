@@ -100,12 +100,12 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
     }
 
 
-    override fun updateMarketItem(marketItemList: MutableList<WfMarketItemEntity>) {
-        // 每批插入1000条
-        val batchSize = 1000
+    override fun updateMarketItem(marketItemList: List<WfMarketItemEntity>) {
+        // 每批插入500条
+        val batchSize = 500
         var i = 0
         while (i < marketItemList.size) {
-            val batch: MutableList<WfMarketItemEntity> =
+            val batch: List<WfMarketItemEntity> =
                 marketItemList.subList(i, marketItemList.size.coerceAtMost(i + batchSize))
             wfMarketItemMapper.insertMarketItem(batch)
             i += batchSize
@@ -120,6 +120,10 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
             wfMarketItemMapper.updateById(wfMarketItemEntity)
             return wfMarketItemEntity
         } else null
+    }
+
+    override fun selectListZhNameList(keyList: List<String>): List<WfMarketItemEntity>? {
+        return wfMarketItemMapper.batchSelectByZhNameList(keyList)
     }
 
     override fun getItemByFuzzyMatching(key: String): List<WfMarketItemEntity>? {

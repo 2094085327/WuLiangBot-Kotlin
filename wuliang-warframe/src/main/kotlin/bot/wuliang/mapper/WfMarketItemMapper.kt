@@ -20,7 +20,7 @@ interface WfMarketItemMapper : BaseMapper<WfMarketItemEntity?> {
      *
      * @param marketItemList 物品信息列表
      */
-    fun insertMarketItem(marketItemList: MutableList<WfMarketItemEntity>)
+    fun insertMarketItem(marketItemList: List<WfMarketItemEntity>)
 
     /**
      * 根据关键字获取物品信息
@@ -46,4 +46,12 @@ interface WfMarketItemMapper : BaseMapper<WfMarketItemEntity?> {
      * @return 查询结果
      */
     fun selectItemByFuzzyMatching(@Param("paramsMap")paramsMap: Map<String, String>): List<WfMarketItemEntity>?
+
+    /**
+     * 根据中文名称列表批量查询物品信息
+     *
+     * @param zhNameList 中文名称列表
+     * @return 查询结果
+     */
+    fun batchSelectByZhNameList(@Param("zhNameList") zhNameList: List<String>): List<WfMarketItemEntity>?
 }
