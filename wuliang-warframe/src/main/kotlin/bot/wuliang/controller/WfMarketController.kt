@@ -1,5 +1,6 @@
 package bot.wuliang.controller
 
+import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.WARFRAME_AMP_PNG
@@ -21,7 +22,6 @@ import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
-import com.baidu.aip.ocr.AipOcr
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -31,7 +31,6 @@ import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
-import kotlin.collections.HashMap
 
 
 /**
@@ -48,7 +47,7 @@ class WfMarketController @Autowired constructor(
     private val wfRivenService: WfRivenService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
     private val redisService: RedisService,
-    private val aipOcrClient: AipOcr,
+    private val aipOcrClient: AipOcrClient,
     private val parseDataUtil: ParseDataUtil
 ) {
     @Autowired
@@ -340,14 +339,14 @@ class WfMarketController @Autowired constructor(
         runBlocking {
             messageContent.images.map { image ->
                 async {
-                    aipOcrClient.basicGeneralUrl(image.url, HashMap<String, String>())
+                    aipOcrClient.getBasicOcr(mapOf("url" to image.url))
                 }
             }.awaitAll().forEach { result ->
                 val root = JacksonUtil.readTree(result.toString())
                 val wordsArray = root["words_result"]
                 wordsList.addAll(
                     wordsArray.mapNotNull { it["words"]?.asText() }
-                        .map { word -> word.replace(Regex("""[xX]\d+$"""), "") } // 移除物品数量部分
+                        .map { word -> word.replace(Regex("""^\d+\s*[xX×Ⅹ]?\s*"""), "").trim() }// 移除物品数量部分
                 )
             }
         }

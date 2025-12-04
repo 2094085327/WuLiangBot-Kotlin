@@ -196,11 +196,9 @@ tencent:
 # 百度云平台OCR配置
 aip_ocr:
   # 应用ID
-  appid: "your_baidu_ocr_appid"
-  # API密钥
-  apikey: "your_baidu_ocr_apikey"
+  client_id: "your_baidu_client_id"
   # 密钥
-  secret: "your_baidu_ocr_secret"
+  client_secret: "your_baidu_client_secret"
 
 # 图片加载配置
 image_load:
