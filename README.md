@@ -192,12 +192,15 @@ tencent:
     policy_expire: 3600
     # 编码格式
     code_format: "UTF-8"
-
-
-# gensokyo框架配置
-gensokyo_config:
-  # 端口号
-  port: 15630
+ 
+# 百度云平台OCR配置
+aip_ocr:
+  # 应用ID
+  appid: "your_baidu_ocr_appid"
+  # API密钥
+  apikey: "your_baidu_ocr_apikey"
+  # 密钥
+  secret: "your_baidu_ocr_secret"
 
 # 图片加载配置
 image_load:

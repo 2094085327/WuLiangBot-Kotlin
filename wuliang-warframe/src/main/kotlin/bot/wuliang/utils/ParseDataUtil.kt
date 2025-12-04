@@ -1,7 +1,6 @@
 package bot.wuliang.utils
 
-import bot.wuliang.config.WARFRAME_INCARNON
-import bot.wuliang.config.WARFRAME_WEEKLY_RIVEN_PC
+import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
@@ -770,5 +769,21 @@ class ParseDataUtil {
 
         redisService.setValueWithExpiry(WF_INCARNON_KEY, incarnon, expire, TimeUnit.SECONDS)
         return incarnon
+    }
+
+    fun parseWmMinimalPrice(key: String): Int {
+        val json = HttpUtil.doGetJson(url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key")
+        val wmData = json["data"]
+        val filterData = wmData.filter { it["type"].textValue() == "sell" }
+        if (filterData.isEmpty()) {
+            return 0
+        }
+        val onlineOrders = filterData.filter { it["user"]["status"].textValue() != "offline" }
+
+        val targetOrders = onlineOrders.ifEmpty { filterData }
+
+        val minimalOrder = targetOrders.minByOrNull { it["platinum"].intValue() } ?: return 0
+        val price = minimalOrder["platinum"].intValue()
+        return price
     }
 }

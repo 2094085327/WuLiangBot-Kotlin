@@ -72,6 +72,7 @@ class WebImgUtil(
      */
     data class ImgData(
         val url: String,
+        val data: Any? = null,
         val element: String? = "body",
         val waitElement: String? = element,
         val imgName: String? = null,
@@ -218,6 +219,9 @@ class WebImgUtil(
         val playwright = Playwright.create()
         val browser = playwright.chromium().launch()
         val page: Page = browser.newPage()
+        if (imgData.data != null) {
+            page.addInitScript("window.INJECTED_DATA = " +  imgData.data )
+        }
         page.use { thisPage ->
             thisPage.navigate(imgData.url)
             var byteArray = thisPage.screenshot(Page.ScreenshotOptions().setFullPage(true))

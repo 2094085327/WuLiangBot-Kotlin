@@ -11,19 +11,27 @@ import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.httpUtil.HttpUtil.urlEncode
 import bot.wuliang.imageProcess.WebImgUtil
+import bot.wuliang.jacksonUtil.JacksonUtil
+import bot.wuliang.moudles.WmDucats
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
+import com.baidu.aip.ocr.AipOcr
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
+import kotlin.collections.HashMap
 
 
 /**
@@ -39,10 +47,14 @@ class WfMarketController @Autowired constructor(
     private val wfLexiconService: WfLexiconService,
     private val wfRivenService: WfRivenService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
-    private val redisService: RedisService
+    private val redisService: RedisService,
+    private val aipOcrClient: AipOcr,
+    private val parseDataUtil: ParseDataUtil
 ) {
     @Autowired
     private lateinit var wfMarketItemService: WfMarketItemService
+
+    private val wmRateLimiter = kotlinx.coroutines.sync.Semaphore(2)
 
     object WfMarket {
         var rivenOrderList: WfMarketVo.RivenOrderList? = null
@@ -311,4 +323,70 @@ class WfMarketController @Autowired constructor(
         }
     }
 
+    @SystemLog(businessName = "获取部件在WM的白金价格")
+    @AParameter
+    @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
+    fun getWmPrice(context: BotUtils.Context) {
+        val messageContent = context.messageContent
+        if (messageContent.images.isEmpty()) {
+            context.sendMsg("请发送 'WM价格'+'查询部件的售卖部分的截图' 来查询部件在WM的白金价格")
+            return
+        }
+        if (messageContent.images.size > 2) {
+            context.sendMsg("单次查询图片上限为2张")
+            return
+        }
+        val wordsList = mutableListOf<String>()
+        runBlocking {
+            messageContent.images.map { image ->
+                async {
+                    aipOcrClient.basicGeneralUrl(image.url, HashMap<String, String>())
+                }
+            }.awaitAll().forEach { result ->
+                val root = JacksonUtil.readTree(result.toString())
+                val wordsArray = root["words_result"]
+                wordsList.addAll(
+                    wordsArray.mapNotNull { it["words"]?.asText() }
+                        .map { word -> word.replace(Regex("""[xX]\d+$"""), "") } // 移除物品数量部分
+                )
+            }
+        }
+        if (wordsList.isEmpty()) {
+            context.sendMsg("未识别到任何部件名称，请重新发送尽可能清晰的部件售卖图")
+            return
+        }
+        val wfMarketItemEntityList = wfMarketItemService.selectListZhNameList(wordsList)
+        if (wfMarketItemEntityList.isNullOrEmpty()) {
+            context.sendMsg("未查询到任何匹配的部件，请重新发送尽可能清晰的部件售卖图")
+            return
+        }
+        context.sendMsg("正在查询 ${wfMarketItemEntityList.size} 个部件的 WM 最低售价，请耐心等待...")
+        val results = runBlocking {
+            wfMarketItemEntityList.map { item ->
+                async {
+                    wmRateLimiter.acquire()    // 限制 2 并发
+                    try {
+                        val price = parseDataUtil.parseWmMinimalPrice(item.urlName!!)
+                        val ducats = item.ducats ?: 0
+                        val ratio = if (price > 0) ducats.toDouble() / price else 0.0
+                        WmDucats(item.zhName, ducats, price, ratio)
+                    } finally {
+                        // 释放信号量
+                        wmRateLimiter.release()
+                    }
+                }
+            }.awaitAll()
+        }
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/wmPrice",
+            imgName = "wmPrice-${UUID.randomUUID()}",
+            data = JacksonUtil.toJsonString(results),
+            element = "#app",
+            waitElement = ".wmPrice"
+        )
+
+        webImgUtil.sendNewImage(context, imgData)
+        webImgUtil.deleteImg(imgData = imgData)
+    }
 }

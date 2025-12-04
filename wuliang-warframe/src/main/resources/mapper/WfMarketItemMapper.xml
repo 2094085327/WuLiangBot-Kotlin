@@ -46,11 +46,11 @@
     </select>
 
     <select id="batchSelectByZhNameList" parameterType="java.util.List" resultType="bot.wuliang.entity.WfMarketItemEntity">
-        SELECT id, en_name, zh_name, url_name, use_count
+        SELECT id, en_name, zh_name, url_name ,ducats, use_count
         FROM wf_market_item
-        WHERE zh_name IN
-        <foreach collection="zhNameList" item="zhName" open="(" separator="," close=")">
-            #{zhName}
+        WHERE
+        <foreach collection="zhNameList" item="zhName" open="(" separator=" OR " close=")">
+            REPLACE(zh_name, ' ', '') = REPLACE(#{zhName}, ' ', '')
         </foreach>
     </select>
 </mapper>
