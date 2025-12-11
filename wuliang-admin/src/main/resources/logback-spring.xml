@@ -126,9 +126,9 @@
         <!--</triggeringPolicy>-->
 
         <!-- 指定此append对应的日志内容的格式-->
-        <encoder>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${FILE_LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset> <!-- 此处设置字符集 -->
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
@@ -155,9 +155,9 @@
         </rollingPolicy>
 
         <!-- 指定此append对应的日志内容的格式-->
-        <encoder>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${FILE_ERROR_PATTERN}</pattern>
-            <charset>UTF-8</charset> <!-- 此处设置字符集 -->
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
@@ -183,7 +183,7 @@
         </rollingPolicy>
 
         <!-- 指定此appender对应的日志内容的格式 -->
-        <encoder>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${FILE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
