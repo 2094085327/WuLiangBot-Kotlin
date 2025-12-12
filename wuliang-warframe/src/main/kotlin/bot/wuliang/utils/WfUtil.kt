@@ -63,17 +63,16 @@ class WfUtil {
      * @param modLevel 模组等级
      */
     fun sendMarketItemInfo(context: BotUtils.Context, item: WfMarketItemEntity, modLevel: Any? = null) {
-        val url = "$WARFRAME_MARKET_ITEMS/${item.urlName}/orders"
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
-        val marketJson = HttpUtil.doGetJson(url = url, headers = headers)
+        val marketJson = HttpUtil.doGetJson(url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/${item.urlName}", headers = headers)
 
         // 定义允许的状态集合
         val allowedStatuses = setOf("online", "ingame")
-        val orders = marketJson["payload"]["orders"]
+        val orders = marketJson["data"]
 
-        // 获取所有订单中的最大 mod_rank 值
-        val maxModRank = if (modLevel == "满级" && orders.any { it.has("mod_rank") }) {
-            orders.filter { it.has("mod_rank") }.maxOfOrNull { it["mod_rank"].intValue() }
+        // 获取所有订单中的最大 rank 值
+        val maxModRank = if (modLevel == "满级" && orders.any { it.has("rank") }) {
+            orders.filter { it.has("rank") }.maxOfOrNull { it["rank"].intValue() }
         } else {
             (modLevel as? String)?.toIntOrNull()
         }
@@ -81,10 +80,10 @@ class WfUtil {
         // 筛选出符合条件的订单
         val filteredOrders = orders.asSequence()
             .filter { order ->
-                order["order_type"].textValue() == "sell" &&
+                order["type"].textValue() == "sell" &&
                         order["user"]["status"].textValue() in allowedStatuses &&
-                        (modLevel == null || (order.has("mod_rank") &&
-                                order["mod_rank"].intValue() == maxModRank))
+                        (modLevel == null || (order.has("rank") &&
+                                order["rank"].intValue() == maxModRank))
             }
             .sortedBy { it["platinum"].intValue() }
             .take(5)
@@ -92,7 +91,7 @@ class WfUtil {
                 WfMarketVo.OrderInfo(
                     platinum = it["platinum"].intValue(),
                     quantity = it["quantity"].intValue(),
-                    inGameName = it["user"]["ingame_name"].textValue()
+                    inGameName = it["user"]["ingameName"].textValue()
                 )
             }
             .toList()
