@@ -69,9 +69,12 @@
     "value": "虚空覆涌"
   },
   "MT_ASCENSION": {
-    "value": "Ascension"
+    "value": "扬升"
   },
   "MT_ALCHEMY": {
     "value": "元素转换"
+  },
+  "MT_ENDLESS_CAPTURE": {
+    "value": "传承种收割"
   }
 }

@@ -1264,6 +1264,11 @@
     "enemy": "双方交战",
     "type": "镜像防御"
   },
+  "DeimosHub": {
+    "value": "Necralisk (Deimos)",
+    "enemy": "Tenno",
+    "type": "中继站"
+  },
   "SolNode706": {
     "value": "Horend (火卫二)",
     "enemy": "Infested",
@@ -1902,7 +1907,7 @@
   "ClanNode4": {
     "value": "Sinai (木星)",
     "enemy": "Infested",
-    "type": "黑暗地带生存"
+    "type": "黑暗地带防御"
   },
   "ClanNode5": {
     "value": "Cameria (木星)",
