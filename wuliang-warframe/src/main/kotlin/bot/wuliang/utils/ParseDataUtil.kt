@@ -685,6 +685,7 @@ class ParseDataUtil {
      */
     fun parseIncarnon(): Incarnon? {
         if (redisService.hasKey(WF_INCARNON_KEY)) return redisService.getValueTyped<Incarnon>(WF_INCARNON_KEY)
+        val expire = Duration.between(Instant.now(), getNextMonday()).seconds
 
         val incarnonJson = JacksonUtil.readTree(File(WARFRAME_INCARNON))
         val ordinaryJson = incarnonJson["ordinary"]
@@ -764,8 +765,6 @@ class ParseDataUtil {
             expiry = expiry,
             eta = formatDuration(Duration.between(getInstantNow(), expiry))
         )
-
-        val expire = Duration.between(Instant.now(), getNextMonday()).seconds
 
         redisService.setValueWithExpiry(WF_INCARNON_KEY, incarnon, expire, TimeUnit.SECONDS)
         return incarnon
