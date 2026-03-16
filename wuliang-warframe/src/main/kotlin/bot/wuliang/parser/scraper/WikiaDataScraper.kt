@@ -3,8 +3,10 @@ package bot.wuliang.parser.scraper
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.config.WARFRAME_WIKIA_API
 import bot.wuliang.config.WARFRAME_WIKIA_BLUEPRINTS
+import bot.wuliang.config.WARFRAME_WIKIA_DUCATS
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.parser.interfaces.TransformFunction
+import bot.wuliang.parser.model.wikia.WikiaDucats
 import com.fasterxml.jackson.databind.JsonNode
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserContext
@@ -19,9 +21,8 @@ import org.luaj.vm2.LuaValue
 import org.luaj.vm2.lib.jse.JsePlatform
 
 class WikiaDataScraper<T>(
-    private val url: Any,
-    private val luaDataName: String,
-    private val transFormFunction: TransformFunction
+    private val url: Any? = null,
+    private val transFormFunction: TransformFunction? = null
 ) {
     private var blueprintsDataCache: JsonNode? = null
 
@@ -190,7 +191,6 @@ class WikiaDataScraper<T>(
     /**
      * 从 Wikia 页面抓取数据并进行转换
      * @param url Wikia 页面 URL 或 URL 列表
-     * @param luaDataName Lua 数据名称，用于转换 Lua 数据为 JSON 对象
      * @param transFormFunction 转换函数，用于将 JSON 对象转换为目标类型
      * @return 转换后的物品列表
      */
@@ -234,8 +234,8 @@ class WikiaDataScraper<T>(
 
                 if (thingToTransform != null && !thingToTransform.isMissingNode) {
                     val transformedThing =
-                        transFormFunction.transformFunction(thingToTransform, imageUrlMap, blueprintsData)
-                    things.add(transformedThing)
+                        transFormFunction?.transformFunction(thingToTransform, imageUrlMap, blueprintsData)
+                    transformedThing?.let { things.add(it) }
                 }
             }
 
@@ -281,11 +281,55 @@ class WikiaDataScraper<T>(
         }
     }
 
+    /**
+    * 从 Wikia 页面抓取杜卡数据
+      *@return 包含杜卡数据的列表
+     */
+    fun getDucats(): MutableList<WikiaDucats> {
+        ensureBrowserContext()
+        var page: Page? = null
+        try {
+            page = browserContext!!.newPage()
+            logInfo("正在访问 WIKI 页面: $WARFRAME_WIKIA_DUCATS")
+            page.navigate(WARFRAME_WIKIA_DUCATS, Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED))
+
+            // 等待表格加载
+            page.waitForSelector(
+                "#mw-content-text table tbody tr",
+                Page.WaitForSelectorOptions().setTimeout(300000.0)
+            )
+
+            val ducats = mutableListOf<WikiaDucats>()
+            val fullHtml = page.content()
+            val document = Jsoup.parse(fullHtml)
+
+            document.select("#mw-content-text table tbody tr").forEach { row ->
+                // 提取名称
+                val name = row.select("td:nth-of-type(1)").text()
+
+                // 提取杜卡币值
+                val valueStr = row.select("td:nth-of-type(3) b").text()
+                val value = valueStr.toIntOrNull() ?: 0
+
+                if (name.isNotEmpty()) {
+                    ducats.add(WikiaDucats(name, value))
+                }
+            }
+
+            logInfo("共有 ${ducats.size} 条杜卡德数据")
+            return ducats
+
+        } catch (e: Exception) {
+            throw RuntimeException("获取页面数据失败", e)
+        } finally {
+            page?.close()
+        }
+    }
+
 
     /**
      * 将 Lua 脚本执行结果转换为 Kotlin 对象
      * @param luaScript 包含 Lua 脚本的字符串
-     * @param luaDataName Lua 数据名称，用于指定要转换的 Lua 数据
      * @return 转换后的 Kotlin 对象 (通常是 Map 或 List)
      */
     fun convertLuaDataToObject(luaScript: String): Any? {

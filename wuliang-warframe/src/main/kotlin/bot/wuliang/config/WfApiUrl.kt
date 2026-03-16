@@ -28,6 +28,7 @@ const val WARFRAME_DATA = "$WARFRAME_RESOURCES/data"
  */
 const val WARFRAME_BASE_PUBLIC_EXPORT = "https://origin.warframe.com/PublicExport/index_"
 const val WARFRAME_BASE_PUBLIC_EXPORT_BACKUP = "https://content.warframe.com/PublicExport/index_"
+const val WARFRAME_BASE_PUBLIC_EXPORT_MANIFEST = "https://content.warframe.com/PublicExport/Manifest"
 
 
 /**

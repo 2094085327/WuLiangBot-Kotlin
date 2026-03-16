@@ -48,7 +48,7 @@ class WeaponScraper : TransformFunction {
         val subModules = listOf("primary")
         // 将基础URL+后缀+模块名拼接后放到一个数组中
         val urls = subModules.map { "$baseUrl/$it$suffix" }
-        val wikiaDataScraper = WikiaDataScraper<WikiaWeapon>(urls, "Weapon", this)
+        val wikiaDataScraper = WikiaDataScraper<WikiaWeapon>(urls, this)
         val rawResult = wikiaDataScraper.scrape()
         return rawResult
     }
