@@ -24,6 +24,45 @@ const val WARFRAME_CETUS_WISP_PNG = "$WARFRAME_RESOURCES/img/cetusWisp.png"
 const val WARFRAME_DATA = "$WARFRAME_RESOURCES/data"
 
 /**
+ * Warframe 官方API清单
+ */
+const val WARFRAME_BASE_PUBLIC_EXPORT = "https://origin.warframe.com/PublicExport/index_"
+const val WARFRAME_BASE_PUBLIC_EXPORT_BACKUP = "https://content.warframe.com/PublicExport/index_"
+
+
+/**
+ * 仲裁节点数据
+ *
+ * @see <a href="https://github.com/calamity-inc/browse.wf">calamity-inc/browse.wf</a>
+ */
+const val WARFRAME_ARBYS_DATA = "https://browse.wf/arbys.txt"
+
+/**
+ * Warframe 英文Wiki链接
+ */
+const val WARFRAME_WIKIA_BASE_URL = "https://wiki.warframe.com/w"
+
+/**
+ * Warframe 英文Wiki API链接
+ */
+const val WARFRAME_WIKIA_API = "https://wiki.warframe.com/api.php"
+
+/**
+ * Wiki 部件杜卡德金币数据
+ */
+const val WARFRAME_WIKIA_DUCATS = "$WARFRAME_WIKIA_BASE_URL/Ducats/Prices/All"
+
+/**
+ * Wiki 武器数据
+ */
+const val WARFRAME_WIKIA_WEAPONS = "$WARFRAME_WIKIA_BASE_URL/Module:Weapons/data"
+
+/**
+ * Wiki 蓝图数据
+ */
+const val WARFRAME_WIKIA_BLUEPRINTS = "$WARFRAME_WIKIA_BASE_URL/Module:Blueprints/data"
+
+/**
  * Market 物品
  */
 const val WARFRAME_MARKET_ITEMS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/items"

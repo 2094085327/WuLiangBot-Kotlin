@@ -33,6 +33,8 @@ object JacksonUtil {
         }
     }
 
+    private const val DEFAULT_DECIMALS = 2
+
     /**
      * 将任意对象转换为JSON字符串
      *
@@ -239,4 +241,34 @@ object JacksonUtil {
         return this?.textValue()?.toFloatOrNull() ?: default
     }
 
+    /**
+     * 从 JsonNode 中获取指定字段的 Double 值，支持倍数转换和小数位数格式化
+     *
+     * @param field 字段名称
+     * @param multiplier 倍数因子，默认为 1.0
+     * @param decimals 保留的小数位数，默认为 DEFAULT_DECIMALS
+     * @return 转换后的 Double 值，如果字段不存在或无法转换则返回 null
+     */
+    fun JsonNode.getDoubleOrNull(field: String, multiplier: Double = 1.0, decimals: Int = DEFAULT_DECIMALS): Double? =
+        this[field]?.takeIf { !it.isMissingNode }?.asDouble()?.let {
+            "%.${decimals}f".format(it * multiplier).toDouble()
+        }
+
+    /**
+     * 从 JsonNode 中获取指定字段的文本值
+     *
+     * @param field 字段名称
+     * @return 字段的文本值，如果字段不存在则返回 null
+     */
+    fun JsonNode.getTextOrNull(field: String): String? =
+        this[field]?.takeIf { !it.isMissingNode }?.textValue()
+
+    /**
+     * 从 JsonNode 中获取指定字段的 Int 值
+     *
+     * @param field 字段名称
+     * @return 字段的 Int 值，如果字段不存在或无法转换则返回 null
+     */
+    fun JsonNode.getIntOrNull(field: String): Int? =
+        this[field]?.takeIf { !it.isMissingNode }?.asInt()
 }

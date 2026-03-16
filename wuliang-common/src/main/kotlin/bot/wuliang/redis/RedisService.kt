@@ -156,4 +156,24 @@ class RedisService {
         val keys = redisTemplate.keys(prefix)
         return keys.isNotEmpty()
     }
+
+    /**
+     * 获取所有符合条件的hash键值对
+     *
+     * @param hashKey hash键
+     * @return hash键值对
+     */
+    fun getAllHash(hashKey: String): Map<String, String> {
+        return redisTemplate.opsForHash<String, String>().entries(hashKey)
+    }
+
+    /**
+     * 设置所有hash键值对
+     *
+     * @param hashKey hash键
+     * @param hashMap hash键值对
+     */
+    fun setAllHashes(hashKey: String, hashMap: Map<String, String>) {
+        redisTemplate.opsForHash<String, String>().putAll(hashKey, hashMap)
+    }
 }

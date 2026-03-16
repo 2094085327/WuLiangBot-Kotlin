@@ -15,6 +15,19 @@ object WfStatus {
         "The Murmur" to "M系",
         "Narmer" to "合一众"
     )
+    val WarframeElement = mapOf(
+        "Electricity" to "electricity",
+        "Corrosive" to "corrosive",
+        "Toxin" to "toxin",
+        "Heat" to "heat",
+        "Blast" to "blast",
+        "Radiation" to "radiation",
+        "Cold" to "cold",
+        "Viral" to "viral",
+        "Magnetic" to "magnetic",
+        "Gas" to "gas",
+        "Void" to "void",
+    )
 
 
     fun String.replaceFaction(): String {
