@@ -167,13 +167,13 @@ object TimeUtils {
     }
 
     /**
-     * 获取下一周的周一早上08：00的 UTC 时间
+     * 获取下一周的周一00：00的 UTC 时间
      */
     fun getNextMonday(): Instant {
         val firstDay = getFirstDayOfWeek().atOffset(ZoneOffset.UTC)
         return firstDay
             .plusWeeks(1)
-            .withHour(8)
+            .withHour(0)
             .withMinute(0)
             .withSecond(0)
             .withNano(0)

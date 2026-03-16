@@ -711,7 +711,7 @@ class ParseDataUtil {
         val steelNextInd = (steelInd + 1) % steelSize
 
         val activation = getFirstDayOfWeek()
-        val expiry = getLastDayOfWeek()
+        val expiry = getNextMonday()
 
         // 缓存获取灵化武器紫卡映射
         val rivenMap = if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
@@ -725,6 +725,8 @@ class ParseDataUtil {
             map
         }
 
+        // 确保执行灵化解析时已存在紫卡价格数据
+        parseWeeklyRiven()
         val rivenPriceList = redisService.getValueTyped<List<Riven>>(WF_RIVEN_UN_REROLLED_KEY)
 
         fun processSteelItems(steelJsonNode: JsonNode): List<Incarnon.SteelItem> {
