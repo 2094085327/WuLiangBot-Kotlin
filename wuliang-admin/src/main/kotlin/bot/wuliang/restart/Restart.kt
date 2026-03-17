@@ -33,14 +33,14 @@ class Restart {
 
     @GetMapping("/getNowJar")
     @ResponseBody
-    fun getNowJar(): RespBean {
+    fun getNowJar(): RespBean<out String> {
         return try {
             val jarFileName = getNowJarName()
             if (!jarFileName.endsWith(".jar")) {
                 RespBean.error(RespBeanEnum.JAR_NOT_RUN, jarFileName)
             } else RespBean.success(jarFileName)
         } catch (e: Exception) {
-            RespBean.error(RespBeanEnum.JAR_ERROR, e)
+            RespBean.error(RespBeanEnum.JAR_ERROR)
         }
     }
 
@@ -61,7 +61,7 @@ class Restart {
 
     @GetMapping("/allJarFile")
     @ResponseBody
-    fun getAllJar(): RespBean {
+    fun getAllJar(): RespBean<out List<FileInfo>> {
         // 获取当前路径下所有.jar为结尾的文件名
         // 获取当前路径
         val currentDir = File(System.getProperty("user.dir"))
@@ -87,7 +87,7 @@ class Restart {
 
     @PostMapping("/choseJar")
     @ResponseBody
-    fun choseJar(@RequestParam("jar_name") jarName: String): RespBean {
+    fun choseJar(@RequestParam("jar_name") jarName: String): RespBean<Nothing> {
         val restartFile = File(RESTART_CONFIG)
         val restartConfig = objectMapper.readTree(restartFile) as ObjectNode
         // 修改重启配置文件为 jarName
@@ -98,7 +98,7 @@ class Restart {
 
     @GetMapping("/getRestartConfig")
     @ResponseBody
-    fun getRestartConfig(): RespBean {
+    fun getRestartConfig(): RespBean<JsonNode> {
         val restartFile = File(RESTART_CONFIG)
         return RespBean.success(objectMapper.readTree(restartFile))
     }
@@ -148,16 +148,9 @@ class Restart {
 
     @GetMapping("/restartManage")
     @ResponseBody
-    fun restartManage(): RespBean {
+    fun restartManage(): RespBean<Nothing> {
         logInfo("手动重启程序")
         restartFunction()
-        return RespBean.success()
-    }
-
-    @GetMapping("/ping")
-    @ResponseBody
-    fun ping(): RespBean {
-        // 服务器状态是否正常
         return RespBean.success()
     }
 
@@ -175,7 +168,7 @@ class Restart {
 
     @PostMapping("/mergeUpload")
     @ResponseBody
-    fun mergeUpload(@RequestBody params: Map<String, String>): RespBean {
+    fun mergeUpload(@RequestBody params: Map<String, String>): RespBean<Nothing> {
         val folder = params["folder"]
         val folderDir = File(FILE_CACHE_PATH, folder!!)
 
@@ -225,7 +218,7 @@ class Restart {
         @RequestParam fileName: String?,
         @RequestParam folder: String,
         @RequestParam(required = false) encrypt: String?
-    ): RespBean {
+    ): RespBean<Nothing> {
         try {
             // 创建切片存储目录
             val folderDir = File(FILE_CACHE_PATH, folder)
@@ -275,7 +268,7 @@ class Restart {
 
     @PostMapping("/deleteJar")
     @ResponseBody
-    fun deleteJar(@RequestParam("jar_name") jarName: String): RespBean {
+    fun deleteJar(@RequestParam("jar_name") jarName: String): RespBean<Nothing> {
         try {
             val jarFile = File(jarName)
             if (!jarFile.exists()) {
@@ -289,7 +282,7 @@ class Restart {
             jarFile.delete()
             return RespBean.success()
         } catch (e: Exception) {
-            return RespBean.error(RespBeanEnum.JAR_ERROR, e)
+            return RespBean.error(RespBeanEnum.JAR_ERROR)
         }
     }
 }

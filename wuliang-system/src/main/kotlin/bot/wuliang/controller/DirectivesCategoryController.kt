@@ -22,7 +22,7 @@ class DirectivesCategoryController @Autowired constructor(private val directives
      */
     @ApiOperation("获取指令分类列表")
     @RequestMapping("/list")
-    fun getDirectivesList(): RespBean {
+    fun getDirectivesList(): RespBean<List<DirectivesCategoryEntity?>> {
         return RespBean.success(directivesCategoryService.selectDirectivesCategoryList())
     }
 
@@ -34,7 +34,7 @@ class DirectivesCategoryController @Autowired constructor(private val directives
      */
     @ApiOperation("新增指令分类列表")
     @PostMapping("/add")
-    fun addDirectivesCategory(directivesCategoryEntity: DirectivesCategoryEntity): RespBean {
+    fun addDirectivesCategory(directivesCategoryEntity: DirectivesCategoryEntity): RespBean<Nothing> {
         return RespBean.toReturn(directivesCategoryService.addDirectivesCategory(directivesCategoryEntity))
     }
 }

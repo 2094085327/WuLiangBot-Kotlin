@@ -32,7 +32,7 @@ class ClimateController(
     private val weatherUtil = WeatherUtil()
 
     @GetMapping("/weather")
-    fun getWeatherInfo(@RequestParam("city") city: String): RespBean {
+    fun getWeatherInfo(@RequestParam("city") city: String): RespBean<out Weather> {
         // 尝试从Redis缓存中获取数据
         val cachedWeather = redisService.getValueTyped<Weather>("$CLIMATE_CACHE_WEATHER_KEY:$city")
         if (cachedWeather != null) {
@@ -79,7 +79,7 @@ class ClimateController(
     }
 
     @RequestMapping("/geography")
-    fun addGeoInfo(@RequestParam("city") city: String): RespBean {
+    fun addGeoInfo(@RequestParam("city") city: String): RespBean<out City> {
         // 尝试从Redis缓存中获取数据
         val cachedCity = redisService.getValueTyped<City>("$CLIMATE_CACHE_CITY_KEY:$city")
         if (cachedCity != null) {

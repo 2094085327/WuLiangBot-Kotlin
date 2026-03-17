@@ -6,10 +6,10 @@ package bot.wuliang.exception
  * @author Nature Zero
  * @date 2024/8/16 下午2:13
  */
-class RespBean(
+class RespBean<T>(
     val code: Long = 0,
     var message: String? = null,
-    val obj: Any? = null
+    val obj: T? = null
 ) {
 
 
@@ -19,16 +19,16 @@ class RespBean(
          *
          * @return RespBean
          */
-        fun success(): RespBean {
+        fun <T> success(): RespBean<T> {
             return RespBean(RespBeanEnum.SUCCESS.code, RespBeanEnum.SUCCESS.message, null)
         }
 
-        fun success(obj: Any?): RespBean {
+        fun <T> success(obj: T?): RespBean<T> {
             return RespBean(RespBeanEnum.SUCCESS.code, RespBeanEnum.SUCCESS.message, obj)
         }
 
 
-        fun error(): RespBean {
+        fun error(): RespBean<Nothing> {
             return RespBean(RespBeanEnum.ERROR.code, RespBeanEnum.ERROR.message, null)
         }
 
@@ -38,24 +38,29 @@ class RespBean(
          * @param respCode 错误信息
          * @return respBean
          */
-        fun error(respCode: RespCode): RespBean {
+        fun error(respCode: RespCode): RespBean<Nothing> {
             return RespBean(respCode.code, respCode.message, null)
         }
 
-        fun error(respCode: RespCode, obj: Any?): RespBean {
+        fun <T> error(respCode: RespCode, obj: T?): RespBean<T> {
             return RespBean(respCode.code, respCode.message, obj)
         }
 
-        fun error(obj: Any?): RespBean {
+        fun <T> error(obj: T?): RespBean<T> {
             return RespBean(RespBeanEnum.ERROR.code, RespBeanEnum.ERROR.message, obj)
         }
+
+        fun <T> error(message: String): RespBean<T> {
+            return RespBean(RespBeanEnum.ERROR.code, message, null)
+        }
+
 
         /**
          * 返回结果
          *
          * @param result 布尔类型
          */
-        fun toReturn(result: Boolean): RespBean {
+        fun <T> toReturn(result: Boolean): RespBean<out T> {
             return if (result) success() else error()
         }
 
@@ -64,7 +69,7 @@ class RespBean(
          *
          * @param result 布尔类型
          */
-        fun toReturn(result: Boolean, obj: Any?): RespBean {
+        fun <T> toReturn(result: Boolean, obj: T?): RespBean<out T> {
             return if (result) success(obj) else error()
         }
 
@@ -74,7 +79,7 @@ class RespBean(
          * @param rows 影响行数
          * @return 操作结果
          */
-        fun toReturn(rows: Int): RespBean {
+        fun <T> toReturn(rows: Int): RespBean<out T> {
             return if (rows > 0) success() else error()
         }
 
@@ -84,7 +89,7 @@ class RespBean(
          * @param rows 影响行数
          * @return 操作结果
          */
-        fun toReturn(rows: Int, obj: Any?): RespBean {
+        fun <T> toReturn(rows: Int, obj: T?): RespBean<out T> {
             return if (rows > 0) success(obj) else error()
         }
     }

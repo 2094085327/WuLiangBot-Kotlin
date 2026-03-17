@@ -215,7 +215,7 @@ class GachaLogController {
      *
      * @return 导入状态
      */
-    fun importGachaLog(): RespBean {
+    fun importGachaLog(): RespBean<Nothing> {
         try {
             val folder = File(GACHA_LOG_IMPORT)
             if (!folder.exists()) {

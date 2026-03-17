@@ -7,6 +7,7 @@ import bot.wuliang.exception.RespBean
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.DirectivesService
 import bot.wuliang.service.impl.DirectivesCategoryServiceImpl
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
@@ -36,9 +37,9 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("获取指令列表")
     @GetMapping("/list")
-    fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean {
+    fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean<List<DirectivesEntity?>> {
         if (redisService.hasKey(DIRECTIVES_KEY)) {
-            return RespBean.success(redisService.getValue(DIRECTIVES_KEY))
+            return RespBean.success(redisService.getValueTyped<List<DirectivesEntity?>>(DIRECTIVES_KEY))
         }
 
         val selectDirectivesList = directivesService.selectDirectivesList(directivesEntity)
@@ -54,7 +55,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("新增指令")
     @PostMapping("/addDirectives")
-    fun addDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean {
+    fun addDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean<Nothing> {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.save(directivesEntity))
     }
@@ -64,7 +65,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("更新指令")
     @PutMapping("/updateDirectives")
-    fun updateDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean {
+    fun updateDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean<Nothing> {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.updateById(directivesEntity))
     }
@@ -74,7 +75,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("批量更新指令")
     @PutMapping("/updateBatchDirectives")
-    fun updateBatchDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean {
+    fun updateBatchDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean<Nothing> {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.updateBatchById(directivesEntity))
     }
@@ -84,7 +85,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("删除单个指令")
     @DeleteMapping("/delete/{id}")
-    fun deleteDirectives(@PathVariable id: Long): RespBean {
+    fun deleteDirectives(@PathVariable id: Long): RespBean<Nothing> {
         redisService.deleteKey(DIRECTIVES_KEY)
         return RespBean.toReturn(directivesService.deleteDirective(id))
     }
@@ -94,7 +95,7 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("导入指令列表")
     @PostMapping("/import")
-    fun importDirectives(file: MultipartFile, covered: Boolean? = false): RespBean {
+    fun importDirectives(file: MultipartFile, covered: Boolean? = false): RespBean<out JsonNode> {
         redisService.deleteKey(DIRECTIVES_KEY)
         return try {
             val objectMapper = ObjectMapper()

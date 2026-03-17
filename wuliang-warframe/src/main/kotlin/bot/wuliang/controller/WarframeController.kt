@@ -15,6 +15,7 @@ import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
+import bot.wuliang.distribute.annotation.DataSchema
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.exception.RespBean
@@ -28,6 +29,7 @@ import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeBySecond
 import bot.wuliang.utils.TimeUtils.getInstantNow
 import bot.wuliang.utils.TimeUtils.getNextMonday
+import bot.wuliang.utils.WfLexiconUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,6 +53,7 @@ import java.time.Instant
 class WarframeController(
     @Autowired private val wfLexiconService: WfLexiconService,
     @Autowired private val redisService: RedisService,
+    @Autowired private val wfLexiconUtil: WfLexiconUtil,
 ) {
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
@@ -63,14 +66,14 @@ class WarframeController(
     fun addOtherName(
         @RequestParam("itemName") itemName: String,
         @RequestParam("otherName") otherName: String,
-    ): RespBean {
+    ): RespBean<Nothing> {
         redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
         return RespBean.toReturn(wfLexiconService.insertOtherName(itemName, otherName))
     }
 
     @ApiOperation("执刑官数据")
     @GetMapping("/archonHunt")
-    fun archonHunt(): RespBean {
+    fun archonHunt(): RespBean<out Sortie> {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, archonHuntEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_ARCHONHUNT_KEY)
         if (expiry == null) expiry = -1L
@@ -83,7 +86,7 @@ class WarframeController(
 
     @ApiOperation("每日突击数据")
     @GetMapping("/sortie")
-    fun sortie(): RespBean {
+    fun sortie(): RespBean<out Sortie> {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, sortieEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_SORTIE_KEY)
         if (expiry == null) expiry = -1L
@@ -96,7 +99,7 @@ class WarframeController(
 
     @ApiOperation("钢路奖励")
     @GetMapping("/steelPath")
-    fun steelPath(): RespBean {
+    fun steelPath(): RespBean<SteelPath> {
         var (expiry, steelPathEntity) = parseDataUtil.parseSteelPath()
         if (expiry == null) expiry = -1L
         steelPathEntity!!.eta = formatTimeBySecond(expiry)
@@ -106,7 +109,7 @@ class WarframeController(
 
     @ApiOperation("裂缝信息")
     @GetMapping("/fissureList")
-    suspend fun fissureList(@RequestParam("type") type: String): RespBean {
+    suspend fun fissureList(@RequestParam("type") type: String): RespBean<out List<Fissure>> {
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
@@ -134,7 +137,7 @@ class WarframeController(
 
     @ApiOperation("虚空商人信息")
     @GetMapping("/voidTrader")
-    fun voidTrader(): RespBean {
+    fun voidTrader(): RespBean<out List<VoidTrader>> {
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseVoidTraders(data["VoidTraders"])
@@ -169,7 +172,8 @@ class WarframeController(
 
     @ApiOperation("电波信息")
     @GetMapping("/nightWave")
-    fun nightWave(): RespBean {
+    @DataSchema(commandKey = "nightWave")
+    fun nightWave(): RespBean<out NightWave> {
         val nightWaveEntity = redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY) ?: return RespBean.error()
         nightWaveEntity.eta = formatTimeBySecond(Duration.between(getInstantNow(), nightWaveEntity.expiry).seconds)
         nightWaveEntity.startTime =
@@ -180,7 +184,7 @@ class WarframeController(
 
     @ApiOperation("入侵信息")
     @GetMapping("/invasions")
-    fun invasions(): RespBean {
+    fun invasions(): RespBean<out List<Invasions>> {
         if (!redisService.hasKey(WF_INVASIONS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseInvasions(data["Invasions"])
@@ -194,7 +198,7 @@ class WarframeController(
 
     @ApiOperation("回廊信息")
     @GetMapping("/incarnon")
-    fun incarnon(): RespBean {
+    fun incarnon(): RespBean<out Incarnon> {
         val incarnonEntity =
             if (!redisService.hasKey(WF_INCARNON_KEY)) {
                 parseDataUtil.parseIncarnon()
@@ -214,7 +218,7 @@ class WarframeController(
     }
 
     @GetMapping("/spirals")
-    fun spirals(): RespBean {
+    fun spirals(): RespBean<out MoodSpirals> {
         var (expiry, moodSpiralsEntity) = redisService.getExpireAndValueTyped<MoodSpirals>(WF_MOODSPIRALS_KEY)
         if (expiry == null) expiry = -1L
         if (moodSpiralsEntity == null) return RespBean.error()
@@ -226,7 +230,7 @@ class WarframeController(
 
     @GetMapping("/allOtherName")
     @Suppress("UNCHECKED_CAST")
-    fun allOtherName(): RespBean {
+    fun allOtherName(): RespBean<List<WfOtherNameEntity>> {
         if (redisService.getValue(WF_ALL_OTHER_NAME_KEY) == null) {
             val allOtherName = wfLexiconService.selectAllOtherName()
             redisService.setValue(WF_ALL_OTHER_NAME_KEY, allOtherName)
@@ -235,7 +239,7 @@ class WarframeController(
     }
 
     @RequestMapping("/deleteOtherName")
-    fun deleteOtherName(@RequestParam("other_name_id") id: Int): RespBean {
+    fun deleteOtherName(@RequestParam("other_name_id") id: Int): RespBean<Nothing> {
         try {
             wfLexiconService.deleteOtherName(id)
             redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
@@ -249,7 +253,7 @@ class WarframeController(
     fun updateOtherName(
         @RequestParam("other_name_id") id: Int,
         @RequestParam("other_name") otherName: String
-    ): RespBean {
+    ): RespBean<Nothing> {
         try {
             wfLexiconService.updateOtherName(id, otherName)
             redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
@@ -265,7 +269,7 @@ class WarframeController(
         @RequestParam("type") type: String?,
         @RequestParam("sort") sort: String? = "desc",
         @RequestParam("rerolled") rerolled: Boolean = false
-    ): RespBean {
+    ): RespBean<out List<Riven>> {
         if (!redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) || !redisService.hasKey(WF_RIVEN_REROLLED_KEY)) {
             parseDataUtil.parseWeeklyRiven()
         }
@@ -291,13 +295,13 @@ class WarframeController(
 
     @ApiOperation("圣殿结合仪式目标信息")
     @GetMapping("/simaris")
-    fun simaris(): RespBean {
+    fun simaris(): RespBean<out Simaris> {
         if (!redisService.hasKey(WF_SIMARIS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSimaris(data["LibraryInfo"])
         }
         val simarisEntity = redisService.getValueTyped<Simaris>(WF_SIMARIS_KEY)
-            ?: return RespBean.error("圣殿结合仪式目标没有找到~")
+            ?: return RespBean.error(message = "圣殿结合仪式目标没有找到~")
 
         simarisEntity.eta = formatDuration(Duration.between(getInstantNow(), simarisEntity.expiry))
 

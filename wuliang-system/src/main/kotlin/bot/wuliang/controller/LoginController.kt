@@ -36,7 +36,7 @@ class LoginController(
         @RequestParam("password") password: String,
         httpServletResponse: HttpServletResponse?,
         httpServletRequest: HttpServletRequest?
-    ): RespBean {
+    ): RespBean<out String> {
         if (username == manageUserName && password == managePassword) {
             val ticket = UUID.randomUUID().toString().replace("-", "")
 
@@ -60,7 +60,7 @@ class LoginController(
     }
 
     @PostMapping("/checkUserTicket")
-    fun checkUserTicket(@RequestParam("userTicket") userTicket: String): RespBean {
+    fun checkUserTicket(@RequestParam("userTicket") userTicket: String): RespBean<Nothing> {
         if (redisService.hasKey(USER_TICKET_KEY + userTicket)) return RespBean.success()
         return RespBean.error(RespBeanEnum.NO_USER)
     }

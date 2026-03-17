@@ -1,5 +1,6 @@
 package bot.wuliang.botLog.database.controller
 
+import bot.wuliang.botLog.database.entity.PlatformStats
 import bot.wuliang.botLog.database.service.PlatformStatsService
 import bot.wuliang.exception.RespBean
 import io.swagger.annotations.Api
@@ -20,7 +21,7 @@ class PlatformStatsController(@Autowired private val platformStatsService: Platf
      * @param offset 时间偏移量，单位为秒
      */
     @GetMapping("/getStats")
-    fun getStats(@RequestParam("offset", required = false) offset: Int?): RespBean? {
+    fun getStats(@RequestParam("offset", required = false) offset: Int?): RespBean<List<PlatformStats?>> {
         val actualOffset = offset ?: 86400
         // 从数据库中查询对应时间范围的消息统计数据
         val platformStats = platformStatsService.getPlatformStatsWithOffset(actualOffset)
@@ -32,7 +33,7 @@ class PlatformStatsController(@Autowired private val platformStatsService: Platf
      *
      */
     @GetMapping("/getAllMsgCount")
-    fun getAllMsgCount(): RespBean? {
+    fun getAllMsgCount(): RespBean<Int> {
         // 从数据库中查询对应时间范围的消息统计数据
         val count = platformStatsService.getAllMsgCount()
         return RespBean.success(count)

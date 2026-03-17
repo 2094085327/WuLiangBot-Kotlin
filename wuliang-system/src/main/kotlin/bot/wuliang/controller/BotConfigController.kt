@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController
 class BotConfigController @Autowired constructor(private val botConfigService: BotConfigService) {
     @ApiOperation("获取机器人配置列表")
     @GetMapping("/list")
-    fun getBotConfigList(): RespBean {
+    fun getBotConfigList(): RespBean<List<BotConfigEntity?>> {
         return RespBean.success(botConfigService.list())
     }
 
     @ApiOperation("新增机器人配置")
     @PostMapping("/add")
-    fun addBotConfig(botConfigEntity: BotConfigEntity): RespBean {
+    fun addBotConfig(botConfigEntity: BotConfigEntity): RespBean<Nothing> {
         botConfigService.save(botConfigEntity)
         return RespBean.success()
     }

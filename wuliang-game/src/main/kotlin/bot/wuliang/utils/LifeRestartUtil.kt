@@ -64,7 +64,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @return 判断是否有文件缺失
      */
-    fun fetchDataAndUpdateLists(): RespBean {
+    fun fetchDataAndUpdateLists(): RespBean<Nothing> {
 
         fun readData(filePath: String, missingMessage: String): JsonNode? {
             return if (File(filePath).exists()) {
@@ -94,7 +94,7 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @return 响应
      */
-    fun getFetchData(): RespBean {
+    fun getFetchData(): RespBean<Nothing> {
         val ageDataBoolean = redisService.setExpire("lifeRestart:ageData", Duration.of(10L, ChronoUnit.MINUTES))
         val eventDataBoolean = redisService.setExpire("lifeRestart:eventData", Duration.of(10L, ChronoUnit.MINUTES))
         val talentDataBoolean = redisService.setExpire("lifeRestart:talentData", Duration.of(10L, ChronoUnit.MINUTES))
@@ -878,10 +878,10 @@ class LifeRestartUtil @Autowired constructor(
      * @param operation 类型
      * @return
      */
-    fun errorState(userInfo: UserInfoEntity?, operation: OperationType): RespBean {
+    fun errorState(userInfo: UserInfoEntity?, operation: OperationType): RespBean<Nothing> {
         if (userInfo == null) return RespBean.error(RestartRespEnum.GAME_NOT_START)
 
-        fun checkTalentAssigned(): RespBean {
+        fun checkTalentAssigned(): RespBean<Nothing> {
             return when {
                 userInfo.talent.isEmpty() -> RespBean.error(RestartRespEnum.TALENT_NOT_CHOSE)
                 !userInfo.propertyDistribution -> RespBean.error(RestartRespEnum.NO_ASSIGN_ATTRIBUTES)

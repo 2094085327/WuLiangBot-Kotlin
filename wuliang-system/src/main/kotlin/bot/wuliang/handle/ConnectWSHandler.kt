@@ -27,7 +27,7 @@ class ConnectWSHandler {
         sessionsMap[session.id] = session
 
         // 发送初始连接成功消息
-        sendObject(session, RespBean.success())
+        sendObject(session, RespBean.success<Nothing>())
 
         // 启动心跳检测
         startHeartbeat(session)
