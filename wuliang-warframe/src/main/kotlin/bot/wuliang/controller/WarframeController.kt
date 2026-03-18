@@ -73,6 +73,7 @@ class WarframeController(
 
     @ApiOperation("执刑官数据")
     @GetMapping("/archonHunt")
+    @DataSchema(commandKey = "archonHunt")
     fun archonHunt(): RespBean<out Sortie> {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, archonHuntEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_ARCHONHUNT_KEY)
@@ -86,6 +87,7 @@ class WarframeController(
 
     @ApiOperation("每日突击数据")
     @GetMapping("/sortie")
+    @DataSchema(commandKey = "sortie")
     fun sortie(): RespBean<out Sortie> {
         // 访问此链接时Redis必然存在缓存，直接从Redis中获取数据
         var (expiry, sortieEntity) = redisService.getExpireAndValueTyped<Sortie>(WF_SORTIE_KEY)
@@ -99,6 +101,7 @@ class WarframeController(
 
     @ApiOperation("钢路奖励")
     @GetMapping("/steelPath")
+    @DataSchema(commandKey = "steelPath")
     fun steelPath(): RespBean<SteelPath> {
         var (expiry, steelPathEntity) = parseDataUtil.parseSteelPath()
         if (expiry == null) expiry = -1L
@@ -109,6 +112,7 @@ class WarframeController(
 
     @ApiOperation("裂缝信息")
     @GetMapping("/fissureList")
+    @DataSchema(commandKey = "fissureList")
     suspend fun fissureList(@RequestParam("type") type: String): RespBean<out List<Fissure>> {
         if (!redisService.hasKey(WF_FISSURE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
@@ -137,6 +141,7 @@ class WarframeController(
 
     @ApiOperation("虚空商人信息")
     @GetMapping("/voidTrader")
+    @DataSchema(commandKey = "voidTrader")
     fun voidTrader(): RespBean<out List<VoidTrader>> {
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
@@ -155,17 +160,19 @@ class WarframeController(
 
     @ApiOperation("玄骸武器信息")
     @RequestMapping("/lich")
+    @DataSchema(commandKey = "lich")
     fun lich(
         @RequestParam("url_name") urlName: String?,
         @RequestParam("damage") damage: String?,
         @RequestParam("element") element: String?,
         @RequestParam("ephemera") ephemera: String?
     ): WfMarketVo.LichEntity? {
-        return redisService.getValueTyped<WfMarketVo.LichEntity>(WF_LICHORDER_KEY + "${urlName}${damage}${element}${ephemera}")
+        return redisService.getValueTyped<WfMarketVo.LichEntity>("${WF_LICHORDER_KEY}:${urlName}${damage}${element}${ephemera}")
     }
 
     @ApiOperation("紫卡信息")
     @RequestMapping("/riven")
+    @DataSchema(commandKey = "riven")
     fun riven(): WfMarketVo.RivenOrderList? {
         return WfMarketController.WfMarket.rivenOrderList
     }
@@ -184,6 +191,7 @@ class WarframeController(
 
     @ApiOperation("入侵信息")
     @GetMapping("/invasions")
+    @DataSchema(commandKey = "invasions")
     fun invasions(): RespBean<out List<Invasions>> {
         if (!redisService.hasKey(WF_INVASIONS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
@@ -198,6 +206,7 @@ class WarframeController(
 
     @ApiOperation("回廊信息")
     @GetMapping("/incarnon")
+    @DataSchema(commandKey = "incarnon")
     fun incarnon(): RespBean<out Incarnon> {
         val incarnonEntity =
             if (!redisService.hasKey(WF_INCARNON_KEY)) {
@@ -217,7 +226,9 @@ class WarframeController(
         return redisService.getValue(WF_INCARNON_RIVEN_KEY) as Map<String, String>?
     }
 
+    @ApiOperation("复眠螺旋信息")
     @GetMapping("/spirals")
+    @DataSchema(commandKey = "spirals")
     fun spirals(): RespBean<out MoodSpirals> {
         var (expiry, moodSpiralsEntity) = redisService.getExpireAndValueTyped<MoodSpirals>(WF_MOODSPIRALS_KEY)
         if (expiry == null) expiry = -1L
@@ -244,7 +255,7 @@ class WarframeController(
             wfLexiconService.deleteOtherName(id)
             redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
             return RespBean.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return RespBean.error(WarframeRespEnum.DELETE_OTHER_NAME_ERROR)
         }
     }
@@ -258,13 +269,14 @@ class WarframeController(
             wfLexiconService.updateOtherName(id, otherName)
             redisService.deleteKey(WF_ALL_OTHER_NAME_KEY)
             return RespBean.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return RespBean.error(WarframeRespEnum.UPDATE_OTHER_NAME_ERROR)
         }
     }
 
     @ApiOperation("紫卡排行榜数据")
     @GetMapping("/allRivenPrice")
+    @DataSchema(commandKey = "allRivenPrice")
     fun allRivenPrice(
         @RequestParam("type") type: String?,
         @RequestParam("sort") sort: String? = "desc",
@@ -295,6 +307,7 @@ class WarframeController(
 
     @ApiOperation("圣殿结合仪式目标信息")
     @GetMapping("/simaris")
+    @DataSchema(commandKey = "simaris")
     fun simaris(): RespBean<out Simaris> {
         if (!redisService.hasKey(WF_SIMARIS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)

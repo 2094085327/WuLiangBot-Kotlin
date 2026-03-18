@@ -5,6 +5,7 @@ import bot.wuliang.botLog.logAop.SystemLog
 import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
+import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -177,7 +178,7 @@ class WfMarketController @Autowired constructor(
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
         val lichType = if (itemEntity.urlName!!.contains("kuva")) "lich" else "sister"
 
-        if (!redisService.hasKey("warframe:lichOrderEntity:${itemEntity.urlName}${damage}${element}${ephemera}")) {
+        if (!redisService.hasKey("${WF_LICHORDER_KEY}:${itemEntity.urlName}${damage}${element}${ephemera}")) {
             val lichJson = wfUtil.getAuctionsJson(
                 element = urlElement,
                 ephemera = ephemera,
@@ -213,7 +214,7 @@ class WfMarketController @Autowired constructor(
             )
 
             redisService.setValueWithExpiry(
-                "warframe:lichOrderEntity:${itemEntity.urlName}${damage}${element}${ephemera}",
+                "${WF_LICHORDER_KEY}:${itemEntity.urlName}${damage}${element}${ephemera}",
                 lichOrderEntity,
                 60L,
                 TimeUnit.SECONDS

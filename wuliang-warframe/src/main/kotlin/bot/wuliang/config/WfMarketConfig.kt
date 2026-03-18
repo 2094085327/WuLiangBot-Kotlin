@@ -41,7 +41,7 @@ object WfMarketConfig {
     /**
      * 玄骸缓存
      */
-    const val WF_LICHORDER_KEY = WF_MARKET_CACHE_KEY + "lichOrder:"
+    const val WF_LICHORDER_KEY = WF_MARKET_CACHE_KEY + "lichOrder"
 
     /**
      * 电波缓存
