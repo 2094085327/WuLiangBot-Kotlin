@@ -1,5 +1,6 @@
 package bot.wuliang.service.impl
 
+import bot.wuliang.distribute.service.SchemaAutoDiscoveryService
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.mapper.DirectivesMapper
 import bot.wuliang.service.DirectivesService
@@ -11,8 +12,19 @@ import org.springframework.stereotype.Service
 class DirectivesServiceImpl : ServiceImpl<DirectivesMapper?, DirectivesEntity?>(), DirectivesService {
     @Autowired
     lateinit var directivesMapper: DirectivesMapper
+    @Autowired
+    private lateinit var schemaDiscoveryService: SchemaAutoDiscoveryService
     override fun selectDirectivesList(directivesEntity: DirectivesEntity?): List<DirectivesEntity> {
-        return directivesMapper.selectDirectivesList(directivesEntity)
+        val directivesList = directivesMapper.selectDirectivesList(directivesEntity)
+        directivesList.forEach { directive->
+            val commandKey = directive.commandKey
+
+            val schema = commandKey?.let { schemaDiscoveryService.discoverSchema(it) }
+
+            directive.supportMd = schema?.isNotEmpty() ?: false
+        }
+
+        return directivesList
     }
 
     override fun selectDirectivesMatch(match: String): MutableList<DirectivesEntity> {

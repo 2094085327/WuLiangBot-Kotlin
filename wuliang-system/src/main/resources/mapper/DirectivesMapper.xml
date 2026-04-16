@@ -11,6 +11,8 @@
         <result property="detail" column="detail"/>
         <result property="regex" column="regex"/>
         <result property="enable" column="enable"/>
+        <result property="commandKey" column="command_key"/>
+        <result property="mdEnabled" column="md_enabled"/>
         <result property="delStatus" column="del_status"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
@@ -23,6 +25,8 @@
                bd.detail,
                bd.regex,
                bd.enable,
+               bd.command_key,
+               bd.md_enabled,
                bd.category_id,
                bd.create_time,
                bd.update_time,
@@ -42,6 +46,8 @@
             <if test="detail != null">AND bd.detail = #{detail}</if>
             <if test="regex != null">AND bd.regex = #{regex}</if>
             <if test="enable != null">AND bd.enable = #{enable}</if>
+            <if test="commandKey != null">AND bd.command_key = #{commandKey}</if>
+            <if test="mdEnabled != null">AND bd.md_enabled = #{mdEnabled}</if>
             <if test="categoryId != null">AND bd.category_id = #{categoryId}</if>
             AND bd.del_status = 0
         </where>
@@ -51,7 +57,7 @@
     <insert id="batchAddDirectives" parameterType="java.util.List">
         INSERT INTO bot_directives (
         directive_name, description, detail,
-        regex, enable, category_id, create_time
+        regex, enable,command_key, md_enabled, category_id, create_time
         ) VALUES
         <foreach collection="directives" item="directive" separator=",">
             (
@@ -60,6 +66,8 @@
             #{directive.detail},
             #{directive.regex},
             #{directive.enable},
+            #{directive.commandKey},
+            #{directive.mdEnabled},
             #{directive.categoryId},
             NOW()
             )

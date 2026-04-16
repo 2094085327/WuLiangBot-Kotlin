@@ -14,7 +14,7 @@ data class TemplateEntity(
      * 机器人ID
      */
     @TableField(value = "bot_id")
-    private val botId: Long? = null,
+    private val botId: String? = null,
 
     /**
      * 模板名称

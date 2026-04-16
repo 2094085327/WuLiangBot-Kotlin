@@ -1,5 +1,6 @@
 package bot.wuliang.utils
 
+import bot.wuliang.distribute.dto.DirectiveConfigDto
 import io.github.kloping.qqbot.api.message.MessageChannelReceiveEvent
 import io.github.kloping.qqbot.api.v2.FriendMessageEvent
 import io.github.kloping.qqbot.api.v2.GroupMessageEvent
@@ -7,6 +8,7 @@ import io.github.kloping.qqbot.api.v2.MessageV2Event
 import io.github.kloping.qqbot.entities.ex.Image
 import io.github.kloping.qqbot.entities.ex.MessageAsyncBuilder
 import io.github.kloping.qqbot.entities.ex.PlainText
+import io.github.kloping.qqbot.entities.ex.msg.MessageChain
 import io.github.kloping.qqbot.entities.qqpd.data.Emoji
 import org.aspectj.lang.annotation.Aspect
 import org.springframework.stereotype.Component
@@ -38,6 +40,26 @@ class BotUtils {
             val builder = MessageAsyncBuilder()
             builder.append(message)
             return sendMsg(builder)
+        }
+
+    fun sendMsg(chain: MessageChain): Any? {
+              when (event) {
+            is GroupMessageEvent -> {
+                return event.sendMessage(chain)
+            }
+
+            is FriendMessageEvent -> {
+                return event.send(chain)
+            }
+
+            is MessageChannelReceiveEvent -> {
+                return event.send(chain)
+            }
+
+            else -> {
+                throw IllegalStateException("不支持的消息类型: ${event.javaClass.simpleName}")
+            }
+        }
         }
 
         fun sendMsg(messageBuilder: MessageAsyncBuilder): Any? {
@@ -123,5 +145,7 @@ class BotUtils {
                 is FriendMessageEvent -> "private"
                 else -> "unknown"
             }
+
+        var directive : DirectiveConfigDto? = null
     }
 }

@@ -43,7 +43,7 @@ class SchemaAutoDiscoveryService(
      * @param commandKey 指令键
      * @return 字段元数据列表
      */
-    private fun discoverSchema(commandKey: String): List<FieldMetaDto> {
+    fun discoverSchema(commandKey: String): List<FieldMetaDto> {
         val controllerBeans = applicationContext.getBeansWithAnnotation<RestController>()
 
         for ((_, bean) in controllerBeans) {

@@ -49,7 +49,7 @@ object CommandRegistry {
                         try {
                             // 这里不立即获取Bean实例，而是在需要时获取
                             scanMethods(klass)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             // 如果无法处理类，则跳过
                         }
                     }
@@ -69,7 +69,7 @@ object CommandRegistry {
                     // 尝试将action解析为正则表达式
                     val pattern = Pattern.compile(commandPattern)
                     patternCommands[pattern] = Pair(Pair(clazz, method), commandPattern)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // 如果不是有效的正则表达式，作为普通命令处理
                     commands[commandPattern] = Pair(clazz, method)
                 }
@@ -83,22 +83,22 @@ object CommandRegistry {
      * @param command 指令文本
      * @return Triple<BotCommand, Matcher, Boolean> 命令、匹配器和是否为正则匹配，未找到时返回 null
      */
-    fun getCommandWithMatcher(command: String): Triple<BotCommand, Matcher, Boolean>? {
+    fun getCommandWithMatcher(command: String): CommandMatchResult? {
         // 首先尝试精确匹配
         commands[command]?.let { (clazz, method) ->
             val bean = applicationContext.getBean(clazz)
             val dummyMatcher = Pattern.compile("").matcher("")
-            return Triple(ReflectiveBotCommand(bean, method), dummyMatcher, false)
+            return CommandMatchResult(ReflectiveBotCommand(bean, method), dummyMatcher, false,command)
         }
 
         // 然后尝试正则表达式匹配
         patternCommands.forEach { (pattern, pair) ->
             val matcher = pattern.matcher(command)
             if (matcher.matches()) {
-                val (clazzToMethod, _) = pair
+                val (clazzToMethod, regex) = pair
                 val (clazz, method) = clazzToMethod
                 val bean = applicationContext.getBean(clazz)
-                return Triple(ReflectiveBotCommand(bean, method), matcher, true)
+                return CommandMatchResult(ReflectiveBotCommand(bean, method), matcher, true,regex)
             }
         }
 

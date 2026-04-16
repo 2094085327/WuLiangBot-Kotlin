@@ -64,6 +64,24 @@ data class DirectivesEntity(
     val enable: Int? = null,
 
     /**
+     * 是否支持MD模式
+     */
+    @TableField(exist = false)
+    var supportMd: Boolean = false,
+
+    /**
+     * 指令命令键
+     */
+    @TableField(value = "command_key")
+    val commandKey: String? = null,
+
+    /**
+     * MD模式实际开关
+     */
+    @TableField(value = "md_enabled")
+    val mdEnabled: Boolean = false,
+
+    /**
      * 删除状态
      */
     @TableField(value = "del_status", fill = FieldFill.INSERT)

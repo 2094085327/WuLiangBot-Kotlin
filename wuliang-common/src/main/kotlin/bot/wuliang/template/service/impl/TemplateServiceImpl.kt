@@ -20,7 +20,7 @@ class TemplateServiceImpl :
 
     @Autowired
     private lateinit var templateMapper: TemplateMapper
-    override fun insertTemplate(botId: Long, templateName: String, templateContent: String) {
+    override fun insertTemplate(botId: String, templateName: String, templateContent: String) {
         val templateInfo = TemplateEntity(botId = botId, templateName = templateName, content = templateContent)
         val queryWrapper = QueryWrapper<TemplateEntity>().eq("bot_id", botId).eq("template_name", templateName)
 
@@ -29,7 +29,7 @@ class TemplateServiceImpl :
         else templateMapper.update(templateInfo, queryWrapper)
     }
 
-    override fun searchByBotIdAndTemplateName(botId: Long, templateName: String): TemplateEntity? {
+    override fun searchByBotIdAndTemplateName(botId: String, templateName: String): TemplateEntity? {
         val queryWrapper = QueryWrapper<TemplateEntity>().eq("bot_id", botId).eq("template_name", templateName)
         return templateMapper.selectOne(queryWrapper)
     }
