@@ -29,7 +29,6 @@ import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.formatTimeBySecond
 import bot.wuliang.utils.TimeUtils.getInstantNow
 import bot.wuliang.utils.TimeUtils.getNextMonday
-import bot.wuliang.utils.WfLexiconUtil
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
@@ -53,7 +52,6 @@ import java.time.Instant
 class WarframeController(
     @Autowired private val wfLexiconService: WfLexiconService,
     @Autowired private val redisService: RedisService,
-    @Autowired private val wfLexiconUtil: WfLexiconUtil,
 ) {
     @Autowired
     private lateinit var parseDataUtil: ParseDataUtil
@@ -226,7 +224,7 @@ class WarframeController(
         return redisService.getValue(WF_INCARNON_RIVEN_KEY) as Map<String, String>?
     }
 
-    @ApiOperation("复眠螺旋信息")
+    @ApiOperation("双衍平原信息")
     @GetMapping("/spirals")
     @DataSchema(commandKey = "spirals")
     fun spirals(): RespBean<out MoodSpirals> {

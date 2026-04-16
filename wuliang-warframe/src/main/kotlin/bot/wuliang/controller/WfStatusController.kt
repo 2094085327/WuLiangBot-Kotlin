@@ -6,7 +6,6 @@ import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
@@ -29,6 +28,7 @@ import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
+import bot.wuliang.service.WarframeDataService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
 import bot.wuliang.utils.TimeUtils.formatDuration
@@ -62,7 +62,8 @@ class WfStatusController @Autowired constructor(
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
     private val redisService: RedisService,
-    private val parseDataUtil: ParseDataUtil
+    private val parseDataUtil: ParseDataUtil,
+    private val warframeDataService: WarframeDataService,
 ) {
     private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
@@ -71,14 +72,6 @@ class WfStatusController @Autowired constructor(
     @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
     fun getFissures(context: BotUtils.Context, matcher: Matcher) {
         val fissureType = matcher.group(1)
-        // 检查 Redis 缓存是否存在，若不存在则从网络获取数据
-        if (!redisService.hasKey(WF_FISSURE_KEY)) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
-            runBlocking {
-                parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
-            }
-        }
-
         // 根据不同的裂缝类型构造图片的 URL
         val urlSuffix = when (fissureType) {
             "裂缝","裂隙" -> "ordinary"
@@ -93,7 +86,7 @@ class WfStatusController @Autowired constructor(
             element = "#app",
             waitElement = ".warframeFissure"
         )
-
+        warframeDataService.getFissuresData()
         webImgUtil.sendNewImage(context, imgData)
         webImgUtil.deleteImg(imgData = imgData)
     }
