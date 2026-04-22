@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * QQ消息处理器
@@ -71,11 +72,14 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
         starter.registerListenerHost(object : ListenerHost() {
             @EventReceiver
             fun onMessage(event: MessageV2Event) {
+
                 scope.launch {
                     try {
                         handleQQMessage(event)
+                    } catch (e: CancellationException) {
+                        logInfo("消息处理被取消: ${e.message}")
                     } catch (e: Exception) {
-                        logError("未能处理用户发出的QQ消息：: ${event.message}", e)
+                        logError("未能处理用户发出的QQ消息: ${event.message}", e)
                     }
                 }
             }
