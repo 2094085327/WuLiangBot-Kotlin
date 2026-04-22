@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.0...2.0.1) (2026-04-22)
+
+
+### 🐛 Bug Fixes
+
+* **system:** 修复协程取消异常处理 ([315f31a](https://github.com/2094085327/WuLiangBot-Kotlin/commit/315f31ab93078cbc06e9827e694a27056a38f7bd))
+
 ## [2.0.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/v1.1.1...2.0.0) (2026-04-22)
 
 
