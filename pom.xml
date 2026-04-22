@@ -10,7 +10,7 @@
 
     <groupId>bot.wuliang</groupId>
     <artifactId>Tencent-Bot-Kotlin</artifactId>
-    <version>1.1.2-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>Tencent-Bot-Kotlin</name>
     <description>Tencent-Bot-Kotlin</description>
@@ -24,13 +24,14 @@
         <module>wuliang-game</module>
         <module>wuliang-weather</module>
         <module>wuliang-system</module>
+        <module>wuliang-adapter</module>
     </modules>
 
     <properties>
         <java.version>17</java.version>
         <kotlin.version>2.1.21</kotlin.version>
         <spring.version>2.7.18</spring.version>
-        <revision>1.1.1</revision>
+        <revision>1.1.2-SNAPSHOT</revision>
         <swagger.version>3.0.0</swagger.version>
         <swagger-models.version>1.5.21</swagger-models.version>
         <lettuce.version>6.5.5.RELEASE</lettuce.version>
@@ -322,6 +323,13 @@
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-system</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!--适配器-->
+            <dependency>
+                <groupId>bot.wuliang</groupId>
+                <artifactId>wuliang-adapter</artifactId>
                 <version>${revision}</version>
             </dependency>
 
