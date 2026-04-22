@@ -1,4 +1,4 @@
-package bot.wuliang.botLog.logAop
+package bot.wuliang.logAop
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)

@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
-import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
@@ -39,7 +39,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
@@ -70,7 +70,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取裂缝信息")
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
-    fun getFissures(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getFissures(context: ExecutionContext, matcher: Matcher) {
         val fissureType = matcher.group(1)
         // 根据不同的裂缝类型构造图片的 URL
         val urlSuffix = when (fissureType) {
@@ -87,15 +87,15 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeFissure"
         )
         warframeDataService.getFissuresData()
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
 
     @SystemLog(businessName = "获取奸商信息")
     @AParameter
     @Executor(action = "奸商")
-    fun findVoidTrader(context: BotUtils.Context) {
+    suspend fun findVoidTrader(context: ExecutionContext) {
         if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseVoidTraders(data["VoidTraders"])
@@ -103,7 +103,7 @@ class WfStatusController @Autowired constructor(
 
         val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
         if (voidTraderList.isNullOrEmpty()) {
-            context.sendMsg("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
+            context.sender.sendText("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
             return
          }
 
@@ -111,13 +111,13 @@ class WfStatusController @Autowired constructor(
         if (activeVoidList.isEmpty()) {
             val arrivalTime = voidTraderList.first().expiry?.minus(Duration.ofDays(2))
             val etaTime = formatDuration(Duration.between(TimeUtils.getInstantNow(), arrivalTime))
-            context.sendMsg("虚空商人仍未回归...\n也许将在 $etaTime 后抵达 ${voidTraderList.first().node}")
+            context.sender.sendText("虚空商人仍未回归...\n也许将在 $etaTime 后抵达 ${voidTraderList.first().node}")
             return
         }
 
         // 当Redis中商人的缓存存在时，直接发送图片
         // 使用协程并发处理多个激活的虚空商人
-        runBlocking {
+        coroutineScope {
             List(activeVoidList.size) { index ->
                 async(Dispatchers.IO) {
                     val imgData = WebImgUtil.ImgData(
@@ -125,7 +125,8 @@ class WfStatusController @Autowired constructor(
                         imgName = "voidTrader-${UUID.randomUUID()}-$index",
                         element = "#app"
                     )
-                    webImgUtil.sendNewImage(context, imgData)
+                    val url = webImgUtil.getImgUrl(imgData)
+                    context.sender.sendImage(url)
                 }
             }.awaitAll()
         }
@@ -134,7 +135,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取钢铁之路兑换信息")
     @AParameter
     @Executor(action = "钢铁")
-    fun getSteelPath(context: BotUtils.Context) {
+    suspend fun getSteelPath(context: ExecutionContext) {
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
@@ -142,14 +143,14 @@ class WfStatusController @Autowired constructor(
             waitElement = ".wfSteelPath"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取日突击信息")
     @AParameter
     @Executor(action = "突击")
-    fun getSortie(context: BotUtils.Context) {
+    suspend fun getSortie(context: ExecutionContext) {
         if (!redisService.hasKey(WF_SORTIE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSorties(data["Sorties"])
@@ -161,14 +162,14 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeSortie"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取执刑官信息")
     @AParameter
     @Executor(action = "执(?:行|刑)官")
-    fun getArchonHunt(context: BotUtils.Context) {
+    suspend fun getArchonHunt(context: ExecutionContext) {
         if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseArchonHunt(data["LiteSorties"])
@@ -181,14 +182,14 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeArchonHunt"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取午夜电波信息")
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
-    fun getNightWave(context: BotUtils.Context) {
+    suspend fun getNightWave(context: ExecutionContext) {
         if (!redisService.hasKey(WF_NIGHTWAVE_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseNightWave(data["SeasonInfo"])
@@ -201,14 +202,14 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeNightWave"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取火卫二循环信息")
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
-    fun phobosStatus(context: BotUtils.Context?): String {
+    suspend fun phobosStatus(context: ExecutionContext?): String {
         var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_PHOBOS_STATUS_KEY)
         if (wordStatus == null) {
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
@@ -223,7 +224,7 @@ class WfStatusController @Autowired constructor(
         val sendMsg =
             "当前火卫二平原的状态为: ${wordStatus.displayState} \n开始时间:${wordStatus.activation}\n结束时间:${wordStatus.expiry}\n剩余:${wordStatus.timeLeft}"
         return if (context != null) {
-            context.sendMsg(sendMsg)
+            context.sender.sendText(sendMsg)
             sendMsg
         } else sendMsg
     }
@@ -231,7 +232,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取夜灵平原昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
-    fun cetusCycle(context: BotUtils.Context?): String {
+    suspend fun cetusCycle(context: ExecutionContext?): String {
         var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_CETUS_CYCLE_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
@@ -249,7 +250,7 @@ class WfStatusController @Autowired constructor(
                 "剩余:${wordStatus.timeLeft}"
 
         return if (context != null) {
-            context.sendMsg(sendMsg)
+            context.sender.sendText(sendMsg)
             sendMsg
         } else sendMsg
     }
@@ -257,7 +258,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取地球昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
-    fun earthCycle(context: BotUtils.Context?): String {
+    suspend fun earthCycle(context: ExecutionContext?): String {
         var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_EARTH_CYCLE_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("night" to "夜晚", "day" to "白天")
@@ -275,7 +276,7 @@ class WfStatusController @Autowired constructor(
                 "剩余:${wordStatus.timeLeft}"
 
         return if (context != null) {
-            context.sendMsg(sendMsg)
+            context.sender.sendText(sendMsg)
             sendMsg
         } else sendMsg
     }
@@ -283,7 +284,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取金星冷热循环信息")
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
-    fun venusStatus(context: BotUtils.Context?): String {
+    suspend fun venusStatus(context: ExecutionContext?): String {
         var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_VENUS_STATUS_KEY)
         if (wordStatus == null) {
             val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
@@ -300,7 +301,7 @@ class WfStatusController @Autowired constructor(
                 "结束时间:${wordStatus.expiry}\n" +
                 "剩余:${wordStatus.timeLeft}"
         return if (context != null) {
-            context.sendMsg(sendMsg)
+            context.sender.sendText(sendMsg)
             sendMsg
         } else sendMsg
     }
@@ -308,7 +309,7 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取全部平原循环信息")
     @AParameter
     @Executor(action = "\\b(平原|全部平原|平原时间)\\b")
-    fun allPlain(context: BotUtils.Context) {
+    suspend fun allPlain(context: ExecutionContext) {
         val phobosDeferred = phobosStatus(null)
         val cetusDeferred = cetusCycle(null)
         val earthDeferred = earthCycle(null)
@@ -320,14 +321,13 @@ class WfStatusController @Autowired constructor(
                 "\n$earthDeferred\n\n" +
                 "\n$venusDeferred"
 
-        // 发送消息
-        context.sendMsg(allStatus)
+        context.sender.sendText(allStatus)
     }
 
     @SystemLog(businessName = "获取入侵列表")
     @AParameter
     @Executor(action = "\\b入侵\\b")
-    fun invasions(context: BotUtils.Context) {
+    suspend fun invasions(context: ExecutionContext) {
         if (!redisService.hasKey(WF_INVASIONS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseInvasions(data["Invasions"])
@@ -339,15 +339,15 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeInvasions"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         System.gc()
     }
 
     @SystemLog(businessName = "获取本周灵化信息")
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
-    fun incarnon(context: BotUtils.Context) {
+    suspend fun incarnon(context: ExecutionContext) {
         if (!redisService.hasKey(WF_INCARNON_KEY)) {
             parseDataUtil.parseIncarnon()
         }
@@ -359,15 +359,15 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeIncarnon"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         System.gc()
     }
 
     @SystemLog(businessName = "获取双衍平原状态信息")
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
-    fun moodSpirals(context: BotUtils.Context) {
+    suspend fun moodSpirals(context: ExecutionContext) {
         if (!redisService.hasKey(WF_MOODSPIRALS_KEY)) {
             val jsonFile = File(WARFRAME_MOOD_SPIRALS)
             val mapper = jacksonObjectMapper()
@@ -378,7 +378,7 @@ class WfStatusController @Autowired constructor(
             val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
 
             if (currentWeatherData == null) {
-                context.sendMsg(WarframeRespEnum.SPIRALS_ERROR.message)
+                context.sender.sendText(WarframeRespEnum.SPIRALS_ERROR.message)
                 return
             }
 
@@ -391,7 +391,7 @@ class WfStatusController @Autowired constructor(
             val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
 
             if (hoursLaterWeatherData == null) {
-                context.sendMsg(WarframeRespEnum.SPIRALS_ERROR.message)
+                context.sender.sendText(WarframeRespEnum.SPIRALS_ERROR.message)
                 return
             }
 
@@ -402,7 +402,7 @@ class WfStatusController @Autowired constructor(
 
             // 确保状态不为null
             if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
-                context.sendMsg(WarframeRespEnum.SPIRALS_ABNORMAL_ERROR.message)
+                context.sender.sendText(WarframeRespEnum.SPIRALS_ABNORMAL_ERROR.message)
                 return
             }
 
@@ -448,15 +448,15 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeSpirals"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         System.gc()
     }
 
     @SystemLog(businessName = "获取信条/终幕武器轮换信息")
     @AParameter
     @Executor(action = "\\b(佩兰|信条|终幕|信条轮换|终幕轮换)\\b")
-    fun weaponRotation(context: BotUtils.Context) {
+    suspend fun weaponRotation(context: ExecutionContext) {
         // 信条刷新日期 2025-03-29 08:00:00
         val tenetStartDate = LocalDateTime.of(2025, 3, 29, 8, 0, 0)
         // 终幕刷新日期 2025-03-19 08:00:00
@@ -486,14 +486,13 @@ class WfStatusController @Autowired constructor(
         val formattedTenetNextRefresh = tenetNextRefresh.format(dateTimeFormatter)
         val formattedCodaNextRefresh = codaNextRefresh.format(dateTimeFormatter)
 
-        // 发送消息
-        context.sendMsg("信条下一次刷新时间: $formattedTenetNextRefresh  剩余时间: $formattedTenetRemainingTime\n终幕下一次刷新时间: $formattedCodaNextRefresh  剩余时间: $formattedCodaRemainingTime")
+        context.sender.sendText("信条下一次刷新时间: $formattedTenetNextRefresh  剩余时间: $formattedTenetRemainingTime\n终幕下一次刷新时间: $formattedCodaNextRefresh  剩余时间: $formattedCodaRemainingTime")
     }
 
     @SystemLog(businessName = "获取圣殿结合仪式目标")
     @AParameter
     @Executor(action = "\\b(结合仪式|结合|结合目标|大黄脸)\\b")
-    fun sanctuarySynthesisTargets(context: BotUtils.Context) {
+    suspend fun sanctuarySynthesisTargets(context: ExecutionContext) {
         if (!redisService.hasKey(WF_SIMARIS_KEY)) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSimaris(data["LibraryInfo"])
@@ -506,14 +505,14 @@ class WfStatusController @Autowired constructor(
             waitElement = ".warframeSimaris"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取DE紫卡数据")
     @AParameter
     @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)(\\s+.*)?$")
-    fun getRivenRanking(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getRivenRanking(context: ExecutionContext, matcher: Matcher) {
         if (!redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) || !redisService.hasKey(WF_RIVEN_REROLLED_KEY)) {
             parseDataUtil.parseWeeklyRiven()
         }
@@ -527,7 +526,7 @@ class WfStatusController @Autowired constructor(
             element = "#app",
             waitElement = ".warframeRivenAllPrice"
         )
-        webImgUtil.sendNewImage(context, imgData)
-        webImgUtil.deleteImg(imgData = imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
     }
 }

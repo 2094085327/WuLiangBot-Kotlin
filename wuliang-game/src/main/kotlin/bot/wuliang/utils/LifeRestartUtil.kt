@@ -1,5 +1,6 @@
 package bot.wuliang.utils
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.*
 import bot.wuliang.entity.UserInfoEntity
@@ -931,8 +932,8 @@ class LifeRestartUtil @Autowired constructor(
      * @param userInfo 用户信息
      * @param message 待发送的消息
      */
-    fun updateAndSend(
-        context: BotUtils.Context,
+    suspend fun updateAndSend(
+        context: ExecutionContext,
         userInfo: UserInfoEntity,
         realId: String,
         message: String? = null
@@ -941,9 +942,10 @@ class LifeRestartUtil @Autowired constructor(
             imgName = "${realId}-LifeStart-${UUID.randomUUID()}",
             url = "http://${webImgUtil.frontendAddress}/game/lifeRestart?game_userId=${realId}"
         )
+        val url = webImgUtil.getImgUrl(imageData)
+        context.sender.sendImage(url)
 
-        webImgUtil.sendNewImage(context, imageData)
-        if (message != null) context.sendMsg(message)
+        if (message != null) context.sender.sendText(message)
         webImgUtil.deleteImg(imageData)
 
         // 更新用户缓存时间
@@ -1015,12 +1017,13 @@ class LifeRestartUtil @Autowired constructor(
      *
      * @param userInfo 用户信息
      */
-    fun sendGameEnd(context: BotUtils.Context, userInfo: UserInfoEntity) {
+    suspend fun sendGameEnd(context: ExecutionContext, userInfo: UserInfoEntity) {
         val imageData = WebImgUtil.ImgData(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://${webImgUtil.frontendAddress}/game/lifeRestart?game_userId=${userInfo.userId}"
         )
-        webImgUtil.sendNewImage(context, imageData)
+        val url = webImgUtil.getImgUrl(imageData)
+        context.sender.sendImage(url)
 
         val mapper = jacksonObjectMapper()
         val rootNode: JsonNode = mapper.readValue(File(GRADE_JSONPATH))
@@ -1043,7 +1046,8 @@ class LifeRestartUtil @Autowired constructor(
             imgName = "${userInfo.userId}-LifeStart-${UUID.randomUUID()}",
             url = "http://${webImgUtil.frontendAddress}/game/lifeRestartEndGame?game_userId=${userInfo.userId}"
         )
-        webImgUtil.sendNewImage(context, gameOverImgData)
+        val gameOverUrl = webImgUtil.getImgUrl(gameOverImgData)
+        context.sender.sendImage(gameOverUrl)
 
         webImgUtil.deleteImg(imageData)
     }

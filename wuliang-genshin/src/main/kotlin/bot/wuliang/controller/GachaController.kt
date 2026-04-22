@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
-import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -20,10 +20,10 @@ class GachaController {
     @SystemLog(businessName = "获取原神全部可用卡池")
     @AParameter
     @Executor(action = "全部卡池")
-    fun allPool(context: BotUtils.Context) {
+    suspend fun allPool(context: ExecutionContext) {
         UpdateGachaResources().getDataMain(ResourceUpdateEvent(this))
         val poolList = MysDataUtil().findEachPoolName()
-        context.sendMsg(poolList.joinToString("\n"))
+        context.sender.sendText(poolList.joinToString("\n"))
     }
 
     /**
@@ -59,11 +59,11 @@ class GachaController {
     @SystemLog(businessName = "启用模拟抽卡卡池")
     @AParameter
     @Executor(action = "\\b^启用卡池\\s*(\\S+)")
-    fun setOpenPool(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun setOpenPool(context: ExecutionContext, matcher: Matcher) {
         // 解析输入
         val (poolName, poolId, poolType) = parsePoolData(matcher.group(1))
         if (poolName.isEmpty() || poolId.isEmpty()) {
-            context.sendMsg(GenshinRespEnum.POOL_FORMAT_ERROR.message)
+            context.sender.sendText(GenshinRespEnum.POOL_FORMAT_ERROR.message)
             return
         }
 
@@ -72,19 +72,19 @@ class GachaController {
 
         val poolFind = MysDataUtil().findPoolData(poolName, poolId)
         if (poolFind == null) {
-            context.sendMsg(GenshinRespEnum.POOL_NOTFOUND.message)
+            context.sender.sendText(GenshinRespEnum.POOL_NOTFOUND.message)
             return
         }
         MysDataUtil().changePoolOpen(poolFind, poolFormat, poolType)
 
-        context.sendMsg("已启用卡池「${poolFind.first}」")
+        context.sender.sendText("已启用卡池「${poolFind.first}」")
         InitGenShinData.initGachaLogData()
     }
 
     @SystemLog(businessName = "模拟抽卡十连")
     @AParameter
     @Executor(action = "十连")
-    fun gacha(context: BotUtils.Context) {
+    suspend fun gacha(context: ExecutionContext) {
         val detailPoolInfo = poolData
 
         val itemListData = MysDataUtil().runGacha()
@@ -93,6 +93,6 @@ class GachaController {
             itemList.add(eachItem!!.name.toString())
         }
 
-        context.sendMsg("现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~\n" + "你抽中了:$itemList")
+        context.sender.sendText("现在启用的卡池是「${detailPoolInfo["poolName"].textValue()}」,如果和你设置的卡池不一样可能是有其他人正在使用哦，可以等一下再尝试~\n" + "你抽中了:$itemList")
     }
 }
