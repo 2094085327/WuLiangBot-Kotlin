@@ -1,0 +1,53 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+      - skip-changelog
+    authors:
+      - dependabot
+      - renovate-bot
+
+  categories:
+    # 1. 重大变更 (破坏性更新)
+    - title: 💥 Breaking Changes
+      labels:
+        - breaking-change
+        - Semver-Major
+
+    # 2. 新功能
+    - title: 🚀 New Features
+      labels:
+        - enhancement
+        - feature
+        - Semver-Minor
+
+    # 3. 性能优化
+    - title: ⚡ Performance Improvements
+      labels:
+        - performance
+        - optimization
+
+    # 4. Bug 修复
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+        - Semver-Patch
+
+    # 5. 代码重构 (不含功能变动)
+    - title: ♻️ Refactoring
+      labels:
+        - refactor
+        - style
+
+    # 6. 文档更新
+    - title: 📝 Documentation
+      labels:
+        - documentation
+        - docs
+
+    # 7. 其他未分类变更
+    - title: 📦 Other Changes
+      labels:
+        - "*"
