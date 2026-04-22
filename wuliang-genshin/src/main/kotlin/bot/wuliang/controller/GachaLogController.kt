@@ -1,9 +1,10 @@
 package bot.wuliang.controller
 
-import bot.wuliang.botLog.logAop.SystemLog
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.adapter.message.UniversalMessage
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.GACHA_CACHE_PATH
 import bot.wuliang.config.GACHA_LOG_IMPORT
 import bot.wuliang.distribute.annotation.AParameter
@@ -57,16 +58,16 @@ class GachaLogController {
     @SystemLog(businessName = "获取当前用户抽卡历史记录")
     @AParameter
     @Executor(action = "历史记录(.*)")
-    fun recordQuery(context: BotUtils.Context, matcher: Matcher) {
-        context.sendMsg(GenshinRespEnum.SEARCH_HISTORY.message)
+    suspend fun recordQuery(context: ExecutionContext, matcher: Matcher) {
+        context.sender.sendText(GenshinRespEnum.SEARCH_HISTORY.message)
         updateGachaResources.getDataMain(ResourceUpdateEvent(this))
-        val realId = context.userId
+        val realId = context.requestContext.userId
         val gameUidFromMatcher = matcher.group(1)?.replace(" ", "")
         val gameUid = gameUidFromMatcher.takeIf { it?.isNotEmpty() == true }
             ?: userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            context.sendMsg(GenshinRespEnum.BIND_NOTFOUND.message)
+            context.sender.sendText(GenshinRespEnum.BIND_NOTFOUND.message)
             return
         }
 
@@ -86,12 +87,12 @@ class GachaLogController {
     @SystemLog(businessName = "删除保存的历史记录")
     @AParameter
     @Executor(action = "删除记录")
-    fun deleteGachaLog(context: BotUtils.Context) {
-        val realId = context.userId
+    suspend fun deleteGachaLog(context: ExecutionContext) {
+        val realId = context.requestContext.userId
         val gameUid = userService.selectGenUidByRealId(realId)
 
         if (gameUid.isNullOrEmpty()) {
-            context.sendMsg(GenshinRespEnum.BIND_NOTFOUND.message)
+            context.sender.sendText(GenshinRespEnum.BIND_NOTFOUND.message)
             return
         }
 
@@ -102,35 +103,35 @@ class GachaLogController {
             val deleted = file.delete()
             val message =
                 if (deleted) "抽卡记录${prefix}删除成功" else "抽卡记录${prefix}删除失败，记录可能正在使用，请稍后再试"
-            context.sendMsg(message)
-        } ?: context.sendMsg(GenshinRespEnum.NO_USER_RECORD.message)
+            context.sender.sendText(message)
+        } ?: context.sender.sendText(GenshinRespEnum.NO_USER_RECORD.message)
     }
 
     @SystemLog(businessName = "通过二维码获取抽卡记录")
     @AParameter
     @Executor(action = "\\b抽卡记录\\b")
-    fun getGachaLog(context: BotUtils.Context) {
-        val realId = context.userId
+    suspend fun getGachaLog(context: ExecutionContext) {
+        val realId = context.requestContext.userId
         MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
         val (outputStream, ticket) = qrLogin.makeQrCode()
 
-        context.sendMsg(GenshinRespEnum.DISCLAIMER.message)
-        webImgUtil.sendNewImage(context,outputStream)
+        context.sender.sendText(GenshinRespEnum.DISCLAIMER.message)
+        context.sender.send(UniversalMessage.Builder().imageBytes(outputStream).build())
 
         updateGachaResources.getDataMain(ResourceUpdateEvent(this))
 
         val (qrCodeStatus, checkQrCode) = qrLogin.checkQrCode(ticket)
         if (!checkQrCode) {
-            context.sendMsg(qrCodeStatus["message"].textValue())
+            context.sender.sendText(qrCodeStatus["message"].textValue())
             return
         }
-        context.sendMsg(GenshinRespEnum.LOGIN_SUCCESS.message)
+        context.sender.sendText(GenshinRespEnum.LOGIN_SUCCESS.message)
 
         MysDataUtil().deleteDataCache()
         val stoken = qrLogin.getStoken(qrCodeStatus)
         // TODO 之后修改为不为正确状态码即返回
         if (stoken["retcode"].intValue() == -100) {
-            context.sendMsg("${stoken["message"].textValue()} 若多次出现此提示请尝试使用「抽卡链接」获取链接后进行分析")
+            context.sender.sendText("${stoken["message"].textValue()} 若多次出现此提示请尝试使用「抽卡链接」获取链接后进行分析")
             return
         }
         qrLogin.getAccountInfo(stoken).let { accountInfo ->
@@ -158,9 +159,9 @@ class GachaLogController {
     @SystemLog(businessName = "向机器人发送抽卡连接获取抽卡记录")
     @AParameter
     @Executor(action = "抽卡记录\\s*(\\S.*)")
-    fun getGachaLogByUrlGroup(context: BotUtils.Context, matcher: Matcher) {
-        if (context.groupId != null) {
-            context.sendMsg(GenshinRespEnum.SEND_LINK_FAIL.message)
+    suspend fun getGachaLogByUrlGroup(context: ExecutionContext, matcher: Matcher) {
+        if (context.requestContext.groupId != null) {
+            context.sender.sendText(GenshinRespEnum.SEND_LINK_FAIL.message)
             return
         }
 
@@ -169,7 +170,7 @@ class GachaLogController {
 
         if (gachaUrl.isEmpty()) return
 
-        context.sendMsg(GenshinRespEnum.GET_LINK.message)
+        context.sender.sendText(GenshinRespEnum.GET_LINK.message)
 
         // 更新卡池数据
         updateGachaResources.getDataMain(ResourceUpdateEvent(this))
@@ -178,18 +179,18 @@ class GachaLogController {
         val checkUrl = gachaLogUtil.checkApi(processingUrl)
         when (checkUrl.first) {
             "-100" -> {
-                context.sendMsg(GenshinRespEnum.LINK_INCOMPLETE.message)
+                context.sender.sendText(GenshinRespEnum.LINK_INCOMPLETE.message)
                 return
             }
 
             "-101" -> {
-                context.sendMsg(GenshinRespEnum.LINK_EXPIRED.message)
+                context.sender.sendText(GenshinRespEnum.LINK_EXPIRED.message)
                 return
             }
 
             "0" -> {
-                context.sendMsg(GenshinRespEnum.LINK_SUCCESS.message)
-                val realId = context.userId
+                context.sender.sendText(GenshinRespEnum.LINK_SUCCESS.message)
+                val realId = context.requestContext.userId
                 MysApiTools.deviceId = gachaLogUtil.convertStringToUuidFormat(realId)
 
                 gachaLogUtil.getData(processingUrl)
@@ -205,7 +206,7 @@ class GachaLogController {
                 userService.insertGenUidByRealId(realId, gameUid)
             }
 
-            else -> context.sendMsg(GenshinRespEnum.LINK_FAIL.message)
+            else -> context.sender.sendText(GenshinRespEnum.LINK_FAIL.message)
         }
     }
 
@@ -246,17 +247,17 @@ class GachaLogController {
     @SystemLog(businessName = "导入通用抽卡记录数据")
     @AParameter
     @Executor(action = "导入记录")
-    fun getGachaLogByUrlGroup(context: BotUtils.Context) {
-        context.sendMsg(GenshinRespEnum.IMPORT_HISTORY.message)
+    suspend fun getGachaLogByUrlGroup(context: ExecutionContext) {
+        context.sender.sendText(GenshinRespEnum.IMPORT_HISTORY.message)
         val importState = importGachaLog()
-        context.sendMsg(importState.message!!)
+        context.sender.sendText(importState.message!!)
     }
 
     @SystemLog(businessName = "获取抽卡链接指令")
     @AParameter
     @Executor(action = "抽卡链接")
-    fun getGachaLogUrl(context: BotUtils.Context) {
-        context.sendMsg("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")
+    suspend fun getGachaLogUrl(context: ExecutionContext) {
+        context.sender.sendText("pause;${'$'}m=(((Get-Clipboard -TextFormatType Html) | sls \"(https:/.+log)\").Matches[0].Value);${'$'}m;Set-Clipboard -Value ${'$'}m")
     }
 
     @RequestMapping("/gachaLog")

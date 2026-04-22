@@ -1,9 +1,9 @@
 package bot.wuliang.updateResources
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
-import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.CommonConfig.RESOURCES_PATH
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
@@ -60,12 +60,12 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
 
     @AParameter
     @Executor(action = "更新资源")
-    fun updateAll(context: BotUtils.Context) {
-        context.sendMsg("正在更新资源，请稍后")
+    suspend fun updateAll(context: ExecutionContext) {
+        context.sender.sendText("正在更新资源，请稍后")
 
         val folderPath = RESOURCES_PATH
 
-        runBlocking {
+        run {
             val downloadCheck = otherUtil.downloadFolderFromGitHub(
                 owner,
                 repoName,
@@ -75,10 +75,10 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
             )
 
             if (!downloadCheck.first) {
-                context.sendMsg("资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试")
-                return@runBlocking
+                context.sender.sendText("资源更新失败,自动跳过此资源更新,请通知管理员检查错误或稍后再试")
+                return@run
             }
-            context.sendMsg("资源更新完成，本次共更新${downloadCheck.second}个资源")
+            context.sender.sendText("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
 
             // 发布资源更新事件
@@ -88,9 +88,9 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
 
     @AParameter
     @Executor(action = "清除缓存")
-    fun deleteCache(context: BotUtils.Context) {
+    suspend fun deleteCache(context: ExecutionContext) {
         updateResourcesUtil.forceDeleteCache("resources/imageCache")
-        context.sendMsg("已完成缓存清理")
+        context.sender.sendText("已完成缓存清理")
     }
 
     /**

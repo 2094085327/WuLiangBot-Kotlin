@@ -2,7 +2,6 @@ package bot.wuliang.imageProcess
 
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.utils.BotUtils.Context
 import bot.wuliang.config.CommonConfig.IMG_CACHE_PATH
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.qiNiuCos.QiNiuService
@@ -11,8 +10,6 @@ import com.luciad.imageio.webp.WebPWriteParam
 import com.microsoft.playwright.ElementHandle
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
-import io.github.kloping.qqbot.entities.ex.Image
-import io.github.kloping.qqbot.entities.ex.MessageAsyncBuilder
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -219,17 +216,17 @@ class WebImgUtil(
         val playwright = Playwright.create()
         val browser = playwright.chromium().launch()
         val page: Page = browser.newPage()
-        if (imgData.data != null) {
-            page.addInitScript("window.INJECTED_DATA = " +  imgData.data )
-        }
-        page.use { thisPage ->
-            thisPage.navigate(imgData.url)
-            var byteArray = thisPage.screenshot(Page.ScreenshotOptions().setFullPage(true))
+        try {
+            if (imgData.data != null) {
+                page.addInitScript("window.INJECTED_DATA = " + imgData.data)
+            }
+
+            page.navigate(imgData.url)
+            var byteArray = page.screenshot(Page.ScreenshotOptions().setFullPage(true))
 
             if (imgData.element != null) {
-                thisPage.waitForSelector(imgData.waitElement)
-                val body: ElementHandle = thisPage.querySelector(imgData.element)!!
-
+                page.waitForSelector(imgData.waitElement)
+                val body: ElementHandle = page.querySelector(imgData.element)!!
                 // 截图
                 byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
             }
@@ -240,6 +237,11 @@ class WebImgUtil(
             }
 
             return byteArray
+        } finally {
+            // 确保资源被正确关闭
+            page.close()
+            browser?.close()
+            playwright?.close()
         }
     }
 
@@ -316,7 +318,7 @@ class WebImgUtil(
      * @param imgData 图片数据
      * @return 返回的图片链接
      */
-    fun returnUrlImgByTxCos(imgData: ImgData): String? {
+    fun returnUrlImgByTxCos(imgData: ImgData): String {
         val input: InputStream
         if (!imgData.local) {
             val byte = getImgByte(imgData)
@@ -333,38 +335,11 @@ class WebImgUtil(
      * @param imgData 图片数据
      * @return 图片链接
      */
-    private fun getImgUrl(imgData: ImgData): String? {
+    fun getImgUrl(imgData: ImgData): String {
         return if (txCosService.checkFileExist(imgData.imgName!!, imgData.imageType!!)) {
             txCosService.getFileUrl(imgData.imgName, imgData.imageType!!)
         } else {
             returnUrlImgByTxCos(imgData)
         }
     }
-
-    /**
-     * 发送新图片
-     *
-     * @param context 上下文
-     * @param imgData 图片数据
-     */
-    fun sendNewImage(context: Context, imgData: ImgData) {
-        val imgUrl = getImgUrl(imgData)
-        val builder = MessageAsyncBuilder()
-        builder.append(Image(imgUrl))
-        context.sendMsg(builder)
-    }
-
-    /**
-     * 发送新图片
-     *
-     * @param context 上下文
-     * @param bytes 图片数据
-     */
-    fun sendNewImage(context: Context,  bytes:ByteArray) {
-        val builder = MessageAsyncBuilder()
-        builder.append(Image(bytes))
-        context.sendMsg(builder)
-    }
-
-
 }

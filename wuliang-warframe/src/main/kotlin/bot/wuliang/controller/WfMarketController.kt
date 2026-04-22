@@ -1,8 +1,8 @@
 package bot.wuliang.controller
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.aipOcr.AipOcrClient
-import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
@@ -14,6 +14,7 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.httpUtil.HttpUtil.urlEncode
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
+import bot.wuliang.message.BotMessage
 import bot.wuliang.moudles.WmDucats
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
@@ -25,7 +26,7 @@ import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -63,7 +64,7 @@ class WfMarketController @Autowired constructor(
     @SystemLog(businessName = "获取WM市场物品信息")
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
-    fun getMarketItem(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getMarketItem(context: ExecutionContext, matcher: Matcher) {
         val key = matcher.group(1)
         val regex = """(\d+)(?=级)|(满级)""".toRegex()
         val matchResult = regex.find(key)
@@ -91,9 +92,9 @@ class WfMarketController @Autowired constructor(
                 }
                 if (fuzzyList.isNotEmpty()) {
                     otherUtil.findMatchingStrings(key, fuzzyList).let {
-                        context.sendMsg(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
+                        context.sender.sendText(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
                     }
-                } else context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                } else context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
                 return
             }
         wfUtil.sendMarketItemInfo(context, itemEntity, level)
@@ -103,7 +104,7 @@ class WfMarketController @Autowired constructor(
     @SystemLog(businessName = "获取WM市场紫卡信息")
     @AParameter
     @Executor(action = "(?i)\\b(wr|wmr)\\s*(\\S+.*)$")
-    fun getRiven(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getRiven(context: ExecutionContext, matcher: Matcher) {
         val key = matcher.group(2)
         val parameterList = key.split(" ")
 
@@ -128,14 +129,14 @@ class WfMarketController @Autowired constructor(
         )
 
         if (rivenJson == null) {
-            context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
+            context.sender.sendText(WarframeRespEnum.SEARCH_ERROR.message)
             return
         }
 
         // 筛选和格式化拍卖数据
         val auctionInfo = wfUtil.formatAuctionData(rivenJson, itemEntity.zhName!!, reRollTimes)
         if (!auctionInfo) {
-            context.sendMsg(WarframeRespEnum.SEARCH_RIVEN_NOT_FOUND.message + itemEntity.zhName)
+            context.sender.sendText(WarframeRespEnum.SEARCH_RIVEN_NOT_FOUND.message + itemEntity.zhName)
             return
         }
 
@@ -145,7 +146,8 @@ class WfMarketController @Autowired constructor(
             element = "#app"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         webImgUtil.deleteImg(imgData = imgData)
 
     }
@@ -153,7 +155,7 @@ class WfMarketController @Autowired constructor(
     @SystemLog(businessName = "获取WM市场玄骸武器信息")
     @AParameter
     @Executor(action = "(?i)\\bwl\\s*(\\S+.*)$")
-    fun getLich(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getLich(context: ExecutionContext, matcher: Matcher) {
         val key = matcher.group(1)
         val parameterList = key.split(" ")
 
@@ -188,7 +190,7 @@ class WfMarketController @Autowired constructor(
             )
 
             if (lichJson == null) {
-                context.sendMsg(WarframeRespEnum.SEARCH_ERROR.message)
+                context.sender.sendText(WarframeRespEnum.SEARCH_ERROR.message)
                 return
             }
 
@@ -227,47 +229,50 @@ class WfMarketController @Autowired constructor(
             element = "#app"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         webImgUtil.deleteImg(imgData = imgData)
     }
 
     @SystemLog(businessName = "获取物品Wiki链接")
     @AParameter
     @Executor(action = "wiki (.*)")
-    fun getWikiUrl(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun getWikiUrl(context: ExecutionContext, matcher: Matcher) {
         val key = matcher.group(1)
         val wikiUrl = "https://warframe.huijiwiki.com/wiki/${key.urlEncode()}"
-        context.sendMsg(WarframeRespEnum.SEARCH_WIKI.message + wikiUrl)
+        context.sender.sendText(WarframeRespEnum.SEARCH_WIKI.message + wikiUrl)
     }
 
     @SystemLog(businessName = "获取增幅器序号")
     @AParameter
     @Executor(action = "(?i)\\b(增幅器|指挥官|指挥官武器|amp)\\b")
-    fun getAmp(context: BotUtils.Context) {
+    suspend fun getAmp(context: ExecutionContext) {
         val imgData = WebImgUtil.ImgData(
             url = WARFRAME_AMP_PNG,
             imgName = "amp",
             local = true,
         )
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData = imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取希图斯幽魂")
     @AParameter
     @Executor(action = "(?i)\\b(幽魂|希图斯幽魂)\\b")
-    fun getCetusWisp(context: BotUtils.Context) {
+    suspend fun getCetusWisp(context: ExecutionContext) {
         val imgData = WebImgUtil.ImgData(
             url = WARFRAME_CETUS_WISP_PNG,
             imgName = "cetus_wisp",
             local = true,
         )
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData = imgData)
+        context.sender.sendImage(url)
     }
 
     @SystemLog(businessName = "获取物品对应翻译")
     @AParameter
     @Executor(action = "(?i)\\b翻译 (.*)\\b")
-    fun translation(context: BotUtils.Context, matcher: Matcher) {
+    suspend fun translation(context: ExecutionContext, matcher: Matcher) {
         val inputText = matcher.group(1).trim()
 
         // 判断输入语言类型
@@ -275,14 +280,14 @@ class WfMarketController @Autowired constructor(
         val hasEnglish = Regex("[A-Za-z]").containsMatchIn(inputText)
 
         // 封装查找和模糊搜索逻辑
-        fun findTranslation(
+        suspend fun findTranslation(
             query: String,
             directLookup: (String) -> String?,
             fuzzyLookup: (String) -> List<String?>
         ): Boolean {
             val directResult = directLookup(query)
             if (directResult != null) {
-                context.sendMsg(directResult)
+                context.sender.sendText(directResult)
                 return true
             }
 
@@ -292,7 +297,7 @@ class WfMarketController @Autowired constructor(
                 ?.let { otherUtil.findMatchingStrings(query, it) }
 
             if (!fuzzyResults.isNullOrEmpty()) {
-                context.sendMsg("${WarframeRespEnum.SEARCH_NOT_FOUND.message}${fuzzyResults.joinToString(", ")}")
+                context.sender.sendText("${WarframeRespEnum.SEARCH_NOT_FOUND.message}${fuzzyResults.joinToString(", ")}")
                 return true
             }
 
@@ -305,7 +310,7 @@ class WfMarketController @Autowired constructor(
                 if (!findTranslation(inputText, wfLexiconService::getEnName) { key ->
                         wfLexiconService.fuzzyQuery(key).map { it?.zhItemName }
                     }) {
-                    context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                    context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
                     return
                 }
             }
@@ -314,70 +319,70 @@ class WfMarketController @Autowired constructor(
                 if (!findTranslation(inputText, wfLexiconService::getZhName) { key ->
                         wfLexiconService.fuzzyQuery(key).map { it?.enItemName }
                     }) {
-                    context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+                    context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
                     return
                 }
             }
 
-            else -> context.sendMsg(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
+            else -> context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
         }
     }
 
     @SystemLog(businessName = "获取部件在WM的白金价格")
     @AParameter
     @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
-    fun getWmPrice(context: BotUtils.Context) {
-        val messageContent = context.messageContent
-        if (messageContent.images.isEmpty()) {
-            context.sendMsg("请发送 'WM价格'+'查询部件的售卖部分的截图' 来查询部件在WM的白金价格")
+    suspend fun getWmPrice(context: ExecutionContext, messages: List<BotMessage>) {
+        val imageMessages = messages.filterIsInstance<BotMessage.Image>()
+
+        if (imageMessages.isEmpty()) {
+            context.sender.sendText("请发送 'WM价格'+'查询部件的售卖部分的截图' 来查询部件在WM的白金价格")
             return
         }
-        if (messageContent.images.size > 2) {
-            context.sendMsg("单次查询图片上限为2张")
+
+        if (imageMessages.size > 2) {
+            context.sender.sendText("单次查询图片上限为2张")
             return
         }
         val wordsList = mutableListOf<String>()
-        runBlocking {
-            messageContent.images.map { image ->
+        coroutineScope {
+            imageMessages.map { imageMessage ->
                 async {
-                    aipOcrClient.getBasicOcr(mapOf("url" to image.url))
+                    aipOcrClient.getBasicOcr(mapOf("url" to imageMessage.url))
                 }
             }.awaitAll().forEach { result ->
                 val root = JacksonUtil.readTree(result.toString())
                 val wordsArray = root["words_result"]
                 wordsList.addAll(
                     wordsArray.mapNotNull { it["words"]?.asText() }
-                        .map { word -> word.replace(Regex("""^\d+\s*[xX×Ⅹ]?\s*"""), "").trim() }// 移除物品数量部分
+                        .map { word -> word.replace(Regex("""^\d+\s*[xX×Ⅹ]?\s*"""), "").trim() }
                 )
             }
         }
         if (wordsList.isEmpty()) {
-            context.sendMsg("未识别到任何部件名称，请重新发送尽可能清晰的部件售卖图")
+            context.sender.sendText("未识别到任何部件名称，请重新发送尽可能清晰的部件售卖图")
             return
         }
         val wfMarketItemEntityList = wfMarketItemService.selectListZhNameList(wordsList)
         if (wfMarketItemEntityList.isNullOrEmpty()) {
-            context.sendMsg("未查询到任何匹配的部件，请重新发送尽可能清晰的部件售卖图")
+            context.sender.sendText("未查询到任何匹配的部件，请重新发送尽可能清晰的部件售卖图")
             return
         }
-        context.sendMsg("正在查询 ${wfMarketItemEntityList.size} 个部件的 WM 最低售价，请耐心等待...")
-        val results = runBlocking {
+        context.sender.sendText("正在查询 ${wfMarketItemEntityList.size} 个部件的 WM 最低售价，请耐心等待...")
+        val results = coroutineScope {
             wfMarketItemEntityList.map { item ->
                 async {
-                    wmRateLimiter.acquire()    // 限制 2 并发
+                    wmRateLimiter.acquire()
                     try {
                         val price = parseDataUtil.parseWmMinimalPrice(item.urlName!!)
                         val ducats = item.ducats ?: 0
                         val ratio = if (price > 0) ducats.toDouble() / price else 0.0
                         WmDucats(item.zhName, ducats, price, ratio)
                     } finally {
-                        // 释放信号量
                         wmRateLimiter.release()
                     }
                 }
             }.awaitAll()
         }
-
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/wmPrice",
             imgName = "wmPrice-${UUID.randomUUID()}",
@@ -386,7 +391,8 @@ class WfMarketController @Autowired constructor(
             waitElement = ".wmPrice"
         )
 
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
         webImgUtil.deleteImg(imgData = imgData)
     }
 }

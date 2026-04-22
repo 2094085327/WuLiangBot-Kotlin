@@ -1,6 +1,6 @@
 package bot.wuliang.controller
 
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -179,10 +179,10 @@ class SystemResourcesMain {
 
     @AParameter
     @Executor(action = "无量姬状态")
-    fun sendSystemResources(context: BotUtils.Context) {
+    suspend fun sendSystemResources(context: ExecutionContext) {
         val (cpuData, ramData, sysData, jvmData, sysFileData) = resourcesMain()
 
-        context.sendMsg("系统状态计算中，请稍后...")
+        context.sender.sendText("系统状态计算中，请稍后...")
         val sysFileString: String = sysFileData.joinToString(separator = "\n") {
             "盘符: ${it.dirName}\n" +
                     "盘符类型: ${it.sysTypeName}\n" +
@@ -193,7 +193,7 @@ class SystemResourcesMain {
                     "空间使用率: ${it.fileUsage}%\n"
         }
 
-        context.sendMsg(
+        context.sender.sendText(
 
             "Cpu总使用率: ${cpuData.getTotal()}%\n" +
                     "Cpu核心数: ${cpuData.cpuNum}\n" +

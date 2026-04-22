@@ -1,11 +1,11 @@
 package bot.wuliang.hadler
 
-import bot.wuliang.botLog.logAop.SystemLog
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.imageProcess.WebImgUtil
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.utils.GetGeoApi
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -19,8 +19,8 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
     @SystemLog(businessName = "获取城市天气信息")
     @AParameter
     @Executor(action = "\\b^天气\\s(\\S+)")
-    fun getWeatherImg(context: BotUtils.Context, matcher: Matcher) {
-        context.sendMsg("正在查询信息，请耐心等待")
+    suspend fun getWeatherImg(context: ExecutionContext, matcher: Matcher) {
+        context.sender.sendText("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 
         val city = matcher.group(1)
@@ -29,7 +29,7 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
         val cityJson = geoApi.getCityData(city)
 
         if (!geoApi.checkCode(cityJson["code"].textValue())) {
-            context.sendMsg("没有找到查询的城市信息，请检查是否输入错误")
+            context.sender.sendText("没有找到查询的城市信息，请检查是否输入错误")
             return
         }
         val imgData = WebImgUtil.ImgData(
@@ -38,7 +38,9 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
             element = "#app",
             waitElement = ".climate"
         )
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
+
         webImgUtil.deleteImg(imgData = imgData)
 
         System.gc()
@@ -47,8 +49,8 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
     @SystemLog(businessName = "获取城市地理信息")
     @AParameter
     @Executor(action = "\\b^地理\\s(\\S+)")
-    fun getGeoImg(context: BotUtils.Context, matcher: Matcher) {
-        context.sendMsg("正在查询信息，请耐心等待")
+    suspend fun getGeoImg(context: ExecutionContext, matcher: Matcher) {
+        context.sender.sendText("正在查询信息，请耐心等待")
         webImgUtil.deleteImgCache()
 
         val city = matcher.group(1)
@@ -57,7 +59,7 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
         val cityJson = geoApi.getCityData(city)
 
         if (!geoApi.checkCode(cityJson["code"].textValue())) {
-            context.sendMsg("没有找到查询的城市信息，请检查是否输入错误")
+            context.sender.sendText("没有找到查询的城市信息，请检查是否输入错误")
             return
         }
         val imgData =
@@ -67,7 +69,9 @@ class ClimateBotCommandHandler(@Autowired val webImgUtil: WebImgUtil, @Autowired
                 element = "#app",
                 waitElement = ".climate"
             )
-        webImgUtil.sendNewImage(context, imgData)
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
+
         webImgUtil.deleteImg(imgData = imgData)
         System.gc()
     }

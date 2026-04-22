@@ -1,12 +1,11 @@
-package bot.wuliang.botLog.logAop
+package bot.wuliang.logAop
 
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.adapter.context.RequestContext
 import bot.wuliang.botLog.database.entity.LogEntity
 import bot.wuliang.botLog.database.entity.PlatformStats
 import bot.wuliang.botLog.database.service.LogService
 import bot.wuliang.botLog.database.service.PlatformStatsService
-import bot.wuliang.utils.BotUtils
-
-import bot.wuliang.utils.BotUtils.ContextUtil.initializeContext
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
@@ -30,7 +29,7 @@ class LogAspect(
     @Autowired private val platformStatsService: PlatformStatsService
 ) {
 
-    @Pointcut("@annotation(bot.wuliang.botLog.logAop.SystemLog)")
+    @Pointcut("@annotation(bot.wuliang.logAop.SystemLog)")
     fun pc() {
     }
 
@@ -57,18 +56,7 @@ class LogAspect(
         val classPath = joinPoint.signature.declaringTypeName
         // 请求对应类方法名
         val methodName = joinPoint.signature.name
-        // 请求参数的json形式
-        val args = joinPoint.args
-
-        var context: BotUtils.Context? = null
-        args.forEach { arg ->
-            run {
-                if (arg is BotUtils.Context) {
-                    val event = arg.getEvent()
-                    context = initializeContext(event)
-                }
-            }
-        }
+        val requestContext = extractRequestContext(joinPoint.args)
 
         return Pair(
             System.currentTimeMillis(),
@@ -76,15 +64,24 @@ class LogAspect(
                 businessName = businessName,
                 classPath = classPath,
                 methodName = methodName,
-                cmdText = context?.message,
-                eventType = context?.messageType,
-                groupId = context?.groupId,
-                userId = context?.userId,
-                botId = context?.botId
+                cmdText = requestContext?.rawMessage,
+                eventType = requestContext?.let { "${it.platform}_${it.messageType}" },
+                groupId = requestContext?.groupId,
+                userId = requestContext?.userId,
+                botId = requestContext?.botId
             )
         )
     }
 
+    private fun extractRequestContext(args: Array<Any?>): RequestContext? {
+        for (arg in args) {
+            when (arg) {
+                is ExecutionContext -> return arg.requestContext
+                is RequestContext -> return arg
+            }
+        }
+        return null
+    }
 
     private fun handleAfter(start: Long, logParam: LogEntity) {
         // 设置核心方法执行时长
@@ -104,7 +101,6 @@ class LogAspect(
 
         // 插入或更新 存在对应时间时将count+1
         platformStatsService.insertOrUpdatePlatformStats(platformStats)
-
     }
 
     /**

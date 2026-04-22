@@ -1,7 +1,7 @@
 package bot.wuliang.handle
 
-import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
@@ -24,7 +24,7 @@ class HelpHandle @Autowired constructor(
     @SystemLog(businessName = "获取帮助菜单")
     @AParameter
     @Executor(action = "\\b(帮助|菜单|help)\\b")
-    fun help(context: BotUtils.Context) {
+    suspend fun help(context: ExecutionContext) {
         var imgName = "help-"
         val directivesList: List<DirectivesEntity>?
 
@@ -45,6 +45,7 @@ class HelpHandle @Autowired constructor(
             element = "#app",
             url = "http://${webImgUtil.frontendAddress}/system/help"
         )
-        webImgUtil.sendNewImage(context, imageData)
+        val url = webImgUtil.getImgUrl(imageData)
+        context.sender.sendImage(url)
     }
 }

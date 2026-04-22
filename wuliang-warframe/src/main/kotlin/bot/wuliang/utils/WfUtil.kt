@@ -1,5 +1,6 @@
 package bot.wuliang.utils
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
@@ -62,7 +63,7 @@ class WfUtil {
      * @param item 物品
      * @param modLevel 模组等级
      */
-    fun sendMarketItemInfo(context: BotUtils.Context, item: WfMarketItemEntity, modLevel: Any? = null) {
+    suspend fun sendMarketItemInfo(context: ExecutionContext, item: WfMarketItemEntity, modLevel: Any? = null) {
         val headers = mutableMapOf<String, Any>("accept" to "application/json")
         val marketJson = HttpUtil.doGetJson(url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/${item.urlName}", headers = headers)
 
@@ -115,7 +116,7 @@ class WfUtil {
             else -> ""
         }
 
-        context.sendMsg("你查询的物品是 $modLevelString「${item.zhName}」\n$orderString")
+        context.sender.sendText("你查询的物品是 $modLevelString「${item.zhName}」\n$orderString")
     }
 
     /**
@@ -123,7 +124,7 @@ class WfUtil {
      *
      * @param itemNameKey 物品名称关键字
      */
-    fun handleFuzzySearch(context: BotUtils.Context, itemNameKey: String) {
+    suspend fun handleFuzzySearch(context: ExecutionContext, itemNameKey: String) {
         val fuzzyList = mutableSetOf<String>()
         itemNameKey.forEach { char ->
             wfRivenService.superFuzzyQuery(char.toString())
@@ -132,10 +133,10 @@ class WfUtil {
 
         if (fuzzyList.isNotEmpty()) {
             otherUtil.findMatchingStrings(itemNameKey, fuzzyList.toList()).let {
-                context.sendMsg("未找到该物品,也许你想找的是:[${it.joinToString(", ")}]")
+                context.sender.sendText("未找到该物品,也许你想找的是:${it.joinToString(", ")}")
             }
         } else {
-            context.sendMsg("未找到任何匹配项。")
+            context.sender.sendText("未找到任何匹配项")
         }
     }
 

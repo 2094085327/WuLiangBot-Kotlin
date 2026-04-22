@@ -1,5 +1,6 @@
 package bot.wuliang.utils
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
@@ -34,12 +35,16 @@ import java.util.*
 class GachaLogUtil {
     @Autowired
     private lateinit var gaChaLogService: GaChaLogService
+
     @Autowired
     private lateinit var mysApiTools: MysApiTools
+
     @Autowired
     private lateinit var webImgUtil: WebImgUtil
+
     @Autowired
     private lateinit var qiNiuService: QiNiuService
+
     @Autowired
     private lateinit var txCosService: CosFileServiceImpl
 
@@ -303,7 +308,7 @@ class GachaLogUtil {
             val splitUrl2 = splitUrl1.split("\\?".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
             // 含参链接
             "$GACHA_LOG_URL?$splitUrl2"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
@@ -359,16 +364,17 @@ class GachaLogUtil {
      * @param gameUid 游戏Uid
      * @param imgData 图片数据
      */
-    fun getGachaLog(
-        context: BotUtils.Context,
+    suspend fun getGachaLog(
+        context: ExecutionContext,
         gameUid: String,
         imgData: WebImgUtil.ImgData,
     ) {
         try {
-//            qiNiuService.getFileInfo(imgData)
-            if (txCosService.checkFileExist(imgData.imgName!!, "jpeg")) webImgUtil.sendNewImage(context, imgData)
-            else throw Exception("缓存图片不存在")
-        } catch (e: Exception) {
+            if (txCosService.checkFileExist(imgData.imgName!!, "jpeg")) {
+                val imgUrl = webImgUtil.getImgUrl(imgData)
+                context.sender.sendImage(imgUrl)
+            } else throw Exception("缓存图片不存在")
+        } catch (_: Exception) {
             logWarn("缓存图片不存在，开始生成图片")
             val gachaData = MysDataUtil().getGachaData("$GACHA_LOG_FILE$gameUid.json")
             val pools = arrayOf("200", "301", "302", "500")
@@ -376,7 +382,8 @@ class GachaLogUtil {
                 getEachData(gachaData, type)
             }
 
-            webImgUtil.sendNewImage(context, imgData)
+            val imgUrl = webImgUtil.getImgUrl(imgData)
+            context.sender.sendImage(imgUrl)
         }
     }
 

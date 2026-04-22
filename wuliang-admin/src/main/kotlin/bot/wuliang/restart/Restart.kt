@@ -1,7 +1,7 @@
 package bot.wuliang.restart
 
+import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.CommonConfig.FILE_CACHE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
 import bot.wuliang.controller.SystemResourcesMain
@@ -39,7 +39,7 @@ class Restart {
             if (!jarFileName.endsWith(".jar")) {
                 RespBean.error(RespBeanEnum.JAR_NOT_RUN, jarFileName)
             } else RespBean.success(jarFileName)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             RespBean.error(RespBeanEnum.JAR_ERROR)
         }
     }
@@ -125,8 +125,8 @@ class Restart {
 
     @AParameter
     @Executor(action = "重启")
-    fun restart(context: BotUtils.Context) {
-        context.sendMsg("正在重启中，请稍后")
+    suspend fun restart(context: ExecutionContext) {
+        context.sender.sendText("正在重启中，请稍后")
         restartFunction()
     }
 
@@ -198,7 +198,7 @@ class Restart {
                     }
                 }
             }
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             return RespBean.error(RespBeanEnum.FILE_MERGE_FAIL)
         }
 
@@ -232,7 +232,7 @@ class Restart {
                 fos.write(file.bytes)
             }
             return RespBean.success()
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             return RespBean.error(RespBeanEnum.JAR_UPLOAD_FAIL)
         }
     }
@@ -281,7 +281,7 @@ class Restart {
 
             jarFile.delete()
             return RespBean.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return RespBean.error(RespBeanEnum.JAR_ERROR)
         }
     }

@@ -1,7 +1,7 @@
 package bot.wuliang.controller
 
-import bot.wuliang.botLog.logAop.SystemLog
-import bot.wuliang.utils.BotUtils
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.TALENT_SELECT_Limit
 import bot.wuliang.config.TALENT_SELECT_NOT_COMPLETE
 import bot.wuliang.distribute.annotation.AParameter
@@ -60,15 +60,15 @@ class LifeRestartMainController @Autowired constructor(
     @SystemLog(businessName = "人生重开游戏开始")
     @AParameter
     @Executor(action = "重开")
-    fun startRestart(context: BotUtils.Context) {
+    suspend fun startRestart(context: ExecutionContext) {
         // 初始化游戏数据
         val fetchResp = restartUtil.getFetchData()
         if (fetchResp.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(fetchResp.message!!)
+            context.sender.sendText(fetchResp.message!!)
             return
         }
 
-        val realId = context.userId
+        val realId = context.requestContext.userId
 
         val userGameInfo = lifeRestartService.selectRestartInfoByRealId(realId)
         val userInfo = UserInfoEntity(
@@ -91,34 +91,35 @@ class LifeRestartMainController @Autowired constructor(
             url = "http://${webImgUtil.frontendAddress}/game/lifeRestartTalent?game_userId=${userInfo.userId}",
             element = "#app"
         )
-        webImgUtil.sendNewImage(context, imageData)
+        val url = webImgUtil.getImgUrl(imageData)
+        context.sender.sendImage(url)
+        context.sender.sendText(RestartRespEnum.GAME_START_SUCCESS.message)
 
-        context.sendMsg(RestartRespEnum.GAME_START_SUCCESS.message)
         webImgUtil.deleteImg(imageData)
     }
 
     @SystemLog(businessName = "选择人生重开游戏天赋")
     @AParameter
     @Executor(action = "天赋 (.*)")
-    fun getTalent(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.userId
+    suspend fun getTalent(context: ExecutionContext, matcher: Matcher) {
+        val realId = context.requestContext.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.CHOOSE_TALENT)
         if (errorState.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(errorState.message!!)
+            context.sender.sendText(errorState.message!!)
             return
         }
 
         val talentInput = matcher.group(1)
         if (!restartUtil.isTalentFormatValid(talentInput)) {
-            context.sendMsg(RestartRespEnum.TALENT_FORMAT_ERROR.message)
+            context.sender.sendText(RestartRespEnum.TALENT_FORMAT_ERROR.message)
             return
         }
         when (restartUtil.talentCheck(talentInput, userInfo!!)) {
-            TALENT_SELECT_NOT_COMPLETE -> context.sendMsg("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
+            TALENT_SELECT_NOT_COMPLETE ->context.sender.sendText("要选满 ${userInfo.talentSelectLimit} 个不同的天赋,请重新选择")
 
-            TALENT_SELECT_Limit -> context.sendMsg("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
+            TALENT_SELECT_Limit -> context.sender.sendText("只能选择 ${userInfo.talentSelectLimit} 个天赋,请重新选择")
 
             else -> {
                 restartUtil.getChoiceTalent(talentInput, userInfo)
@@ -128,7 +129,7 @@ class LifeRestartMainController @Autowired constructor(
                 userInfo.randomTalentTemp = mutableListOf()
                 restartUtil.updateUserInfo(userInfo)
 
-                context.sendMsg("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
+                context.sender.sendText("请输入「分配 颜值 智力 体质 家境」或者「随机」来获取随机属性,你总共有 ${userInfo.status} 点属性可以分配")
             }
         }
     }
@@ -136,13 +137,13 @@ class LifeRestartMainController @Autowired constructor(
     @SystemLog(businessName = "随机分配人生重开游戏属性")
     @AParameter
     @Executor(action = "随机")
-    fun randomAttribute(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.userId
+    suspend fun randomAttribute(context: ExecutionContext) {
+        val realId = context.requestContext.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.UNALLOCATED)
         if (errorState.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(errorState.message!!)
+            context.sender.sendText(errorState.message!!)
             return
         }
 
@@ -172,27 +173,27 @@ class LifeRestartMainController @Autowired constructor(
     @SystemLog(businessName = "手动分配人生重开游戏属性")
     @AParameter
     @Executor(action = "分配 (.*)")
-    fun dealAttribute(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.userId
+    suspend fun dealAttribute(context: ExecutionContext, matcher: Matcher) {
+        val realId = context.requestContext.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
 
         if (!Regex("^\\d+( \\d+)*\$").matches(matcher.group(1))) {
-            context.sendMsg(RestartRespEnum.ASSIGN_ATTRIBUTES_ERROR.message)
+            context.sender.sendText(RestartRespEnum.ASSIGN_ATTRIBUTES_ERROR.message)
             return
         }
 
         // 检查其他状态是否正确
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.UNALLOCATED)
         if (errorState.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(errorState.message!!)
+            context.sender.sendText(errorState.message!!)
             return
         }
 
         // 检查分配属性是否正确
         val assignState = restartUtil.assignAttributes(userInfo!!, matcher)
         if (assignState.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(assignState.message)
+            context.sender.sendText(assignState.message)
         }
         userInfo.propertyDistribution = true
 
@@ -219,14 +220,14 @@ class LifeRestartMainController @Autowired constructor(
     @SystemLog(businessName = "继续下一步人生重开游戏")
     @AParameter
     @Executor(action = "继续(.*)")
-    fun continueGame(context: BotUtils.Context, matcher: Matcher) {
-        val realId = context.userId
+    suspend fun continueGame(context: ExecutionContext, matcher: Matcher) {
+        val realId = context.requestContext.userId
         val userInfo = restartUtil.findUserInfo(realId)
 
         // 判断错误状态
         val errorState = restartUtil.errorState(userInfo, LifeRestartUtil.OperationType.CONTINUE)
         if (errorState.code != RestartRespEnum.SUCCESS.code) {
-            context.sendMsg(errorState.message!!)
+            context.sender.sendText(errorState.message!!)
             return
         }
 
@@ -235,7 +236,7 @@ class LifeRestartMainController @Autowired constructor(
         val stepNext = matcher.group(1).trim().toIntOrNull() ?: 1 // 默认为1步
 
         val strList = mutableListOf<List<LifeRestartUtil.SendListEntity>>()
-        for (i in 1..stepNext) {
+        repeat(stepNext) {
             val sendMessage = restartUtil.trajectory(userInfo!!, ageData, eventData)
             strList.add(sendMessage)
 
@@ -251,8 +252,8 @@ class LifeRestartMainController @Autowired constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun handleGameEnd(
-        context: BotUtils.Context,
+    private suspend fun handleGameEnd(
+        context: ExecutionContext,
         userInfo: UserInfoEntity,
         realId: String,
         strList: List<List<LifeRestartUtil.SendListEntity>>

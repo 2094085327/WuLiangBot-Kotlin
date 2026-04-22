@@ -1,8 +1,8 @@
 package bot.wuliang.controller
 
-import bot.wuliang.botLog.logAop.SystemLog
+import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.utils.BotUtils
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.distribute.annotation.AParameter
@@ -203,7 +203,7 @@ class WfTranslateLexicon {
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "更新词库")
-    fun upDataWfTranslateLexicon(context: BotUtils.Context) {
+    fun upDataWfTranslateLexicon(context: ExecutionContext) {
         val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
         val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
         val lichMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
@@ -212,7 +212,7 @@ class WfTranslateLexicon {
         GlobalScope.launch {
             try {
                 // 获取中英文JSON数据并解析
-                context.sendMsg("因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待")
+                context.sender.sendText("因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待")
 
                 // 使用async并行执行插入操作
                 val marketJob = async {
@@ -249,7 +249,7 @@ class WfTranslateLexicon {
                 lichJob.await()
 
 
-                context.sendMsg("词库更新完成")
+                context.sender.sendText("词库更新完成")
             } finally {
                 // 显式地将变量置空
                 lexiconMap.clear()
