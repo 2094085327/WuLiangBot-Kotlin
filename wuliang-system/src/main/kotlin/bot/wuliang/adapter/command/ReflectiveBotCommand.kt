@@ -1,6 +1,7 @@
 package bot.wuliang.adapter.command
 
 import bot.wuliang.adapter.context.ExecutionContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -63,6 +64,8 @@ class ReflectiveBotCommand(private val bean: Any, private val method: Method) : 
             } else {
                 method.invoke(bean, *parameters)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw RuntimeException("命令执行失败: ${method.name}", e.cause ?: e)
         }

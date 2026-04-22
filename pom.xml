@@ -31,7 +31,6 @@
         <java.version>17</java.version>
         <kotlin.version>2.1.21</kotlin.version>
         <spring.version>2.7.18</spring.version>
-        <revision>1.1.2-SNAPSHOT</revision>
         <swagger.version>3.0.0</swagger.version>
         <swagger-models.version>1.5.21</swagger-models.version>
         <lettuce.version>6.5.5.RELEASE</lettuce.version>
@@ -281,56 +280,56 @@
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-admin</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--通用工具-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-common</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--小游戏模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-game</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--warframe模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-warframe</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--genshin模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-genshin</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--天气模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-weather</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--系统模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-system</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--适配器-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
                 <artifactId>wuliang-adapter</artifactId>
-                <version>${revision}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!--引入生成二维码的依赖声明-->
@@ -425,32 +424,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.7.3</version>
-                <configuration>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                </configuration>
-                <executions>
-                    <!-- enable flattening -->
-                    <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <!-- ensure proper cleanup -->
-                    <execution>
-                        <id>flatten.clean</id>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>

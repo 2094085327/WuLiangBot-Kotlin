@@ -13,6 +13,7 @@ import bot.wuliang.redis.RedisService
 import bot.wuliang.service.BotConfigService
 import bot.wuliang.service.DirectivesService
 import bot.wuliang.text.Convert
+import kotlinx.coroutines.CancellationException
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -80,6 +81,8 @@ class BotMessageBus(
                     context.sender.sendText(result)
                 }
                 return
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 context.sender.sendText("执行命令时发生错误: ${e.message}")
                 e.printStackTrace()
