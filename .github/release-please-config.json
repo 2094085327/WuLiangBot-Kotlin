@@ -62,13 +62,6 @@
           "section": "🔧 Chores",
           "hidden": true
         }
-      ],
-      "extra-files": [
-        {
-          "type": "xml",
-          "path": "pom.xml",
-          "xpath": "//project/properties/revision"
-        }
       ]
     }
   }
