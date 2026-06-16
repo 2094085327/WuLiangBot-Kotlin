@@ -11,7 +11,7 @@ const val WARFRAME_MARKET_BASE_URL_V2 = "https://api.warframe.market/v2"
 
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
-const val WARFRAME_STATUS_URL = "https://content.warframe.com/dynamic/worldState.php"
+const val WARFRAME_STATUS_URL = "https://api.warframe.com/cdn/worldState.php"
 const val WARFRAME_WEEKLY_RIVEN_PC = "https://www-static.warframe.com/repos/weeklyRivensPC.json"
 
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"

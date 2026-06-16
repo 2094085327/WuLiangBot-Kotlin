@@ -1,6 +1,7 @@
 package bot.wuliang.restart
 
 import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.config.CommonConfig.FILE_CACHE_PATH
 import bot.wuliang.config.CommonConfig.RESTART_CONFIG
@@ -15,14 +16,15 @@ import bot.wuliang.exception.RespBeanEnum
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
+import java.lang.management.ManagementFactory
 import java.util.*
+import kotlin.system.exitProcess
 
 
 @Controller
@@ -105,20 +107,41 @@ class Restart {
 
     fun restartFunction() {
         logInfo("正在启动重启程序....")
-        // 获取操作系统类型
-        val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
 
-        // 根据操作系统类型选择相应的脚本
-        // 如果是Windows系统
-        val scriptPath = if (osName.contains("win")) System.getProperty("user.dir") + "\\restart.bat"
-        else System.getProperty("user.dir") + "/restart.sh" // 如果是Linux系统
+        try {
+            val jarPath = getNowJarName()
+            if (!jarPath.endsWith(".jar")) {
+                logError("当前不是JAR运行模式，无法自动重启")
+                return
+            }
 
-        val restartConfig = getRestartConfig().obj as JsonNode
-        val command = arrayOf(scriptPath, restartConfig["jar_file"].textValue(), "app.log")
-        // 执行Shell脚本或批处理文件
-        runBlocking {
-            val process = Runtime.getRuntime().exec(command)
-            process.waitFor()
+            val javaHome = System.getProperty("java.home")
+            val javaBin = File(javaHome, "bin/java").absolutePath
+
+            val jvmArgs = ManagementFactory.getRuntimeMXBean().inputArguments
+
+            val command = mutableListOf<String>()
+            command.add(javaBin)
+            command.addAll(jvmArgs)
+            command.add("-jar")
+            command.add(jarPath)
+
+            val processBuilder = ProcessBuilder(command)
+            processBuilder.directory(File(System.getProperty("user.dir")))
+
+            val newProcess = processBuilder.start()
+            logInfo("新进程已启动，PID: ${newProcess.pid()}")
+
+            Runtime.getRuntime().addShutdownHook(Thread {
+                logInfo("应用正在关闭...")
+            })
+
+            Thread.sleep(2000)
+            exitProcess(0)
+
+        } catch (e: Exception) {
+            logError("重启失败: ${e.message}")
+            e.printStackTrace()
         }
     }
 
