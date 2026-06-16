@@ -430,15 +430,16 @@ logging:
 
 ### 主要模块
 
-| 模块 | 功能 |
-|------|------|
-| `wuliang-admin` | 主应用入口和管理界面 |
-| `wuliang-common` | 公共工具和基础类 |
-| `wuliang-genshin` | 原神相关功能（已停止维护） |
-| `wuliang-game` | 人生重开模拟器游戏 |
-| `wuliang-system` | 系统核心功能 |
-| `wuliang-warframe` | Warframe游戏信息查询 |
-| `wuliang-weather` | 天气和地理信息查询 |
+| 模块                 | 功能               |
+|--------------------|------------------|
+| `wuliang-admin`    | 主应用入口和管理界面       |
+| `wuliang-adapter`  | 适配器模块，负责适配外部消息结构 |
+| `wuliang-common`   | 公共工具和基础类         |
+| `wuliang-genshin`  | 原神相关功能（已停止维护）    |
+| `wuliang-game`     | 人生重开模拟器游戏        |
+| `wuliang-system`   | 系统核心功能           |
+| `wuliang-warframe` | Warframe游戏信息查询   |
+| `wuliang-weather`  | 天气和地理信息查询        |
 
 ### 数据库配置
 项目使用MySQL数据库，相关SQL脚本位于 [sql/](file://E:\Learning\bots\Wuliang-Bot\Tencent-Bot-Kotlin\doc\bot_log.sql) 目录中。
@@ -486,7 +487,7 @@ logging:
 
 ## 特别鸣谢
 
-- [`Kloping/qqpd-bot-java`](https://github.com/MisakaTAT/Shiro/blob/main/README.md): 本项目采用了Kloping编写的机器人SDK，使用此框架实现对QQ机器人官方的对接。
+- [`Kloping/qqpd-bot-java`](https://github.com/Kloping/qqpd-bot-java/blob/master/README.md): 本项目采用了Kloping编写的机器人SDK，使用此框架实现对QQ机器人官方的对接。
 
 ## 许可证
 

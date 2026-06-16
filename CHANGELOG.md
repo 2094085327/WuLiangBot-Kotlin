@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.2](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.1...2.0.2) (2026-04-22)
+
+
+### 🐛 Bug Fixes
+
+* **parser:** 添加掉落数据解析相关接口和枚举 ([b90ba29](https://github.com/2094085327/WuLiangBot-Kotlin/commit/b90ba297cd0c9572bdee6233ec369790081af049))
+* **warframe:** 一些未提交的文件 ([d9456d7](https://github.com/2094085327/WuLiangBot-Kotlin/commit/d9456d71e006316f4563b48ed28b0d2ff3513a91))
+* **warframe:** 添加轮次枚举定义 ([76c7679](https://github.com/2094085327/WuLiangBot-Kotlin/commit/76c7679ceaa2d9a5e99f2ae2ffecf569108b6950))
+
 ## [2.0.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.0...2.0.1) (2026-04-22)
 
 
