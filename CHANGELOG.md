@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.3](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.2...2.0.3) (2026-06-16)
+
+
+### 🐛 Bug Fixes
+
+* **admin:** 修复重启功能并改进README文档 ([9abbb2a](https://github.com/2094085327/WuLiangBot-Kotlin/commit/9abbb2ae4a7ccdf38e0fbf7867ad4fe3df3a1351))
+* **warframe:** 更新 Warframe 状态 API 地址 ([5cd4a7e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5cd4a7ed5fd0ae2dd3d31fad6113a12d8f9af95e))
+
 ## [2.0.2](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.1...2.0.2) (2026-04-22)
 
 
