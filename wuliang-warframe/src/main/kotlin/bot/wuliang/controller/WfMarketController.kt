@@ -331,8 +331,8 @@ class WfMarketController @Autowired constructor(
     @SystemLog(businessName = "获取部件在WM的白金价格")
     @AParameter
     @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
-    suspend fun getWmPrice(context: ExecutionContext, messages: List<BotMessage>) {
-        val imageMessages = messages.filterIsInstance<BotMessage.Image>()
+    suspend fun getWmPrice(context: ExecutionContext) {
+        val imageMessages = context.messages.filterIsInstance<BotMessage.Image>()
 
         if (imageMessages.isEmpty()) {
             context.sender.sendText("请发送 'WM价格'+'查询部件的售卖部分的截图' 来查询部件在WM的白金价格")
