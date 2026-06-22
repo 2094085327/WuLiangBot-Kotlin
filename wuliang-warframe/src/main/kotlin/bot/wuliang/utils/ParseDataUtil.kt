@@ -60,6 +60,8 @@ class ParseDataUtil {
     @Autowired
     private lateinit var wfUtil: WfUtil
 
+    private val incarnonWeekSeconds = 604800L
+
     /**
      * 通用解析常规突击任务（每日突击与周突击）
      * @param sortiesJson 突击任务数据
@@ -690,28 +692,19 @@ class ParseDataUtil {
         val incarnonJson = JacksonUtil.readTree(File(WARFRAME_INCARNON))
         val ordinaryJson = incarnonJson["ordinary"]
         val steelJson = incarnonJson["steel"]
-        val ordinaryStart = Instant.parse(ordinaryJson[0]["startTime"].textValue())
-        val steelStart = Instant.parse(steelJson[0]["startTime"].textValue())
+        val ordinaryScheduleJson = incarnonJson["ordinarySchedule"]
+        val steelScheduleJson = incarnonJson["steelSchedule"]
 
         // 获取到现在经过的秒数
         val now = Instant.now()
-        val ordinarySeconds = Duration.between(ordinaryStart, now).seconds
-        val steelSeconds = Duration.between(steelStart, now).seconds
-        val sevenDays = 604800
-        val ordinarySize = ordinaryJson.size()
-        val steelSize = steelJson.size()
-        val ordinaryWeeks = ordinarySize * sevenDays
-        val steelWeeks = steelSize * sevenDays
-        // 使用模运算和除法计算当前处于第几个7天周期
-        val ordinaryInd = ((ordinarySeconds % ordinaryWeeks) / sevenDays).toInt()
-        val steelInd = ((steelSeconds % steelWeeks) / sevenDays).toInt()
+        val ordinaryInd = calculateIncarnonIndex(ordinaryScheduleJson, ordinaryJson.size(), now)
+        val steelInd = calculateIncarnonIndex(steelScheduleJson, steelJson.size(), now)
 
         // 计算下周的索引
-        val ordinaryNextInd = (ordinaryInd + 1) % ordinarySize
-        val steelNextInd = (steelInd + 1) % steelSize
-
         val activation = getFirstDayOfWeek()
         val expiry = getNextMonday()
+        val ordinaryNextInd = calculateIncarnonIndex(ordinaryScheduleJson, ordinaryJson.size(), expiry)
+        val steelNextInd = calculateIncarnonIndex(steelScheduleJson, steelJson.size(), expiry)
 
         // 缓存获取灵化武器紫卡映射
         val rivenMap = if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
@@ -770,6 +763,22 @@ class ParseDataUtil {
 
         redisService.setValueWithExpiry(WF_INCARNON_KEY, incarnon, expire, TimeUnit.SECONDS)
         return incarnon
+    }
+
+    private fun calculateIncarnonIndex(scheduleJson: JsonNode, itemSize: Int, now: Instant): Int {
+        val schedule = scheduleJson
+            .filter { !Instant.parse(it["startTime"].textValue()).isAfter(now) }
+            .maxByOrNull { Instant.parse(it["startTime"].textValue()) }
+            ?: scheduleJson.first()
+
+        val startTime = Instant.parse(schedule["startTime"].textValue())
+        val startIndex = schedule["startIndex"].longValue()
+        val cycleSize = schedule["size"].longValue()
+        require(cycleSize in 1..itemSize.toLong()) { "无效的灵化索引大小: $cycleSize" }
+        require(startIndex in 0 until cycleSize) { "无效的灵化开始索引: $startIndex" }
+
+        val elapsedWeeks = Math.floorDiv(Duration.between(startTime, now).seconds, incarnonWeekSeconds)
+        return Math.floorMod(startIndex + elapsedWeeks, cycleSize).toInt()
     }
 
     fun parseWmMinimalPrice(key: String): Int {
