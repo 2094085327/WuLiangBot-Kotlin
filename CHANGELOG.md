@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.1.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.3...2.1.0) (2026-06-24)
+
+
+### ✨ Features
+
+* **qq-adapter:** 增加对QQ适配器全量消息接收的支持 ([9d5de4a](https://github.com/2094085327/WuLiangBot-Kotlin/commit/9d5de4aa372dbe76cb471ca165007e6f957943a7))
+* **qq-adapter:** 增加对QQ适配器全量消息接收的支持 ([5b6adb4](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5b6adb40016b5b5cbff900a0205ed94877b03188))
+
+
+### 🐛 Bug Fixes
+
+* **warframe:** 修复getWmPrice方法参数错误导致的执行失败 ([99e36e0](https://github.com/2094085327/WuLiangBot-Kotlin/commit/99e36e03b4bb09b192f07f93cd179562d95a6d48))
+* **warframe:** 修复getWmPrice方法参数错误导致的执行失败 ([5d69815](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5d69815a024e7160e6738f8321682033cf76a75e))
+
+
+### ♻️ Code Refactoring
+
+* **utils:** 优化灵化武器轮换逻辑计算 ([750424d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/750424d8646a1726ef6b2bbe12fd6043032c1028))
+
 ## [2.0.3](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.2...2.0.3) (2026-06-16)
 
 
