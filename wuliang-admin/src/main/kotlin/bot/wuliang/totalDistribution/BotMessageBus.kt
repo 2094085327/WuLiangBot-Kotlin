@@ -1,4 +1,4 @@
-package bot.wuliang.totalDistribution
+﻿package bot.wuliang.totalDistribution
 
 import bot.wuliang.adapter.command.CommandRegistry
 import bot.wuliang.adapter.context.ExecutionContext
@@ -113,8 +113,11 @@ class BotMessageBus(
             )
         }
 
+        // 全量消息模式下，只有 @了机器人才提示未知指令，避免普通聊天被干扰
+        if (!context.requestContext.isAtBot) {
+            return
+        }
         context.sender.sendText("未知指令，你可能在找这些指令：$matchedCommands")
-
         val endTime = System.currentTimeMillis()
         val logEntity = LogEntity(
             businessName = "未知指令",

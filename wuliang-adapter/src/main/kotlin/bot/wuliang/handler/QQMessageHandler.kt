@@ -1,4 +1,4 @@
-package bot.wuliang.handler
+﻿package bot.wuliang.handler
 
 import bot.wuliang.adapter.message.MessageSender
 import bot.wuliang.adapter.context.ExecutionContext
@@ -98,14 +98,16 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
      */
     private suspend fun handleQQMessage(event: MessageV2Event) {
         val sender = QQMessageSender(event)
-        val botMessage = event.toBotMessage()
+        val botName = event.bot.userBase.botInfo().username
+        val botMessage = event.toBotMessage(botName)
         val chain = event.message
+        // 构建原始消息文本并判断是否@了机器人
         val sb = StringBuilder()
         for (msg in chain) {
-            if (msg is PlainText) {
-                sb.append(msg.text)
-            }
+            sb.append(msg.toString())
         }
+        val rawMsg = sb.toString().trim()
+        val isAtBot = rawMsg.startsWith("<@") || (botName != null && rawMsg.startsWith("@$botName"))
         val requestContext = RequestContext(
             platform = "QQ",
             userId = event.sender.id,
@@ -119,7 +121,8 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
                 is FriendMessageEvent -> "private"
                 else -> "unknown"
             },
-            rawMessage = sb.toString().trim()
+            rawMessage = rawMsg,
+            isAtBot = isAtBot
         )
         
         val executionContext = object : ExecutionContext {
@@ -140,7 +143,7 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
      *
      * @return Bot消息列表
      */
-    private fun MessageV2Event.toBotMessage(): List<BotMessage> {
+    private fun MessageV2Event.toBotMessage(botName: String?): List<BotMessage> {
         return message.mapNotNull {
             when (it) {
                 is Image -> BotMessage.Image(
@@ -150,7 +153,17 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
                     fileName = "${UUID.randomUUID()}.jpg"
                 )
 
-                is PlainText -> BotMessage.Text(it.text)
+                // 剥离 @ 前缀：先处理 QQ 官方 @ (<@...>)，再处理伪 @ (@botName)
+                is PlainText -> {
+                    val text = it.text.trimStart()
+                    val cleaned = if (text.startsWith("<@")) {
+                        val endIndex = text.indexOf('>')
+                        if (endIndex != -1) text.substring(endIndex + 1).trim() else text
+                    } else if (botName != null && text.startsWith("@$botName")) {
+                        text.removePrefix("@$botName").trim()
+                    } else text
+                    BotMessage.Text(cleaned)
+                }
                 else -> null
             }
         }
