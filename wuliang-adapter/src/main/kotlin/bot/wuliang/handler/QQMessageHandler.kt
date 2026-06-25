@@ -1,9 +1,9 @@
 ﻿package bot.wuliang.handler
 
-import bot.wuliang.adapter.message.MessageSender
+import bot.wuliang.adapter.QQMessageSender
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.adapter.context.RequestContext
-import bot.wuliang.adapter.QQMessageSender
+import bot.wuliang.adapter.message.MessageSender
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.message.BotMessage
@@ -15,13 +15,9 @@ import io.github.kloping.qqbot.api.v2.MessageV2Event
 import io.github.kloping.qqbot.entities.ex.Image
 import io.github.kloping.qqbot.entities.ex.PlainText
 import io.github.kloping.qqbot.impl.ListenerHost
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.springframework.stereotype.Component
-import java.util.UUID
+import java.util.*
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.coroutines.cancellation.CancellationException
@@ -101,13 +97,29 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
         val botName = event.bot.userBase.botInfo().username
         val botMessage = event.toBotMessage(botName)
         val chain = event.message
-        // 构建原始消息文本并判断是否@了机器人
+        // 构建原始消息文本
         val sb = StringBuilder()
         for (msg in chain) {
             sb.append(msg.toString())
         }
         val rawMsg = sb.toString().trim()
-        val isAtBot = rawMsg.startsWith("<@") || (botName != null && rawMsg.startsWith("@$botName"))
+
+        // 判断是否@了机器人：通过 metadata.mentions 中的 is_you 字段
+        val isAtBot = when (event) {
+            is GroupMessageEvent -> {
+                try {
+                    val mentions = event.metadata.getJSONArray("mentions")
+                    mentions.indices.any { i ->
+                        mentions.getJSONObject(i).getBoolean("is_you") == true
+                    }
+                } catch (_: Exception) {
+                    rawMsg.startsWith("<@") || (botName != null && rawMsg.startsWith("@$botName"))
+                }
+            }
+
+            else -> false
+        }
+
         val requestContext = RequestContext(
             platform = "QQ",
             userId = event.sender.id,
@@ -124,13 +136,13 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
             rawMessage = rawMsg,
             isAtBot = isAtBot
         )
-        
+
         val executionContext = object : ExecutionContext {
             override val sender: MessageSender = sender
             override val requestContext: RequestContext = requestContext
             override val messages: List<BotMessage> = botMessage
         }
-        
+
         messageBus.dispatch(executionContext)
     }
 
@@ -153,19 +165,34 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
                     fileName = "${UUID.randomUUID()}.jpg"
                 )
 
-                // 剥离 @ 前缀：先处理 QQ 官方 @ (<@...>)，再处理伪 @ (@botName)
+                // 剥离所有 @ 前缀：多个 <@...> 和 @botName
                 is PlainText -> {
                     val text = it.text.trimStart()
-                    val cleaned = if (text.startsWith("<@")) {
-                        val endIndex = text.indexOf('>')
-                        if (endIndex != -1) text.substring(endIndex + 1).trim() else text
-                    } else if (botName != null && text.startsWith("@$botName")) {
-                        text.removePrefix("@$botName").trim()
-                    } else text
+                    val cleaned = stripLeadingMentions(text).let { stripped ->
+                        if (botName != null && stripped.startsWith("@$botName")) {
+                            stripped.removePrefix("@$botName").trim()
+                        } else stripped
+                    }
                     BotMessage.Text(cleaned)
                 }
+
                 else -> null
             }
         }
+    }
+
+    /**
+     * 去除消息开头的所有 @ 提及 (<@...>)
+     *
+     * 例如: "<@ID1> <@ID2>  hello world" -> "hello world"
+     */
+    private fun stripLeadingMentions(text: String): String {
+        var result = text.trimStart()
+        while (result.startsWith("<@")) {
+            val endIndex = result.indexOf('>')
+            if (endIndex == -1) break
+            result = result.substring(endIndex + 1).trimStart()
+        }
+        return result
     }
 }
