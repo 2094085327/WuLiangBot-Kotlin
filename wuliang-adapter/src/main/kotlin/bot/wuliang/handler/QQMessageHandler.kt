@@ -12,6 +12,7 @@ import io.github.kloping.qqbot.Starter
 import io.github.kloping.qqbot.api.v2.FriendMessageEvent
 import io.github.kloping.qqbot.api.v2.GroupMessageEvent
 import io.github.kloping.qqbot.api.v2.MessageV2Event
+import io.github.kloping.qqbot.entities.ex.FileMsg
 import io.github.kloping.qqbot.entities.ex.Image
 import io.github.kloping.qqbot.entities.ex.PlainText
 import io.github.kloping.qqbot.impl.ListenerHost
@@ -104,13 +105,14 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
         }
         val rawMsg = sb.toString().trim()
 
-        // 判断是否@了机器人：通过 metadata.mentions 中的 is_you 字段
+        // 判断是否@了机器人：通过 metadata.mentions 中的 is_you 字段，同时排除@全体成员的消息
         val isAtBot = when (event) {
             is GroupMessageEvent -> {
                 try {
                     val mentions = event.metadata.getJSONArray("mentions")
                     mentions.indices.any { i ->
-                        mentions.getJSONObject(i).getBoolean("is_you") == true
+                        mentions.getJSONObject(i).getBoolean("is_you") == true && mentions.getJSONObject(i)
+                            .getString("scope") != "all"
                     }
                 } catch (_: Exception) {
                     rawMsg.startsWith("<@") || (botName != null && rawMsg.startsWith("@$botName"))
@@ -158,12 +160,16 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
     private fun MessageV2Event.toBotMessage(botName: String?): List<BotMessage> {
         return message.mapNotNull {
             when (it) {
-                is Image -> BotMessage.Image(
-                    url = it.url ?: "",
-                    bytes = it.bytes ?: byteArrayOf(),
-                    type = "image/jpeg",
-                    fileName = "${UUID.randomUUID()}.jpg"
-                )
+                is FileMsg -> {
+                    if (it.type == "image/png") {
+                        BotMessage.Image(
+                            url = it.url ?: "",
+                            bytes = it.bytes ?: byteArrayOf(),
+                            type = "image/jpeg",
+                            fileName = "${UUID.randomUUID()}.jpg"
+                        )
+                    } else null
+                }
 
                 // 剥离所有 @ 前缀：多个 <@...> 和 @botName
                 is PlainText -> {
