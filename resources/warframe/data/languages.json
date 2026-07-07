@@ -12,7 +12,7 @@
     "value": "Dominus Aureus Collection Progress:"
   },
   "/Lotus/Language/Isleweaver/DuviriMurmurEventTitle": {
-    "value": "Operation: Eight Claw"
+    "value": "《行动代号：八爪》"
   },
   "/Lotus/Language/JadeShadows/JadeShadowsEventName": {
     "value": "行动代号：兽之腹"
@@ -22,6 +22,12 @@
   },
   "/Lotus/Language/JadeShadows/JadeShadowsShortEventDesc": {
     "value": "阻止帕尔沃斯•格拉努！从位于（布鲁图斯）天王星上的的扬升任务和特殊战术警报中收集不稳定微粒。造访Larunda中继站（水星）的Ordis来领取奖励。"
+  },
+  "/Lotus/Language/TauPrequel/TauPrequelFinal/BloodOfPeritaDetails": {
+    "value": "Collect Marks of Valiance by facing the darkest of memories in exchange for lucrative rewards. Obtain them from Perita Rebellion missions and special Void Alerts.\n\nVisit Roathe in La Cathédrale to claim rewards and show the remnant of the Orokin true valor."
+  },
+  "/Lotus/Language/TauPrequel/TauPrequelFinal/TauPrequelEventName": {
+    "value": "行动代号：佩里塔之血"
   },
   "/Lotus/Powersuits/Odalisk/Odalisk": {
     "value": "Protea"
@@ -94,9 +100,6 @@
   },
   "/Lotus/StoreItems/Types/Game/Projections/T4VoidProjectionMagNovaVaultABronze": {
     "value": "Axi S4 Relic"
-  },
-  "/Lotus/StoreItems/Types/Game/Projections/T4VoidProjectionMagNovaVaultBBronze": {
-    "value": "Axi A5 Relic"
   },
   "/Lotus/StoreItems/Types/Game/Projections/T4VoidProjectionNezhaOctaviaVaultABronze": {
     "value": "Axi P5 Relic"
@@ -233,8 +236,17 @@
   "/Lotus/StoreItems/Types/Items/SongItems/LotusEatersSongItem": {
     "value": "The Lotus Eaters Login Music"
   },
-  "/Lotus/StoreItems/Types/Recipes/Components/WeaponUtilityUnlockerBlueprint": {
-    "value": "Exilus Weapon Adapter Blueprint"
+  "/Lotus/StoreItems/Types/Recipes/WarframeRecipes/DagathBlueprint": {
+    "value": "Dagath Blueprint"
+  },
+  "/Lotus/StoreItems/Types/Recipes/WarframeRecipes/DagathChassisComponent": {
+    "value": "Dagath Chassis"
+  },
+  "/Lotus/StoreItems/Types/Recipes/WarframeRecipes/DagathHelmetComponent": {
+    "value": "Dagath Neuroptics"
+  },
+  "/Lotus/StoreItems/Types/Recipes/WarframeRecipes/DagathSystemsComponent": {
+    "value": "Dagath Systems"
   },
   "/Lotus/StoreItems/Types/Restoratives/Consumable/AssassinBait": {
     "value": "Stalker信标"
@@ -510,9 +522,17 @@
     "value": "Even the odds",
     "desc": "Kill 250 Enemies"
   },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesHard": {
+    "value": "Even the odds",
+    "desc": "Kill 1,000 Enemies"
+  },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesMedium": {
     "value": "Even the odds",
     "desc": "击杀500名敌人"
+  },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithAbilitiesEasy": {
+    "value": "Demonstration of power",
+    "desc": "使用技能击杀150名敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithAbilitiesHard": {
     "value": "Demonstration of power",
@@ -526,17 +546,29 @@
     "value": "By The Blade",
     "desc": "Kill 150 Enemies with Melee Weapons"
   },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithMeleeHard": {
+    "value": "By The Blade",
+    "desc": "Kill 500 Enemies with Melee Weapons"
+  },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithMeleeMedium": {
+    "value": "By The Blade",
+    "desc": "Kill 300 Enemies with Melee Weapons"
+  },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusEasy": {
-    "value": "EX-EXIMUS",
+    "value": "Ex-Eximus",
     "desc": "Kill 10 Eximus"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusHard": {
-    "value": "EX-EXIMUS",
+    "value": "Ex-Eximus",
     "desc": "击杀30名卓越者"
+  },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusMedium": {
+    "value": "Ex-Eximus",
+    "desc": "Kill 20 Eximus"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesEasy": {
     "value": "Punish Scaldra",
-    "desc": "Kill 250 Scaldra Troops"
+    "desc": "Kill 150 Scaldra Troops"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesHard": {
     "value": "Punish Scaldra",
@@ -562,9 +594,13 @@
     "value": "Make it personal",
     "desc": "Kill 75 Scaldra Troops with Melee Weapons"
   },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithMeleeHard": {
+    "value": "Make it personal",
+    "desc": "Kill 250 Scaldra Troops with Melee Weapons"
+  },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithMeleeMedium": {
     "value": "Make it personal",
-    "desc": "Kill 300 Scaldra Troops with Melee Weapons"
+    "desc": "Kill 150 Scaldra Troops with Melee Weapons"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTankHard": {
     "value": "Tankless Work",
@@ -576,19 +612,55 @@
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesHard": {
     "value": "Purge the infection",
-    "desc": "Kill 1,000 Techrot"
+    "desc": "Kill 750 Techrot"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesMedium": {
     "value": "Purge the infection",
     "desc": "Kill 500 Techrot"
   },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesEasy": {
+    "value": "Null and Void",
+    "desc": "Kill 100 Techrot with Abilities"
+  },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesHard": {
+    "value": "Null and Void",
+    "desc": "Kill 300 Techrot with Abilities"
+  },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesMedium": {
     "value": "Null and Void",
     "desc": "Kill 200 Techrot with Abilities"
   },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeEasy": {
+    "value": "Electronic waste Disposal",
+    "desc": "Kill 100 Techrot with Melee Weapons"
+  },
+  "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeHard": {
+    "value": "Electronic waste Disposal",
+    "desc": "Kill 300 Techrot with Melee Weapons"
+  },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeMedium": {
     "value": "Electronic waste Disposal",
     "desc": "Kill 200 Techrot with Melee Weapons"
+  },
+  "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyCompleteRace": {
+    "value": "Ollie Oop!",
+    "desc": "Play Ollie's Crash Course and complete a race."
+  },
+  "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyKillEnemiesWithHeadshots": {
+    "value": "这不是警告射击",
+    "desc": "Kill 100 enemies with headshots"
+  },
+  "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyOpenLockers": {
+    "value": "盗窃癖",
+    "desc": "Open 30 Lockers"
+  },
+  "/Lotus/Types/Challenges/Seasons/WeeklyHard/SeasonWeeklyHardCeremonialEvolution": {
+    "value": "Ceremonial Evolution",
+    "desc": "Evolve any Incarnon weapon in-mission 5 times"
+  },
+  "/Lotus/Types/Challenges/Seasons/WeeklyHard/SeasonWeeklyHardCompleteConquest": {
+    "value": "Voluntary Specimen",
+    "desc": "Complete a run of Deep Archimedea or Temporal Archimedea"
   },
   "/Lotus/Types/Gameplay/JadeShadows/Resources/AscensionEventResourceItem": {
     "value": "Volatile Motes"
@@ -601,6 +673,9 @@
   },
   "/Lotus/Types/Gameplay/NarmerSorties/ArchonCrystalNiraMythic": {
     "value": "Tauforged Amber Archon Shard"
+  },
+  "/Lotus/Types/Gameplay/Tau/Resources/TwelveResourceCurrencyItem": {
+    "value": "Marks of Valiance"
   },
   "/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem": {
     "value": "陀螺磁抵系统"
@@ -1562,11 +1637,14 @@
   "/lotus/language/events/amalgameventtooltip": {
     "value": "行动代号：恶意合并"
   },
+  "/lotus/language/events/anniversary2024challengemode": {
+    "value": "Lotus 的馈赠 - 精英"
+  },
   "/lotus/language/events/halloweennaberusdesc": {
     "value": "Visit Daughter for Naberus Treats"
   },
   "/lotus/language/events/halloweennaberusname": {
-    "value": "Nights of Naberus"
+    "value": "纳贝流士之夜"
   },
   "/lotus/language/events/primevaulttrader": {
     "value": "Prime Resurgence"
@@ -1581,7 +1659,7 @@
     "value": "战术警报：万圣之焰-无尽"
   },
   "/lotus/language/g1quests/anniversary2017missiontitle": {
-    "value": "Lotus的礼物-失窃!"
+    "value": "Lotus的礼物-被窃取!"
   },
   "/lotus/language/g1quests/deck12eventdesc": {
     "value": "追击剥削者圆蛛"
@@ -1599,7 +1677,7 @@
     "value": "猩红之矛"
   },
   "/lotus/language/g1quests/fomorianrevengebattlename": {
-    "value": "巨人战舰"
+    "value": "巴罗尔巨人战舰"
   },
   "/lotus/language/g1quests/heatfissureseventdesc": {
     "value": "封印奥布山谷的裂缝"
@@ -1737,7 +1815,7 @@
     "value": "Corpus Siege"
   },
   "/lotus/language/menu/corpusrazorbackproject": {
-    "value": "利刃豺狼"
+    "value": "利刃豺狼舰队"
   },
   "/lotus/language/menu/grineerinvasiongeneric": {
     "value": "Grineer Offensive"
@@ -1781,9 +1859,648 @@
   "/lotus/language/messages/orbheisteventrewarddinboxmessagetitle": {
     "value": "Vallis Fractures: Real Progress"
   },
+  "/lotus/language/shadowgrapher/shadowgraphereventname": {
+    "value": "Operation: Atramentum"
+  },
   "/lotus/language/sigils/kelaeventsigilname": {
     "desc": "A sigil commemorating the liberation of defectors from the Grineer.",
     "value": "Rathuum Sigil"
+  },
+  "/Lotus/Language/1999Echoes/1999HexConquestNode": {
+    "value": "时光科研"
+  },
+  "/Lotus/Language/Conquest/Condition_AcceleratedEnemies": {
+    "value": "激进冒险"
+  },
+  "/Lotus/Language/Conquest/Condition_AcceleratedEnemies_Desc": {
+    "value": "敌人造成的伤害 -15%，受到的伤害 +15% ，但移动速度、攻击速度和射速 +15%。"
+  },
+  "/Lotus/Language/Conquest/Condition_AntiMaterialWeapons": {
+    "value": "指挥型重型炮兵"
+  },
+  "/Lotus/Language/Conquest/Condition_AntiMaterialWeapons_Desc": {
+    "value": "暴戾重型炮兵装备的武器对超宏防护和殁世机甲造成 5 倍的伤害。"
+  },
+  "/Lotus/Language/Conquest/Condition_ArcadeAutomata": {
+    "value": "自动街机"
+  },
+  "/Lotus/Language/Conquest/Condition_ArcadeAutomata_Desc": {
+    "value": "敌人的枪械发射巨大且缓慢移动的球体，而不是他们平常的弹药。"
+  },
+  "/Lotus/Language/Conquest/Condition_ArtilleryBeacons": {
+    "value": "光能炮信标"
+  },
+  "/Lotus/Language/Conquest/Condition_ArtilleryBeacons_Desc": {
+    "value": "炽蛇军敌人被击杀时会掉落光能炮信标召唤轰炸。"
+  },
+  "/Lotus/Language/Conquest/Condition_BalloonFest": {
+    "value": "气球嘉年华"
+  },
+  "/Lotus/Language/Conquest/Condition_BalloonFest_Desc": {
+    "value": "炽蛇军前哨气球数量更多，攻击和移动速度更快。"
+  },
+  "/Lotus/Language/Conquest/Condition_CompetitionSpillover": {
+    "value": "竞争优势"
+  },
+  "/Lotuit/Language/Conquest/Condition_CompetitionSpillover_Desc": {
+    "value": "在整个任务过程中，阿米尔和碧的“对战”模式将产生随机负面惩罚。"
+  },
+  "/Lotus/Language/Conquest/Condition_Deflectors": {
+    "value": "坚不可摧"
+  },
+  "/Lotus/Language/Conquest/Condition_Deflectors_Desc": {
+    "value": "可能会出现守护者卓越者敌人，包括守护者卓越者殁世机甲。"
+  },
+  "/Lotus/Language/Conquest/Condition_DrainingResiduals": {
+    "value": "恶魔契约"
+  },
+  "/Lotus/Language/Conquest/Condition_DrainingResiduals_Desc": {
+    "value": "敌人被击杀时 4 米范围内的友军会牺牲 50% 的弹药效率以换取 +25% 的射速。"
+  },
+  "/Lotus/Language/Conquest/Condition_EfervonFog": {
+    "value": "浓雾"
+  },
+  "/Lotus/Language/Conquest/Condition_EfervonFog_Desc": {
+    "value": "艾弗旺气体覆盖整个关卡。敌人可能会掉落提供短暂缓解的过滤器。"
+  },
+  "/Lotus/Language/Conquest/Condition_EmpoweredEnemies": {
+    "value": "等比增防"
+  },
+  "/Lotus/Language/Conquest/Condition_EmpoweredEnemies_Desc": {
+    "value": "敌人的生命值和护盾增加 100%，每拥有一个小队成员额外增加 50%，最多 300%。卓越者单位的部署更加频繁。"
+  },
+  "/Lotus/Language/Conquest/Condition_EnemyElementalEnhancement": {
+    "value": "元素效力"
+  },
+  "/Lotus/Language/Conquest/Condition_EnemyElementalEnhancement_Desc": {
+    "value": "敌人造成 +100% 元素伤害，并对元素伤害有 +85% 抗性。"
+  },
+  "/Lotus/Language/Conquest/Condition_ExplosiveCrawlers": {
+    "value": "易爆潜能"
+  },
+  "/Lotus/Language/Conquest/Condition_ExplosiveCrawlers_Desc": {
+    "value": "爆裂断肢取代蹒跚断肢。"
+  },
+  "/Lotus/Language/Conquest/Condition_ExplosiveSummer": {
+    "value": "过量炸药"
+  },
+  "/Lotus/Language/Conquest/Condition_ExplosiveSummer_Desc": {
+    "value": "所有补给箱都被炸药桶替换。"
+  },
+  "/Lotus/Language/Conquest/Condition_FactionSwarm_Scaldra": {
+    "value": "炽蛇军竞速"
+  },
+  "/Lotus/Language/Conquest/Condition_FactionSwarm_Scaldra_Desc": {
+    "value": "所有敌人被炽蛇军取代，并且移动的更快。"
+  },
+  "/Lotus/Language/Conquest/Condition_FactionSwarm_Techrot": {
+    "value": "科腐者竞速"
+  },
+  "/Lotus/Language/Conquest/Condition_FactionSwarm_Techrot_Desc": {
+    "value": "所有敌人被科腐者取代，并且移动的更快。"
+  },
+  "/Lotus/Language/Conquest/Condition_FallFog": {
+    "value": "浓雾之秋"
+  },
+  "/Lotus/Language/Conquest/Condition_FallFog_Desc": {
+    "value": "迷雾限制了整个任务区的视野。"
+  },
+  "/Lotus/Language/Conquest/Condition_HeavyWarfare": {
+    "value": "重装作战"
+  },
+  "/Lotus/Language/Conquest/Condition_HeavyWarfare_Desc": {
+    "value": "敌人受到的非重型武器伤害减少 95%。敌人会掉落重型弹药包，重型武器召回时间减少至 5 秒。"
+  },
+  "/Lotus/Language/Conquest/Condition_HostileOvergrowth": {
+    "value": "它是活的"
+  },
+  "/Lotus/Language/Conquest/Condition_HostileOvergrowth_Desc": {
+    "value": "在地下，如果玩家停止移动，敌方增生物就会发起攻击。"
+  },
+  "/Lotus/Language/Conquest/Condition_InfectedTechrot": {
+    "value": "腐朽之躯"
+  },
+  "/Lotus/Language/Conquest/Condition_InfectedTechrot_Desc": {
+    "value": "科腐者敌人被注入艾弗旺并随时间推移受到伤害。他们被击杀后会爆炸并留下致命的艾弗旺。"
+  },
+  "/Lotus/Language/Conquest/Condition_JadeSpring": {
+    "value": "翠玉之灵"
+  },
+  "/Lotus/Language/Conquest/Condition_JadeSpring_Desc": {
+    "value": "翠玉之灵徘徊在该区域。如果玩家靠近，它们就会追逐玩家并转变为翠玉光束。"
+  },
+  "/Lotus/Language/Conquest/Condition_MagneticHounds": {
+    "value": "迷人弧犬"
+  },
+  "/Lotus/Language/Conquest/Condition_MagneticHounds_Desc": {
+    "value": "当暴戾弧犬发起攻击时，它们会将战甲拉向自己。"
+  },
+  "/Lotus/Language/Conquest/Condition_MeleeOnlyEnemies": {
+    "value": "短兵相接"
+  },
+  "/Lotus/Language/Conquest/Condition_MeleeOnlyEnemies_Desc": {
+    "value": "只出现近战攻击的敌人。"
+  },
+  "/Lotus/Language/Conquest/Condition_MiasmiteHive": {
+    "value": "自爆虫群"
+  },
+  "/Lotus/Language/Conquest/Condition_MiasmiteHive_Desc": {
+    "value": "在任务过程中，科腐者自爆虫会从阴影中蜂拥而出。"
+  },
+  "/Lotus/Language/Conquest/Condition_MurmurIncursion": {
+    "value": "墙壁之外"
+  },
+  "/Lotus/Language/Conquest/Condition_MurmurIncursion_Desc": {
+    "value": "低语者敌人加入炽蛇军和科腐者阵营。"
+  },
+  "/Lotus/Language/Conquest/Condition_PointBlank": {
+    "value": "短视弹药"
+  },
+  "/Lotus/Language/Conquest/Condition_PointBlank_Desc": {
+    "value": "玩家距离敌人 15 米以内时，敌人才会受到伤害。"
+  },
+  "/Lotus/Language/Conquest/Condition_Quicksand": {
+    "value": "牵连"
+  },
+  "/Lotus/Language/Conquest/Condition_Quicksand_Desc": {
+    "value": "被击杀敌人 4 米范围内的友军， 移动速度和跑酷速度会降低。"
+  },
+  "/Lotus/Language/Conquest/Condition_RangedOnlyEnemies": {
+    "value": "远程交战"
+  },
+  "/Lotus/Language/Conquest/Condition_RangedOnlyEnemies_Desc": {
+    "value": "只出现远程攻击的敌人。"
+  },
+  "/Lotus/Language/Conquest/Condition_RegeneratingEnemies": {
+    "value": "敌军复生"
+  },
+  "/Lotus/Language/Conquest/Condition_RegeneratingEnemies_Desc": {
+    "value": "敌人的生命值会缓慢恢复。"
+  },
+  "/Lotus/Language/Conquest/Condition_RestrictedConsumables": {
+    "value": "延迟供应"
+  },
+  "/Lotus/Language/Conquest/Condition_RestrictedConsumables_Desc": {
+    "value": "消耗品有 30 秒冷却时间。魅影，待命舰员以及曲翼枪械除外。"
+  },
+  "/Lotus/Language/Conquest/Condition_RestrictedRespawns": {
+    "value": "终局"
+  },
+  "/Lotus/Language/Conquest/Condition_RestrictedRespawns_Desc": {
+    "value": "禁用自我复活。濒死的玩家只能通过击杀嘲讽低语来复活。死亡的玩家无法继续进行连续任务。"
+  },
+  "/Lotus/Language/Conquest/Condition_SentientAdaptation": {
+    "value": "适应异变"
+  },
+  "/Lotus/Language/Conquest/Condition_SentientAdaptation_Desc": {
+    "value": "敌人受到元素伤害时产生相应的抗性。如果在 5 秒内没有受到该元素伤害，则抗性会消失。"
+  },
+  "/Lotus/Language/Conquest/Condition_ShieldedFoes": {
+    "value": "强化好战"
+  },
+  "/Lotus/Language/Conquest/Condition_ShieldedFoes_Desc": {
+    "value": "所有敌人获得相当于他们最大生命值 50% 的超宏防护。"
+  },
+  "/Lotus/Language/Conquest/Condition_Vanquisher": {
+    "value": "卓越支援"
+  },
+  "/Lotus/Language/Conquest/Condition_Vanquisher_Desc": {
+    "value": "部署额外的卓越者敌人。"
+  },
+  "/Lotus/Language/Conquest/Condition_VoidAberration": {
+    "value": "吸血界影"
+  },
+  "/Lotus/Language/Conquest/Condition_VoidAberration_Desc": {
+    "value": "行动缓慢且不死的双衍王境界影，能从过于接近的友军身上吸取生命和能量。"
+  },
+  "/Lotus/Language/Conquest/Condition_Voidburst": {
+    "value": "死后冲击"
+  },
+  "/Lotus/Language/Conquest/Condition_Voidburst_Desc": {
+    "value": "被击杀的敌人会爆发出虚空能量。"
+  },
+  "/Lotus/Language/Conquest/Condition_WinterFrost": {
+    "value": "厚冰"
+  },
+  "/Lotus/Language/Conquest/Condition_WinterFrost_Desc": {
+    "value": "极寒卓越者护罩的耐久度是正常值的 30 倍。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ChemicalNoise": {
+    "value": "噪音抑制"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ChemicalNoise_Desc": {
+    "value": "无人机在弗莱尔上方飞行，向他喷射艾弗旺气体。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ContaminationZone": {
+    "value": "屏住呼吸"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ContaminationZone_Desc": {
+    "value": "整个区域会随着玩家停留时间的延长而造成 <DT_POISON_COLOR>毒素伤害，地狱净化器附近区域除外。有些敌人可能会掉落过滤器，可用于创造额外稳定的临时安全区。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_DisruptiveSounds": {
+    "value": "吸血摇滚"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_DisruptiveSounds_Desc": {
+    "value": "弗莱尔会创造一个力场，干扰玩家的技能，同时消耗能量以增强弗莱尔的生命值。当没有玩家在范围内时，弗莱尔会缓慢失去生命值。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_DoubleTroubleLegacyte": {
+    "value": "有丝分裂"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_DoubleTroubleLegacyte_Desc": {
+    "value": "每轮产生两个传承种，需要两倍的捕获次数才能成功。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_EscalateImmediately": {
+    "value": "破坏补给"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_EscalateImmediately_Desc": {
+    "value": "任务开始时，触发打开补给箱的负面效果，一旦打开就会加剧。未能打开补给箱会导致完成任务所需的击杀数翻倍。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ExplosiveEnergy": {
+    "value": "自爆虫浆"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_ExplosiveEnergy_Desc": {
+    "value": "敌人死亡时掉落的自爆虫会立即冲向弗莱尔。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_FortifiedFoes": {
+    "value": "密闭装甲"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_FortifiedFoes_Desc": {
+    "value": "非弱点命中对敌人造成的伤害降低 95%。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_GestatingTumors": {
+    "value": "孢子增殖"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_GestatingTumors_Desc": {
+    "value": "地狱净化器附近会出现科腐者肿瘤，每个活跃的肿瘤都会增加维生系统衰减的速度。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_HighScalingLegacyte": {
+    "value": "生长激素"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_HighScalingLegacyte_Desc": {
+    "value": "每一代传承种都更加强大，但同时也需要更长的时间来逃脱。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_HostileSecurity": {
+    "value": "破坏之音"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_HostileSecurity_Desc": {
+    "value": "弗莱尔在自身周围发出一个干扰力场，干扰技能并消耗能量。如果范围内没有玩家，弗莱尔将流失生命值。他会根据范围内的玩家数量获得生命值。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_MutatedEnemies": {
+    "value": "平行进化"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_MutatedEnemies_Desc": {
+    "value": "随着传承种进化，其他在场敌人也将获得新技能。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankReinforcements": {
+    "value": "支援"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankReinforcements_Desc": {
+    "value": "战斗过程中会有敌方援军抵达，首先是炽蛇军，然后是科腐者。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankStrongArmor": {
+    "value": "热熔装甲板"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankStrongArmor_Desc": {
+    "value": "只有热熔火箭弹才能对坦克造成伤害。携带热熔火箭炮的增援部队将在战斗中持续出现。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankSuperToxic": {
+    "value": "剧毒坦克"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TankSuperToxic_Desc": {
+    "value": "坦克拥有 <DT_POISON_COLOR>毒素光环，留下 <DT_POISON_COLOR>毒素尾迹，并且所有的攻击会造成 <DT_POISON_COLOR>毒素伤害。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TechrotConjunction": {
+    "value": "科腐围攻"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_HexConquest_TechrotConjunction_Desc": {
+    "value": "科腐者敌人会尝试近战攻击地狱净化器，接触后将其引爆，并使净化器污染增加 33%。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_AlchemicalShields": {
+    "value": "炼金难侵"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_AlchemicalShields_Desc": {
+    "value": "有 10% 敌人装备了不可穿透的元素屏障，只有对应元素的元素瓶才能摧毁屏障。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_DoubleTrouble": {
+    "value": "双重爆破"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_DoubleTrouble_Desc": {
+    "value": "两台爆破型殁世机甲会攻击任意导管，但它们的生命值降低。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_DuoAssassination": {
+    "value": "双重接肢"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_DuoAssassination_Desc": {
+    "value": "在最终战斗中对战两个接肢怪。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EnemyLink": {
+    "value": "伤害链接"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EnemyLink_Desc": {
+    "value": "相距 10 米内的敌人形成一个伤害链接群体。任何对单个成员造成的伤害都会平均分摊到整个群体。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EnvironmentalSystem": {
+    "value": "危险区域"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EnvironmentalSystem_Desc": {
+    "value": "激活维生装置塔以为你的小队清除危险区域。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EximusGrenadiers": {
+    "value": "卓越者元素瓶"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_EximusGrenadiers_Desc": {
+    "value": "卓越者敌人必定掉落元素瓶，但只有他们会掉落元素瓶。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_FortifiedFoes": {
+    "value": "密闭装甲"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_FortifiedFoes_Desc": {
+    "value": "非弱点命中对敌人造成的伤害降低 90%。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_FragileNodes": {
+    "value": "统一目标"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_FragileNodes_Desc": {
+    "value": "敌人可以瞄准并摧毁导管。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_GrowingIncursion": {
+    "value": "裂缝激增"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_GrowingIncursion_Desc": {
+    "value": "裂缝在任务中形成，使得敌人的等级每 10 秒提升 1 级。消灭它们以防止等级增加。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HarshWords": {
+    "value": "带刺钥符"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HarshWords_Desc": {
+    "value": "每个浮印在被收集时都会造成少量伤害。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HostileSecurity": {
+    "value": "侵蚀感官"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HostileSecurity_Desc": {
+    "value": "魔耳和魔瞳随着时间逐渐受损，收集所需的荧音浮印可暂停损伤并对它们进行部分修复。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HungryPillars": {
+    "value": "辐化御敌"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_HungryPillars_Desc": {
+    "value": "所有敌人都是无敌的，只有在受到辐射异常状态影响时才会受到伤害。辐射柱体随机出现并造成 <DT_RADIATION>辐射异常状态。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_InfiniteTide": {
+    "value": "无情肢潮"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_InfiniteTide_Desc": {
+    "value": "断肢潮不会停止攻击。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_LostInTranslation": {
+    "value": "浮印膨胀"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_LostInTranslation_Desc": {
+    "value": "安全系统需要两倍的荧音浮印才能激活。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_MisguidedInstructions": {
+    "value": "浮印陷阱"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_MisguidedInstructions_Desc": {
+    "value": "某些荧音浮印附有传送门陷阱，接触它时会被传送到 250 米以外的地方。传送门显性后持续 45 秒。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_NecramechActivation": {
+    "value": "殁世机甲激增"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_NecramechActivation_Desc": {
+    "value": "殁世机甲出现的频率更高。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_NecramechLockout": {
+    "value": "敌意支援"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_NecramechLockout_Desc": {
+    "value": "禁用维生装置塔运送系统。每 90 秒生成殁世机甲，击杀时掉落 6 个维生模块。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_Reinforcements": {
+    "value": "协调阵线"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_Reinforcements_Desc": {
+    "value": "卓越者敌人出现并支援断肢潮和最终的接肢怪。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_SameTeam": {
+    "value": "天使同行"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_SameTeam_Desc": {
+    "value": "虚空天使与最终的接肢怪并肩作战。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_StickyFingers": {
+    "value": "暴食贪囤"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_StickyFingers_Desc": {
+    "value": "所有贪囤断肢都是卓越者。"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_UnpoweredCapsules": {
+    "value": "寄生装置塔"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_UnpoweredCapsules_Desc": {
+    "value": "维生装置塔只有在其 15 米范围内杀死 20 名敌人后才会激活。 "
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_VolatileGrenades": {
+    "value": "高危物资"
+  },
+  "/Lotus/Language/Conquest/MissionVariant_LabConquest_VolatileGrenades_Desc": {
+    "value": "携带元素瓶时会受到与之对应的元素伤害。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_AbilityLockout": {
+    "value": "技能禁用"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_AbilityLockout_Desc": {
+    "value": "小队击杀 50 名敌人前，所有技能均被禁止使用。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_AntiGuard": {
+    "value": "超宏衰减"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_AntiGuard_Desc": {
+    "value": "战甲和友军超宏防护获取量减少 75%"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Armorless": {
+    "value": "破损护甲"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Armorless_Desc": {
+    "value": "施放技能会使护甲降低 10%，持续 10 秒。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Armorless_Desc_Status": {
+    "value": "施放技能会使护甲降低 |PERCENT|%，持续 10 秒。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ComboCountChance": {
+    "value": "钝重兵刃"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ComboCountChance_Desc": {
+    "value": "近战连击数几率减少 50%"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Conductive": {
+    "value": "导电侵袭"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Conductive_Desc": {
+    "value": "每隔几秒就会受到 <DT_ELECTRICITY>电击伤害。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ContactDamage": {
+    "value": "二次伤害"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ContactDamage_Desc": {
+    "value": "每次受到伤害时，获得 1 层 <DT_PUNCTURE>穿刺异常状态。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_DamageMomentum": {
+    "value": "致命速率"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_DamageMomentum_Desc": {
+    "value": "静止不动时无法造成伤害。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_DecayingFlesh": {
+    "value": "永久损伤"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_DecayingFlesh_Desc": {
+    "value": "受到生命值伤害时还会扣减最大生命上限"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_EnergyStarved": {
+    "value": "能量缩减"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_EnergyStarved_Desc": {
+    "value": "最大能量值减少 75%"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Exhaustion": {
+    "value": "能量枯竭"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Exhaustion_Desc": {
+    "value": "周围 10 米范围内的所有敌人使你每秒丢失 2 能量。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ExposureCurse": {
+    "value": "显露之诅"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ExposureCurse_Desc": {
+    "value": "护盾被移除。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Framecurse": {
+    "value": "咒甲减益"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Framecurse_Desc": {
+    "value": "激活一项技能会对你造成 50 伤害。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Gearless": {
+    "value": "携带装备限制"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Gearless_Desc": {
+    "value": "无法使用携带装备轮盘。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Knifestep": {
+    "value": "如履刀尖"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Knifestep_Desc": {
+    "value": "移动时损失 2 点生命值。跳跃会暂停效果。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_MaxAmmo": {
+    "value": "补给短缺"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_MaxAmmo_Desc": {
+    "value": "所有武器的弹药最大值减少 75%"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_OperatorLockout": {
+    "value": "传识失真"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_OperatorLockout_Desc": {
+    "value": "无法传识到指挥官或漂泊者。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_OverSensitive": {
+    "value": "过敏受体"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_OverSensitive_Desc": {
+    "value": "负面异常状态的持续时间增加到三倍"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Sanguine": {
+    "value": "血色减益"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Sanguine_Desc": {
+    "value": "每当你受到伤害时，还会陷入 <DT_SLASH>切割异常状态。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ScarcityCurse": {
+    "value": "弹药枯竭"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ScarcityCurse_Desc": {
+    "value": "弹药逐渐耗尽。电池武器充能缓慢。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ShieldDelay": {
+    "value": "嗜睡护盾"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_ShieldDelay_Desc": {
+    "value": "护盾充能延迟增加 |val|%。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Starvation": {
+    "value": "弹药亏空"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Starvation_Desc": {
+    "value": "通过掉落和道具恢复的弹药减少 75%。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_TimeDilation": {
+    "value": "缩短技能"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_TimeDilation_Desc": {
+    "value": "技能持续时间减少 |val|%。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Vampyri": {
+    "value": "吸血减益"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Vampyri_Desc": {
+    "value": "每秒流失生命值。击杀敌人可恢复生命值。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_VitalEnergy": {
+    "value": "震荡耗能"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_VitalEnergy_Desc": {
+    "value": "每当生命值受到伤害，也会消耗最大能量的 5%。"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_VoidEnergyOverload": {
+    "value": "技能超载"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_VoidEnergyOverload_Desc": {
+    "value": "使用技能将在附近打开一道虚空裂隙"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Withering": {
+    "value": "无法治愈"
+  },
+  "/Lotus/Language/Conquest/PersonalMod_Withering_Desc": {
+    "value": "拾取无法提供治疗，并且无法拾取生命球。"
+  },
+  "/Lotus/Language/Conquest/SolarMapLabConquestNode": {
+    "value": "深层科研"
+  },
+  "/Lotus/Language/Duviri/AngryMoodTitleShort": {
+    "value": "愤怒"
+  },
+  "/Lotus/Language/Duviri/HappyMoodTitleShort": {
+    "value": "喜悦"
+  },
+  "/Lotus/Language/Duviri/JealousMoodTitleShort": {
+    "value": "嫉妒"
+  },
+  "/Lotus/Language/Duviri/SadMoodTitleShort": {
+    "value": "悲伤"
+  },
+  "/Lotus/Language/Duviri/ScaredMoodTitleShort": {
+    "value": "恐惧"
+  },
+  "/Lotus/Language/Events/GalleonRobberyEventMissionTitle": {
+    "value": "尸鬼的帆船战舰"
+  },
+  "/Lotus/Language/Labels/SteelPathDailies": {
+    "value": "钢铁之路侵袭"
+  },
+  "/Lotus/Language/Menu/AlertHardMode": {
+    "value": "仲裁"
+  },
+  "/Lotus/Language/Menu/SortieMissionName": {
+    "value": "突击"
+  },
+  "/Lotus/Language/Menu/WorldStatePanel_Invasions": {
+    "value": "入侵"
+  },
+  "/Lotus/Language/WorldStateWindow/LiteSortieMissionName": {
+    "value": "执刑官猎杀"
   },
   "/lotus/levels/proc/corpus/corpusgascitydisruption": {
     "value": "Gas City Disruption"
@@ -8290,7 +9007,7 @@
     "value": "Stunning Speed"
   },
   "/lotus/storeitems/upgrades/mods/pistol/event/ambulasevent/expert/secondaryexplosionradiusmodexpert": {
-    "value": "猛烈爆发Prime"
+    "value": "Prime Fulmination"
   },
   "/lotus/storeitems/upgrades/mods/pistol/expert/primedweaponcritdamagemod": {
     "value": "弱点专精Prime"
@@ -11386,94 +12103,94 @@
     "value": "Misa Prime Syandana"
   },
   "/lotus/storeitems/upgrades/skins/scarves/prismarazorscarf": {
-    "value": "Prisma Uru Syandana"
+    "value": "棱晶乌鲁披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/ps4armscarf": {
     "value": "Yomo Obsidian Syandana"
   },
   "/lotus/storeitems/upgrades/skins/scarves/razorscarf": {
-    "value": "Uru Syandana"
+    "value": "乌鲁披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/rubedodinospikescarf": {
     "value": "Rubedo Plated Yamako Syandana"
   },
   "/lotus/storeitems/upgrades/skins/scarves/solsticebarocape": {
-    "value": "Ki'teer Solstice Syandana"
+    "value": "Ki'Teer冬至披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicateahscarf": {
-    "value": "Telos Syandana"
+    "value": "终极披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicatecsscarf": {
-    "value": "Synoid Syandana"
+    "value": "枢议披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicatenlscarf": {
-    "value": "Sancti Syandana"
+    "value": "圣洁披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicatepsscarf": {
-    "value": "Secura Syandana"
+    "value": "保障披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicatervscarf": {
-    "value": "Asita Rakta Syandana"
+    "value": "隐士绯红披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/syndicatesmscarf": {
-    "value": "Vaykor Syandana"
+    "value": "勇气披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/turtleneckscarf": {
-    "value": "Imperator Syandana"
+    "value": "凯旋将军披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/vtdinospikescarf": {
-    "value": "Prisma Yamako Syandana"
+    "value": "棱晶山越披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/vthornskullscarf": {
-    "value": "Prisma Hecate Syandana"
+    "value": "棱晶朔月女神披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/wraithturbinesscarf": {
-    "value": "Harkonar Wraith Cloak"
+    "value": "哈库纳亡魂披饰"
   },
   "/lotus/storeitems/upgrades/skins/scarves/yamakoprimescarf": {
-    "value": "Yamako Prime Syandana"
+    "value": "山越Prime披饰"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/carbuncledethcubeskin": {
     "value": "Carabus Dethcube"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/baropetmask": {
-    "value": "Ki'teer Sentinel Mask"
+    "value": "Ki'Teer守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/gunheadmask": {
-    "value": "Coltek Sentinel Mask"
+    "value": "寇塔克守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/hunhowmask": {
-    "value": "Hunhow Sentinel Mask"
+    "value": "Hunhow 守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/ictusmask": {
-    "value": "Ictus Sentinel Mask"
+    "value": "扬音守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/infestedmask": {
-    "value": "Mandible Mask"
+    "value": "下颚骨面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/kavatpetmask": {
-    "value": "Kavat Sentinel Mask"
+    "value": "库娃守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/kubrowmask": {
-    "value": "Kubrow Sentinel Mask"
+    "value": "库狛守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/lotusmask": {
-    "value": "Lotus Sentinel Mask"
+    "value": "Lotus 守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/mechheadmask": {
-    "value": "Mech Head Sentinel Mask"
+    "value": "机甲头盔面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/orokinmask": {
-    "value": "Summus Prime Sentinel Mask"
+    "value": "至上Prime守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/parrotmask": {
-    "value": "Para Sentinel Mask"
+    "value": "帕拉守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/primesentinelmask": {
-    "value": "Unda Prime Sentinel Mask"
+    "value": "脉涌Prime守护面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/masks/prismamechheadmask": {
-    "value": "Prisma Mech Head Sentinel Mask"
+    "value": "棱晶机甲头盔面具"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/parrotcarrierskin": {
     "value": "Para Carrier"
@@ -11482,31 +12199,31 @@
     "value": "塔克桑 沙漠迷彩外观"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/skins/librarianhelios": {
-    "value": "Helios Simaris Skin"
+    "value": "赫利俄斯Simaris外观"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/spriteshadeskin": {
     "value": "Sprite Shade"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/baropettail": {
-    "value": "Ki'teer Sentinel Tail"
+    "value": "Ki'Teer守护尾翼"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/capsuletail": {
     "value": "Capsule Sentinel Tail"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/coltektail": {
-    "value": "Coltek Sentinel Tail"
+    "value": "寇塔克守护尾部"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/fishtail": {
-    "value": "Koi Sentinel Tail"
+    "value": "锦鲤守护尾部"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/ictustail": {
-    "value": "Ictus Sentinel Tail"
+    "value": "扬音守护尾部"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/infestedtail": {
     "value": "Thorax Tail"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/kavatpettail": {
-    "value": "Kavat Sentinel Tail"
+    "value": "库娃守护尾巴"
   },
   "/lotus/storeitems/upgrades/skins/sentinels/tails/orokintail": {
     "value": "Summus Prime Sentinel Tail"
@@ -12924,6 +13641,9 @@
   "/lotus/storeitems/weapons/tenno/melee/swords/jawsword/jawlongsword": {
     "value": "Jaw Sword"
   },
+  "/lotus/storeitems/weapons/tenno/melee/swords/katanaandwakizashi/dex2023nikana/dex2023nikana": {
+    "value": "Dex Nikana"
+  },
   "/lotus/storeitems/weapons/tenno/melee/swords/katanaandwakizashi/katana": {
     "value": "Nikana"
   },
@@ -13462,6 +14182,10 @@
     "desc": "向 Helminth 饲喂任意资源",
     "value": "喂饱野兽"
   },
+  "/lotus/types/challenges/seasons/weekly/seasonweeklyfinelytuned": {
+    "desc": "Play 2 different Shawzin songs in Duviri.",
+    "value": "Finely Tuned"
+  },
   "/lotus/types/challenges/seasons/weekly/seasonweeklygildmodular": {
     "desc": "镀金1个模块化物品",
     "value": "镀金的"
@@ -13473,6 +14197,10 @@
   "/lotus/types/challenges/seasons/weekly/seasonweeklyhijackcrewship": {
     "desc": "劫持一艘敌方战舰",
     "value": "没收"
+  },
+  "/lotus/types/challenges/seasons/weekly/seasonweeklyhorsingaround": {
+    "desc": "Fly your Kaithe for 1000 meters",
+    "value": "Horsing Around"
   },
   "/lotus/types/challenges/seasons/weekly/seasonweeklyisolationbounties": {
     "desc": "在魔胎之境完成一次隔离库的赏金任务。",
@@ -13962,6 +14690,10 @@
     "desc": "完成 5 场钢铁之路任务",
     "value": "罕迹之路"
   },
+  "/lotus/types/challenges/seasons/weeklyhard/seasonweeklyhardelitebeastslayer": {
+    "desc": "Defeat the Orowyrm in Steel Path",
+    "value": "Elite Beast Slayer"
+  },
   "/lotus/types/challenges/seasons/weeklyhard/seasonweeklyhardelitesanctuaryonslaught": {
     "desc": "完成8个精英级圣殿突袭区域",
     "value": "精英测试对象"
@@ -14029,6 +14761,10 @@
   "/lotus/types/challenges/seasons/weeklyhard/seasonweeklyhardkillsilvergrovespecters": {
     "desc": "击杀1名落银树庭魅影",
     "value": "树庭守护者"
+  },
+  "/lotus/types/challenges/seasons/weeklyhard/seasonweeklyhardkilltank": {
+    "desc": "Defeat an H-09 Efervon Tank",
+    "value": "Tanked"
   },
   "/lotus/types/challenges/seasons/weeklyhard/seasonweeklyhardkillthumper": {
     "desc": "在夜灵平野上击杀一个巨牙重击者朵玛",
@@ -15434,7 +16170,7 @@
     "value": "Tellurium"
   },
   "/lotus/types/items/miscitems/utilityunlocker": {
-    "value": "战甲特殊功能槽连接器"
+    "value": "Exilus Warframe Adapter"
   },
   "/lotus/types/items/miscitems/vayhekcoordinatefragmenta": {
     "value": "Delta Beacon"
@@ -15746,7 +16482,7 @@
     "value": "斯特朗 亡魂 蓝图"
   },
   "/lotus/types/recipes/weapons/twinviperswraithblueprint": {
-    "value": "双子蝰蛇 亡魂 蓝图"
+    "value": "Twin Vipers Wraith Blueprint"
   },
   "/lotus/types/recipes/weapons/weaponparts/deravandalbarrel": {
     "value": "德拉 破坏者 枪管"
@@ -15806,13 +16542,13 @@
     "value": "斯特朗 亡魂 枪托"
   },
   "/lotus/types/recipes/weapons/weaponparts/twinviperswraithbarrel": {
-    "value": "双子蝰蛇 亡魂 枪管"
+    "value": "Twin Vipers Wraith Barrel"
   },
   "/lotus/types/recipes/weapons/weaponparts/twinviperswraithlink": {
-    "value": "双子蝰蛇 亡魂 连接器"
+    "value": "Twin Vipers Wraith Link"
   },
   "/lotus/types/recipes/weapons/weaponparts/twinviperswraithreceiver": {
-    "value": "双子蝰蛇 亡魂 枪机"
+    "value": "Twin Vipers Wraith Receiver"
   },
   "/lotus/types/restoratives/deployables/lisetturretavatar": {
     "value": "Liset Turret Avatar"
@@ -19027,6 +19763,9 @@
   "/lotus/weapons/tenno/melee/swords/jawsword/jawlongsword": {
     "value": "Jaw Sword"
   },
+  "/lotus/weapons/tenno/melee/swords/katanaandwakizashi/dex2023nikana/dex2023nikana": {
+    "value": "Dex Nikana"
+  },
   "/lotus/weapons/tenno/melee/swords/katanaandwakizashi/katana": {
     "value": "Nikana"
   },
@@ -19276,39 +20015,14 @@
   "/lotus/weapons/voidtrader/vtdetron": {
     "value": "苦痛德特昂"
   },
-  "AbilityLockout": {
-    "value": "Powerless",
-    "desc": "All Abilities are disabled until the squad kills 50 enemies."
-  },
-  "AcceleratedEnemies": {
-    "value": "Bold Venture",
-    "desc": "Enemies deal -15% Damage and take +15% Damage but gain +15% Movement Speed, Attack Speed, and Fire Rate."
-  },
-  "AntiMaterialWeapons": {
-    "value": "Commanding Culverins",
-    "desc": "Rogue Culverins equip weapons that deal 5x Damage to Overguard and Necramechs."
+  "KahlSyndicate": {
+    "value": "卡尔驻军"
   },
   "ArbitersSyndicate": {
     "value": "均衡仲裁者"
   },
-  "ArcadeAutomata": {
-    "value": "Arcade Automate",
-    "desc": "Enemy guns launch large, slow moving orbs instead of their usual ordnance."
-  },
-  "Armorless": {
-    "value": "Fractured Armor",
-    "desc": "Casting an ability reduces armor by 10% for 10s."
-  },
-  "ArtilleryBeacons": {
-    "value": "Artillery Beacons",
-    "desc": "When killed, Scaldra troops drop artillery beacons that summon bombardments."
-  },
   "AssassinsSyndicate": {
     "value": "刺客"
-  },
-  "BalloonFest": {
-    "value": "Ballonfest",
-    "desc": "Scaldra Harbingers are more numerous and attack and move more quickly."
   },
   "CephalonSudaSyndicate": {
     "value": "中枢苏达"
@@ -19316,171 +20030,20 @@
   "CetusSyndicate": {
     "value": "Ostrons"
   },
-  "ChemicalNoise": {
-    "value": "Noise Suppression",
-    "desc": "Drones fly above Flare, spraying them with Efervon gas."
-  },
-  "CompetitionSpillover": {
-    "value": "Competitive Streak",
-    "desc": "Random negative penalties from Amir and Aoi's \"Faceoff\" mode will be applied throughout the mission."
-  },
-  "ContactDamage": {
-    "value": "Secondary Wounds",
-    "desc": "Gain 1 Puncture Status Effect every time you take damage."
-  },
-  "DecayingFlesh": {
-    "value": "Permanent Injury",
-    "desc": "Max health reduced each time health damage is taken"
-  },
-  "Deflectors": {
-    "value": "Fortified Foes",
-    "desc": "Guardian Eximus units may be encountered, including Guardian Eximus Necramechs."
-  },
-  "DisruptiveSounds": {
-    "value": "Vampire Rock",
-    "desc": "Flare creates a field that disrupts player abilities while draining energy to boost Flare's health. Flare slowly loses health when no players are in range."
-  },
-  "DrainingResiduals": {
-    "value": "Devil's Bargain",
-    "desc": "Allies within 4m of slain enemies gain 25% Fire Rate at the cost of -50% Ammo Efficiency."
-  },
-  "DullBlades": {
-    "value": "Dull Blades",
-    "desc": "-50% melee combo chance"
-  },
-  "EMPBlackHole": {
-    "value": "Alluring Arcocanids",
-    "desc": "As Rogue Arcocanids charge attacks, they pull Warframes towards them."
-  },
-  "EfervonFog": {
-    "value": "Dense Fog",
-    "desc": "Efervon gas blankets the level. Enemies may drop filters that can provide a temporary reprieve."
-  },
   "EntratiSyndicate": {
     "value": "英择谛"
-  },
-  "EscalateImmediately": {
-    "value": "Cache Crash",
-    "desc": "Consequences of opening a Supply Cache are active from the start and will intensify once it is opened. Failure to open a Supply Cache doubles the kill count required to finish the mission."
   },
   "EventSyndicate": {
     "value": "集团"
   },
-  "ExplosiveCrawlers": {
-    "value": "Explosive Potential",
-    "desc": "Rupturing Fragments replace Shuffling Fragments."
-  },
-  "ExplosiveEnergy": {
-    "value": "Miasmite Mash",
-    "desc": "Enemies drop Miasmites upon death that immediately rush Flare."
-  },
-  "FactionSwarm_Scaldra": {
-    "value": "Scaldra Speed Run",
-    "desc": "All enemies are replaced with Scaldra and move much faster."
-  },
-  "FallFog": {
-    "value": "Foggy Fall",
-    "desc": "A fog limits vision across the mission zone."
-  },
-  "FortifiedFoes": {
-    "value": "Sealed Armor",
-    "desc": "Enemies take 90% less damage from non-weak point hits."
-  },
-  "FragileNodes": {
-    "value": "Unified Purpose",
-    "desc": "Enemies can target and destroy Conduits."
-  },
-  "Framecurse": {
-    "value": "Framecurse syndrome",
-    "desc": "Activating an Ability inflicts 50 damage upon you."
-  },
-  "Gearless": {
-    "value": "Gear Embargo",
-    "desc": "Gear cannot be used."
-  },
-  "GestatingTumors": {
-    "value": "Sporogenesis",
-    "desc": "Techrot Tumors appear near Hell-Scrubbers, increasing the rate of life support decay with each active tumor."
-  },
-  "GrowingIncursion": {
-    "value": "Fissure Cascade",
-    "desc": "Fissures rip into the mission, causing the Enemy Level to go up by 1 every 10s. Destroy them to stop the level from increasing further."
-  },
-  "HarshWords": {
-    "value": "Barbed Glyphs",
-    "desc": "Each Glyph inflicts a small amount of damage when collected."
-  },
-  "HeavyWarfare": {
-    "value": "Heavy Warfare",
-    "desc": "Enemies take 95% less damage from non-heavy weapons. Enemies will drop heavy ammo packs and heavy weapon recall time reduced to 5s."
-  },
-  "HighScalingLegacyte": {
-    "value": "Growth Hormones",
-    "desc": "Legacytes are more powerful with each generation but take longer to escape."
-  },
-  "HostileOvergrowth": {
-    "value": "It's Alive",
-    "desc": "Within the underground, hostile overgrowths will attack if players stops moving."
-  },
-  "HostileSecurity": {
-    "value": "Eroding Senses",
-    "desc": "The Auricle and Vitreum take damage over time, collecting the required Vosphene Glyphs will halt the degradation and partially heal them."
-  },
-  "InfiniteTide": {
-    "value": "Relentless Tide",
-    "desc": "The Fragmented Tide never stops attacking."
-  },
-  "JadeSpring": {
-    "value": "Jade Spirits",
-    "desc": "Jade Wisps haunt the region. If approached, they chase down the player responsible and transform into Jade Light beams."
-  },
-  "KahlSyndicate": {
-    "value": "卡尔驻军"
-  },
-  "Knifestep": {
-    "value": "Knifestep Syndrome",
-    "desc": "Lose 2 Health when moving. Jumping pauses the effect."
-  },
-  "LostInTranslation": {
-    "value": "Glyph Inflation",
-    "desc": "The security system requires twice as many Vosphene Glyphs to activate."
-  },
-  "MiasmiteHive": {
-    "value": "Miasmite Swarm",
-    "desc": "Techrot Miasmites swarm out of the shadows throught the mission."
-  },
-  "MutatedEnemies": {
-    "value": "Parallel Evolution",
-    "desc": "As the Legacyte evolves other enemies present also gain new abilities."
-  },
   "NecraloidSyndicate": {
     "value": "殁世械灵"
-  },
-  "NecramechActivation": {
-    "value": "Necramech Influx",
-    "desc": "Necramechs appear with greater frequency."
   },
   "NewLokaSyndicate": {
     "value": "新世间"
   },
-  "OperatorLockout": {
-    "value": "Transference Distortion",
-    "desc": "Transference into Operator and Drifter is blocked."
-  },
-  "OverSensitive": {
-    "value": "Hypersensitive",
-    "desc": "Duration of negative Status Effects is tripled"
-  },
   "PerrinSyndicate": {
     "value": "佩兰数列"
-  },
-  "PointBlank": {
-    "value": "Myopic Munitions",
-    "desc": "Enemies will only take damage if a player is within 15m of them."
-  },
-  "Quicksand": {
-    "value": "Entanglement",
-    "desc": "Allies within 4m of slain enemies endure reduced Movement Speed and Parkour Velocity."
   },
   "QuillsSyndicate": {
     "value": "夜羽"
@@ -19515,73 +20078,11 @@
   "RedVeilSyndicate": {
     "value": "血色面纱"
   },
-  "RegeneratingEnemies": {
-    "value": "Hostile Regeneration",
-    "desc": "Enemy health slowly regenerates."
-  },
-  "Reinforcements": {
-    "value": "Coordinated Front",
-    "desc": "Eximus units support The Fragmented Tide and its final form."
-  },
-  "ShieldDelay": {
-    "value": "Lethargic Shields",
-    "desc": "Shield recharge delay increased 500%."
-  },
-  "ShieldedFoes": {
-    "value": "Bolstered Belligerents",
-    "desc": "All enemies have Overguard equal to 50% of their max health."
-  },
-  "SolarisSyndicate": {
-    "value": "索拉里斯联盟"
-  },
-  "Starvation": {
-    "value": "Ammo Deficit",
-    "desc": "Ammo restored by drops and gear is reduced 75%."
-  },
   "SteelMeridianSyndicate": {
     "value": "钢铁防线"
   },
-  "StickyFingers": {
-    "value": "Engorged Gruzzlings",
-    "desc": "All gruzzlings are Eximus."
-  },
-  "TankStrongArmor": {
-    "value": "Thermian Plating",
-    "desc": "Only Thermian RPGs can damage the tank. Reinforcements that carry Thermian RPGs will arrive during the fight"
-  },
-  "TechrotConjunction": {
-    "value": "Pile-On",
-    "desc": "Techrot enemies attempt to melee attack Hell-Scrubbers, bursting on contact and increasing scrubber contamination by 33%."
-  },
-  "TimeDilation": {
-    "value": "Abbreviated Abilities",
-    "desc": "Ability durations reduced by 50%."
-  },
-  "Undersupplied": {
-    "value": "Undersupplied",
-    "desc": "所有武器的最大弹药减少75%"
-  },
   "VentKidsSyndicate": {
     "value": "通风小子"
-  },
-  "VoidAberration": {
-    "value": "Vampyric Liminus",
-    "desc": "Slow moving, immortal, Duviri Liminus drain health and energy from allies who get too close."
-  },
-  "Voidburst": {
-    "value": "Postmortal Surges",
-    "desc": "Slain enemies burts with Void energy."
-  },
-  "VoxSyndicate": {
-    "value": "索里拉斯之声"
-  },
-  "WinterFrost": {
-    "value": "Thick Ice",
-    "desc": "Arctic Eximus globes have 30x their normal durability."
-  },
-  "Withering": {
-    "value": "Untreatable",
-    "desc": "Pickups do not heal, and Health Orbs cannot be picked up."
   },
   "ZarimanSyndicate": {
     "value": "坚守者"
@@ -19591,5 +20092,371 @@
   },
   "projectindex": {
     "value": "指数之场"
+  },
+  "SolarisSyndicate": {
+    "value": "索拉里斯联盟"
+  },
+  "VoxSyndicate": {
+    "value": "索里拉斯之声"
+  },
+  "AbilityLockout": {
+    "value": "技能禁用",
+    "desc": "小队击杀 50 名敌人前，所有技能均被禁止使用。"
+  },
+  "AcceleratedEnemies": {
+    "value": "激进冒险",
+    "desc": "敌人造成的伤害 -15%，受到的伤害 +15% ，但移动速度、攻击速度和射速 +15%。"
+  },
+  "AlchemicalShields": {
+    "value": "炼金难侵",
+    "desc": "有10%敌人装备了不可穿透的元素屏障，只有对应元素的元素瓶才能摧毁屏障。"
+  },
+  "AntiGuard": {
+    "value": "超宏衰减",
+    "desc": "战甲和友军超宏防护获取量减少 75%。"
+  },
+  "AntiMaterialWeapons": {
+    "value": "指挥型重型炮兵",
+    "desc": "暴戾重型炮兵装备的武器对超宏防护和殁世机甲造成 5 倍的伤害。"
+  },
+  "ArcadeAutomata": {
+    "value": "自动街机",
+    "desc": "敌人的枪械发射巨大且缓慢移动的球体，而不是他们平常的弹药。"
+  },
+  "Armorless": {
+    "value": "破损护甲",
+    "desc": "施放技能会使护甲降低10%，持续10秒。."
+  },
+  "ArtilleryBeacons": {
+    "value": "光能炮信标",
+    "desc": "炽蛇军敌人被击杀时会掉落光能炮信标召唤轰炸。"
+  },
+  "BalloonFest": {
+    "value": "气球嘉年华",
+    "desc": "炽蛇军前哨气球数量更多，攻击和移动速度更快。"
+  },
+  "ChemicalNoise": {
+    "value": "噪音抑制",
+    "desc": "无人机在弗莱尔上方飞行，向他喷射艾弗旺气体。"
+  },
+  "CompetitionSpillover": {
+    "value": "竞争优势",
+    "desc": "在整个任务过程中，阿米尔和碧的“对战”模式将产生随机负面惩罚。"
+  },
+  "ContactDamage": {
+    "value": "二次伤害",
+    "desc": "每次受到伤害时，获得1层穿刺异常状态。"
+  },
+  "ContaminationZone": {
+    "value": "屏住呼吸",
+    "desc": "整个区域会随着玩家停留时间的延长而造成毒素伤害，地狱净化器附近区域除外。一些敌人可能会掉落过滤器，从而创建额外的静态临时安全区。"
+  },
+  "DecayingFlesh": {
+    "value": "永久损伤",
+    "desc": "受到生命值伤害时还会扣减最大生命上限。"
+  },
+  "Deflectors": {
+    "value": "坚不可摧",
+    "desc": "可能会出现守护者卓越者敌人，包括守护者卓越者殁世机甲。"
+  },
+  "DisruptiveSounds": {
+    "value": "破坏之音",
+    "desc": "弗莱尔四周具有干扰力场，干扰技能并消耗能量。如果范围内没有玩家，弗莱尔将流失生命值。他会根据范围内的玩家数量获得生命值。"
+  },
+  "DoubleTrouble": {
+    "value": "双重爆破",
+    "desc": "每个导管都会受到两台爆破型殁世机甲的攻击，这些殁世机甲的生命值降低。"
+  },
+  "DoubleTroubleLegacyte": {
+    "value": "有丝分裂",
+    "desc": "每轮产生两个传承种，需要两倍的捕获次数才能成功。"
+  },
+  "DrainingResiduals": {
+    "value": "恶魔契约",
+    "desc": "敌人被击杀时 4 米范围内的友军会牺牲 50% 的弹药效率以换取 +25% 的射速。"
+  },
+  "DullBlades": {
+    "value": "钝重兵刃",
+    "desc": "近战连击数几率减少 50%。"
+  },
+  "EMPBlackHole": {
+    "value": "迷人弧犬",
+    "desc": "当暴戾弧犬发起攻击时，它们会将战甲拉向自己。"
+  },
+  "EfervonFog": {
+    "value": "浓雾",
+    "desc": "艾弗旺气体覆盖整个关卡。敌人可能会掉落提供短暂缓解的过滤器。"
+  },
+  "EnergyStarved": {
+    "value": "能量缩减",
+    "desc": "最大能量值减少 75%"
+  },
+  "EscalateImmediately": {
+    "value": "破坏补给",
+    "desc": "任务开始时，触发打开补给箱的负面效果，一旦打开就会加剧。未能打开补给箱会导致完成任务所需的击杀数翻倍。"
+  },
+  "Exhaustion": {
+    "value": "能量枯竭",
+    "desc": "周围 10 米范围内的所有敌人使你每秒丢失 2 能量。"
+  },
+  "EximusGrenadiers": {
+    "value": "卓越者元素瓶",
+    "desc": "卓越者敌人必定掉落元素瓶，但只有他们会掉落元素瓶。"
+  },
+  "ExplosiveCrawlers": {
+    "value": "易爆潜能",
+    "desc": "爆裂断肢取代蹒跚断肢。"
+  },
+  "ExplosiveEnergy": {
+    "value": "爆发能量",
+    "desc": "敌人死亡时掉落的自爆虫会立即冲向弗莱尔。"
+  },
+  "ExplosiveSummer": {
+    "value": "过量炸药",
+    "desc": "所有补给箱都被炸药桶替换。"
+  },
+  "FactionSwarm_Scaldra": {
+    "value": "炽蛇军竞速",
+    "desc": "所有敌人被炽蛇军取代，并且移动的更快。"
+  },
+  "FactionSwarm_Techrot": {
+    "value": "科腐者竞速",
+    "desc": "所有敌人被科腐者取代，并且移动的更快。"
+  },
+  "FallFog": {
+    "value": "迷雾秋日",
+    "desc": "迷雾限制了整个任务区的视野。"
+  },
+  "FortifiedFoes": {
+    "value": "密闭装甲",
+    "desc": "非弱点命中对敌人造成的伤害降低90%。"
+  },
+  "FragileNodes": {
+    "value": "统一目标",
+    "desc": "敌人可以瞄准并摧毁导管。"
+  },
+  "Framecurse": {
+    "value": "咒甲减益",
+    "desc": "激活一项技能会对你造成 50 伤害。"
+  },
+  "Gearless": {
+    "value": "携带装备限制",
+    "desc": "无法使用携带装备轮盘"
+  },
+  "GestatingTumors": {
+    "value": "孢子增殖",
+    "desc": "地狱净化器附近会出现科腐者肿瘤，每个活跃的肿瘤都会增加维生系统衰减的速度。"
+  },
+  "GrowingIncursion": {
+    "value": "裂缝激增",
+    "desc": "裂缝在任务中形成，使得敌人的等级每 10 秒提升 1 级。消灭它们以防止等级增加。"
+  },
+  "HarshWords": {
+    "value": "带刺钥符",
+    "desc": "每个浮印在被收集时都会造成少量伤害。"
+  },
+  "HeavyWarfare": {
+    "value": "重装作战",
+    "desc": "敌人受到的非重型武器伤害减少 95%。敌人会掉落重型弹药包，重型武器召回时间减少至 5 秒。"
+  },
+  "HighScalingLegacyte": {
+    "value": "阿尔法传承种",
+    "desc": "传承种明显更加强大，拥有更多能力，但逃脱所需的时间更长"
+  },
+  "HostileOvergrowth": {
+    "value": "它是活的",
+    "desc": "在地下，如果玩家停止移动，敌方增生物就会发起攻击。"
+  },
+  "HostileSecurity": {
+    "value": "侵蚀感官",
+    "desc": "魔耳和魔瞳随着时间逐渐受损，收集所需的荧音浮印可暂停损伤并对它们进行部分修复。"
+  },
+  "InfectedTechrot": {
+    "value": "腐朽之躯",
+    "desc": "科腐者敌人被注入艾弗旺并随时间推移受到伤害。他们被击杀后会爆炸并留下致命的艾弗旺。"
+  },
+  "InfiniteTide": {
+    "value": "无情肢潮",
+    "desc": "断肢潮不会停止攻击。"
+  },
+  "JadeSpring": {
+    "value": "翠玉之灵",
+    "desc": "翠玉之灵徘徊在该区域。如果玩家靠近，它们就会追逐玩家并转变为翠玉光束。"
+  },
+  "Knifestep": {
+    "value": "如履刀尖",
+    "desc": "移动时损失 2 点生命值。跳跃会暂停效果。"
+  },
+  "LostInTranslation": {
+    "value": "浮印膨胀",
+    "desc": "安全系统需要两倍的荧音浮印才能激活。"
+  },
+  "MiasmiteHive": {
+    "value": "自爆虫群",
+    "desc": "在任务过程中，科腐者自爆虫会从阴影中蜂拥而出。"
+  },
+  "MurmurIncursion": {
+    "value": "墙壁之外",
+    "desc": "低语者敌人加入炽蛇军和科腐者阵营。"
+  },
+  "MutatedEnemies": {
+    "value": "平行进化",
+    "desc": "随着传承种进化，其他在场敌人也将获得新技能。"
+  },
+  "NecramechActivation": {
+    "value": "殁世机甲激增",
+    "desc": "殁世机甲出现的频率更高。"
+  },
+  "OperatorLockout": {
+    "value": "传识失真",
+    "desc": "无法传识到指挥官或漂泊者。"
+  },
+  "OverSensitive": {
+    "value": "过敏受体",
+    "desc": "负面异常状态的持续时间增加到三倍"
+  },
+  "PointBlank": {
+    "value": "短视弹药",
+    "desc": "玩家距离敌人 15 米以内时，敌人才会受到伤害。"
+  },
+  "Quicksand": {
+    "value": "牵连",
+    "desc": "被击杀敌人 4 米范围内的友军， 移动速度和跑酷速度会降低。"
+  },
+  "RegeneratingEnemies": {
+    "value": "敌军再生",
+    "desc": "敌人的生命值会缓慢恢复。"
+  },
+  "Reinforcements": {
+    "value": "协调阵线",
+    "desc": "卓越者敌人出现并支援断肢潮和最终的接肢怪。"
+  },
+  "ShieldDelay": {
+    "value": "嗜睡护盾",
+    "desc": "护盾充能延迟增加 500%。"
+  },
+  "ShieldedFoes": {
+    "value": "强化好战",
+    "desc": "所有敌人获得相当于他们最大生命值 50% 的超宏防护。"
+  },
+  "Starvation": {
+    "value": "弹药亏空",
+    "desc": "通过掉落和道具恢复的弹药减少 75%。"
+  },
+  "StickyFingers": {
+    "value": "暴食贪囤",
+    "desc": "所有贪囤断肢都是卓越者。"
+  },
+  "TankReinforcements": {
+    "value": "敌军增援",
+    "desc": "战斗过程中会有敌方援军抵达，首先是炽蛇军，然后是科腐者。"
+  },
+  "TankStrongArmor": {
+    "value": "装甲护板",
+    "desc": "只有热熔火箭弹才能对坦克造成伤害。携带热熔火箭炮的增援部队将在战斗中持续出现。"
+  },
+  "TankSuperToxic": {
+    "value": "毒性坦克",
+    "desc": "坦克拥有毒素光环，留下毒素尾迹，并且所有的攻击会造成毒素伤害。"
+  },
+  "TechrotConjunction": {
+    "value": "科腐围攻",
+    "desc": "科腐者敌人会尝试近战攻击地狱净化器，接触后将其引爆，并使净化器污染增加 25%。"
+  },
+  "TimeDilation": {
+    "value": "缩短技能",
+    "desc": "技能持续时间减少 50%。"
+  },
+  "Undersupplied": {
+    "value": "补给短缺",
+    "desc": "所有武器的弹药最大值减少75%。"
+  },
+  "UnpoweredCapsules": {
+    "value": "寄生装置塔",
+    "desc": "维生装置塔只有在其 15 米范围内杀死 20 名敌人后才会激活。"
+  },
+  "VoidAberration": {
+    "value": "吸血界影",
+    "desc": "行动缓慢且不死的双衍王境界影，能从过于接近的友军身上吸取生命和能量。"
+  },
+  "VoidEnergyOverload": {
+    "value": "技能超载",
+    "desc": "使用技能将在附近打开一道虚空裂隙"
+  },
+  "Voidburst": {
+    "value": "死后冲击",
+    "desc": "被击杀的敌人会爆发出虚空能量。"
+  },
+  "VolatileGrenades": {
+    "value": "高危物资",
+    "desc": "携带元素瓶时会受到与之对应的元素伤害。"
+  },
+  "WinterFrost": {
+    "value": "厚冰",
+    "desc": "极寒卓越者护罩的耐久度是正常值的 30 倍。"
+  },
+  "Withering": {
+    "value": "无法治愈",
+    "desc": "拾取无法提供治疗，并且无法拾取生命球。"
+  },
+  "DamageMomentum": {
+    "value": "致命速率",
+    "desc": "静止不动时无法造成伤害。"
+  },
+  "ScarcityCurse": {
+    "value": "弹药枯竭",
+    "desc": "弹药逐渐耗尽。电池武器充能缓慢。"
+  },
+  "ExposureCurse": {
+    "value": "显露之诅",
+    "desc": "护盾被移除。"
+  },
+  "Sanguine": {
+    "value": "血色减益",
+    "desc": "每当你受到伤害时，还会陷入出血异常状态。"
+  },
+  "Vampyri": {
+    "value": "吸血减益",
+    "desc": "每秒流失生命值。击杀敌人可恢复生命值。"
+  },
+  "Conductive": {
+    "value": "导电侵袭",
+    "desc": "隔几秒就会受到电击伤害。"
+  },
+  "EnemyLink": {
+    "value": "伤害链接",
+    "desc": "相距10米内的敌人形成一个伤害链接群体。任何对单个成员造成的伤害都会平均分摊到整个群体。"
+  },
+  "NecramechLockout": {
+    "value": "敌意支援",
+    "desc": "禁用维生装置塔运送系统。 每90秒生成殁世机甲，击杀时掉落6个维生模块。"
+  },
+  "MisguidedInstructions": {
+    "value": "浮印陷阱",
+    "desc": "某些荧音浮印附有传送门陷阱，接触它时会被传送到250米以外的地方。 传送门现形后持续 45 秒。"
+  },
+  "SameTeam": {
+    "value": "天使同行",
+    "desc": "虚空天使与最终的接肢怪并肩作战。"
+  },
+  "DuoAssassination": {
+    "value": "双重接肢",
+    "desc": "在最终战斗中对战两个接肢怪。"
+  },
+  "Vanquisher": {
+    "value": "卓越支援",
+    "desc": "部署额外的卓越者敌人。"
+  },
+  "RangedOnlyEnemies": {
+    "value": "远程交战",
+    "desc": "只出现远程攻击的敌人。"
+  },
+  "MeleeOnlyEnemies": {
+    "value": "短兵相接",
+    "desc": "只出现近战攻击的敌人。"
+  },
+  "EnemyElementalEnhancement": {
+    "value": "元素效力",
+    "desc": "敌人造成+100%元素伤害，并对元素伤害有+85%抗性。"
   }
 }
