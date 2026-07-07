@@ -3,6 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.config.WARFRAME_STATUS_URL
 import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
@@ -32,11 +33,7 @@ import bot.wuliang.utils.TimeUtils.getNextMonday
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.time.Duration
 import java.time.Instant
 
@@ -319,4 +316,23 @@ class WarframeController(
         return RespBean.success(simarisEntity)
     }
 
+
+    @ApiOperation("科研任务信息")
+    @GetMapping("/conquest")
+    @DataSchema(commandKey = "conquest")
+    fun conquest(): RespBean<out List<Conquest>> {
+        if (!redisService.hasKey(WF_CONQUEST_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseConquestArray(data["Conquests"])
+        }
+        val conquestList = redisService.getValueTyped<List<Conquest>>(WF_CONQUEST_KEY)
+            ?: return RespBean.error()
+
+        val result = conquestList
+            .onEach { conquest ->
+                conquest.eta = formatDuration(Duration.between(getInstantNow(), conquest.expiry))
+            }
+
+        return RespBean.success(result)
+    }
 }

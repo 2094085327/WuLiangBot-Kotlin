@@ -34,6 +34,23 @@ class WfDataInit {
             launch { initLanguage() }
             launch { initFissureModifiers() }
             launch { initSimaris() }
+            launch { initFactions() }
+        }
+    }
+
+    /**
+     * 初始化派系映射（科研任务等使用）
+     */
+    private suspend fun initFactions() {
+        if (redisService.hasKeyWithPrefix("${WF_MARKET_CACHE_KEY}Faction:*")) return
+        val factionsJson = withContext(Dispatchers.IO) {
+            objectMapper.readTree(File("$WARFRAME_DATA/factionsData.json"))
+        }
+        factionsJson.fields().forEach { (key, value) ->
+            redisService.setValue(
+                 "${WF_MARKET_CACHE_KEY}Faction:${key}",
+                Info(value = value["value"]?.textValue())
+            )
         }
     }
 

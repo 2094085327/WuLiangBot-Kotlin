@@ -1,10 +1,10 @@
 package bot.wuliang.controller
 
 import bot.wuliang.adapter.context.ExecutionContext
-import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
@@ -24,6 +24,7 @@ import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.imageProcess.WebImgUtil
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.redis.RedisService
@@ -43,7 +44,10 @@ import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
-import java.time.*
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -74,8 +78,8 @@ class WfStatusController @Autowired constructor(
         val fissureType = matcher.group(1)
         // 根据不同的裂缝类型构造图片的 URL
         val urlSuffix = when (fissureType) {
-            "裂缝","裂隙" -> "ordinary"
-            "钢铁裂缝","钢铁裂隙" -> "hard"
+            "裂缝", "裂隙" -> "ordinary"
+            "钢铁裂缝", "钢铁裂隙" -> "hard"
             "九重天" -> "storm"
             else -> "ordinary"
         }
@@ -105,9 +109,9 @@ class WfStatusController @Autowired constructor(
         if (voidTraderList.isNullOrEmpty()) {
             context.sender.sendText("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
             return
-         }
+        }
 
-        val activeVoidList = voidTraderList.filter { it.isActive==true }
+        val activeVoidList = voidTraderList.filter { it.isActive == true }
         if (activeVoidList.isEmpty()) {
             val arrivalTime = voidTraderList.first().expiry?.minus(Duration.ofDays(2))
             val etaTime = formatDuration(Duration.between(TimeUtils.getInstantNow(), arrivalTime))
@@ -526,6 +530,27 @@ class WfStatusController @Autowired constructor(
             element = "#app",
             waitElement = ".warframeRivenAllPrice"
         )
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
+    }
+
+
+    @SystemLog(businessName = "获取科研任务信息")
+    @AParameter
+    @Executor(action = "\\b(科研|时光科研|深层科研)\\b")
+    suspend fun getConquest(context: ExecutionContext) {
+        if (!redisService.hasKey(WF_CONQUEST_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseConquestArray(data["Conquests"])
+        }
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/conquest",
+            imgName = "conquest-${UUID.randomUUID()}",
+            element = "#app",
+            waitElement = ".warframeConquest"
+        )
+
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
     }

@@ -2,6 +2,7 @@ package bot.wuliang.utils
 
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+ import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
@@ -795,5 +796,75 @@ class ParseDataUtil {
         val minimalOrder = targetOrders.minByOrNull { it["platinum"].intValue() } ?: return 0
         val price = minimalOrder["platinum"].intValue()
         return price
+    }
+
+
+    /**
+     * 解析科研任务（深层科研 / 时光科研），仅读取 CD_HARD 难度的数据
+     * @param conquestsJson Conquests 数组节点
+     */
+    fun parseConquestArray(conquestsJson: JsonNode): List<Conquest>? {
+        if (redisService.hasKey(WF_CONQUEST_KEY)) return redisService.getValueTyped<List<Conquest>>(WF_CONQUEST_KEY)
+
+        val conquestEntity = conquestsJson.map { conquest ->
+            val expiry = parseTimestamp(conquest["Expiry"])
+            val type = conquest["Type"]?.asText()?.let { WfStatus.conquestTypeMap[it] }
+
+            val missions = conquest["Missions"]?.mapNotNull { mission ->
+                val missionTypeKey = mission["missionType"]?.asText()
+                val factionKey = mission["faction"]?.asText()
+
+                // 只取 CD_HARD 难度
+                val hardDifficulty = mission["difficulties"]?.find { it["type"]?.asText() == "CD_HARD" }
+                val difficulty = hardDifficulty?.let { diff ->
+                    val deviationKey = diff["deviation"]?.asText()
+                    val deviationInfo = deviationKey?.let {
+                        redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                    }
+                    val risks = diff["risks"]?.mapNotNull { riskNode ->
+                        val riskKey = riskNode?.asText()
+                        riskKey?.let {
+                            redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                        }
+                    } ?: emptyList()
+                    ConquestDifficulty(deviation = deviationInfo, risks = risks)
+                }
+
+                ConquestMission(
+                    faction = factionKey?.let {
+                        redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Faction:${it}")?.value
+                            ?: factionKey
+                    },
+                    missionType = missionTypeKey?.let {
+                        redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${it}")
+                    },
+                    difficulty = difficulty
+                )
+            }?.toList() ?: emptyList()
+
+            val variables = conquest["Variables"]?.mapNotNull { varNode ->
+                val varKey = varNode?.asText()
+                varKey?.let {
+                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                }
+            } ?: emptyList()
+
+            Conquest(
+                activation = parseTimestamp(conquest["Activation"]),
+                expiry = expiry,
+                eta = expiry?.let {
+                    formatDuration(Duration.between(getInstantNow(), it)).replace("\\s+".toRegex(), "")
+                },
+                type = type,
+                missions = missions,
+                variables = variables
+            )
+        }
+
+        val expire = conquestEntity
+            .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
+            ?.coerceAtLeast(30) ?: 300
+        redisService.setValueWithExpiry(WF_CONQUEST_KEY, conquestEntity, expire, TimeUnit.SECONDS)
+        return conquestEntity
     }
 }
