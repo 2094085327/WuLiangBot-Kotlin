@@ -57,12 +57,12 @@
   "SolNode11": {
     "value": "Tharsis (火星)",
     "enemy": "Corpus",
-    "type": "劫持"
+    "type": "移动防御"
   },
   "SolNode12": {
     "value": "Elion (水星)",
     "enemy": "Grineer",
-    "type": "移动防御"
+    "type": "捕获"
   },
   "SolNode13": {
     "value": "Bianca (天王星)",
@@ -167,7 +167,7 @@
   "SolNode33": {
     "value": "Ariel (天王星)",
     "enemy": "Grineer",
-    "type": "破坏"
+    "type": "捕获"
   },
   "SolNode34": {
     "value": "Sycorax (天王星)",
@@ -422,7 +422,7 @@
   "SolNode84": {
     "value": "Nereid (海王星)",
     "enemy": "Corpus",
-    "type": "劫持"
+    "type": "间谍"
   },
   "SolNode85": {
     "value": "Gaia (地球)",
@@ -442,7 +442,7 @@
   "SolNode88": {
     "value": "Adrastea (木星)",
     "enemy": "Corpus",
-    "type": "间谍"
+    "type": "破坏"
   },
   "SolNode89": {
     "value": "Mariana (地球)",
@@ -492,7 +492,7 @@
   "SolNode98": {
     "value": "Desdemona (天王星)",
     "enemy": "Grineer",
-    "type": "捕获"
+    "type": "破坏 (Archwing)"
   },
   "SolNode99": {
     "value": "War (火星)",
@@ -918,7 +918,7 @@
   "SolNode184": {
     "value": "Rusalka (赛德娜)",
     "enemy": "Grineer",
-    "type": "捕获"
+    "type": "破坏"
   },
   "SolNode185": {
     "value": "Berehynia (赛德娜)",
@@ -1109,7 +1109,7 @@
   "SolNode223": {
     "value": "Boethius (水星)",
     "enemy": "Grineer",
-    "type": "歼灭"
+    "type": "移动防御"
   },
   "SolNode224": {
     "value": "Odin (水星)",
@@ -1183,6 +1183,11 @@
     "value": "无尽回廊(双衍王境)",
     "enemy": "双衍王境",
     "type": "自由探索"
+  },
+  "SolNode239": {
+    "value": "Vesper 中继站 (金星)",
+    "enemy": "Corpus",
+    "type": "中继站"
   },
   "ZarimanHub": {
     "value": "羽化之穹(扎里曼)",
@@ -1345,9 +1350,14 @@
     "type": "衰退室"
   },
   "SolNode721": {
-    "value": "Armatus (火卫二)",
+    "value": "卫城区 (火卫二)",
     "enemy": "低语者",
     "type": "中断"
+  },
+  "SolNode251": {
+    "value": "Dark Refactory (火卫二)",
+    "enemy": "自由派",
+    "type": "佩里塔叛乱"
   },
   "SolNode740": {
     "value": "蝠力使 (木星)",
@@ -1362,7 +1372,7 @@
   "SolNode742": {
     "value": "Nabuk (Kuva 要塞)",
     "enemy": "Grineer",
-    "type": "捕获"
+    "type": "防御"
   },
   "SolNode743": {
     "value": "Rotuma (Kuva 要塞)",
@@ -1452,7 +1462,7 @@
   "SolNode304": {
     "value": "Copernicus (月球)",
     "enemy": "Corpus",
-    "type": "移动防御"
+    "type": "捕获"
   },
   "SolNode305": {
     "value": "Stöfler (月球)",
@@ -2167,7 +2177,7 @@
   "CrewBattleNode536": {
     "value": "外域星轴 (冥王星比邻星域)",
     "enemy": "Corpus",
-    "type": "奥菲斯"
+    "type": "间谍"
   },
   "CrewBattleNode538": {
     "value": "蒲芦 (面纱)",
