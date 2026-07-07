@@ -112,4 +112,9 @@ object WfMarketConfig {
      * 紫卡Market Riven数据
      */
     const val WF_MARKET_RIVEN_KEY = WF_MARKET_CACHE_KEY + "riven:market"
+
+    /**
+     * 科研任务缓存（深层科研/时光科研）
+     */
+    const val WF_CONQUEST_KEY = WF_MARKET_CACHE_KEY + "conquest"
 }

@@ -29,6 +29,14 @@ object WfStatus {
         "Void" to "void",
     )
 
+    /**
+     * 科研类型映射（深层科研 / 时光科研）
+     */
+    val conquestTypeMap = mapOf(
+        "CT_LAB" to "深层科研",
+        "CT_HEX" to "时光科研"
+    )
+
 
     fun String.replaceFaction(): String {
         return factionReplacements.entries.fold(this) { acc: String, entry: Map.Entry<String, String> ->
