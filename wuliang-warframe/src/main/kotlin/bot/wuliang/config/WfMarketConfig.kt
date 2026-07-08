@@ -117,4 +117,9 @@ object WfMarketConfig {
      * 科研任务缓存（深层科研/时光科研）
      */
     const val WF_CONQUEST_KEY = WF_MARKET_CACHE_KEY + "conquest"
+ 
+     /**
+      * 1999 日历缓存
+      */
+     const val WF_CALENDAR_KEY = WF_MARKET_CACHE_KEY + "calendar"
 }

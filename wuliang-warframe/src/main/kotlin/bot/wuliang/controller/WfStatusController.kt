@@ -3,6 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+ import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
@@ -554,4 +555,27 @@ class WfStatusController @Autowired constructor(
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
     }
+
+
+
+    @SystemLog(businessName = "获取1999日历信息")
+    @AParameter
+    @Executor(action = "\\b(日历|1999日历|石榴2代|石榴电脑)\\b")
+    suspend fun getCalendar(context: ExecutionContext) {
+        if (!redisService.hasKey(WF_CALENDAR_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseCalendarArray(data["KnownCalendarSeasons"])
+        }
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/calendar",
+            imgName = "calendar-${UUID.randomUUID()}",
+            element = "#app",
+            waitElement = ".warframeCalendar"
+        )
+
+        val url = webImgUtil.getImgUrl(imgData)
+        context.sender.sendImage(url)
+    }
+
 }

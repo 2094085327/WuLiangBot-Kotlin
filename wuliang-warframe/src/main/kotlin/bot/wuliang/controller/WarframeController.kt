@@ -3,6 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.config.WARFRAME_STATUS_URL
 import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+ import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
@@ -334,5 +335,22 @@ class WarframeController(
             }
 
         return RespBean.success(result)
+    }
+
+
+    @ApiOperation("1999 日历信息")
+    @GetMapping("/calendar")
+    @DataSchema(commandKey = "calendar")
+    fun calendar(): RespBean<out CalendarSeason> {
+        if (!redisService.hasKey(WF_CALENDAR_KEY)) {
+            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            parseDataUtil.parseCalendarArray(data["KnownCalendarSeasons"])
+        }
+        val calendarSeason = redisService.getValueTyped<CalendarSeason>(WF_CALENDAR_KEY)
+            ?: return RespBean.error()
+
+        calendarSeason.eta = formatDuration(Duration.between(getInstantNow(), calendarSeason.expiry))
+
+        return RespBean.success(calendarSeason)
     }
 }

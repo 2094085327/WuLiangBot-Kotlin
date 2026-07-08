@@ -5328,6 +5328,9 @@
   "/lotus/storeitems/types/items/miscitems/vayhekcoordinatefragmentd": {
     "value": "Omega Beacon"
   },
+  "/Lotus/StoreItems/Types/Items/MiscItems/WeaponPrimaryArcaneUnlocker": {
+    "value": "主要武器赋能槽连接器"
+  },
   "/lotus/storeitems/types/items/plants/miscitems/commondayplantitem": {
     "value": "Sunlight Threshcone Extract"
   },
