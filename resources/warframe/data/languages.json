@@ -507,140 +507,140 @@
     "value": "Zakti Prime"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarDestroyPropsEasy": {
-    "value": "Starve the beast",
-    "desc": "Destroy 75 Containers"
+    "value": "饿死野兽",
+    "desc": "摧毁 75 个容器"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarDestroyPropsHard": {
-    "value": "Starve the beast",
-    "desc": "Destroy 300 Containers"
+    "value": "饿死野兽",
+    "desc": "摧毁 300 个容器"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarDestroyPropsMedium": {
-    "value": "Starve the beast",
-    "desc": "Destroy 150 Containers"
+    "value": "饿死野兽",
+    "desc": "摧毁 150 个容器"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesEasy": {
-    "value": "Even the odds",
-    "desc": "Kill 250 Enemies"
+    "value": "平分秋色",
+    "desc": "击杀 250 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesHard": {
-    "value": "Even the odds",
-    "desc": "Kill 1,000 Enemies"
+    "value": "平分秋色",
+    "desc": "击杀 1000 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesMedium": {
-    "value": "Even the odds",
+    "value": "平分秋色",
     "desc": "击杀500名敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithAbilitiesEasy": {
-    "value": "Demonstration of power",
-    "desc": "使用技能击杀150名敌人"
+    "value": "力量展现",
+    "desc": "用技能击杀 150 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithAbilitiesHard": {
-    "value": "Demonstration of power",
-    "desc": "Kill 500 Enemies with Abilities"
+    "value": "力量展现",
+    "desc": "用技能击杀 500 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithAbilitiesMedium": {
-    "value": "Demonstration of power",
-    "desc": "Kill 300 Enemies with Abilities"
+    "value": "力量展现",
+    "desc": "用技能击杀 300 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithMeleeEasy": {
     "value": "By The Blade",
-    "desc": "Kill 150 Enemies with Melee Weapons"
+    "desc": "用近战武器杀死 150 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithMeleeHard": {
     "value": "By The Blade",
-    "desc": "Kill 500 Enemies with Melee Weapons"
+    "desc": "用近战武器杀死 500 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEnemiesWithMeleeMedium": {
     "value": "By The Blade",
-    "desc": "Kill 300 Enemies with Melee Weapons"
+    "desc": "用近战武器杀死 300 个敌人"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusEasy": {
-    "value": "Ex-Eximus",
-    "desc": "Kill 10 Eximus"
+    "value": "卓越者过去时",
+    "desc": "消灭 10 名卓越者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusHard": {
-    "value": "Ex-Eximus",
-    "desc": "击杀30名卓越者"
+    "value": "卓越者过去时",
+    "desc": "消灭30名卓越者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillEximusMedium": {
-    "value": "Ex-Eximus",
-    "desc": "Kill 20 Eximus"
+    "value": "卓越者过去时",
+    "desc": "消灭 20 名卓越者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesEasy": {
-    "value": "Punish Scaldra",
-    "desc": "Kill 150 Scaldra Troops"
+    "value": "惩罚炽蛇军",
+    "desc": "消灭 150 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesHard": {
-    "value": "Punish Scaldra",
-    "desc": "Kill 500 Scaldra Troops"
+    "value": "惩罚炽蛇军",
+    "desc": "消灭 500 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesMedium": {
-    "value": "Punish Scaldra",
-    "desc": "Kill 350 Scaldra Troops"
+    "value": "惩罚炽蛇军",
+    "desc": "消灭 350 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithAbilitiesEasy": {
-    "value": "Shock and Awe",
-    "desc": "Kill 75 Scaldra Troops with Abilities"
+    "value": "敲山震虎",
+    "desc": "用技能消灭 75 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithAbilitiesHard": {
-    "value": "Shock and Awe",
-    "desc": "Kill 250 Scaldra Troops with Abilities"
+    "value": "敲山震虎",
+    "desc": "用技能消灭 250 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithAbilitiesMedium": {
-    "value": "Shock and Awe",
-    "desc": "Kill 150 Scaldra Troops with Abilities"
+    "value": "敲山震虎",
+    "desc": "用技能消灭 150 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithMeleeEasy": {
-    "value": "Make it personal",
-    "desc": "Kill 75 Scaldra Troops with Melee Weapons"
+    "value": "私人恩怨",
+    "desc": "用近战武器杀死 75 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithMeleeHard": {
-    "value": "Make it personal",
-    "desc": "Kill 250 Scaldra Troops with Melee Weapons"
+    "value": "私人恩怨",
+    "desc": "用近战武器杀死 250 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillScaldraEnemiesWithMeleeMedium": {
-    "value": "Make it personal",
-    "desc": "Kill 150 Scaldra Troops with Melee Weapons"
+    "value": "私人恩怨",
+    "desc": "用近战武器杀死 150 名炽蛇军士兵"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTankHard": {
     "value": "Tankless Work",
-    "desc": "Destroy 1 Tanks"
+    "desc": "摧毁 1 辆坦克"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesEasy": {
-    "value": "Purge the infection",
-    "desc": "Kill 250 Techrot"
+    "value": "净化感染",
+    "desc": "消灭 250 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesHard": {
-    "value": "Purge the infection",
-    "desc": "Kill 750 Techrot"
+    "value": "净化感染",
+    "desc": "消灭 750 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesMedium": {
-    "value": "Purge the infection",
-    "desc": "Kill 500 Techrot"
+    "value": "净化感染",
+    "desc": "消灭 500 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesEasy": {
-    "value": "Null and Void",
-    "desc": "Kill 100 Techrot with Abilities"
+    "value": "化为乌有",
+    "desc": "用技能消灭 100 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesHard": {
-    "value": "Null and Void",
-    "desc": "Kill 300 Techrot with Abilities"
+    "value": "化为乌有",
+    "desc": "用技能消灭 300 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithAbilitiesMedium": {
-    "value": "Null and Void",
-    "desc": "Kill 200 Techrot with Abilities"
+    "value": "化为乌有",
+    "desc": "用技能消灭 200 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeEasy": {
-    "value": "Electronic waste Disposal",
-    "desc": "Kill 100 Techrot with Melee Weapons"
+    "value": "电子垃圾处理",
+    "desc": "用近战武器杀死 100 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeHard": {
-    "value": "Electronic waste Disposal",
-    "desc": "Kill 300 Techrot with Melee Weapons"
+    "value": "电子垃圾处理",
+    "desc": "用近战武器杀死 300 名科腐者"
   },
   "/Lotus/Types/Challenges/Calendar1999/CalendarKillTechrotEnemiesWithMeleeMedium": {
-    "value": "Electronic waste Disposal",
-    "desc": "Kill 200 Techrot with Melee Weapons"
+    "value": "电子垃圾处理",
+    "desc": "用近战武器杀死 200 名科腐者"
   },
   "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyCompleteRace": {
     "value": "Ollie Oop!",
@@ -648,11 +648,11 @@
   },
   "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyKillEnemiesWithHeadshots": {
     "value": "这不是警告射击",
-    "desc": "Kill 100 enemies with headshots"
+    "desc": "击杀100名敌人"
   },
   "/Lotus/Types/Challenges/Seasons/Weekly/SeasonWeeklyOpenLockers": {
     "value": "盗窃癖",
-    "desc": "Open 30 Lockers"
+    "desc": "打开30个储藏箱"
   },
   "/Lotus/Types/Challenges/Seasons/WeeklyHard/SeasonWeeklyHardCeremonialEvolution": {
     "value": "Ceremonial Evolution",
@@ -702,13 +702,13 @@
     "value": "Chrysalith Pack"
   },
   "/Lotus/Types/StoreItems/Packages/Calendar/CalendarKuvaBundleLarge": {
-    "value": "6000 x Kuva"
+    "value": "6000 x 赤毒"
   },
   "/Lotus/Types/StoreItems/Packages/Calendar/CalendarKuvaBundleSmall": {
-    "value": "2000 x Kuva"
+    "value": "2000 x 赤毒"
   },
   "/Lotus/Types/StoreItems/Packages/Calendar/CalendarVosforPack": {
-    "value": "Vosfor Cache"
+    "value": "荧尘储藏箱"
   },
   "/Lotus/Types/StoreItems/Packages/DeluxeBundles/ProteaDeluxeSkinBundle": {
     "value": "Proteus Caladrius Collection"
@@ -795,112 +795,112 @@
     "value": "Void Adornment Bundle II"
   },
   "/Lotus/Upgrades/Calendar/AbilityStrength": {
-    "value": "Power Gains",
-    "desc": "Increase Ability Strength +25%.\n+25% Ability Strength"
+    "value": "力量飙升",
+    "desc": "增加25%技能强度。"
   },
   "/Lotus/Upgrades/Calendar/Armor": {
-    "value": "Thick Skin",
-    "desc": "Gain +250 Armor."
+    "value": "硬化装甲",
+    "desc": "增加250护甲。"
   },
   "/Lotus/Upgrades/Calendar/AttackAndMovementSpeedOnCritMelee": {
-    "value": "Hit'N'Split",
-    "desc": "Critical melee hits have a chance to increase attack and movement speed by 5% for 10sec."
+    "value": "粉碎它吧",
+    "desc": "近战暴击有几率使攻击速度和移动速度提高5%，持续10秒。"
   },
   "/Lotus/Upgrades/Calendar/BlastEveryXShots": {
-    "value": "Have A Blast",
-    "desc": "Every 10th shot adds 10 Blast stacks on hit."
+    "value": "爆炸派对",
+    "desc": "每第10次射击命中时造成10层爆炸异常状态。"
   },
   "/Lotus/Upgrades/Calendar/CompanionDamage": {
-    "value": "Got Your Back",
-    "desc": "Specters and companions gain +250% damage."
+    "value": "好兄弟",
+    "desc": "魅影和同伴的伤害增加250%。"
   },
   "/Lotus/Upgrades/Calendar/CompanionsBuffNearbyPlayer": {
-    "value": "More the Merrier",
-    "desc": "Non-Tenno Allies within 20m all gain +5% Melee Attack Speed and +20% Fire Rate for each one in range."
+    "value": "人多势众",
+    "desc": "20米范围内每名非Tenno友军增加5%近战攻击速度和20%射速。"
   },
   "/Lotus/Upgrades/Calendar/CompanionsRadiationChance": {
-    "value": "Friendly Fallout",
-    "desc": "Attacks from Specters or Companions have a 25% chance to cause Radiation Status."
+    "value": "辐射支援",
+    "desc": "魅影或同伴的攻击有25%的几率触发辐射异常状态。"
   },
   "/Lotus/Upgrades/Calendar/ElectricStatusDamageAndChance": {
-    "value": "Bottled Lightning",
-    "desc": "Add 25% Status Damage and Electricity Status Chance to all weapons."
+    "value": "瓶装闪电",
+    "desc": "为所有武器增加25%的异常状态伤害和电击异常状态伤害。"
   },
   "/Lotus/Upgrades/Calendar/EnergyOrbToAbilityRange": {
-    "value": "Broadened Horizons",
-    "desc": "On Energy Pickup increase ability range by 10% for 10s."
+    "value": "极限拓展",
+    "desc": "拾取能量球时增加10%技能范围，持续10秒。"
   },
   "/Lotus/Upgrades/Calendar/EnergyRestoration": {
-    "value": "Espresso Shots",
-    "desc": "Increase energy restoration by 2/s."
+    "value": "特浓咖啡",
+    "desc": "增加每秒2能量恢复。"
   },
   "/Lotus/Upgrades/Calendar/EnergyWavesOnCombo": {
-    "value": "Combo Wave",
-    "desc": "Upon gaining 7x combo multiplier all melee attacks fire off waves of energy."
+    "value": "连击波",
+    "desc": "达到7倍连击倍率后，所有近战攻击都会释放能量波。"
   },
   "/Lotus/Upgrades/Calendar/FinisherChancePerComboMultiplier": {
-    "value": "Combo Killer",
-    "desc": "Combo Multiplier increases the chance of enemies being susceptible to finishers after a melee hit. 5% per Multiplier Max 65% with Venka Prime."
+    "value": "杀意连段",
+    "desc": "连击倍率将增加敌人在受到近战攻击后进入可处决状态的几率。每层倍率提高5%几率，使用凯旋之爪 Prime 时最大可达65%。"
   },
   "/Lotus/Upgrades/Calendar/GasChanceToPrimaryAndSecondary": {
-    "value": "Toxic Shot",
-    "desc": "Add 25% Gas Status Chance to Primary and Secondary weapons."
+    "value": "毒气弹头",
+    "desc": "主要武器和次要武器增加25%毒气触发几率。"
   },
   "/Lotus/Upgrades/Calendar/GenerateOmniOrbsOnWeakKill": {
-    "value": "Involuntary Transfusion",
-    "desc": "Weakpoint kills have a 25% chance to generate an Universal Orb."
+    "value": "强制输血",
+    "desc": "弱点击杀有25%的几率生成通用补给球。"
   },
   "/Lotus/Upgrades/Calendar/GuidingMissilesChance": {
-    "value": "Tickshots",
-    "desc": "Shots gain a 10% chance to fire a seeking projectile for each successful hit. Firing weapons reduces the chance by 5%."
+    "value": "花式射击",
+    "desc": "每次成功命中都会使发射追踪弹的几率提高10%。每次射击会使该几率降低5%。"
   },
   "/Lotus/Upgrades/Calendar/HealingEffects": {
-    "value": "Emergency Medicine",
-    "desc": "All restoration effects provided by Orb pickups increased by 25%."
+    "value": "急诊医学",
+    "desc": "所有补给球提供的恢复效果提高25%。"
   },
   "/Lotus/Upgrades/Calendar/MagazineCapacity": {
-    "value": "Heavy Mags",
-    "desc": "Increase magazine capacity by 25%"
+    "value": "重型弹匣",
+    "desc": "增加25%的弹匣容量。"
   },
   "/Lotus/Upgrades/Calendar/MagnetStatusPull": {
-    "value": "Force Of Attraction",
-    "desc": "Magnetic Status Effects also pull in enemies within 1m per stack."
+    "value": "吸引力",
+    "desc": "磁力异常状态会将1米范围内的敌人拉近，每层磁力异常状态将增加1米范围。"
   },
   "/Lotus/Upgrades/Calendar/MagnitizeWithinRangeEveryXCasts": {
-    "value": "Magnetic Menace",
-    "desc": "Every 5th ability cast applies a Magnetic Status Effect to an enemy in front of you within 50m."
+    "value": "磁场威胁",
+    "desc": "每施放第5次技能都会对前方50米内的敌人造成磁力异常状态。"
   },
   "/Lotus/Upgrades/Calendar/MeleeAttackSpeed": {
-    "value": "No Quarter",
-    "desc": "+25% Melee Attack Speed."
+    "value": "毫不留情",
+    "desc": "增加25%近战攻击速度。"
   },
   "/Lotus/Upgrades/Calendar/MeleeCritChance": {
-    "value": "Practiced Precision",
-    "desc": "+20% Melee Critical Chance (x2 for Heavy Attacks)."
+    "value": "熟能生巧",
+    "desc": "增加20%近战暴击几率（重击时×2）。"
   },
   "/Lotus/Upgrades/Calendar/OrbsDuplicateOnPickup": {
-    "value": "Targeted Medicine",
-    "desc": "Shoot Health Orbs to pick them up. Health orbs now have 25% chance to duplicate when picked up."
+    "value": "靶向医学",
+    "desc": "射击生命球即可拾取。生命球在拾取时有25%的几率复制。"
   },
   "/Lotus/Upgrades/Calendar/OvershieldCap": {
-    "value": "Harden Up",
-    "desc": "Increases Overshield cap by 50%. Kills grant 50 shields."
+    "value": "硬质化",
+    "desc": "过载护盾上限增加50%。击杀时恢复50点护盾。"
   },
   "/Lotus/Upgrades/Calendar/PowerStrengthAndEfficiencyPerEnergySpent": {
-    "value": "Overpower",
-    "desc": "Casting abilities increases ability strength by 2% and efficiency by -1% per unit of energy used by ability, for 5s."
+    "value": "能量过载",
+    "desc": "施放技能时，每消耗一点能量值，技能强度增加2%，技能效率减少1%，持续5秒。"
   },
   "/Lotus/Upgrades/Calendar/PunchToPrimary": {
-    "value": "Punchcard",
-    "desc": "Add +1.5m punch through to primary weapons."
+    "value": "打孔纸带",
+    "desc": "主要武器穿透增加1.5米。"
   },
   "/Lotus/Upgrades/Calendar/RadiationProcOnTakeDamage": {
-    "value": "Psionic Feedback",
-    "desc": "On Damaged 10% chance to set off a 250 damage, 5m radius blast of radiation on taking damage."
+    "value": "精神反击",
+    "desc": "有10%的几率触发250点伤害、5米范围的辐射爆炸。"
   },
   "/Lotus/Upgrades/Calendar/RefundBulletOnStatusProc": {
-    "value": "Free Shot",
-    "desc": "Triggering a status proc has a 10% chance to reload the triggering bullet into the clip."
+    "value": "免费射击",
+    "desc": "触发异常状态时有10%的几率将触发该异常的子弹重新装填回弹匣。"
   },
   "/Lotus/Upgrades/Skins/Armor/SWPiercingEyeShoulderArmor/SWPiercingEyeShoulderArmor": {
     "value": "Piercing Eye Shoulder Armor"
