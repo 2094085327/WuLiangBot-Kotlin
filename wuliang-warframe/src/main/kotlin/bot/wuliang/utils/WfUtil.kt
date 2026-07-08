@@ -713,4 +713,20 @@ class WfUtil {
             )
         }
     }
+
+    /**
+     * 将年日转换为 "MM月DD日" 格式（1999年，非闰年）
+     */
+    fun dayOfYearToDate(day: Int): String {
+        val monthDays = intArrayOf(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+        var remaining = day
+        for (i in monthDays.indices) {
+            if (remaining <= monthDays[i]) {
+                return String.format("%02d月%02d日", i + 1, remaining)
+            }
+            remaining -= monthDays[i]
+        }
+        return ""
+    }
+
 }

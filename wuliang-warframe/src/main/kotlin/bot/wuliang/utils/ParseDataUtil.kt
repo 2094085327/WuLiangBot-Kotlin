@@ -2,7 +2,8 @@ package bot.wuliang.utils
 
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
- import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
+ import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
@@ -866,5 +867,80 @@ class ParseDataUtil {
             ?.coerceAtLeast(30) ?: 300
         redisService.setValueWithExpiry(WF_CONQUEST_KEY, conquestEntity, expire, TimeUnit.SECONDS)
         return conquestEntity
+    }
+
+    /**
+     * 解析 1999 日历
+     * @param calendarJson KnownCalendarSeasons 数组节点
+     */
+    fun parseCalendarArray(calendarJson: JsonNode): CalendarSeason? {
+        if (redisService.hasKey(WF_CALENDAR_KEY)) return redisService.getValueTyped<CalendarSeason>(WF_CALENDAR_KEY)
+
+        val seasonNode = calendarJson[0] ?: return null
+        val expiry = parseTimestamp(seasonNode["Expiry"])
+        val seasonKey = seasonNode["Season"]?.asText()
+
+        val days = seasonNode["Days"]?.mapNotNull { dayNode ->
+            val day = dayNode["day"]?.asInt() ?: return@mapNotNull null
+            val events = dayNode["events"]
+            val eventKey = events?.firstOrNull()?.let {
+                when {
+                    it.has("challenge") -> "CET_CHALLENGE"
+                    it.has("reward") -> "CET_REWARD"
+                    it.has("upgrade") -> "CET_UPGRADE"
+                    else -> null
+                }
+            }
+
+            // 如果是生日（events 为空且是生日日期）
+            val birthday = WfStatus.calendarBirthdayMap[day]
+
+            if (birthday != null) {
+                return@mapNotNull CalendarDay(
+                    day = day,
+                    date = wfUtil.dayOfYearToDate(day),
+                    type = null,
+                    typeKey = null,
+                    items = emptyList(),
+                    birthday = birthday
+                )
+            }
+
+            val items = events?.mapNotNull { event ->
+                val path = when {
+                    event.has("challenge") -> event["challenge"]?.asText()
+                    event.has("reward") -> event["reward"]?.asText()
+                    event.has("upgrade") -> event["upgrade"]?.asText()
+                    else -> null
+                }
+                path?.let {
+                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                }
+            }?.toList() ?: emptyList()
+
+            CalendarDay(
+                day = day,
+                date = wfUtil.dayOfYearToDate(day),
+                type = eventKey?.let { WfStatus.calendarEventTypeMap[it] },
+                typeKey = eventKey,
+                items = items,
+                birthday = null
+            )
+        }?.toList() ?: emptyList()
+
+        val result = CalendarSeason(
+            activation = parseTimestamp(seasonNode["Activation"]),
+            expiry = expiry,
+            eta = expiry?.let {
+                formatDuration(Duration.between(getInstantNow(), it)).replace("\\s+".toRegex(), "")
+            },
+            season = seasonKey?.let { WfStatus.calendarSeasonMap[it] },
+            seasonKey = seasonKey,
+            days = days
+        )
+
+        val expire = result.eta?.parseDuration() ?: 300L
+        redisService.setValueWithExpiry(WF_CALENDAR_KEY, result, expire, TimeUnit.SECONDS)
+        return result
     }
 }

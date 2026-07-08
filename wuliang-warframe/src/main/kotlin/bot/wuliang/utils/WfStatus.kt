@@ -38,6 +38,38 @@ object WfStatus {
     )
 
 
+    /**
+     * 季节映射
+     */
+    val calendarSeasonMap = mapOf(
+        "CST_SPRING" to "春季",
+        "CST_SUMMER" to "夏季",
+        "CST_FALL" to "秋季",
+        "CST_WINTER" to "冬季"
+    )
+
+    /**
+     * 事件类型映射
+     */
+    val calendarEventTypeMap = mapOf(
+        "CET_CHALLENGE" to "待办事项",
+        "CET_REWARD" to "大奖！",
+        "CET_UPGRADE" to "覆写"
+    )
+
+    /**
+     * 1999 角色生日映射（年日 → 角色名）
+     */
+    val calendarBirthdayMap = mapOf(
+        45 to "莱蒂西娅",     // 2月14日
+        143 to "阿米尔",      // 5月23日
+        191 to "碧",          // 7月10日
+        306 to "埃莉诺",      // 11月2日
+        307 to "亚瑟",        // 11月3日
+        338 to "昆西"         // 12月4日
+    )
+
+
     fun String.replaceFaction(): String {
         return factionReplacements.entries.fold(this) { acc: String, entry: Map.Entry<String, String> ->
             acc.replace(entry.key, entry.value)
