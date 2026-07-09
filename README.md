@@ -9,7 +9,7 @@
 # WuLiangBot-Kotlin
 
 _✨
-基于 [OneBot](https://github.com/howmanybots/onebot/blob/master/README.md) [Shiro](https://github.com/MisakaTAT/Shiro/blob/main/README.md)
+基于 [`Kloping/qqpd-bot-java`](https://github.com/Kloping/qqpd-bot-java/blob/master/README.md)
 QQ官方机器人Api Kotlin 实现 ✨_
 
 
@@ -222,13 +222,6 @@ github:
 
 # 项目自定义配置
 wuLiang:
-  bot-config:
-    # QQ开放平台appid
-    appid: "your_appid"
-    # QQ开放平台token
-    token: "your_token"
-    # QQ开放平台secret
-    secret: "your_secret"
   config:
     # 图床路径，用于自动更新图片
     gallery: "https://your-gallery-domain.com/"
@@ -292,30 +285,38 @@ spring:
     password: your_database_password
     # 数据源类型
     type: com.alibaba.druid.pool.DruidDataSource
-    # 初始化连接数
-    initialSize: 5
-    # 最小空闲连接数
-    minIdle: 5
-    # 最大活跃连接数
-    maxActive: 20
-    # 获取连接等待超时的时间
-    maxWait: 60000
-    # 空闲时是否验证连接有效性
-    testWhileIdle: true
-    # 获取连接时是否验证有效性
-    testOnBorrow: true
-    # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接(毫秒)
-    timeBetweenEvictionRunsMillis: 60000
-    # 配置一个连接在池中最小生存的时间(毫秒)
-    minEvictableIdleTimeMillis: 300000
     # Druid连接池配置
     druid:
-      test-on-borrow: false
-      # SQL验证语句
-      validationQuery: SELECT 1
-      testWhileIdle: true
-      testOnBorrow: true
-      testOnReturn: false
+      # 初始化连接数
+      initial-size: 5
+      # 最小空闲连接数
+      min-idle: 5
+      # 最大活跃连接数
+      max-active: 20
+      # 获取连接等待超时的时间
+      max-wait: 60000
+      # 连接有效性检测SQL
+      validation-query: SELECT 1
+      # 验证查询超时时间
+      validation-query-timeout: 5
+      # 空闲时是否验证连接有效性
+      test-while-idle: true
+      # 获取连接时是否验证有效性
+      test-on-borrow: true
+      # 归还连接时是否验证有效性
+      test-on-return: false
+      # 是否开启连接保活机制
+      keep-alive: true
+      # 销毁线程检测间隔时间（毫秒）
+      time-between-eviction-runs-millis: 10000
+      # 连接最小空闲存活时间（毫秒）
+      min-evictable-idle-time-millis: 60000
+      # 是否开启泄露连接回收机制
+      remove-abandoned: true
+      # 连接泄露回收超时时间（秒）
+      remove-abandoned-timeout: 1800
+      # 是否记录泄露连接的堆栈信息
+      log-abandoned: true
     # 防火墙配置
     filter:
       wall:
