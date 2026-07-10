@@ -87,9 +87,23 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfUtil.fetchItemEntity(cleanKey)
             ?: run {
                 // 模糊查询
-                val fuzzyList = key.flatMap { eachKey ->
-                    wfMarketItemService.fuzzyQuery(eachKey.toString()).mapNotNull { it?.zhName }
-                }
+                val fuzzyList = key
+                    .asSequence()
+                    .map { it.toString() }
+                    .filter {
+                        val c = it[0]
+                        when {
+                            c in 'a'..'z' -> false
+                            c in 'A'..'Z' -> false
+                            c.isDigit() -> false
+                            else -> true
+                        }
+                    }
+                    .flatMap {
+                        wfMarketItemService.fuzzyQuery(it).asSequence().mapNotNull { item -> item?.zhName }
+                    }
+                    .distinct()
+                    .toList()
                 if (fuzzyList.isNotEmpty()) {
                     otherUtil.findMatchingStrings(key, fuzzyList).let {
                         context.sender.sendText(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
