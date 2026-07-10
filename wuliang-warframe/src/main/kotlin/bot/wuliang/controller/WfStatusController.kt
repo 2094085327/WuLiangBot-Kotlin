@@ -123,12 +123,16 @@ class WfStatusController @Autowired constructor(
         // 当Redis中商人的缓存存在时，直接发送图片
         // 使用协程并发处理多个激活的虚空商人
         coroutineScope {
-            List(activeVoidList.size) { index ->
+            activeVoidList.map { voidTrader ->
                 async(Dispatchers.IO) {
+                    val originalIndex = voidTraderList.indexOf(voidTrader)
+
                     val imgData = WebImgUtil.ImgData(
-                        url = "http://${webImgUtil.frontendAddress}/voidTrader?activeNum=$index",
-                        imgName = "voidTrader-${UUID.randomUUID()}-$index",
-                        element = "#app"
+                        // 将准确的原始索引传递给前端接口
+                        url = "http://${webImgUtil.frontendAddress}/voidTrader?activeNum=$originalIndex",
+                        imgName = "voidTrader-${UUID.randomUUID()}-$originalIndex",
+                        element = "#app",
+                        waitElement = ".warframeVoidTrader"
                     )
                     val url = webImgUtil.getImgUrl(imgData)
                     context.sender.sendImage(url)
