@@ -3,7 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
- import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
@@ -45,11 +45,14 @@ import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.File
+import java.time.DayOfWeek
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
@@ -94,6 +97,7 @@ class WfStatusController @Autowired constructor(
         warframeDataService.getFissuresData()
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
 
@@ -136,6 +140,7 @@ class WfStatusController @Autowired constructor(
                     )
                     val url = webImgUtil.getImgUrl(imgData)
                     context.sender.sendImage(url)
+                    webImgUtil.deleteImg(imgData)
                 }
             }.awaitAll()
         }
@@ -154,6 +159,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
     @SystemLog(businessName = "获取日突击信息")
@@ -173,6 +179,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
     @SystemLog(businessName = "获取执刑官信息")
@@ -193,6 +200,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
     @SystemLog(businessName = "获取午夜电波信息")
@@ -213,6 +221,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
     @SystemLog(businessName = "获取火卫二循环信息")
@@ -350,6 +359,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
         System.gc()
     }
 
@@ -370,6 +380,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
         System.gc()
     }
 
@@ -459,6 +470,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
         System.gc()
     }
 
@@ -516,6 +528,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
     @SystemLog(businessName = "获取DE紫卡数据")
@@ -529,9 +542,13 @@ class WfStatusController @Autowired constructor(
         val params = matcher.group(2)?.trim() ?: ""
         val urlParams = wfUtil.parseRivenParams(params)
 
+        val currentMonday = LocalDate.now()
+            .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            .toString()
+
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/allRivenPrice$urlParams",
-            imgName = "allRivenPrice-${UUID.randomUUID()}",
+            imgName = "allRivenPrice-${currentMonday}",
             element = "#app",
             waitElement = ".warframeRivenAllPrice"
         )
@@ -558,8 +575,8 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
-
 
 
     @SystemLog(businessName = "获取1999日历信息")
@@ -580,6 +597,7 @@ class WfStatusController @Autowired constructor(
 
         val url = webImgUtil.getImgUrl(imgData)
         context.sender.sendImage(url)
+        webImgUtil.deleteImg(imgData)
     }
 
 }
