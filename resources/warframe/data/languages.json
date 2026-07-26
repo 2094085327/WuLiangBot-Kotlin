@@ -203,6 +203,9 @@
   "/Lotus/StoreItems/Types/Items/ShipDecos/OctaviaPrimeBobbleHead": {
     "value": "Octavia Prime 摇头娃娃"
   },
+  "/Lotus/StoreItems/Types/Items/ShipDecos/TeshinBobbleHead": {
+    "value": "Teshin 摇头娃娃"
+  },
   "/Lotus/StoreItems/Types/Items/ShipDecos/ParazonPoster": {
     "value": "灭骸之刃海报"
   },
@@ -524,6 +527,9 @@
   "/Lotus/StoreItems/Types/Items/ShipDecos/OwlOrdisStatue": {
     "value": "Ordis 具象化雕像"
   },
+  "/Lotus/StoreItems/Types/Items/ShipDecos/LisetPropCleaningDroneGrineer": {
+    "value": "内务肥皂果无人机"
+  },
   "/Lotus/StoreItems/Types/Items/SongItems/LotusEatersSongItem": {
     "value": "《食莲者》登录音乐"
   },
@@ -571,6 +577,9 @@
   },
   "/Lotus/StoreItems/Types/Items/SongItems/TheSacrificeLoginSongItem": {
     "value": "《牺牲》登录音乐"
+  },
+  "/Lotus/StoreItems/Types/Items/SongItems/CorpusLichLoginSongItem": {
+    "value": "《帕尔沃斯的姐妹们》登录音乐"
   },
   "/Lotus/StoreItems/Types/Recipes/WarframeRecipes/DagathBlueprint": {
     "value": "Dagath 蓝图"
