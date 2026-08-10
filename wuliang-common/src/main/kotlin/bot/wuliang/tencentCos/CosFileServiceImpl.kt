@@ -3,8 +3,13 @@ package bot.wuliang.tencentCos
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import com.qcloud.cos.exception.CosClientException
 import com.qcloud.cos.exception.CosServiceException
+import com.qcloud.cos.model.BucketLifecycleConfiguration
+import com.qcloud.cos.model.GetBucketLifecycleConfigurationRequest
 import com.qcloud.cos.model.ObjectMetadata
 import com.qcloud.cos.model.PutObjectRequest
+import com.qcloud.cos.model.SetBucketLifecycleConfigurationRequest
+import com.qcloud.cos.model.lifecycle.LifecycleFilter
+import com.qcloud.cos.model.lifecycle.LifecyclePrefixPredicate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -13,6 +18,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 
 /**
@@ -26,6 +32,7 @@ class CosFileServiceImpl(
 ) : ICosFileService {
     val cosClient = txCosConfig.cosClient()
     private val scope = CoroutineScope(Dispatchers.Default)
+    private val lifecycleRuleConfigured = ConcurrentHashMap<String, Boolean>()
 
     companion object {
         // 视频后缀 校验视频格式
@@ -131,6 +138,41 @@ class CosFileServiceImpl(
             } catch (e: CosClientException) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    /**
+     * 为指定文件名前缀的对象配置生命周期规则，到期的对象由 COS 自动删除
+     */
+    fun ensureLifecycleRule(fileNamePrefix: String, expireDays: Int) {
+        if (lifecycleRuleConfigured[fileNamePrefix] == true) return
+        val prefix = txCosConfig.path + fileNamePrefix
+        val ruleId = "expire-${fileNamePrefix.trimEnd('-')}-${expireDays}d"
+        try {
+            val existingRules = try {
+                cosClient.getBucketLifecycleConfiguration(GetBucketLifecycleConfigurationRequest(txCosConfig.bucketName))
+                    ?.rules?.toMutableList() ?: mutableListOf()
+            } catch (e: CosServiceException) {
+                if (e.statusCode == 404) mutableListOf() else throw e
+            }
+            if (existingRules.none { it.id == ruleId }) {
+                val rule = BucketLifecycleConfiguration.Rule().apply {
+                    id = ruleId
+                    status = BucketLifecycleConfiguration.ENABLED
+                    expirationInDays = expireDays
+                    filter = LifecycleFilter(LifecyclePrefixPredicate(prefix))
+                }
+                existingRules.add(rule)
+                cosClient.setBucketLifecycleConfiguration(
+                    SetBucketLifecycleConfigurationRequest(
+                        txCosConfig.bucketName,
+                        BucketLifecycleConfiguration(existingRules)
+                    )
+                )
+            }
+            lifecycleRuleConfigured[fileNamePrefix] = true
+        } catch (e: Exception) {
+            logError("配置COS生命周期规则失败: prefix=$prefix, expireDays=$expireDays", e)
         }
     }
 

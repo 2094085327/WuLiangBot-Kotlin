@@ -4,6 +4,7 @@ import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenEntity
@@ -12,11 +13,14 @@ import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
+import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.moudles.Info
+import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.tencentCos.CosFileServiceImpl
 import bot.wuliang.utils.TimeUtils.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.databind.JsonNode
@@ -52,6 +56,13 @@ class WfUtil {
 
     @Autowired
     private lateinit var proxyUtil: ProxyUtil
+
+    @Autowired
+    private lateinit var txCosService: CosFileServiceImpl
+
+    @Autowired
+    private lateinit var webImgUtil: WebImgUtil
+
 
     @Autowired
     @Qualifier("otherUtil")
@@ -729,4 +740,31 @@ class WfUtil {
         return ""
     }
 
+    /**
+     * 获取并缓存本周周常图片，图片名固定为本周一日期与奸商状态
+     */
+    fun getWeeklyImgUrl(): String {
+        // 周常每周一刷新，按周一日期与奸商状态生成图片名，缓存在COS中一周
+        val weeklyKey = TimeUtils.getFirstDayOfWeek()
+            .atZone(ZoneId.of("UTC"))
+            .toLocalDate()
+            .toString()
+        // 奸商激活状态写入缓存key，抵达后第一次生成周常图会带上库存
+        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
+        val voidTraderState = when {
+            voidTraderList?.any { it.isActive == true } == true -> "active"
+            voidTraderList.isNullOrEmpty() -> "none"
+            else -> "upcoming"
+        }
+        txCosService.ensureLifecycleRule("weekly-", 7)
+
+        val imgData = WebImgUtil.ImgData(
+            url = "http://${webImgUtil.frontendAddress}/weekly",
+            imgName = "weekly-$weeklyKey-$voidTraderState",
+            element = "#app",
+            waitElement = ".warframeWeekly"
+        )
+
+        return webImgUtil.getImgUrl(imgData)
+    }
 }

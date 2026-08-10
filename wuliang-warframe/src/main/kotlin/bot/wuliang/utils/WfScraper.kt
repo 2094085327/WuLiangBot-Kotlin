@@ -72,7 +72,11 @@ class WfScraper {
                     ) ?: ""
                 )
             }
-            return@retryAttempts EndpointResult.Endpoints(decompressed.replace(manifestRegex, "").split(Regex("\r?\n")))
+            return@retryAttempts EndpointResult.Endpoints(
+                decompressed.replace(manifestRegex, "")
+                    .split(Regex("\r?\n"))
+                    .filter { it.isNotEmpty() }
+            )
         }
     }
 
