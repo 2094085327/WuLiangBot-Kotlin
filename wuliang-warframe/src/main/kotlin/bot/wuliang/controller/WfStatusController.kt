@@ -600,4 +600,10 @@ class WfStatusController @Autowired constructor(
         webImgUtil.deleteImg(imgData)
     }
 
+    @SystemLog(businessName = "获取周常任务信息")
+    @AParameter
+    @Executor(action = "\\b(周常|每周任务)\\b")
+    suspend fun getWeekly(context: ExecutionContext) {
+        context.sender.sendImage(wfUtil.getWeeklyImgUrl())
+    }
 }
