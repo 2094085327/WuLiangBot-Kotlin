@@ -216,6 +216,8 @@ CREATE TABLE `wf_market_item`  (
   `en_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '物品英文名',
   `zh_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '物品中文名',
   `url_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '物品URL名',
+  `game_ref` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'Warframe游戏内部引用路径',
+  `tags` json NULL COMMENT 'Warframe Market v2物品标签',
   `use_count` int(10) NULL DEFAULT NULL COMMENT '使用次数',
   `ducats` int(10) NULL DEFAULT NULL COMMENT '物品对应杜卡德数量',
   PRIMARY KEY (`id`) USING BTREE

@@ -1,18 +1,17 @@
 package bot.wuliang.controller
 
 import bot.wuliang.adapter.context.ExecutionContext
-import bot.wuliang.logAop.SystemLog
+import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.config.*
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_ITEMS_VERSION_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_LICHES_VERSION_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVENS_VERSION_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_SISTERS_VERSION_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
-import bot.wuliang.entity.WfLexiconEntity
-import bot.wuliang.entity.WfMarketItemEntity
-import bot.wuliang.entity.WfRivenEntity
-import bot.wuliang.httpUtil.HttpUtil
-import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
@@ -49,212 +48,86 @@ class WfTranslateLexicon {
     @Autowired
     lateinit var wfUtil: WfUtil
 
-    /**
-     * 获取Json数据并进行格式化
-     *
-     * @param lexiconMap 词库Map
-     * @return 格式化后的词库List
-     */
-    fun getLexiconList(lexiconMap: MutableMap<String, WfLexiconEntity>): MutableList<WfLexiconEntity> {
-        updateLexicon(lexiconMap, WARFRAME_MARKET_LOCATION, LANGUAGE_EN_HANS, "locations", "system_name")
-        updateLexicon(
-            lexiconMap,
-            WARFRAME_MARKET_LOCATION,
-            LANGUAGE_ZH_HANS,
-            "locations",
-            "system_name",
-            isChinese = true
-        )
-
-        updateStatusLexicon(lexiconMap, WARFRAME_STATUS_ITEM, "en")
-        updateStatusLexicon(lexiconMap, WARFRAME_STATUS_ITEM, "zh", true)
-
-        return lexiconMap.values.toMutableList()
-    }
-
-    /**
-     * 获取赤毒紫卡列表
-     *
-     * @param richMap 词库Map
-     * @return 赤毒紫卡列表
-     */
-    fun getLichList(richMap: MutableMap<String, WfRivenEntity>): MutableList<WfRivenEntity> {
-        updateLich(richMap, WARFRAME_MARKET_LICH_WEAPONS, LANGUAGE_EN_HANS, "weapons", "item_name")
-        updateLich(richMap, WARFRAME_MARKET_LICH_WEAPONS, LANGUAGE_ZH_HANS, "weapons", "item_name", isChinese = true)
-        updateLich(richMap, WARFRAME_MARKET_SISTER_WEAPONS, LANGUAGE_EN_HANS, "weapons", "item_name")
-        updateLich(richMap, WARFRAME_MARKET_SISTER_WEAPONS, LANGUAGE_ZH_HANS, "weapons", "item_name", isChinese = true)
-
-        return richMap.values.toMutableList()
-    }
-
-    /**
-     * 更新紫卡词库
-     *
-     * @param lexiconMap 词库Map
-     * @param url 请求URL
-     * @param language 请求语言
-     * @param listKey 词库列表Key
-     * @param nameKey 词库名称Key
-     * @param isChinese 是否为中文
-     */
-    private fun updateLexicon(
-        lexiconMap: MutableMap<String, WfLexiconEntity>,
-        url: String,
-        language: MutableMap<String, Any>,
-        listKey: String,
-        nameKey: String,
-        isChinese: Boolean = false,
-        inMarket: Int = 0
+    private fun updateCollectionIfChanged(
+        collectionName: String,
+        version: String,
+        versionCacheKey: String,
+        updater: () -> Unit
     ) {
-        val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
-        items.forEach { item ->
-            val id = item["id"].textValue()
-            val entity = lexiconMap[id] ?: WfLexiconEntity(
-                id = id,
-                enItemName = if (!isChinese) item[nameKey].textValue() else "",
-                urlName = item["url_name"].textValue(),
-                zhItemName = if (isChinese) item[nameKey].textValue() else "",
-                inMarket = inMarket
-            )
-            if (isChinese) {
-                entity.zhItemName = item[nameKey].textValue()
-            } else {
-                entity.enItemName = item[nameKey].textValue()
-            }
-            lexiconMap[id] = entity
+        val cachedVersion = redisService.getValue(versionCacheKey)?.toString()
+        if (cachedVersion == version) {
+            logInfo("Warframe Market $collectionName 版本未变化，跳过更新")
+            return
         }
+
+        updater()
+        redisService.setValue(versionCacheKey, version)
+        logInfo("Warframe Market $collectionName 更新完成，版本：$version")
     }
-
-    fun updateStatusLexicon(
-        lexiconMap: MutableMap<String, WfLexiconEntity>,
-        url: String,
-        languageType: String,
-        isChinese: Boolean = false
-    ) {
-        val items = HttpUtil.doGetJson(url = url, params = mapOf("language" to languageType))
-        items.forEach { item ->
-            val itemName = item["name"].textValue()
-            // 检查itemName是否已存在于lexiconMap的zhItemName中
-            if (!lexiconMap.values.any { it.zhItemName?.contains(itemName) == true || it.enItemName?.contains(itemName) == true }) {
-                // 确保itemName不在lexiconMap的zhItemNames中后，再执行更新逻辑
-                val urlName = if (item.has("imageName")) item["imageName"].textValue().split(".")[0].replace(
-                    "-",
-                    "_"
-                ) else itemName
-                val id = urlName.toMd5()
-                val entity = lexiconMap[id] ?: WfLexiconEntity(
-                    id = id,
-                    enItemName = if (!isChinese) itemName else "",
-                    urlName = urlName,
-                    zhItemName = if (isChinese) itemName else "",
-                    inMarket = 0
-                )
-                if (isChinese) {
-                    entity.zhItemName = itemName
-                } else {
-                    entity.enItemName = itemName
-                }
-                lexiconMap[id] = entity
-            }
-        }
-    }
-
-    /**
-     * 更新玄骸武器词库
-     *
-     * @param richMap 词库Map
-     * @param url 请求URL
-     * @param language 语言
-     * @param listKey 词库列表Key
-     * @param nameKey 物品名称Key
-     * @param isChinese 是否为中文
-     */
-    fun updateLich(
-        richMap: MutableMap<String, WfRivenEntity>,
-        url: String,
-        language: MutableMap<String, Any>,
-        listKey: String,
-        nameKey: String,
-        isChinese: Boolean = false
-    ) {
-        val items = HttpUtil.doGetJson(url = url, headers = language)["payload"][listKey]
-        items.forEach { item ->
-            val id = item["id"].textValue()
-            val entity = richMap[id] ?: WfRivenEntity(
-                id = id,
-                rGroup = "lich",
-                enName = if (!isChinese) item[nameKey].textValue() else "",
-                urlName = item["url_name"].textValue(),
-                zhName = if (isChinese) item[nameKey].textValue() else "",
-                attributesBool = 2
-            )
-
-            if (isChinese) {
-                entity.zhName = item[nameKey].textValue()
-            } else {
-                entity.enName = item[nameKey].textValue()
-            }
-            richMap[id] = entity
-        }
-    }
-
 
     @SystemLog(businessName = "更新Warframe词库")
     @OptIn(DelicateCoroutinesApi::class)
     @AParameter
     @Executor(action = "更新词库")
     fun upDataWfTranslateLexicon(context: ExecutionContext) {
-        val lexiconMap: MutableMap<String, WfLexiconEntity> = mutableMapOf()
-        val rivenMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
-        val lichMap: MutableMap<String, WfRivenEntity> = mutableMapOf()
-        val marketItemMap: MutableMap<String, WfMarketItemEntity> = mutableMapOf()
-
         GlobalScope.launch {
             try {
                 // 获取中英文JSON数据并解析
                 context.sender.sendText("因本次更新数据量较大，预计花费5-10分钟不等，请耐心等待")
 
+                val marketVersions = runCatching { wfUtil.getMarketCollectionVersions() }
+                    .onFailure { logError("获取 Warframe Market Collection 版本失败，跳过市场词库更新", it) }
+                    .getOrNull()
+
                 // 使用async并行执行插入操作
                 val marketJob = async {
-                    val marketItems = wfUtil.getMarketItems()
-                    wfMarketItemService.updateMarketItem(marketItems)
-                    logInfo("Market更新完成")
-                    marketItemMap.clear()
-                }
-
-                val lexiconJob = async {
-//                    wfLexiconService.insertLexicon(getLexiconList(lexiconMap))
-                    logInfo("词库更新完成")
-                    lexiconMap.clear()
+                    marketVersions?.get("items")?.let { version ->
+                        runCatching {
+                            updateCollectionIfChanged("物品", version, WF_MARKET_ITEMS_VERSION_KEY) {
+                                wfMarketItemService.updateMarketItem(wfUtil.getMarketItems())
+                            }
+                        }.onFailure { logError("物品词库更新失败", it) }
+                    }
                 }
                 val rivenJob = async {
-                    redisService.deleteKey(WF_MARKET_RIVEN_KEY)
-                    val rivenList = wfUtil.getRivenItems()
-                    redisService.setValue(WF_MARKET_RIVEN_KEY, rivenList)
-                    wfRivenService.insertRiven(rivenList)
-                    wfRivenService.insertRiven(wfUtil.getRivenAttributes())
-                    logInfo("紫卡词库更新完成")
-                    rivenMap.clear()
+                    marketVersions?.get("rivens")?.let { version ->
+                        runCatching {
+                            updateCollectionIfChanged("紫卡", version, WF_MARKET_RIVENS_VERSION_KEY) {
+                                val rivenList = wfUtil.getRivenItems()
+                                wfRivenService.insertRiven(rivenList)
+                                redisService.setValue(WF_MARKET_RIVEN_KEY, rivenList)
+                            }
+                        }.onFailure { logError("紫卡词库更新失败", it) }
+                    }
                 }
                 val lichJob = async {
-                    wfRivenService.insertRiven(getLichList(lichMap))
-                    logInfo("玄骸武器词库更新完成")
-                    lichMap.clear()
+                    marketVersions?.get("liches")?.let { version ->
+                        runCatching {
+                            updateCollectionIfChanged("赤毒玄骸", version, WF_MARKET_LICHES_VERSION_KEY) {
+                                wfRivenService.insertRiven(wfUtil.getLichItems())
+                            }
+                        }.onFailure { logError("赤毒玄骸词库更新失败", it) }
+                    }
+                }
+                val sisterJob = async {
+                    marketVersions?.get("sisters")?.let { version ->
+                        runCatching {
+                            updateCollectionIfChanged("信条玄骸", version, WF_MARKET_SISTERS_VERSION_KEY) {
+                                wfRivenService.insertRiven(wfUtil.getSisterItems())
+                            }
+                        }.onFailure { logError("信条玄骸词库更新失败", it) }
+                    }
                 }
 
                 // 等待所有任务完成
                 marketJob.await()
-                lexiconJob.await()
                 rivenJob.await()
                 lichJob.await()
+                sisterJob.await()
 
 
                 context.sender.sendText("词库更新完成")
             } finally {
-                // 显式地将变量置空
-                lexiconMap.clear()
-                rivenMap.clear()
-                lichMap.clear()
                 System.gc()
             }
         }

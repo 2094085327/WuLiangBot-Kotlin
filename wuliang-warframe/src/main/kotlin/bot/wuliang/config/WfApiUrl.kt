@@ -9,6 +9,8 @@ const val WARFRAME_MARKET_BASE_URL = "https://api.warframe.market/v1"
 
 const val WARFRAME_MARKET_BASE_URL_V2 = "https://api.warframe.market/v2"
 
+const val WARFRAME_MARKET_VERSIONS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/versions"
+
 const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
 
 const val WARFRAME_STATUS_URL = "https://api.warframe.com/cdn/worldState.php"
@@ -82,6 +84,16 @@ const val WARFRAME_MARKET_RIVEN_ITEMS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/riven/w
 const val WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2 = "$WARFRAME_MARKET_BASE_URL_V2/riven/attributes"
 
 /**
+ * Market 赤毒武器
+ */
+const val WARFRAME_MARKET_LICH_WEAPONS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/lich/weapons"
+
+/**
+ * Market 信条武器
+ */
+const val WARFRAME_MARKET_SISTER_WEAPONS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/sister/weapons"
+
+/**
  * Market 最新紫卡拍卖
  */
 const val WARFRAME_MARKET_RIVEN_AUCTIONS_BASE = "$WARFRAME_MARKET_BASE_URL/auctions"
@@ -96,21 +108,6 @@ const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE
  */
 const val WARFRAME_MARKET_LICH_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=lich"
 const val WARFRAME_MARKET_SISTER_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=sister"
-
-/**
- * 赤毒武器
- */
-const val WARFRAME_MARKET_LICH_WEAPONS = "$WARFRAME_MARKET_BASE_URL/lich/weapons"
-
-/**
- * 信条武器
- */
-const val WARFRAME_MARKET_SISTER_WEAPONS = "$WARFRAME_MARKET_BASE_URL/sister/weapons"
-
-/**
- * 地图地点
- */
-const val WARFRAME_MARKET_LOCATION = "$WARFRAME_MARKET_BASE_URL/locations"
 
 /**
  * 火卫二世界状态
