@@ -29,6 +29,18 @@ data class WfMarketItemEntity(
     var urlName: String? = null,
 
     /**
+     * Warframe 游戏内部引用路径
+     */
+    @TableField("game_ref")
+    var gameRef: String? = null,
+
+    /**
+     * Market v2 返回的标签 JSON 字符串
+     */
+    @TableField("tags")
+    var tags: String? = null,
+
+    /**
      * 物品对应的杜卡德金币值
      * 可能为null
      */

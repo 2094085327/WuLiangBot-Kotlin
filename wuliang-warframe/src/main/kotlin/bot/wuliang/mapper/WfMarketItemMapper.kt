@@ -28,7 +28,7 @@ interface WfMarketItemMapper : BaseMapper<WfMarketItemEntity?> {
      * @param key 关键字
      * @return 物品信息
      */
-    @Select("select id,zh_name,en_name,url_name,use_count from wf_market_item where (zh_name = #{key} or en_name = #{key})")
+    @Select("select id,zh_name,en_name,url_name,game_ref,tags,ducats,use_count from wf_market_item where (zh_name = #{key} or en_name = #{key})")
     fun getUrlNameFromKey(@Param("key") key: String): WfMarketItemEntity?
 
     /**

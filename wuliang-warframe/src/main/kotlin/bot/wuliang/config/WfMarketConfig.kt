@@ -114,6 +114,15 @@ object WfMarketConfig {
     const val WF_MARKET_RIVEN_KEY = WF_MARKET_CACHE_KEY + "riven:market"
 
     /**
+     * Warframe Market v2 Collection 版本缓存
+     */
+    private const val WF_MARKET_COLLECTION_VERSION_KEY = WF_MARKET_CACHE_KEY + "market:version:"
+    const val WF_MARKET_ITEMS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "items"
+    const val WF_MARKET_RIVENS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "rivens"
+    const val WF_MARKET_LICHES_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "liches"
+    const val WF_MARKET_SISTERS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "sisters"
+
+    /**
      * 科研任务缓存（深层科研/时光科研）
      */
     const val WF_CONQUEST_KEY = WF_MARKET_CACHE_KEY + "conquest"
