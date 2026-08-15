@@ -14,6 +14,7 @@ import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
+import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil
@@ -672,18 +673,39 @@ class WfUtil {
         }
     }
 
+    fun getMarketCollectionVersions(): Map<String, String> {
+        val collections = HttpUtil.doGetJson(
+            url = WARFRAME_MARKET_VERSIONS_V2,
+            headers = LANGUAGE_ZH_HANS
+        )["data"]["collections"]
+
+        return listOf("items", "rivens", "liches", "sisters").associateWith { collection ->
+            collections[collection]?.textValue()?.takeIf { it.isNotBlank() }
+                ?: error("Warframe Market API 版本校验缺失: $collection")
+        }
+    }
+
+    private fun JsonNode.localizedName(language: String): String? {
+        return this["i18n"]?.get(language)?.get("name")?.textValue()
+    }
+
     fun getMarketItems(): List<WfMarketItemEntity> {
         val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
         val items = json["data"]
 
         return items.map { item ->
-            val i18n = item["i18n"]
+            val tags = item["tags"]
+                ?.takeIf { it.isArray }
+                ?.mapNotNull { it.textValue() }
+                ?: emptyList()
 
             WfMarketItemEntity(
                 id = item["id"].textValue(),
                 urlName = item["slug"].textValue(),
-                zhName = i18n["zh-hans"]["name"]?.textValue(),
-                enName = i18n["en"]["name"].textValue(),
+                gameRef = item["gameRef"]?.textValue(),
+                tags = JacksonUtil.toJsonString(tags),
+                zhName = item.localizedName("zh-hans"),
+                enName = item.localizedName("en"),
                 ducats = item["ducats"]?.intValue()
             )
         }
@@ -699,15 +721,36 @@ class WfUtil {
                 id = item["id"].textValue(),
                 urlName = item["slug"].textValue(),
                 zhName = i18n["zh-hans"]["name"]?.textValue(),
-                enName = i18n["en"]["name"].textValue(),
-                rGroup = item["group"].textValue(),
-                reqMasteryRank = item["reqMasteryRank"].floatValue(),
-                rivenType = item["rivenType"].textValue(),
-                disposition = item["disposition"].floatValue(),
+                enName = i18n["en"]["name"]?.textValue(),
+                rGroup = item["group"]?.textValue(),
+                reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
+                rivenType = item["rivenType"]?.textValue(),
+                disposition = item["disposition"]?.floatValue(),
                 attributesBool = 0
             )
         }
     }
+
+    private fun getV2WeaponItems(url: String, group: String): List<WfRivenEntity> {
+        val items = HttpUtil.doGetJson(url = url, headers = LANGUAGE_ZH_HANS)["data"]
+        return items.map { item ->
+            WfRivenEntity(
+                id = item["id"].textValue(),
+                urlName = item["slug"].textValue(),
+                zhName = item.localizedName("zh-hans"),
+                enName = item.localizedName("en"),
+                rGroup = group,
+                reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
+                attributesBool = 2
+            )
+        }
+    }
+
+    fun getLichItems(): List<WfRivenEntity> =
+        getV2WeaponItems(WARFRAME_MARKET_LICH_WEAPONS_V2, "lich")
+
+    fun getSisterItems(): List<WfRivenEntity> =
+        getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, "sister")
 
     fun getRivenAttributes(): List<WfRivenEntity> {
         val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2, headers = LANGUAGE_ZH_HANS)
