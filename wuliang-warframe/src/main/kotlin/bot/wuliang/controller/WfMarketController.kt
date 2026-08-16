@@ -65,7 +65,10 @@ class WfMarketController @Autowired constructor(
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
     suspend fun getMarketItem(context: ExecutionContext, matcher: Matcher) {
-        val key = matcher.group(1)
+        val rawKey = matcher.group(1).trim()
+        val pageMatch = Regex("""(?:^|\s)-(\d+)\s*$""").find(rawKey)
+        val page = pageMatch?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }
+        val key = pageMatch?.let { rawKey.removeRange(it.range).trim() } ?: rawKey
         val regex = """(\d+)(?=级)|(满级)""".toRegex()
         val matchResult = regex.find(key)
         val level = matchResult?.value
@@ -79,7 +82,7 @@ class WfMarketController @Autowired constructor(
         if (lexiconEntity !=
             null
         ) {
-            wfUtil.sendMarketItemInfo(context, lexiconEntity, level)
+            wfUtil.sendMarketItemInfo(context, lexiconEntity, level, page)
             return
         }
 
@@ -87,7 +90,7 @@ class WfMarketController @Autowired constructor(
         val itemEntity = wfUtil.fetchItemEntity(cleanKey)
             ?: run {
                 // 模糊查询
-                val fuzzyList = key
+                val fuzzyList = cleanKey
                     .asSequence()
                     .map { it.toString() }
                     .filter {
@@ -105,13 +108,13 @@ class WfMarketController @Autowired constructor(
                     .distinct()
                     .toList()
                 if (fuzzyList.isNotEmpty()) {
-                    otherUtil.findMatchingStrings(key, fuzzyList).let {
+                    otherUtil.findMatchingStrings(cleanKey, fuzzyList).let {
                         context.sender.sendText(WarframeRespEnum.SEARCH_NOT_FOUND.message + it.joinToString(", "))
                     }
                 } else context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
                 return
             }
-        wfUtil.sendMarketItemInfo(context, itemEntity, level)
+        wfUtil.sendMarketItemInfo(context, itemEntity, level, page)
         return
     }
 

@@ -282,6 +282,6 @@ object HttpUtil {
      * @param responseBody 响应体内容
      * @constructor 创建一个HTTP异常实例
      */
-    class HttpException(statusCode: Int, responseBody: String) :
+    class HttpException(val statusCode: Int, val responseBody: String) :
         Exception("HTTP Request Failed: $statusCode, Response: $responseBody")
 }
