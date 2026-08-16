@@ -784,17 +784,45 @@ class ParseDataUtil {
     }
 
     fun parseWmMinimalPrice(key: String): Int {
-        val json = HttpUtil.doGetJson(url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key")
-        val wmData = json["data"]
-        val filterData = wmData.filter { it["type"].textValue() == "sell" }
-        if (filterData.isEmpty()) {
+        val headers: MutableMap<String, Any> = mutableMapOf(
+            "accept" to "application/json",
+            "language" to "zh-hans",
+            "platform" to "pc",
+            "crossplay" to "false"
+        )
+        val topJson = HttpUtil.doGetJson(
+            url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key/top",
+            headers = headers
+        )
+        val topOrders = topJson["data"]["sell"]
+            ?.takeIf { it.isArray }
+            ?.toList()
+            ?: emptyList()
+        if (topOrders.isNotEmpty()) {
+            return topOrders.first()["platinum"].intValue()
+        }
+
+        val json = HttpUtil.doGetJson(
+            url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key",
+            headers = headers
+        )
+        val fallbackData = json["data"]
+        val fallbackNode = when {
+            fallbackData.isArray -> fallbackData
+            fallbackData["sell"]?.isArray == true -> fallbackData["sell"]
+            else -> null
+        }
+        val fallbackOrders = fallbackNode
+            ?.filter {
+                it["type"].textValue() == "sell" &&
+                        it["visible"].asBoolean(false)
+            }
+            ?: emptyList()
+        if (fallbackOrders.isEmpty()) {
             return 0
         }
-        val onlineOrders = filterData.filter { it["user"]["status"].textValue() != "offline" }
 
-        val targetOrders = onlineOrders.ifEmpty { filterData }
-
-        val minimalOrder = targetOrders.minByOrNull { it["platinum"].intValue() } ?: return 0
+        val minimalOrder = fallbackOrders.minByOrNull { it["platinum"].intValue() } ?: return 0
         val price = minimalOrder["platinum"].intValue()
         return price
     }

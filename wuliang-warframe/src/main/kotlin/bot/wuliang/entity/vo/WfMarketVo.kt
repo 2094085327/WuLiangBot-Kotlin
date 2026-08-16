@@ -16,11 +16,13 @@ class WfMarketVo {
      * @property platinum 价格
      * @property quantity 数量
      * @property inGameName 游戏内名称
+     * @property userStatus 用户状态
      */
     data class OrderInfo(
         val platinum: Int,
         val quantity: Int,
         val inGameName: String,
+        val userStatus: String,
     ) : Serializable
 
     /**

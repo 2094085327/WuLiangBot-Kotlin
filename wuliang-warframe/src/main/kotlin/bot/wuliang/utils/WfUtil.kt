@@ -26,6 +26,8 @@ import bot.wuliang.utils.TimeUtils.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.databind.JsonNode
 import com.github.houbb.opencc4j.util.ZhConverterUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -46,6 +48,28 @@ import java.util.concurrent.TimeUnit
 @Component
 class WfUtil {
 
+    private data class MarketOrder(
+        val hasRank: Boolean,
+        val rank: Int?,
+        val type: String,
+        val visible: Boolean,
+        val platinum: Int,
+        val quantity: Int,
+        val inGameName: String,
+        val status: String,
+    )
+
+    private data class MarketOrderSelection(
+        val orders: List<MarketOrder>,
+        val rankQuery: String?,
+    )
+
+    private data class MarketOrderPage(
+        val orders: List<MarketOrder>,
+        val pageInfo: String,
+        val nextPage: Int?,
+    )
+
     @Autowired
     private lateinit var wfMarketItemService: WfMarketItemService
 
@@ -64,72 +88,293 @@ class WfUtil {
     @Autowired
     private lateinit var webImgUtil: WebImgUtil
 
-
-    @Autowired
     @Qualifier("otherUtil")
     private lateinit var otherUtil: OtherUtil
 
     /**
-     * 发送物品信息
+     * 查询并发送 Warframe Market 物品订单信息。
      *
-     * @param item 物品
-     * @param modLevel 模组等级
+     * @param context 消息执行上下文
+     * @param item 物品信息
+     * @param modLevel 模组等级或“满级”
+     * @param page 页码；为空时优先查询精选订单
      */
-    suspend fun sendMarketItemInfo(context: ExecutionContext, item: WfMarketItemEntity, modLevel: Any? = null) {
-        val headers = mutableMapOf<String, Any>("accept" to "application/json")
-        val marketJson = HttpUtil.doGetJson(url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/${item.urlName}", headers = headers)
-
-        // 定义允许的状态集合
-        val allowedStatuses = setOf("online", "ingame")
-        val orders = marketJson["data"]
-
-        // 获取所有订单中的最大 rank 值
-        val maxModRank = if (modLevel == "满级" && orders.any { it.has("rank") }) {
-            orders.filter { it.has("rank") }.maxOfOrNull { it["rank"].intValue() }
-        } else {
-            (modLevel as? String)?.toIntOrNull()
+    suspend fun sendMarketItemInfo(
+        context: ExecutionContext,
+        item: WfMarketItemEntity,
+        modLevel: String? = null,
+        page: Int? = null
+    ) {
+        val topRequested = page == null && modLevel != "满级"
+        val requestedRank = modLevel?.toIntOrNull()
+        var usingFallback = false
+        var orders = fetchMarketOrdersOrNotify(context, item, requestedRank, topRequested) ?: return
+        if (topRequested && orders.isEmpty()) {
+            usingFallback = true
+            orders = fetchMarketOrdersOrNotify(context, item, requestedRank, top = false) ?: return
         }
 
-        // 筛选出符合条件的订单
+        val selection = selectMarketOrders(
+            orders = orders,
+            modLevel = modLevel,
+            applyFilters = !topRequested || usingFallback,
+        )
+        val marketPage = paginateMarketOrders(
+            orders = selection.orders,
+            requestedPage = page,
+            topRequested = topRequested,
+            usingFallback = usingFallback,
+        )
+        context.sender.sendText(
+            renderMarketItemMessage(item, selection.rankQuery, marketPage, page != null || usingFallback)
+        )
+    }
+
+    /**
+     * 从缓存或 Warframe Market 获取订单，并将 JSON 订单转换为内部模型。
+     *
+     * 网络请求和同步 Redis 操作在 IO 调度器中执行，避免阻塞消息处理线程。
+     *
+     * @param item 物品信息
+     * @param requestedRank 请求的具体模组等级
+     * @param top 是否请求精选订单
+     * @return 解析后的订单列表
+     */
+    private suspend fun fetchMarketOrders(
+        item: WfMarketItemEntity,
+        requestedRank: Int?,
+        top: Boolean,
+    ): List<MarketOrder> = withContext(Dispatchers.IO) {
+        val headers = mutableMapOf<String, Any>(
+            "accept" to "application/json",
+            "language" to "zh-hans",
+            "platform" to "pc",
+        )
+        val suffix = if (top) "/top" else ""
+        val url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/${item.urlName}$suffix"
+        val cacheKey = "${WF_MARKET_CACHE_KEY}orders:$url:rank=${requestedRank ?: "all"}"
+        val cachedOrders = redisService.getValueTyped<String>(cacheKey)
+        val orderNodes = if (cachedOrders != null) {
+            JacksonUtil.readTree(cachedOrders).toList()
+        } else {
+            val json = HttpUtil.doGetJson(
+                url = url,
+                headers = headers,
+                params = requestedRank?.let { mapOf("rank" to it) },
+            )
+            val data = json["data"]
+            val orderNode = when {
+                data.isArray -> data
+                data["sell"]?.isArray == true -> data["sell"]
+                else -> JacksonUtil.readTree("[]")
+            }
+            redisService.setValueWithExpiry(
+                cacheKey,
+                JacksonUtil.toJsonString(orderNode),
+                1L,
+                TimeUnit.MINUTES
+            )
+            orderNode.toList()
+        }
+        orderNodes.map(::parseMarketOrder)
+    }
+
+    /**
+     * 获取订单并处理不支持指定模组等级的 API 错误。
+     *
+     * @param context 消息执行上下文
+     * @param item 物品信息
+     * @param requestedRank 请求的具体模组等级
+     * @param top 是否请求精选订单
+     * @return 订单列表；等级不支持时发送提示并返回 null
+     */
+    private suspend fun fetchMarketOrdersOrNotify(
+        context: ExecutionContext,
+        item: WfMarketItemEntity,
+        requestedRank: Int?,
+        top: Boolean,
+    ): List<MarketOrder>? {
+        return try {
+            fetchMarketOrders(item, requestedRank, top)
+        } catch (e: HttpUtil.HttpException) {
+            if (requestedRank != null &&
+                e.statusCode == 400 &&
+                e.responseBody.contains("app.field.unsupportedValue")
+            ) {
+                context.sender.sendText("「${item.zhName}」不支持${requestedRank}级，请输入该物品允许的等级")
+                null
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 将 API 返回的订单 JSON 转换为内部订单模型。
+     *
+     * @param node 单条订单 JSON
+     * @return 内部订单模型
+     */
+    private fun parseMarketOrder(node: JsonNode): MarketOrder {
+        val user = node["user"]
+        return MarketOrder(
+            hasRank = node.has("rank"),
+            rank = node["rank"].takeIf { node.has("rank") }?.intValue(),
+            type = node["type"].textValue().orEmpty(),
+            visible = node["visible"].asBoolean(false),
+            platinum = node["platinum"].intValue(),
+            quantity = node["quantity"].intValue(),
+            inGameName = user["ingameName"].textValue().orEmpty(),
+            status = user["status"].textValue().orEmpty(),
+        )
+    }
+
+    /**
+     * 根据等级、可见性和用户在线状态筛选订单。
+     *
+     * “满级”使用完整订单集计算最大等级，再筛选可见订单，避免离线高等级订单影响查询结果。
+     *
+     * @param orders 原始订单列表
+     * @param modLevel 用户输入的等级
+     * @param applyFilters 是否应用普通订单筛选；精选订单由 API 负责排序和筛选
+     * @return 筛选后的订单及实际生效的等级查询
+     */
+    private fun selectMarketOrders(
+        orders: List<MarketOrder>,
+        modLevel: String?,
+        applyFilters: Boolean,
+    ): MarketOrderSelection {
+        val supportsRank = orders.any { it.hasRank }
+        val rankQuery = modLevel.takeIf { supportsRank }
+        val requestedRank = modLevel?.toIntOrNull()
+        val maxModRank = if (rankQuery == "满级") {
+            orders.asSequence()
+                .filter { it.hasRank }
+                .mapNotNull { it.rank }
+                .maxOrNull()
+        } else {
+            requestedRank
+        }
+
+        if (!applyFilters) {
+            return MarketOrderSelection(orders, rankQuery)
+        }
+
         val filteredOrders = orders.asSequence()
+            .filter { it.visible }
             .filter { order ->
-                order["type"].textValue() == "sell" &&
-                        order["user"]["status"].textValue() in allowedStatuses &&
-                        (modLevel == null || (order.has("rank") &&
-                                order["rank"].intValue() == maxModRank))
+                when {
+                    rankQuery == null -> true
+                    requestedRank != null -> !order.hasRank || order.rank == requestedRank
+                    else -> order.hasRank && order.rank == maxModRank
+                }
             }
-            .sortedBy { it["platinum"].intValue() }
-            .take(5)
-            .map {
-                WfMarketVo.OrderInfo(
-                    platinum = it["platinum"].intValue(),
-                    quantity = it["quantity"].intValue(),
-                    inGameName = it["user"]["ingameName"].textValue()
-                )
-            }
+            .filter { it.type == "sell" && it.status in setOf("online", "ingame") }
+            .sortedBy { it.platinum }
             .toList()
 
+        return MarketOrderSelection(filteredOrders, rankQuery)
+    }
+
+    /**
+     * 对订单执行普通分页，或将精选订单包装为第一页结果。
+     *
+     * @param orders 待分页订单
+     * @param requestedPage 用户请求的页码
+     * @param topRequested 是否请求精选订单
+     * @param usingFallback 是否已经从精选接口回退到普通接口
+     * @return 分页结果和下一页信息
+     */
+    private fun paginateMarketOrders(
+        orders: List<MarketOrder>,
+        requestedPage: Int?,
+        topRequested: Boolean,
+        usingFallback: Boolean,
+    ): MarketOrderPage {
+        if (topRequested && !usingFallback) {
+            return MarketOrderPage(
+                orders = orders,
+                pageInfo = "\n精选订单",
+                nextPage = 2,
+            )
+        }
+
+        val pageSize = 5
+        val totalPages = maxOf(1, (orders.size + pageSize - 1) / pageSize)
+        val currentPage = (requestedPage ?: 1).coerceIn(1, totalPages)
+        val pageOrders = orders
+            .drop((currentPage - 1) * pageSize)
+            .take(pageSize)
+        val nextPage = (currentPage + 1).takeIf { it <= totalPages }
+
+        return MarketOrderPage(
+            orders = pageOrders,
+            pageInfo = "\n页码：$currentPage/$totalPages",
+            nextPage = nextPage,
+        )
+    }
+
+    /**
+     * 将订单分页结果渲染为机器人消息文本。
+     *
+     * @param item 物品信息
+     * @param rankQuery 实际生效的等级查询
+     * @param page 分页结果
+     * @param showVisibleOrderMessage 是否显示“可见订单”提示
+     * @return 待发送的消息文本
+     */
+    private fun renderMarketItemMessage(
+        item: WfMarketItemEntity,
+        rankQuery: String?,
+        page: MarketOrderPage,
+        showVisibleOrderMessage: Boolean,
+    ): String {
+        val filteredOrders = page.orders.map {
+            WfMarketVo.OrderInfo(
+                platinum = it.platinum,
+                quantity = it.quantity,
+                inGameName = it.inGameName,
+                userStatus = when (it.status) {
+                    "online" -> "在线中"
+                    "ingame" -> "游戏中"
+                    else -> "离线"
+                }
+            )
+        }
         val orderString = if (filteredOrders.isEmpty()) {
-            "当前没有任何在线的玩家出售${item.zhName}"
+            if (showVisibleOrderMessage) {
+                "当前没有可见的玩家出售${item.zhName}"
+            } else {
+                "当前没有任何在线的玩家出售${item.zhName}"
+            }
         } else {
             filteredOrders.joinToString("\n") {
-                "| ${it.inGameName.replace(".", "ׅ")} \n" + "| 价格: ${it.platinum} 数量: ${it.quantity}\n"
-            } + "\n/w ${
-                filteredOrders.first().inGameName.replace(
-                    ".",
-                    "ׅ"
-                )
-            } Hi! I want to buy: \"${item.enName}\" for ${filteredOrders.first().platinum} platinum.(wf.m WuLiang-Bot)"
+                "| ${escapeMarketUserName(it.inGameName)} \n" +
+                        "| 价格: ${it.platinum} 数量: ${it.quantity} 状态：${it.userStatus}\n"
+            } + "\n/w ${escapeMarketUserName(filteredOrders.first().inGameName)} " +
+                    "Hi! I want to buy: \"${item.enName}\" for " +
+                    "${filteredOrders.first().platinum} platinum.(wf.m WuLiang-Bot)"
         }
-
         val modLevelString = when {
-            modLevel == "满级" -> "满级"
-            modLevel != null -> "${modLevel}级"
+            rankQuery == "满级" -> "满级"
+            rankQuery != null -> "${rankQuery}级"
             else -> ""
         }
+        val nextPageMessage = page.nextPage?.let {
+            "\n\n使用'wm ${item.zhName} -$it' 查看下一页"
+        }.orEmpty()
 
-        context.sender.sendText("你查询的物品是 $modLevelString「${item.zhName}」\n$orderString")
+        return "你查询的物品是 ${modLevelString}「${item.zhName}」${page.pageInfo}\n" +
+                orderString + nextPageMessage
     }
+
+    /**
+     * 替换游戏内名称中的点号，避免消息平台将名称解析为其他格式。
+     *
+     * @param name 游戏内名称
+     * @return 可用于消息文本的名称
+     */
+    private fun escapeMarketUserName(name: String): String = name.replace(".", "ׅ")
 
     /**
      * 如果找不到项目，则处理模糊搜索的功能
@@ -751,22 +996,6 @@ class WfUtil {
 
     fun getSisterItems(): List<WfRivenEntity> =
         getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, "sister")
-
-    fun getRivenAttributes(): List<WfRivenEntity> {
-        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2, headers = LANGUAGE_ZH_HANS)
-        val items = json["data"]
-
-        return items.map { item ->
-            WfRivenEntity(
-                id = item["id"].textValue(),
-                urlName = item["slug"].textValue(),
-                zhName = item["i18n"]["zh-hans"]["name"].textValue(),
-                enName = item["i18n"]["en"]["name"].textValue(),
-                rGroup = item["group"].textValue(),
-                attributesBool = 1
-            )
-        }
-    }
 
     /**
      * 将年日转换为 "MM月DD日" 格式（1999年，非闰年）
