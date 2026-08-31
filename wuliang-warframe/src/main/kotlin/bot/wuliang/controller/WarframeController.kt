@@ -24,6 +24,7 @@ import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
+import bot.wuliang.riven.RivenAuctionResultStore
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.ParseDataUtil
@@ -37,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 
 /**
@@ -49,6 +51,7 @@ import java.time.Instant
 @RequestMapping("/warframe")
 class WarframeController(
     @Autowired private val wfLexiconService: WfLexiconService,
+    private val rivenAuctionResultStore: RivenAuctionResultStore,
     @Autowired private val redisService: RedisService,
 ) {
     @Autowired
@@ -161,16 +164,18 @@ class WarframeController(
         @RequestParam("url_name") urlName: String?,
         @RequestParam("damage") damage: String?,
         @RequestParam("element") element: String?,
-        @RequestParam("ephemera") ephemera: String?
+        @RequestParam("ephemera") ephemera: String?,
+        @RequestParam("page", defaultValue = "1") page: Int,
     ): WfMarketVo.LichEntity? {
-        return redisService.getValueTyped<WfMarketVo.LichEntity>("${WF_LICHORDER_KEY}:${urlName}${damage}${element}${ephemera}")
+        val cacheKey = "${WF_LICHORDER_KEY}:${urlName}:${damage}:${element}:${ephemera}:page=$page"
+        return redisService.getValueTyped<WfMarketVo.LichEntity>(cacheKey)
     }
 
     @ApiOperation("紫卡信息")
-    @RequestMapping("/riven")
+    @GetMapping("/riven")
     @DataSchema(commandKey = "riven")
-    fun riven(): WfMarketVo.RivenOrderList? {
-        return WfMarketController.WfMarket.rivenOrderList
+    fun riven(@RequestParam("resultId") resultId: UUID): WfMarketVo.RivenOrderList? {
+        return rivenAuctionResultStore.get(resultId)
     }
 
     @ApiOperation("电波信息")

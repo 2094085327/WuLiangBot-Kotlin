@@ -5,8 +5,8 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
-import bot.wuliang.controller.WfMarketController
 import bot.wuliang.entity.WfMarketItemEntity
+import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.entity.vo.WfStatusVo
@@ -19,6 +19,7 @@ import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
+import bot.wuliang.riven.RivenQueryCriteria
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.tencentCos.CosFileServiceImpl
@@ -34,7 +35,6 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -299,18 +299,12 @@ class WfUtil {
             )
         }
 
-        val pageSize = 5
-        val totalPages = maxOf(1, (orders.size + pageSize - 1) / pageSize)
-        val currentPage = (requestedPage ?: 1).coerceIn(1, totalPages)
-        val pageOrders = orders
-            .drop((currentPage - 1) * pageSize)
-            .take(pageSize)
-        val nextPage = (currentPage + 1).takeIf { it <= totalPages }
+        val page = orders.paginate(requestedPage ?: 1)
 
         return MarketOrderPage(
-            orders = pageOrders,
-            pageInfo = "\n页码：$currentPage/$totalPages",
-            nextPage = nextPage,
+            orders = page.items,
+            pageInfo = "\n页码：${page.currentPage}/${page.totalPages}",
+            nextPage = page.nextPage,
         )
     }
 
@@ -398,63 +392,6 @@ class WfUtil {
     }
 
     /**
-     * 处理参数并分离正负词条的功能
-     *
-     * @param parameters 参数
-     * @param positiveStats 正词条
-     * @param negativeStat 负词条
-     */
-    private fun processParameters(
-        parameters: List<String>,
-        positiveStats: MutableList<String>,
-        negativeStat: String?
-    ): String? {
-        var negative = negativeStat
-
-        parameters.forEach { parameter ->
-            if (parameter.contains("负")) {
-                negative = if (parameter == "无负") "none"
-                else wfRivenService.turnKeyToUrlNameByRivenLike(parameter.replace("负", ""))?.firstOrNull()?.urlName
-            } else {
-                wfRivenService.turnKeyToUrlNameByRivenLike(parameter)
-                    ?.firstOrNull()?.urlName?.let { positiveStats.add(it) }
-            }
-        }
-
-        return negative
-    }
-
-    /**
-     * 用于为API调用创建查询参数的函数
-     *
-     * @param weaponUrlName 武器URL名称
-     * @param positiveStats 正词条
-     * @param negativeStat 负词条
-     * @return 查询参数
-     */
-    private fun createQueryParams(
-        weaponUrlName: String,
-        positiveStats: List<String>,
-        negativeStat: String?,
-        otherParams: Map<String, String>? = null
-    ): MutableMap<String, String> {
-        return mutableMapOf(
-            "weapon_url_name" to weaponUrlName,
-            "sort_by" to "price_asc"
-        ).apply {
-            if (positiveStats.isNotEmpty()) {
-                put("positive_stats", positiveStats.joinToString(","))
-            }
-            negativeStat?.let {
-                put("negative_stats", it)
-            }
-            otherParams?.let {
-                putAll(it)
-            }
-        }
-    }
-
-    /**
      * 用于为API调用创建查询参数的函数
      *
      * @param weaponUrlName 武器URL名称
@@ -476,170 +413,29 @@ class WfUtil {
         }
     }
 
-    /**
-     * 对字符串首字符进行转大写
-     *
-     * @return 首字符转换为大写后的字符串
-     */
-    fun String.capitalizeSpecial(): String {
-        // 将字符串分割为单词，使用空格和 '-' 作为分隔符
-        val words = this.split(" ", "-")
-
-        // 对每个单词的首字母进行大写处理
-        val capitalizedWords = words.joinToString(" ") { word ->
-            if (word.isNotEmpty()) {
-                word.replaceFirstChar { it.uppercase() }
-            } else {
-                word
-            }
-        }
-
-        return capitalizedWords
+    fun getRivenAuctionsJson(criteria: RivenQueryCriteria): JsonNode? = try {
+        HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = criteria.toMarketParams())
+    } catch (e: Exception) {
+        logError("WM紫卡查询错误:$e")
+        null
     }
 
-    /**
-     * 判断输入的时间字符串距离当前时间有多远
-     *
-     * @param timeStr 时间字符串
-     * @return 判断后的时间
-     */
-    private fun timeAgo(timeStr: String): String {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-        val pastTime = LocalDateTime.parse(timeStr, formatter)
-        val now = LocalDateTime.now()
-
-        val years = ChronoUnit.YEARS.between(pastTime, now)
-        val months = ChronoUnit.MONTHS.between(pastTime, now)
-        val days = ChronoUnit.DAYS.between(pastTime, now)
-        val hours = ChronoUnit.HOURS.between(pastTime, now)
-        val minutes = ChronoUnit.MINUTES.between(pastTime, now)
-        val seconds = ChronoUnit.SECONDS.between(pastTime, now)
-
-        return when {
-            years > 0 -> "${years}年前"
-            months > 0 -> "${months}个月前"
-            days > 0 -> "${days}天前"
-            hours > 0 -> "${hours}小时前"
-            minutes > 0 -> "${minutes}分钟前"
-            seconds > 0 -> "${seconds}秒前"
-            else -> "刚刚"
-        }
-    }
-
-    /**
-     * 将拍卖数据格式化为字符串消息的函数
-     *
-     * @param rivenJson 紫卡Json数据
-     * @param itemZhName 物品中文名称
-     * @param reRollTimes 紫卡循环次数
-     * @return 格式化后的拍卖数据
-     */
-    fun formatAuctionData(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int? = null): Boolean {
-        val orders = rivenJson["payload"]["auctions"]
-        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
-
-        val rivenOrderList = orders.asSequence()
-            // 筛选游戏状态为 在线 和 游戏中 的信息
-            .filter {
-                if (reRollTimes != null) it["item"]["re_rolls"].intValue() == reRollTimes else true
-            }
-            // 按照 status 排序，ingame -> online -> offline
-            .sortedBy {
-                when (it["owner"]["status"].textValue()) {
-                    "ingame" -> 0
-                    "online" -> 1
-                    "offline" -> 2
-                    else -> 3
-                }
-            }
-            .take(5)
-            .map { order ->
-                val status = order["owner"]["status"].textValue()
-
-                WfMarketVo.RivenOrderInfo(
-                    user = order["owner"]["ingame_name"].textValue(),
-                    userStatus = if (status == "online") "游戏在线" else if (status == "ingame") "游戏中" else "离线",
-                    modName = (order["item"]["weapon_url_name"].textValue() + " " + order["item"]["name"].textValue()).capitalizeSpecial(),
-                    modRank = order["item"]["mod_rank"].intValue(),
-                    reRolls = order["item"]["re_rolls"].intValue(),
-                    masteryLevel = order["item"]["mastery_level"].intValue(),
-                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
-                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                    polarity = polaritySymbols[order["item"]["polarity"].textValue()] ?: "-",
-                    positive = mutableListOf(),
-                    negative = mutableListOf(),
-                    updateTime = timeAgo(order["updated"].textValue())
-                ).apply {
-                    order["item"]["attributes"].forEach { attribute ->
-                        val attr = WfMarketVo.Attributes(
-                            value = attribute["value"].doubleValue(),
-                            positive = attribute["positive"].booleanValue(),
-                            urlName = wfRivenService.turnUrlNameToKeyByRiven(attribute["url_name"].textValue())
-                        )
-                        if (attr.positive) positive.add(attr)
-                        else negative.add(attr)
-                    }
-                }
-            }.toList()
-
-        if (rivenOrderList.isEmpty()) return false
-
-        WfMarketController.WfMarket.rivenOrderList = WfMarketVo.RivenOrderList(
-            itemName = itemZhName,
-            orderList = rivenOrderList
-        )
-
-        return true
-    }
-
-    /**
-     * 获取拍卖数据
-     *
-     * @param parameterList 紫卡参数列表
-     * @param element 武器元素
-     * @param ephemera 是否有幻纹
-     * @param itemEntityUrlName 物品Url名称
-     * @param auctionType 拍卖类型
-     * @param lichType 玄骸类型
-     * @return Json数据
-     */
-    fun getAuctionsJson(
-        parameterList: List<String>? = null,
+    fun getLichAuctionsJson(
         element: String? = null,
         ephemera: String? = null,
         itemEntityUrlName: String,
-        auctionType: String,
         lichType: String? = null
     ): JsonNode? {
-        val positiveStats = mutableListOf<String>()
-        val negativeStat: String? = null
-
-        val queryParams = when (auctionType) {
-            "riven" -> {
-                parameterList?.let { processParameters(it.drop(1), positiveStats, negativeStat) }
-                createQueryParams(itemEntityUrlName, positiveStats, negativeStat)
-            }
-
-            "lich" -> {
-                val ephemeraBoolean = ephemera?.contains("有")
-                createLichQueryParams(itemEntityUrlName, element = element, ephemera = ephemeraBoolean)
-            }
-
-            else -> return null
-        }
+        val ephemeraBoolean = ephemera?.contains("有")
+        val queryParams = createLichQueryParams(itemEntityUrlName, element = element, ephemera = ephemeraBoolean)
 
         return try {
-            when (auctionType) {
-                "riven" -> HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = queryParams)
-                "lich" -> when (lichType) {
-                    "lich" -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
-                    else -> HttpUtil.doGetJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
-                }
-
-                else -> null
+            when (lichType) {
+                "lich" -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
+                else -> HttpUtil.doGetJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
             }
         } catch (e: Exception) {
-            logError("WM查询错误:$e")
+            logError("WM玄骸查询错误:$e")
             null
         }
     }
@@ -971,7 +767,6 @@ class WfUtil {
                 reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
                 rivenType = item["rivenType"]?.textValue(),
                 disposition = item["disposition"]?.floatValue(),
-                attributesBool = 0
             )
         }
     }
@@ -986,7 +781,6 @@ class WfUtil {
                 enName = item.localizedName("en"),
                 rGroup = group,
                 reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
-                attributesBool = 2
             )
         }
     }
@@ -996,6 +790,14 @@ class WfUtil {
 
     fun getSisterItems(): List<WfRivenEntity> =
         getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, "sister")
+
+    fun getRivenAttributes(): List<WfRivenAttributeEntity> {
+        val items = HttpUtil.doGetJson(
+            url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2,
+            headers = LANGUAGE_ZH_HANS
+        )["data"]
+        return items.map(WfRivenAttributeParser::parse)
+    }
 
     /**
      * 将年日转换为 "MM月DD日" 格式（1999年，非闰年）

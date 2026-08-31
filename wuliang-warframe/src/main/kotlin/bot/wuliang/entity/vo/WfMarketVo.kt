@@ -30,12 +30,18 @@ class WfMarketVo {
      *
      * @property value 属性值
      * @property positive 是否为正属性
-     * @property urlName 属性URL名
+     * @property slug v1 拍卖接口使用的属性标识
+     * @property displayName 根据 v2 属性目录解析出的展示名
+     * @property unit v2 属性目录提供的数值单位
+     * @property formattedValue 已按单位格式化、可直接展示的属性值
      */
     data class Attributes(
         val value: Double,
         val positive: Boolean,
-        val urlName: String
+        val slug: String,
+        val displayName: String,
+        val unit: String?,
+        val formattedValue: String,
     ) : Serializable
 
     /**
@@ -58,8 +64,8 @@ class WfMarketVo {
         val startPlatinum: Int,
         val buyOutPlatinum: Int,
         val polarity: String,
-        val positive: MutableList<Attributes>,
-        val negative: MutableList<Attributes>,
+        val positive: List<Attributes>,
+        val negative: List<Attributes>,
         val updateTime: String,
     ) : Serializable
 
@@ -88,7 +94,9 @@ class WfMarketVo {
      */
     data class LichEntity(
         val lichName: String? = null,
-        val lichOrderInfoList: List<LichOrderInfo>? = listOf()
+        val lichOrderInfoList: List<LichOrderInfo>? = listOf(),
+        val currentPage: Int = 1,
+        val totalPages: Int = 1,
     ) : Serializable
 
     /**
@@ -99,14 +107,8 @@ class WfMarketVo {
      */
     data class RivenOrderList(
         val itemName: String,
-        val orderList: List<RivenOrderInfo>
+        val orderList: List<RivenOrderInfo>,
+        val currentPage: Int = 1,
+        val totalPages: Int = 1,
     ) : Serializable
-
-    /**
-     * 全部紫卡价格排行
-     *
-     * @property name 紫卡名称
-     * @property value 价格
-     */
-    data class RivenRank(val name: String? = null, val value: Double? = null) : Serializable
 }

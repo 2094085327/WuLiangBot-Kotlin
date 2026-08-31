@@ -44,38 +44,16 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
 
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .eq("zh", zh)
-            .eq("attributes", 0)
-            .or()
-            .eq("en", zh)
-            .eq("attributes", 0)
+            .nested { it.eq("zh", zh).or().eq("en", zh) }
+            .notIn("r_group", "lich", "sister")
         return rivenMapper.selectOne(queryWrapper)
     }
 
     override fun turnKeyToUrlNameByLich(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .eq("zh", zh)
-            .eq("attributes", 2)
-            .or()
-            .eq("en", zh)
-            .eq("attributes", 2)
+            .nested { it.eq("zh", zh).or().eq("en", zh) }
+            .`in`("r_group", "lich", "sister")
         return rivenMapper.selectOne(queryWrapper)
-    }
-
-    override fun turnKeyToUrlNameByRivenLike(zh: String): List<WfRivenEntity?>? {
-        val regex = zh.toCharArray().joinToString(".*") { it.toString() }  // 将输入字符串转换为.*分隔的正则表达式
-        val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .apply("zh REGEXP {0}", regex)
-            .eq("attributes", 1)
-            .or()
-            .like("en", "%$zh%")
-            .eq("attributes", 1)
-        return rivenMapper.selectList(queryWrapper)
-    }
-
-    override fun turnUrlNameToKeyByRiven(urlName: String): String {
-        val queryWrapper = QueryWrapper<WfRivenEntity>().eq("url_name", urlName)
-        return rivenMapper.selectOne(queryWrapper)?.zhName ?: ""
     }
 
     override fun superFuzzyQuery(key: String): List<WfRivenEntity?>? {
@@ -109,14 +87,14 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
 
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .eq("attributes", 2)
-            .like("url_name", "%${key.replace(" ", "%_%")}%")
-            .or()
-            .eq("attributes", 2)
-            .apply("zh REGEXP {0}", regex)
-            .or()
-            .eq("attributes", 2)
-            .like("en", "%${key.replace(" ", "%")}%")
+            .`in`("r_group", "lich", "sister")
+            .and {
+                it.like("url_name", "%${key.replace(" ", "%_%")}%")
+                    .or()
+                    .apply("zh REGEXP {0}", regex)
+                    .or()
+                    .like("en", "%${key.replace(" ", "%")}%")
+            }
 
         return getWfRivenEntityLike(queryWrapper, key)
     }
@@ -127,11 +105,6 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
 
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .nested {
-                it.eq("attributes", 0)
-                    .or()
-                    .eq("attributes", 2)
-            }
-            .and {
                 it.like("url_name", "%${key.replace(" ", "%_%")}%")
                     .or()
                     .apply("zh REGEXP {0}", regex)
