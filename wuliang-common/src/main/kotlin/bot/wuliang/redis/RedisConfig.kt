@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.cache.annotation.CachingConfigurer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -34,6 +35,8 @@ class RedisConfig : CachingConfigurer {
         val stringRedisSerializer = StringRedisSerializer()
         val om: ObjectMapper = JsonMapper.builder()
             .addModule(JavaTimeModule())
+            // Redis 使用独立 ObjectMapper，必须显式注册 Kotlin 模块才能调用 data class 主构造器。
+            .addModule(KotlinModule.Builder().build())
             .build()
             .apply {
                 val ptv = BasicPolymorphicTypeValidator.builder()

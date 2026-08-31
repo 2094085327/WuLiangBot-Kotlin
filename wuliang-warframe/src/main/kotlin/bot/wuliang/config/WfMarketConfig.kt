@@ -113,12 +113,15 @@ object WfMarketConfig {
      */
     const val WF_MARKET_RIVEN_KEY = WF_MARKET_CACHE_KEY + "riven:market"
 
+    /** 单次紫卡查询结果；实际 Redis key 会追加请求 UUID。 */
+    const val WF_RIVEN_RESULT_KEY_PREFIX = WF_MARKET_CACHE_KEY + "riven:result:"
+
     /**
      * Warframe Market v2 Collection 版本缓存
      */
     private const val WF_MARKET_COLLECTION_VERSION_KEY = WF_MARKET_CACHE_KEY + "market:version:"
     const val WF_MARKET_ITEMS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "items"
-    const val WF_MARKET_RIVENS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "rivens"
+    const val WF_MARKET_RIVENS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "rivensWithAttributes"
     const val WF_MARKET_LICHES_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "liches"
     const val WF_MARKET_SISTERS_VERSION_KEY = WF_MARKET_COLLECTION_VERSION_KEY + "sisters"
 

@@ -6,13 +6,13 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_ITEMS_VERSION_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_LICHES_VERSION_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVENS_VERSION_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_SISTERS_VERSION_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.logAop.SystemLog
 import bot.wuliang.redis.RedisService
+import bot.wuliang.riven.RivenCatalogSync
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
@@ -47,6 +47,9 @@ class WfTranslateLexicon {
 
     @Autowired
     lateinit var wfUtil: WfUtil
+
+    @Autowired
+    lateinit var rivenCatalogSync: RivenCatalogSync
 
     private fun updateCollectionIfChanged(
         collectionName: String,
@@ -93,9 +96,7 @@ class WfTranslateLexicon {
                     marketVersions?.get("rivens")?.let { version ->
                         runCatching {
                             updateCollectionIfChanged("紫卡", version, WF_MARKET_RIVENS_VERSION_KEY) {
-                                val rivenList = wfUtil.getRivenItems()
-                                wfRivenService.insertRiven(rivenList)
-                                redisService.setValue(WF_MARKET_RIVEN_KEY, rivenList)
+                                rivenCatalogSync.sync()
                             }
                         }.onFailure { logError("紫卡词库更新失败", it) }
                     }

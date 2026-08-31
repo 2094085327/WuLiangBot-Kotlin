@@ -70,11 +70,4 @@ data class WfRivenEntity(
     @JsonProperty("disposition")
     @TableField(value = "disposition")
     var disposition: Float? = null,
-
-    /**
-     * 是否为紫卡属性
-     */
-    @JsonProperty("attributes")
-    @TableField(value = "attributes")
-    val attributesBool: Int? = 0
 ) : Serializable
