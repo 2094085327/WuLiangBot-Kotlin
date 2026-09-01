@@ -13,7 +13,6 @@ import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.logAop.SystemLog
 import bot.wuliang.redis.RedisService
 import bot.wuliang.riven.RivenCatalogSync
-import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.utils.WfUtil
@@ -21,7 +20,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 
@@ -32,24 +30,13 @@ import org.springframework.stereotype.Component
  */
 @Component
 @ActionService
-class WfTranslateLexicon {
-    @Autowired
-    lateinit var wfLexiconService: WfLexiconService
-
-    @Autowired
-    lateinit var wfRivenService: WfRivenService
-
-    @Autowired
-    lateinit var wfMarketItemService: WfMarketItemService
-
-    @Autowired
-    lateinit var redisService: RedisService
-
-    @Autowired
-    lateinit var wfUtil: WfUtil
-
-    @Autowired
-    lateinit var rivenCatalogSync: RivenCatalogSync
+class WfTranslateLexicon(
+    private val wfRivenService: WfRivenService,
+    private val wfMarketItemService: WfMarketItemService,
+    private val redisService: RedisService,
+    private val wfUtil: WfUtil,
+    private val rivenCatalogSync: RivenCatalogSync,
+) {
 
     private fun updateCollectionIfChanged(
         collectionName: String,

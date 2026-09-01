@@ -21,6 +21,7 @@ data class RivenCatalogSyncResult(
 class RivenCatalogSync(
     private val wfUtil: WfUtil,
     private val writer: RivenCatalogWriter,
+    private val attributeCatalog: DatabaseRivenAttributeCatalog,
     private val redisService: RedisService,
 ) {
     fun sync(): RivenCatalogSyncResult {
@@ -28,6 +29,7 @@ class RivenCatalogSync(
         val attributes = wfUtil.getRivenAttributes()
         RivenCatalogValidator.validate(weapons, attributes)
         writer.replace(weapons, attributes)
+        attributeCatalog.refresh(attributes)
         redisService.setValue(WF_MARKET_RIVEN_KEY, weapons)
         return RivenCatalogSyncResult(weapons.size, attributes.size)
     }
@@ -43,7 +45,7 @@ class RivenCatalogWriter(
     fun replace(weapons: List<WfRivenEntity>, attributes: List<WfRivenAttributeEntity>) {
         // lich/sister 仍由各自的数据源维护，因此这里只替换标准紫卡武器。
         rivenMapper.delete(
-            QueryWrapper<WfRivenEntity>().notIn("r_group", "lich", "sister")
+            QueryWrapper<WfRivenEntity>().notIn("r_group", RivenGroups.LICH, RivenGroups.SISTER)
         )
         attributeMapper.delete(null)
         rivenMapper.insertOrUpdateBatch(weapons)
@@ -61,7 +63,7 @@ object RivenCatalogValidator {
         }
         require(attributes.all {
             !it.id.isNullOrBlank() && !it.urlName.isNullOrBlank() &&
-                !it.zhName.isNullOrBlank() && !it.enName.isNullOrBlank()
+                    !it.zhName.isNullOrBlank() && !it.enName.isNullOrBlank()
         }) { "紫卡属性目录包含缺少 id、slug 或名称的记录" }
         require(weapons.mapNotNull { it.id }.distinct().size == weapons.size) { "紫卡武器目录包含重复 id" }
         require(attributes.mapNotNull { it.id }.distinct().size == attributes.size) { "紫卡属性目录包含重复 id" }

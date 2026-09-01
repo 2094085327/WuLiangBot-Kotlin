@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.WfRivenAttributeMapper">
+
+    <insert id="insertOrUpdateBatch">
+        INSERT INTO wf_riven_attribute
+            (id, url_name, game_ref, r_group, prefix, suffix, unit, en, zh)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.urlName}, #{item.gameRef}, #{item.rGroup}, #{item.prefix},
+             #{item.suffix}, #{item.unit}, #{item.enName}, #{item.zhName})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            url_name = VALUES(url_name),
+            game_ref = VALUES(game_ref),
+            r_group = VALUES(r_group),
+            prefix = VALUES(prefix),
+            suffix = VALUES(suffix),
+            unit = VALUES(unit),
+            en = VALUES(en),
+            zh = VALUES(zh)
+    </insert>
+</mapper>

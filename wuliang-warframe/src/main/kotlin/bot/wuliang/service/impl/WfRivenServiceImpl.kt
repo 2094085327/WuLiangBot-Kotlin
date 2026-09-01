@@ -2,10 +2,10 @@ package bot.wuliang.service.impl
 
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.mapper.WfRivenMapper
+import bot.wuliang.riven.RivenGroups
 import bot.wuliang.service.WfRivenService
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 
@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service
  * @date 2024/5/20 下午11:50
  */
 @Service
-class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRivenService {
-    @Autowired
-    lateinit var rivenMapper: WfRivenMapper
+class WfRivenServiceImpl(
+    private val rivenMapper: WfRivenMapper,
+) : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRivenService {
 
     /**
      * Sorensen-Dice 系数计算字符串相似度
@@ -45,14 +45,14 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .nested { it.eq("zh", zh).or().eq("en", zh) }
-            .notIn("r_group", "lich", "sister")
+            .notIn("r_group", RivenGroups.LICH, RivenGroups.SISTER)
         return rivenMapper.selectOne(queryWrapper)
     }
 
     override fun turnKeyToUrlNameByLich(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .nested { it.eq("zh", zh).or().eq("en", zh) }
-            .`in`("r_group", "lich", "sister")
+            .`in`("r_group", RivenGroups.LICH, RivenGroups.SISTER)
         return rivenMapper.selectOne(queryWrapper)
     }
 
@@ -87,7 +87,7 @@ class WfRivenServiceImpl : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRive
 
         // 创建查询条件，结合市场状态、URL名称模糊匹配、正则匹配及英文名模糊匹配
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .`in`("r_group", "lich", "sister")
+            .`in`("r_group", RivenGroups.LICH, RivenGroups.SISTER)
             .and {
                 it.like("url_name", "%${key.replace(" ", "%_%")}%")
                     .or()
