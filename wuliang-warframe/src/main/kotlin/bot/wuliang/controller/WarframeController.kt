@@ -3,7 +3,7 @@ package bot.wuliang.controller
 import bot.wuliang.config.WARFRAME_STATUS_URL
 import bot.wuliang.config.WfMarketConfig.WF_ALL_OTHER_NAME_KEY
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
- import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
@@ -24,8 +24,8 @@ import bot.wuliang.exception.RespBean
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
-import bot.wuliang.riven.RivenAuctionResultStore
 import bot.wuliang.respEnum.WarframeRespEnum
+import bot.wuliang.riven.RivenAuctionResultStore
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils.formatDuration
@@ -34,11 +34,10 @@ import bot.wuliang.utils.TimeUtils.getInstantNow
 import bot.wuliang.utils.TimeUtils.getNextMonday
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 
 /**
@@ -50,13 +49,11 @@ import java.util.UUID
 @RestController
 @RequestMapping("/warframe")
 class WarframeController(
-    @Autowired private val wfLexiconService: WfLexiconService,
+    private val wfLexiconService: WfLexiconService,
     private val rivenAuctionResultStore: RivenAuctionResultStore,
-    @Autowired private val redisService: RedisService,
+    private val redisService: RedisService,
+    private val parseDataUtil: ParseDataUtil,
 ) {
-    @Autowired
-    private lateinit var parseDataUtil: ParseDataUtil
-
     /**
      * 新增别名
      */

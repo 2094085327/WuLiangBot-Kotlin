@@ -10,6 +10,22 @@ data class RivenAttributeDefinition(
     val unit: String?,
 )
 
+object RivenGroups {
+    const val LICH = "lich"
+    const val SISTER = "sister"
+}
+
+object MarketUserStatuses {
+    const val IN_GAME = "ingame"
+    const val ONLINE = "online"
+    const val OFFLINE = "offline"
+}
+
+object MarketDefaults {
+    const val AUCTION_PAGE_SIZE = 5
+    const val LICH_CACHE_TTL_SECONDS = 60L
+}
+
 interface RivenAttributeCatalog {
     /** 按中文、英文或 slug 解析用户输入，并显式保留歧义结果。 */
     fun resolve(name: String): RivenAttributeMatch

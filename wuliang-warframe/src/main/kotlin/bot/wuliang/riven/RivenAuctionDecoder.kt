@@ -1,14 +1,14 @@
 package bot.wuliang.riven
 
 import bot.wuliang.entity.vo.WfMarketVo
+import bot.wuliang.utils.paginate
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.stereotype.Component
-import bot.wuliang.utils.paginate
 import java.time.Duration
+import java.time.Instant
 import java.time.OffsetDateTime
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.util.*
 import kotlin.math.absoluteValue
 
 sealed interface RivenAuctionDecodeResult {
@@ -27,14 +27,14 @@ class RivenAuctionDecoder(
             .sortedBy { statusOrder(it["owner"]["status"].textValue()) }
             .toList()
         if (matchingOrders.isEmpty()) return RivenAuctionDecodeResult.Empty
-        val selectedPage = matchingOrders.paginate(page, PAGE_SIZE)
+        val selectedPage = matchingOrders.paginate(page, MarketDefaults.AUCTION_PAGE_SIZE)
+        val now = Instant.now()
 
         val definitions = attributeCatalog.findBySlugs(
             selectedPage.items.flatMap { order ->
                 order["item"]["attributes"].mapNotNull { it["url_name"]?.textValue() }
             }.distinct()
         )
-        val polaritySymbols = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
         val orders = selectedPage.items.map { order ->
             val attributes = order["item"]["attributes"].map { attribute ->
                 val slug = attribute["url_name"].textValue()
@@ -61,10 +61,10 @@ class RivenAuctionDecoder(
                 masteryLevel = order["item"]["mastery_level"].intValue(),
                 startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
                 buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                polarity = polaritySymbols[order["item"]["polarity"].textValue()] ?: "-",
+                polarity = POLARITY_SYMBOLS[order["item"]["polarity"].textValue()] ?: DEFAULT_POLARITY,
                 positive = attributes.filter { it.positive },
                 negative = attributes.filterNot { it.positive },
-                updateTime = timeAgo(order["updated"].textValue()),
+                updateTime = timeAgo(order["updated"].textValue(), now),
             )
         }
         return RivenAuctionDecodeResult.Success(
@@ -94,25 +94,25 @@ class RivenAuctionDecoder(
     }
 
     private fun statusOrder(status: String): Int = when (status) {
-        "ingame" -> 0
-        "online" -> 1
-        "offline" -> 2
+        MarketUserStatuses.IN_GAME -> 0
+        MarketUserStatuses.ONLINE -> 1
+        MarketUserStatuses.OFFLINE -> 2
         else -> 3
     }
 
     private fun displayStatus(status: String): String = when (status) {
-        "ingame" -> "游戏中"
-        "online" -> "游戏在线"
+        MarketUserStatuses.IN_GAME -> "游戏中"
+        MarketUserStatuses.ONLINE -> "游戏在线"
         else -> "离线"
     }
 
     private fun capitalizeName(value: String): String = value.split(" ", "-")
         .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
 
-    private fun timeAgo(value: String): String {
+    private fun timeAgo(value: String, now: Instant): String {
         val duration = Duration.between(
             OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant(),
-            ZonedDateTime.now().toInstant(),
+            now,
         )
         return when {
             duration.toDays() >= 365 -> "${duration.toDays() / 365}年前"
@@ -126,6 +126,7 @@ class RivenAuctionDecoder(
     }
 
     companion object {
-        private const val PAGE_SIZE = 5
+        private const val DEFAULT_POLARITY = "-"
+        private val POLARITY_SYMBOLS = mapOf("madurai" to "r", "vazarin" to "Δ", "naramon" to "一")
     }
 }

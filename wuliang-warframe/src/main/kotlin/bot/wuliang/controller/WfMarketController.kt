@@ -2,7 +2,6 @@ package bot.wuliang.controller
 
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.aipOcr.AipOcrClient
-import bot.wuliang.logAop.SystemLog
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
@@ -14,27 +13,23 @@ import bot.wuliang.entity.vo.WfMarketVo
 import bot.wuliang.httpUtil.HttpUtil.urlEncode
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
+import bot.wuliang.logAop.SystemLog
 import bot.wuliang.message.BotMessage
 import bot.wuliang.moudles.WmDucats
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
-import bot.wuliang.riven.RivenCriteriaResolution
-import bot.wuliang.riven.RivenAuctionDecodeResult
-import bot.wuliang.riven.RivenAuctionDecoder
-import bot.wuliang.riven.RivenAuctionResultStore
-import bot.wuliang.riven.RivenQueryCriteriaResolver
 import bot.wuliang.respEnum.WarframeRespEnum
+import bot.wuliang.riven.*
 import bot.wuliang.service.WfLexiconService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
-import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.PagedCommand
-import bot.wuliang.utils.paginate
+import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
+import bot.wuliang.utils.paginate
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.util.*
@@ -49,7 +44,7 @@ import java.util.regex.Matcher
  */
 @Component
 @ActionService
-class WfMarketController @Autowired constructor(
+class WfMarketController(
     private val wfUtil: WfUtil,
     private val webImgUtil: WebImgUtil,
     private val wfLexiconService: WfLexiconService,
@@ -61,11 +56,13 @@ class WfMarketController @Autowired constructor(
     private val rivenQueryCriteriaResolver: RivenQueryCriteriaResolver,
     private val rivenAuctionDecoder: RivenAuctionDecoder,
     private val rivenAuctionResultStore: RivenAuctionResultStore,
+    private val wfMarketItemService: WfMarketItemService,
 ) {
-    @Autowired
-    private lateinit var wfMarketItemService: WfMarketItemService
-
     private val wmRateLimiter = kotlinx.coroutines.sync.Semaphore(2)
+
+    companion object {
+        private const val KUVA_WEAPON_MARKER = "kuva"
+    }
 
     @SystemLog(businessName = "获取WM市场物品信息")
     @AParameter
@@ -156,11 +153,13 @@ class WfMarketController @Autowired constructor(
                 context.sender.sendText("无法识别紫卡词条，可能的紫卡词条：$suggestions")
                 return
             }
+
             is RivenCriteriaResolution.AmbiguousAttribute -> {
                 val candidates = resolution.candidates.joinToString("、") { it.zhName.ifBlank { it.enName } }
                 context.sender.sendText("紫卡词条存在歧义，可能的紫卡词条：$candidates")
                 return
             }
+
             is RivenCriteriaResolution.ConflictingNegativeAttributes -> {
                 context.sender.sendText("每次查询只能指定一个负词条条件")
                 return
@@ -182,6 +181,7 @@ class WfMarketController @Autowired constructor(
                 context.sender.sendText(WarframeRespEnum.SEARCH_RIVEN_NOT_FOUND.message + itemEntity.zhName)
                 return
             }
+
             is RivenAuctionDecodeResult.Success -> decoded.value
         }
         val resultId = rivenAuctionResultStore.publish(orderList)
@@ -226,7 +226,7 @@ class WfMarketController @Autowired constructor(
         val ephemera: String? = otherParams.firstOrNull { it.contains("无") || it.contains("有") }
 
         val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
-        val lichType = if (itemEntity.urlName!!.contains("kuva")) "lich" else "sister"
+        val lichType = if (itemEntity.urlName!!.contains(KUVA_WEAPON_MARKER)) RivenGroups.LICH else RivenGroups.SISTER
 
         val lichCacheKey =
             "${WF_LICHORDER_KEY}:${itemEntity.urlName}:${damage}:${element}:${ephemera}:page=${pagedCommand.page}"
@@ -248,20 +248,21 @@ class WfMarketController @Autowired constructor(
 
             val matchingOrders = orders.asSequence()
                 .filter { if (damage != null) it["item"]["damage"].intValue() == damage else true }
-                .map { order ->
-                    WfMarketVo.LichOrderInfo(
-                        element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
-                        havingEphemera = order["item"]["having_ephemera"].booleanValue(),
-                        damage = order["item"]["damage"].intValue(),
-                        startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
-                        buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
-                    )
-                }.toList()
-            val orderPage = matchingOrders.paginate(pagedCommand.page)
+                .toList()
+            val orderPage = matchingOrders.paginate(pagedCommand.page, MarketDefaults.AUCTION_PAGE_SIZE)
+            val orderInfos = orderPage.items.map { order ->
+                WfMarketVo.LichOrderInfo(
+                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
+                    havingEphemera = order["item"]["having_ephemera"].booleanValue(),
+                    damage = order["item"]["damage"].intValue(),
+                    startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
+                    buyOutPlatinum = order["buyout_price"]?.intValue() ?: order["starting_price"].intValue(),
+                )
+            }
 
             val lichOrderEntity = WfMarketVo.LichEntity(
                 lichName = itemEntity.zhName!!,
-                lichOrderInfoList = orderPage.items,
+                lichOrderInfoList = orderInfos,
                 currentPage = orderPage.currentPage,
                 totalPages = orderPage.totalPages,
             )
@@ -269,14 +270,14 @@ class WfMarketController @Autowired constructor(
             redisService.setValueWithExpiry(
                 lichCacheKey,
                 lichOrderEntity,
-                60L,
+                MarketDefaults.LICH_CACHE_TTL_SECONDS,
                 TimeUnit.SECONDS
             )
         }
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/lich?url_name=${itemEntity.urlName}&damage=${damage}" +
-                "&element=${element}&ephemera=${ephemera}&page=${pagedCommand.page}",
+                    "&element=${element}&ephemera=${ephemera}&page=${pagedCommand.page}",
             imgName = "lich-${UUID.randomUUID()}",
             element = "#app",
             waitElement = ".warframeLich"

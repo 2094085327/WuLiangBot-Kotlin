@@ -19,6 +19,7 @@ import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
+import bot.wuliang.riven.RivenGroups
 import bot.wuliang.riven.RivenQueryCriteria
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
@@ -431,7 +432,7 @@ class WfUtil {
 
         return try {
             when (lichType) {
-                "lich" -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
+                RivenGroups.LICH -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
                 else -> HttpUtil.doGetJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
             }
         } catch (e: Exception) {
@@ -786,10 +787,10 @@ class WfUtil {
     }
 
     fun getLichItems(): List<WfRivenEntity> =
-        getV2WeaponItems(WARFRAME_MARKET_LICH_WEAPONS_V2, "lich")
+        getV2WeaponItems(WARFRAME_MARKET_LICH_WEAPONS_V2, RivenGroups.LICH)
 
     fun getSisterItems(): List<WfRivenEntity> =
-        getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, "sister")
+        getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, RivenGroups.SISTER)
 
     fun getRivenAttributes(): List<WfRivenAttributeEntity> {
         val items = HttpUtil.doGetJson(

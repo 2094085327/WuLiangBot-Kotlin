@@ -2,7 +2,6 @@ package bot.wuliang.riven
 
 import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.mapper.WfRivenAttributeMapper
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import org.springframework.stereotype.Component
 
 /** 基于独立紫卡属性表实现领域目录查询。 */
@@ -10,16 +9,16 @@ import org.springframework.stereotype.Component
 class DatabaseRivenAttributeCatalog(
     private val attributeMapper: WfRivenAttributeMapper,
 ) : RivenAttributeCatalog {
+    @Volatile
+    private var snapshot: CatalogSnapshot? = null
+
     override fun resolve(name: String): RivenAttributeMatch {
-        val regex = name.toCharArray().joinToString(".*") { it.toString() }
-        val candidates = attributeMapper.selectList(
-            QueryWrapper<WfRivenAttributeEntity>()
-                .apply("zh REGEXP {0}", regex)
-                .or()
-                .like("en", "%$name%")
-                .or()
-                .eq("url_name", name)
-        ).mapNotNull(::toDefinition)
+        val normalizedName = name.trim()
+        val candidates = currentSnapshot().definitions.filter { definition ->
+            definition.zhName.containsCharactersInOrder(normalizedName) ||
+                    definition.enName.contains(normalizedName, ignoreCase = true) ||
+                    definition.slug.equals(normalizedName, ignoreCase = true)
+        }
 
         // 精确匹配优先；只有没有精确结果时才采用模糊匹配，避免短词误命中。
         val exact = candidates.filter {
@@ -36,16 +35,14 @@ class DatabaseRivenAttributeCatalog(
 
     override fun findBySlugs(slugs: Collection<String>): Map<String, RivenAttributeDefinition> {
         if (slugs.isEmpty()) return emptyMap()
-        return attributeMapper.selectList(
-            QueryWrapper<WfRivenAttributeEntity>().`in`("url_name", slugs.distinct())
-        ).mapNotNull(::toDefinition).associateBy { it.slug }
+        val definitionsBySlug = currentSnapshot().definitionsBySlug
+        return slugs.distinct().mapNotNull { slug -> definitionsBySlug[slug]?.let { slug to it } }.toMap()
     }
 
     override fun suggest(name: String, limit: Int): List<RivenAttributeDefinition> {
         if (name.isBlank() || limit <= 0) return emptyList()
         val normalizedName = name.trim().lowercase()
-        return attributeMapper.selectList(QueryWrapper<WfRivenAttributeEntity>())
-            .mapNotNull(::toDefinition)
+        return currentSnapshot().definitions
             .map { definition ->
                 definition to minOf(
                     normalizedDistance(normalizedName, definition.zhName.lowercase()),
@@ -57,6 +54,26 @@ class DatabaseRivenAttributeCatalog(
             .sortedBy { (_, distance) -> distance }
             .take(limit)
             .map { (definition) -> definition }
+    }
+
+    /** 使用刚完成同步的数据原子替换查询快照，避免再次读取数据库。 */
+    fun refresh(entities: Collection<WfRivenAttributeEntity>) {
+        snapshot = CatalogSnapshot.from(entities.mapNotNull(::toDefinition))
+    }
+
+    private fun currentSnapshot(): CatalogSnapshot = snapshot ?: synchronized(this) {
+        snapshot ?: CatalogSnapshot.from(
+            attributeMapper.selectList(null).mapNotNull(::toDefinition)
+        ).also { snapshot = it }
+    }
+
+    private fun String.containsCharactersInOrder(query: String): Boolean {
+        if (query.isEmpty()) return false
+        var queryIndex = 0
+        for (character in this) {
+            if (character == query[queryIndex] && ++queryIndex == query.length) return true
+        }
+        return false
     }
 
     private fun normalizedDistance(left: String, right: String): Double {
@@ -96,5 +113,17 @@ class DatabaseRivenAttributeCatalog(
 
     companion object {
         private const val MAX_SUGGESTION_DISTANCE = 0.6
+    }
+
+    private data class CatalogSnapshot(
+        val definitions: List<RivenAttributeDefinition>,
+        val definitionsBySlug: Map<String, RivenAttributeDefinition>,
+    ) {
+        companion object {
+            fun from(definitions: List<RivenAttributeDefinition>) = CatalogSnapshot(
+                definitions = definitions.toList(),
+                definitionsBySlug = definitions.associateBy { it.slug },
+            )
+        }
     }
 }
