@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.2.0...2.2.1) (2026-10-01)
+
+
+### 🐛 Bug Fixes
+
+* **warframe:** 修复灵化数据缺失并调整数据位置 ([3f62a11](https://github.com/2094085327/WuLiangBot-Kotlin/commit/3f62a11534ee88bf5f722b3c151d318b8bd244fc))
+
 ## [2.2.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.1.0...2.2.0) (2026-10-01)
 
 
