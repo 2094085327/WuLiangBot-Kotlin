@@ -1,0 +1,23 @@
+{
+  "weatherStates": {"1":"Joy","2":"Anger","3":"Envy","4":"Sorrow","5":"Fear"},
+  "damageTypes": {"1":"Void","2":"Heat","3":"Toxin","4":"Cold","5":"Electricity"},
+  "weather": [
+    {"stateId":1,"dmgStateId":1,"startTime":"2024-08-18T20:02:30+08:00"},
+    {"stateId":2,"dmgStateId":2,"startTime":"2024-08-18T22:02:30+08:00"},
+    {"stateId":3,"dmgStateId":3,"startTime":"2024-08-19T00:02:30+08:00"},
+    {"stateId":4,"dmgStateId":4,"startTime":"2024-08-19T02:02:30+08:00"},
+    {"stateId":5,"dmgStateId":5,"startTime":"2024-08-19T04:02:30+08:00"}
+  ],
+  "places": [
+    {"name":"Upperhaven","npc":[{"name":"/Lotus/Language/Duviri/DragonName","excludeIds":[2]}]},
+    {"name":"Chamber of the Muses","npc":[{"name":"Luscinia","excludeIds":[4]}]},
+    {"name":"The Agora","npc":[{"name":"Bombastine","excludeIds":[3]}]},
+    {"name":"Mathila's Farm","npc":[{"name":"Mathila","excludeIds":[1]}]},
+    {"name":"Hill between Titan's Rest and Custos Arch","npc":[{"name":"Sythel","excludeIds":[5]}]}
+  ],
+  "excludePlaces": [
+    {"name":"The Archarbor","excludeIds":[2,5]},
+    {"name":"The Amphitheater","excludeIds":[4]},
+    {"name":"/Lotus/Language/Duviri/ThePrison","excludeIds":[1,3]}
+  ]
+}

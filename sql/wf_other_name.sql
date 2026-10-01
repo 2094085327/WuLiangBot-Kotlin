@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : 122.51.5.228
- Source Server Type    : MariaDB
- Source Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- Source Host           : 122.51.5.228:3306
- Source Schema         : wuliang
-
- Target Server Type    : MariaDB
- Target Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- File Encoding         : 65001
-
- Date: 06/11/2025 09:13:06
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 

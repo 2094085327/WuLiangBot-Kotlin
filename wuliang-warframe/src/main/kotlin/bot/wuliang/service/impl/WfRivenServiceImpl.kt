@@ -4,6 +4,7 @@ import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.mapper.WfRivenMapper
 import bot.wuliang.riven.RivenGroups
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.translation.PublicExportService
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service
 @Service
 class WfRivenServiceImpl(
     private val rivenMapper: WfRivenMapper,
+    private val translations: PublicExportService,
 ) : ServiceImpl<WfRivenMapper?, WfRivenEntity?>(), WfRivenService {
 
     /**
@@ -44,29 +46,30 @@ class WfRivenServiceImpl(
 
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .nested { it.eq("zh", zh).or().eq("en", zh) }
+            .nested { it.eq("zh", zh).or().eq("en", zh).or().`in`("en", translations.index().translateQuery(zh) + zh) }
             .notIn("r_group", RivenGroups.LICH, RivenGroups.SISTER)
-        return rivenMapper.selectOne(queryWrapper)
+        return rivenMapper.selectOne(queryWrapper)?.let(translations::localize)
     }
 
     override fun turnKeyToUrlNameByLich(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .nested { it.eq("zh", zh).or().eq("en", zh) }
+            .nested { it.eq("zh", zh).or().eq("en", zh).or().`in`("en", translations.index().translateQuery(zh) + zh) }
             .`in`("r_group", RivenGroups.LICH, RivenGroups.SISTER)
-        return rivenMapper.selectOne(queryWrapper)
+        return rivenMapper.selectOne(queryWrapper)?.let(translations::localize)
     }
 
     override fun superFuzzyQuery(key: String): List<WfRivenEntity?>? {
+        if (key.isBlank()) return emptyList()
         val queryWrapper = QueryWrapper<WfRivenEntity>()
-            .like("zh", "%$key%")
+            .like("zh", key)
             .or()
-            .like("en", "%$key%")
-        return rivenMapper.selectList(queryWrapper)
+            .like("en", key)
+        return rivenMapper.selectList(queryWrapper).map { it?.let(translations::localize) }
     }
 
     fun getWfRivenEntityLike(queryWrapper: QueryWrapper<WfRivenEntity>, key: String): List<WfRivenEntity?> {
         // 获取查询结果
-        val resultList = rivenMapper.selectList(queryWrapper)
+        val resultList = rivenMapper.selectList(queryWrapper).map { it?.let(translations::localize) }
 
         // 对查询结果按 Sorensen-Dice 系数排序，然后按 id 排序
         return resultList.distinctBy { it?.id }.sortedWith(compareByDescending<WfRivenEntity?> {
@@ -116,7 +119,7 @@ class WfRivenServiceImpl(
 
 
     override fun selectAllRivenData(): List<WfRivenEntity> {
-        return rivenMapper.selectAllRiven()
+        return rivenMapper.selectAllRiven().map(translations::localize)
     }
 
 }

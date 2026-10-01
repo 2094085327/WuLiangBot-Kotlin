@@ -1,0 +1,1324 @@
+[
+  {
+    "imageKey": "ancient_disruptor",
+    "locations": [
+      {
+        "level": "6-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-24",
+        "missionKey": "Tikal",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode3"
+      },
+      {
+        "level": "8-10",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-24",
+        "missionKey": "Terminus",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode28"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-24",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      }
+    ]
+  },
+  {
+    "imageKey": "ancient_healer",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2018-08-22",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode401"
+      }
+    ]
+  },
+  {
+    "imageKey": "anti_moa",
+    "locations": [
+      {
+        "level": "34-38",
+        "spawnRate": "100%",
+        "lastVerified": "2019-07-01",
+        "missionKey": "Acheron",
+        "planetKey": "/Lotus/Language/Locations/Pluto",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode4"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2020-01-28",
+        "missionKey": "Baal",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode205"
+      },
+      {
+        "level": "18-33",
+        "spawnRate": "?%",
+        "lastVerified": "2020-01-28",
+        "missionKey": "Valefor",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode216"
+      }
+    ]
+  },
+  {
+    "imageKey": "arid_eviscerator",
+    "locations": [
+      {
+        "level": "10-12",
+        "spawnRate": "100%",
+        "lastVerified": "2018-04-16",
+        "missionKey": "Ara",
+        "planetKey": "/Lotus/Language/Locations/Mars",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode45"
+      }
+    ]
+  },
+  {
+    "imageKey": "ballista",
+    "locations": [
+      {
+        "level": "2-4",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-15",
+        "missionKey": "Mantle",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode63"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-15",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      }
+    ]
+  },
+  {
+    "imageKey": "boiler",
+    "locations": [
+      {
+        "level": "23-33",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-23",
+        "missionKey": "Cholistan",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode7"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-23",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      },
+      {
+        "level": "25-35",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-23",
+        "missionKey": "Orokin Derelict Capture",
+        "planetKey": "Orokin Derelict",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested"
+      }
+    ]
+  },
+  {
+    "imageKey": "bombard",
+    "locations": [
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-20",
+        "missionKey": "Ker",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode141"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-08",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "13-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-20",
+        "missionKey": "Nuovo",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode137"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-20",
+        "missionKey": "Exta",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_ASSASSINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode144"
+      }
+    ]
+  },
+  {
+    "imageKey": "brood_mother",
+    "locations": [
+      {
+        "level": "6-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-04-16",
+        "missionKey": "Tikal",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode3"
+      },
+      {
+        "level": "15-25",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-26",
+        "missionKey": "Gabii",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_SURVIVAL",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode23"
+      },
+      {
+        "level": "25-35",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-29",
+        "missionKey": "Assur",
+        "planetKey": "/Lotus/Language/Locations/Uranus",
+        "typeKey": "MT_SURVIVAL",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode17"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-26",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      }
+    ]
+  },
+  {
+    "imageKey": "butcher",
+    "locations": [
+      {
+        "level": "2-4",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-26",
+        "missionKey": "Mantle",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode63"
+      },
+      {
+        "level": "6-8",
+        "spawnRate": "70%",
+        "lastVerified": "2018-09-25",
+        "missionKey": "Caloris",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode119"
+      },
+      {
+        "level": "7-9",
+        "spawnRate": "78%",
+        "lastVerified": "2019-06-26",
+        "missionKey": "Elion",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode12"
+      },
+      {
+        "level": "36-40",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-26",
+        "missionKey": "Rusalka",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode184"
+      }
+    ]
+  },
+  {
+    "imageKey": "charger",
+    "locations": [
+      {
+        "level": "8-10",
+        "spawnRate": "100%",
+        "lastVerified": "2019-06-27",
+        "missionKey": "Terminus",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode28"
+      },
+      {
+        "level": "7-9",
+        "spawnRate": "100%",
+        "lastVerified": "2019-09-01",
+        "missionKey": "M Prime",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode103"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-06-27",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      }
+    ]
+  },
+  {
+    "imageKey": "commander",
+    "locations": [
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2018-05-08",
+        "missionKey": "Telesto",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode20"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_ancient",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-05",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode401"
+      },
+      {
+        "level": "20-25",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-05",
+        "missionKey": "Stribog",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode404"
+      },
+      {
+        "level": "20-25",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-05",
+        "missionKey": "Ani",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_SURVIVAL",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode405"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_bombard",
+    "locations": [
+      {
+        "level": "30-35",
+        "spawnRate": "100%",
+        "lastVerified": "2019-06-05",
+        "missionKey": "Oxomoco",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode407"
+      },
+      {
+        "level": "40-45",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-12",
+        "missionKey": "Marduk",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode411"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_butcher",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "94%",
+        "lastVerified": "2019-01-25",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode401"
+      },
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-25",
+        "missionKey": "Teshub",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode400"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_crewman",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-28",
+        "missionKey": "Teshub",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode400"
+      },
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-28",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode401"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_heavy_gunner",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-23",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode401"
+      },
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-23",
+        "missionKey": "Teshub",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode400"
+      },
+      {
+        "level": "30-35",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-23",
+        "missionKey": "Ukko",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode406"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_lancer",
+    "locations": [
+      {
+        "level": "10-15",
+        "spawnRate": "100%",
+        "lastVerified": "2018-04-15",
+        "missionKey": "Hepit",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode401"
+      },
+      {
+        "level": "30-35",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-17",
+        "missionKey": "Ukko",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode406"
+      }
+    ]
+  },
+  {
+    "imageKey": "corrupted_nullifier",
+    "locations": [
+      {
+        "level": "30-35",
+        "spawnRate": "78%",
+        "lastVerified": "2019-08-14",
+        "missionKey": "Oxomoco",
+        "planetKey": "/Lotus/Language/Locations/Void",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Orokin",
+        "nodeId": "SolNode407"
+      }
+    ]
+  },
+  {
+    "imageKey": "crawler",
+    "locations": [
+      {
+        "level": "6-16",
+        "spawnRate": "100%",
+        "lastVerified": "2018-04-06",
+        "missionKey": "Tikal",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode3"
+      },
+      {
+        "level": "6-11",
+        "spawnRate": "100%",
+        "lastVerified": "2018-05-13",
+        "missionKey": "Apollodorus",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_SURVIVAL",
+        "factionKey": "Infested",
+        "nodeId": "SolNode94"
+      },
+      {
+        "level": "18-20",
+        "spawnRate": "100%",
+        "lastVerified": "2019-05-30",
+        "missionKey": "Armaros",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode204"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-07",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-07",
+        "missionKey": "Brugia",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode153"
+      },
+      {
+        "level": "25-35",
+        "spawnRate": "100%",
+        "lastVerified": "2018-03-20",
+        "missionKey": "Orokin Derelict Assassination",
+        "planetKey": "Orokin Derelict",
+        "typeKey": "MT_ASSASSINATION",
+        "factionKey": "Infested"
+      }
+    ]
+  },
+  {
+    "imageKey": "crewman",
+    "locations": [
+      {
+        "level": "25-30",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-16",
+        "missionKey": "Copernicus",
+        "planetKey": "/Lotus/Language/Locations/Moon",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode304"
+      }
+    ]
+  },
+  {
+    "imageKey": "drahk_master",
+    "locations": [
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-31",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "90%",
+        "lastVerified": "2019-01-31",
+        "missionKey": "Anthe",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode31"
+      }
+    ]
+  },
+  {
+    "imageKey": "elite_crewman",
+    "locations": [
+      {
+        "level": "25-30",
+        "spawnRate": "100%",
+        "lastVerified": "2019-09-28",
+        "missionKey": "Copernicus",
+        "planetKey": "/Lotus/Language/Locations/Moon",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode304"
+      },
+      {
+        "level": "25-30",
+        "spawnRate": "100%",
+        "lastVerified": "2019-09-28",
+        "missionKey": "Zeipel",
+        "planetKey": "/Lotus/Language/Locations/Moon",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode307"
+      },
+      {
+        "level": "5-7",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-16",
+        "missionKey": "Venera",
+        "planetKey": "/Lotus/Language/Locations/Venus",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode107"
+      }
+    ]
+  },
+  {
+    "imageKey": "eviscerator",
+    "locations": [
+      {
+        "level": "10-12",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-24",
+        "missionKey": "Ara",
+        "planetKey": "/Lotus/Language/Locations/Mars",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode45"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-15",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "13-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-15",
+        "missionKey": "Nuovo",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode137"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-09-12",
+        "missionKey": "Ker",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode141"
+      }
+    ]
+  },
+  {
+    "imageKey": "fusion_moa",
+    "locations": [
+      {
+        "level": "9-11",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-29",
+        "missionKey": "Gradivus",
+        "planetKey": "/Lotus/Language/Locations/Mars",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode65"
+      },
+      {
+        "level": "12-14",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-29",
+        "missionKey": "Skyresh",
+        "planetKey": "/Lotus/Language/Locations/Phobos",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SettlementNode2"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-29",
+        "missionKey": "Abaddon",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode203"
+      },
+      {
+        "level": "30-34",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-29",
+        "missionKey": "Hydra",
+        "planetKey": "/Lotus/Language/Locations/Pluto",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode76"
+      }
+    ]
+  },
+  {
+    "imageKey": "guardsman",
+    "locations": [
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-11-23",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "13-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-01",
+        "missionKey": "Nuovo",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode137"
+      },
+      {
+        "level": "13-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-01",
+        "missionKey": "Ludi",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_RETRIEVAL",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode138"
+      }
+    ]
+  },
+  {
+    "imageKey": "heavy_gunner",
+    "locations": [
+      {
+        "level": "7-9",
+        "spawnRate": "77%",
+        "lastVerified": "2019-08-13",
+        "missionKey": "Elion",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode12"
+      },
+      {
+        "level": "6-8",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-13",
+        "missionKey": "Caloris",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode119"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-13",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-13",
+        "missionKey": "Rusalka",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode184"
+      }
+    ]
+  },
+  {
+    "imageKey": "hellion",
+    "locations": [
+      {
+        "level": "10-12",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-15",
+        "missionKey": "Ara",
+        "planetKey": "/Lotus/Language/Locations/Mars",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode45"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-03-30",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "90%",
+        "lastVerified": "2019-03-30",
+        "missionKey": "Rusalka",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode184"
+      }
+    ]
+  },
+  {
+    "imageKey": "lancer",
+    "locations": [
+      {
+        "level": "7-9",
+        "spawnRate": "81%",
+        "lastVerified": "2019-02-14",
+        "missionKey": "Elion",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode12"
+      },
+      {
+        "level": "6-8",
+        "spawnRate": "80%",
+        "lastVerified": "2019-02-14",
+        "missionKey": "Caloris",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode119"
+      },
+      {
+        "level": "6-8",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-14",
+        "missionKey": "Pantheon",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode226"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-06-24",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "34-38",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-14",
+        "missionKey": "Kappa",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_INTEL",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode177"
+      }
+    ]
+  },
+  {
+    "imageKey": "leaper",
+    "locations": [
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-13",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      },
+      {
+        "level": "6-16",
+        "spawnRate": "100%",
+        "lastVerified": "2018-09-23",
+        "missionKey": "Tikal",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXCAVATE",
+        "factionKey": "Infested",
+        "nodeId": "ClanNode3"
+      },
+      {
+        "level": "8-10",
+        "spawnRate": "92%",
+        "lastVerified": "2019-01-13",
+        "missionKey": "Terminus",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_SABOTAGE",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode28"
+      },
+      {
+        "level": "7-9",
+        "spawnRate": "33%",
+        "lastVerified": "2018-09-23",
+        "missionKey": "M Prime",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode103"
+      }
+    ]
+  },
+  {
+    "imageKey": "moa",
+    "locations": [
+      {
+        "level": "5-7",
+        "spawnRate": "100%",
+        "lastVerified": "2019-04-04",
+        "missionKey": "Venera",
+        "planetKey": "/Lotus/Language/Locations/Venus",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode107"
+      },
+      {
+        "level": "5-7",
+        "spawnRate": "100%",
+        "lastVerified": "2019-04-04",
+        "missionKey": "Linea",
+        "planetKey": "/Lotus/Language/Locations/Venus",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode109"
+      },
+      {
+        "level": "3-5",
+        "spawnRate": "100%",
+        "lastVerified": "2019-04-04",
+        "missionKey": "E-Gate",
+        "planetKey": "/Lotus/Language/Locations/Venus",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Corpus"
+      }
+    ]
+  },
+  {
+    "imageKey": "napalm",
+    "locations": [
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-21",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "30-40",
+        "spawnRate": "100%",
+        "lastVerified": "2018-08-04",
+        "missionKey": "Selkie",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_SURVIVAL",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode187"
+      }
+    ]
+  },
+  {
+    "imageKey": "nullifier_crewman",
+    "locations": [
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-06-27",
+        "missionKey": "Abaddon",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode203"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-04-06",
+        "missionKey": "Orias",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Corpus",
+        "nodeId": "SolNode217"
+      }
+    ]
+  },
+  {
+    "imageKey": "runner",
+    "locations": [
+      {
+        "level": "34-38",
+        "spawnRate": "100%",
+        "lastVerified": "2018-01-06",
+        "missionKey": "Saxis",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Infested",
+        "nodeId": "SolNode171"
+      },
+      {
+        "level": "34-38",
+        "spawnRate": "100%",
+        "lastVerified": "2018-08-31",
+        "missionKey": "Orokin Derelict Exterminate",
+        "planetKey": "Orokin Derelict",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Infested"
+      }
+    ]
+  },
+  {
+    "imageKey": "scorch",
+    "locations": [
+      {
+        "level": "21-23",
+        "spawnRate": "95%",
+        "lastVerified": "2019-08-13",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-16",
+        "missionKey": "Numa",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode50"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-16",
+        "missionKey": "ANTHE",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode31"
+      }
+    ]
+  },
+  {
+    "imageKey": "scorpion",
+    "locations": [
+      {
+        "level": "14-16",
+        "spawnRate": "58%",
+        "lastVerified": "2019-02-02",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-03",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-03",
+        "missionKey": "Numa",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode50"
+      }
+    ]
+  },
+  {
+    "imageKey": "seeker",
+    "locations": [
+      {
+        "level": "1-3",
+        "spawnRate": "100%",
+        "lastVerified": "2020-03-10",
+        "missionKey": "E-Prime",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "14-16",
+        "spawnRate": "100%",
+        "lastVerified": "2019-11-28",
+        "missionKey": "Lex",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer"
+      },
+      {
+        "level": "13-15",
+        "spawnRate": "100%",
+        "lastVerified": "2019-02-11",
+        "missionKey": "Nuovo",
+        "planetKey": "/Lotus/Language/Locations/Ceres",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode137"
+      },
+      {
+        "level": "34-38",
+        "spawnRate": "100%",
+        "lastVerified": "2019-08-09",
+        "missionKey": "Kappa",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_INTEL",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode177"
+      }
+    ]
+  },
+  {
+    "imageKey": "shield_lancer",
+    "locations": [
+      {
+        "level": "6-8",
+        "spawnRate": "75%",
+        "lastVerified": "2019-01-30",
+        "missionKey": "Pantheon",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode226"
+      },
+      {
+        "level": "6-8",
+        "spawnRate": "40%",
+        "lastVerified": "2019-01-30",
+        "missionKey": "Caloris",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode119"
+      },
+      {
+        "level": "7-9",
+        "spawnRate": "76%",
+        "lastVerified": "2019-04-18",
+        "missionKey": "Elion",
+        "planetKey": "/Lotus/Language/Locations/Mercury",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode12"
+      },
+      {
+        "level": "21-23",
+        "spawnRate": "88%",
+        "lastVerified": "2019-10-21",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      }
+    ]
+  },
+  {
+    "imageKey": "swarm-mutalist_moa",
+    "locations": [
+      {
+        "level": "18-20",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-19",
+        "missionKey": "Armaros",
+        "planetKey": "/Lotus/Language/Locations/Europa",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Crossfire",
+        "nodeId": "SolNode204"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-19",
+        "missionKey": "Isos",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode162"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-19",
+        "missionKey": "Brugia",
+        "planetKey": "/Lotus/Language/Locations/Eris",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Infested",
+        "nodeId": "SolNode153"
+      }
+    ]
+  },
+  {
+    "imageKey": "trooper",
+    "locations": [
+      {
+        "level": "2-4",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-22",
+        "missionKey": "Mantle",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode63"
+      },
+      {
+        "level": "1-3",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-22",
+        "missionKey": "E Prime",
+        "planetKey": "/Lotus/Language/Locations/Earth",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode27"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-22",
+        "missionKey": "Numa",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_RESCUE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode50"
+      },
+      {
+        "level": "22-24",
+        "spawnRate": "100%",
+        "lastVerified": "2019-01-22",
+        "missionKey": "Cassini",
+        "planetKey": "/Lotus/Language/Locations/Saturn",
+        "typeKey": "MT_CAPTURE",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode70"
+      },
+      {
+        "level": "32-36",
+        "spawnRate": "100%",
+        "lastVerified": "2018-09-14",
+        "missionKey": "Adaro",
+        "planetKey": "/Lotus/Language/Locations/Sedna",
+        "typeKey": "MT_EXTERMINATION",
+        "factionKey": "Grineer",
+        "nodeId": "SolNode181"
+      }
+    ]
+  }
+]

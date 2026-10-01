@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : 122.51.5.228
- Source Server Type    : MariaDB
- Source Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- Source Host           : 122.51.5.228:3306
- Source Schema         : wuliang
-
- Target Server Type    : MariaDB
- Target Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- File Encoding         : 65001
-
- Date: 06/11/2025 09:13:52
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -33,7 +17,7 @@ CREATE TABLE `bot_directives`  (
   `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 49 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of bot_directives
@@ -46,7 +30,7 @@ INSERT INTO `bot_directives` VALUES (6, 1, '更新资源', '更新机器人用�
 INSERT INTO `bot_directives` VALUES (7, 1, '无量姬状态', '获取无量姬的运行状态', '获取无量姬在当前系统中的运行状态', '\\b无量姬状态\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (8, 1, '重载指令', '重新加载指令列表', '重新加载指令列表，刷新可用指令', '\\b重载指令\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (9, 1, '日活', '查看无量姬当前的日活~', '查看无量姬当前的日活~', '\\b(日活)\\b', 0, 0, '2025-04-06 10:44:40', '2025-08-15 16:17:32');
-INSERT INTO `bot_directives` VALUES (10, 2, '更新词库', '更新Warframe词库', '更新Warframe中英文翻译的词库', '\\b更新词库\\b', 1, 0, '2025-04-06 10:44:40', NULL);
+INSERT INTO `bot_directives` VALUES (10, 2, '更新词库', '同步Warframe市场目录', '同步Market物品、武器目录及紫卡属性中文', '\\b更新词库\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (11, 2, 'wm', 'wm市场物品查询', '使用指令「wm 物品名」来查询Warframe Market上的物品订单\n如「wm Saryn Prime Set」，支持中文模糊查询', '(?i)\\bwm\\s*(\\S+.*)$', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (12, 2, 'wr', 'wm市场紫卡查询', '使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\n如「wr 战刃 暴击 无负」，支持中文模糊查询', '(?i)\\b(wr|wmr)\\s*(\\S+.*)$', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (13, 2, 'wl', 'wm市场玄骸查询', '使用指令「wl 物品名 有无幻纹 属性 伤害数值等」来查询Warframe Market上的玄骸订单\n如「wl 信条·冷冻光束步枪 火 无 60」，支持中文模糊查询', '(?i)\\bwl\\s*(\\S+.*)$', 1, 0, '2025-04-06 10:44:40', NULL);
@@ -83,5 +67,8 @@ INSERT INTO `bot_directives` VALUES (43, 4, '抽卡记录', '获取原神抽卡�
 INSERT INTO `bot_directives` VALUES (44, 4, '抽卡链接', '获取原神抽卡链接', '复制并且黏贴到电脑Powershell中\n打开原神抽卡记录页面，Ctrl+A全选，Ctrl+C复制，然后在Powershell中Ctrl+V粘贴并回车\n即可获取到抽卡链接', '\\b抽卡链接\\b', 1, 0, '2025-04-06 10:44:40', NULL);
 INSERT INTO `bot_directives` VALUES (45, 2, '翻译', '获取物品对应翻译', '输入需要翻译的中文/英文，进行对应的转换', '(?i)\\b(翻译 (.*))\\b', 1, 0, '2025-06-27 10:05:16', '2025-08-15 16:18:06');
 INSERT INTO `bot_directives` VALUES (46, 2, '结合仪式', '今日圣殿结合仪式目标', '用于获取今日圣殿结合仪式目标，查看出没任务，可用指令「结合仪式|结合|结合目标|大黄脸」', '\\b(结合仪式|结合|结合目标|大黄脸)\\b', 1, 0, '2025-08-21 15:41:22', '2025-08-28 16:27:21');
+
+INSERT INTO `bot_directives` VALUES (47, 2, '检查世界状态词库更新', '检查 Public Export Plus 版本', '只检查文件变化，不应用更新', '^检查世界状态词库更新$', 1, 0, NOW(), NULL);
+INSERT INTO `bot_directives` VALUES (48, 2, '更新世界状态词库', '更新 Public Export Plus 词库', '增量下载、验证并应用统一游戏词库', '^更新世界状态词库$', 1, 0, NOW(), NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

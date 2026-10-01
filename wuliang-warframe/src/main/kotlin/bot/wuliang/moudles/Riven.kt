@@ -22,5 +22,7 @@ data class Riven(
     val min: Int? = null,
     val max: Int? = null,
     val pop: Int? = null,
-    val median: Double? = null
+    val median: Double? = null,
+    /** 未翻译的来源标识，用于在翻译版本变化后仍能关联同一物品的价格。 */
+    val compatibilityId: String? = null
 )

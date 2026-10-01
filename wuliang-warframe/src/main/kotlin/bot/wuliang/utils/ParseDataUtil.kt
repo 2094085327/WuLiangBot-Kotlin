@@ -1,14 +1,14 @@
 package bot.wuliang.utils
 
-import bot.wuliang.config.*
+import bot.wuliang.config.WARFRAME_INCARNON
+import bot.wuliang.config.WARFRAME_MARKET_ITEMS_ORDERS_V2
+import bot.wuliang.config.WARFRAME_WEEKLY_RIVEN_PC
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
+import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
- import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
@@ -16,27 +16,22 @@ import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
-import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
 import bot.wuliang.moudles.*
 import bot.wuliang.redis.RedisService
-import bot.wuliang.service.WfLexiconService
-import bot.wuliang.service.WfRivenService
-import bot.wuliang.utils.StringUtils.formatSpacesToUnderline
+import bot.wuliang.translation.PublicExportService
+import bot.wuliang.translation.WorldStateCatalog
 import bot.wuliang.utils.TimeUtils.formatDuration
+import bot.wuliang.utils.TimeUtils.getFirstDayOfWeek
 import bot.wuliang.utils.TimeUtils.getInstantNow
 import bot.wuliang.utils.TimeUtils.getLastDayOfWeek
-import bot.wuliang.utils.TimeUtils.getStartOfDay
-import bot.wuliang.utils.TimeUtils.getStartOfNextDay
-import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
-import bot.wuliang.utils.TimeUtils.getFirstDayOfWeek
 import bot.wuliang.utils.TimeUtils.getNextMonday
+import bot.wuliang.utils.TimeUtils.getStartOfDay
+import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.TimeUtils.toNow
-import bot.wuliang.utils.WfStatus.replaceFaction
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,16 +43,17 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.math.abs
 
+/** 解析实时世界状态，译文通过统一服务取得，包含译文的结果使用带翻译版本的缓存键。 */
 @Component
 class ParseDataUtil {
     @Autowired
     private lateinit var redisService: RedisService
 
     @Autowired
-    private lateinit var wfLexiconService: WfLexiconService
+    private lateinit var translations: PublicExportService
 
     @Autowired
-    private lateinit var wfRivenService: WfRivenService
+    private lateinit var worldStateCatalog: WorldStateCatalog
 
     @Autowired
     private lateinit var wfUtil: WfUtil
@@ -67,7 +63,7 @@ class ParseDataUtil {
     /**
      * 通用解析常规突击任务（每日突击与周突击）
      * @param sortiesJson 突击任务数据
-     * @param cacheKey 缓存key
+     * @param cacheKey 已附加翻译版本的业务缓存键
      * @param missionKey 突击任务数据中的任务列表key
      */
     private fun parseCommonSortie(
@@ -75,30 +71,25 @@ class ParseDataUtil {
         cacheKey: String,
         missionKey: String
     ): Sortie? {
-        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<Sortie>(cacheKey)
-        val keyPrefix = WF_MARKET_CACHE_KEY
-        val sortie = sortiesJson.get(0)
-        val boss = sortie["Boss"]?.asText()
-            ?.let { redisService.getValueTyped<Boss>("${keyPrefix}Boss:${it}") }
-
-        data class SortieReward(val boss: String, val reward: String)
-
-        val sortieRewards = listOf(
-            SortieReward("欺谋狼主", "深红源力石"),
-            SortieReward("混沌蛇主", "琥珀源力石"),
-            SortieReward("诡文枭主", "蔚蓝源力石")
-        )
-
-        val bossName = boss?.name
-        val currentIndex = sortieRewards.indexOfFirst { it.boss == bossName }
+        val now = getInstantNow()
+        // 跨周时上游可能同时返回前后两期；必须按有效期选择，不能依赖数组顺序。
+        val sortie = sortiesJson.filter { isActive(it, now) }
+            .maxByOrNull { parseTimestamp(it["Activation"])!! }
+        if (sortie == null) {
+            redisService.deleteKey(cacheKey)
+            return null
+        }
+        val bossCode = sortie["Boss"]?.asText().orEmpty()
+        val boss = worldStateCatalog.boss(bossCode)
+        val currentIndex = WorldStateCatalog.archons.indexOf(bossCode)
 
         val (rewardItem, nextBoss, nextRewardItem) = when {
             currentIndex >= 0 -> {
-                val nextIndex = (currentIndex + 1) % sortieRewards.size
+                val nextIndex = (currentIndex + 1) % WorldStateCatalog.archons.size
                 Triple(
-                    sortieRewards[currentIndex].reward,
-                    sortieRewards[nextIndex].boss,
-                    sortieRewards[nextIndex].reward
+                    translations.name(WorldStateCatalog.archonShards[currentIndex]),
+                    worldStateCatalog.boss(WorldStateCatalog.archons[nextIndex]).name,
+                    translations.name(WorldStateCatalog.archonShards[nextIndex])
                 )
             }
 
@@ -110,17 +101,17 @@ class ParseDataUtil {
             id = sortie["_id"]["\$oid"].asText(),
             activation = parseTimestamp(sortie["Activation"]),
             expiry = parseTimestamp(sortie["Expiry"]),
-            boss = boss?.name,
+            boss = boss.name,
             rewardItem = rewardItem,
             nextBoss = nextBoss,
             nextRewardItem = nextRewardItem,
-            faction = boss?.faction!!.replaceFaction(),
+            faction = boss.faction,
             eta = formatDuration(Duration.between(getInstantNow(), parseTimestamp(sortie["Expiry"]))),
             variants = sortie[missionKey].map { variant ->
                 Variants(
-                    missionType = redisService.getValueTyped<String>("${keyPrefix}MissionType:${variant["missionType"]?.asText()}"),
-                    modifierType = redisService.getValueTyped<String>("${keyPrefix}ModifierType:${variant["modifierType"]?.asText()}"),
-                    node = redisService.getValueTyped<Nodes>("${keyPrefix}Node:${variant["node"]?.asText()}")!!.name
+                    missionType = variant["missionType"]?.asText()?.let(translations::name),
+                    modifierType = variant["modifierType"]?.asText()?.let(translations::name),
+                    node = translations.node(variant["node"]?.asText().orEmpty()).name
                 )
             },
         )
@@ -128,7 +119,7 @@ class ParseDataUtil {
         redisService.setValueWithExpiry(
             cacheKey,
             sortieEntity,
-            sortieEntity.eta?.parseDuration() ?: 0L,
+            Duration.between(now, sortieEntity.expiry).seconds.coerceAtLeast(1),
             TimeUnit.SECONDS
         )
 
@@ -139,24 +130,26 @@ class ParseDataUtil {
      * 解析每日突击任务
      */
     fun parseSorties(sortiesJson: JsonNode): Sortie? {
-        return parseCommonSortie(sortiesJson, WF_SORTIE_KEY, "Variants")
+        return parseCommonSortie(sortiesJson, translations.cacheKey(WF_SORTIE_KEY), "Variants")
     }
 
     /**
      * 解析周突击任务
      */
     fun parseArchonHunt(sortiesJson: JsonNode): Sortie? {
-        return parseCommonSortie(sortiesJson, WF_ARCHONHUNT_KEY, "Missions")
+        return parseCommonSortie(sortiesJson, translations.cacheKey(WF_ARCHONHUNT_KEY), "Missions")
     }
 
     /**
      * 解析钢铁之路
      */
     fun parseSteelPath(): Pair<Long?, SteelPath?> {
-        if (redisService.hasKey(WF_STEELPATH_KEY)) return redisService.getExpireAndValueTyped<SteelPath>(
-            WF_STEELPATH_KEY
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_STEELPATH_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getExpireAndValueTyped<SteelPath>(
+            cacheKey
         )
-        val rotationJson = redisService.getValueTyped<ArrayNode>("${WF_MARKET_CACHE_KEY}SteelPath:Rotation")
+        val rotation = worldStateCatalog.steelRewards
         val start = Instant.parse("2020-11-16T00:00:00.000Z")
         val sSinceStart = Duration.between(start, Instant.now()).seconds
         val eightWeeks = 4838400
@@ -175,13 +168,13 @@ class ParseDataUtil {
             activation = activation,
             expiry = expiry,
             eta = formatDuration(Duration.between(getInstantNow(), expiry)),
-            currentItem = rotationJson!!.get(ind)["name"].asText(),
-            currentCost = rotationJson.get(ind)["cost"].asInt(),
-            nextItem = rotationJson.get(nextInd)["name"].asText(),
-            nextCost = rotationJson.get(nextInd)["cost"].asInt()
+            currentItem = worldStateCatalog.steelName(rotation[ind]),
+            currentCost = rotation[ind].cost,
+            nextItem = worldStateCatalog.steelName(rotation[nextInd]),
+            nextCost = rotation[nextInd].cost
         )
         redisService.setValueWithExpiry(
-            WF_STEELPATH_KEY,
+            cacheKey,
             steelPathEntity,
             steelPathEntity.eta?.parseDuration() ?: 0L,
             TimeUnit.SECONDS
@@ -195,12 +188,28 @@ class ParseDataUtil {
             ?.let { Instant.ofEpochMilli(it) }
     }
 
+    /** 生效时间判断 */
+    private fun isActive(node: JsonNode, now: Instant): Boolean {
+        val activation = parseTimestamp(node["Activation"]) ?: return false
+        val expiry = parseTimestamp(node["Expiry"]) ?: return false
+        return !activation.isAfter(now) && expiry.isAfter(now)
+    }
+
+    /** 成功获取的周任务缓存至下一次轮换；当前任务尚未发布时才使用短缓存。 */
+    private fun rotationCacheSeconds(nodes: Iterable<JsonNode>, now: Instant): Long {
+        if (nodes.none { isActive(it, now) }) return 30
+        return nodes
+            .flatMap { listOfNotNull(parseTimestamp(it["Activation"]), parseTimestamp(it["Expiry"])) }
+            .filter { it.isAfter(now) }
+            .minOfOrNull { Duration.between(now, it).seconds.coerceAtLeast(1) } ?: 30
+    }
+
     /**
      * 解析午夜电波挑战任务
      *
      * @param challengesNode 午夜电波挑战任务数据
      */
-    private fun parseChallenges(challengesNode: JsonNode?): List<Challenges> {
+    private fun parseChallenges(challengesNode: Iterable<JsonNode>?): List<Challenges> {
         return challengesNode?.map { challenge ->
             val challengeText = challenge["Challenge"]?.asText() ?: ""
             val isDaily = challenge["Daily"]?.asBoolean() ?: false
@@ -211,12 +220,8 @@ class ParseDataUtil {
                 isDaily = isDaily,
                 isElite = isElite,
                 isPermanent = challenge["Permanent"]?.asBoolean() ?: false,
-                title = wfUtil.getLanguageValue(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
-                    challengeText.split("/").lastOrNull() ?: ""
-                ),
-                desc = wfUtil.getLanguageDesc(challengeText.lowercase()) ?: StringUtils.formatWithSpaces(
-                    challengeText.split("/").lastOrNull() ?: ""
-                ),
+                title = translations.name(challengeText),
+                desc = translations.description(challengeText) ?: challengeText,
                 reputation = when {
                     isDaily -> 1000
                     isElite -> 7000
@@ -231,10 +236,12 @@ class ParseDataUtil {
      * @param nightWaveJson 午夜电波Json
      */
     fun parseNightWave(nightWaveJson: JsonNode): NightWave? {
-        if (redisService.hasKey(WF_NIGHTWAVE_KEY)) return redisService.getValueTyped<NightWave>(WF_NIGHTWAVE_KEY)
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_NIGHTWAVE_KEY)
         val expiryTime = parseTimestamp(nightWaveJson["Expiry"])
         val activation = parseTimestamp(nightWaveJson["Activation"])
         val now = getInstantNow()
+        val challenges = nightWaveJson["ActiveChallenges"]?.filter { isActive(it, now) }.orEmpty()
         val nightWaveEntity = NightWave(
             id = "nightwave${parseTimestamp(nightWaveJson["Expiry"])}",
             activation = activation,
@@ -246,11 +253,14 @@ class ParseDataUtil {
             phase = nightWaveJson["Phase"].asInt(),
             params = nightWaveJson["Params"].asText(),
             possibleChallenges = nightWaveJson["Challenges"]?.let { parseChallenges(it) },
-            activeChallenges = parseChallenges(nightWaveJson["ActiveChallenges"])
+            activeChallenges = parseChallenges(challenges)
         )
 
-        val expire = Duration.between(now, getStartOfNextDay()).seconds
-        redisService.setValueWithExpiry(WF_NIGHTWAVE_KEY, nightWaveEntity, expire, TimeUnit.SECONDS)
+        // 周常缓存以每周挑战的轮换时间为准，不因每日挑战提前失效。
+        val weeklyChallenges = nightWaveJson["ActiveChallenges"]
+            ?.filter { it["Daily"]?.asBoolean() != true }.orEmpty()
+        val expire = rotationCacheSeconds(weeklyChallenges, now)
+        redisService.setValueWithExpiry(cacheKey, nightWaveEntity, expire, TimeUnit.SECONDS)
         return nightWaveEntity
     }
 
@@ -262,21 +272,21 @@ class ParseDataUtil {
      */
     fun parseFissureArray(fissureJson: JsonNode, isStorm: Boolean = false): List<Fissure> {
         val fissureEntity = fissureJson.map { fissure ->
-            val node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${fissure["Node"]?.asText()}")
+            val node = translations.node(fissure["Node"]?.asText().orEmpty())
             val expiry = parseTimestamp(fissure["Expiry"])
             val modifierNum =
-                redisService.getValueTyped<Modifiers>("${WF_MARKET_CACHE_KEY}FissureModifier:${fissure[if (isStorm) "ActiveMissionTier" else "Modifier"]?.asText()}")
+                worldStateCatalog.tier(fissure[if (isStorm) "ActiveMissionTier" else "Modifier"]?.asText().orEmpty())
             Fissure(
                 id = fissure["_id"]?.get("\$oid")?.asText() ?: "",
                 activation = parseTimestamp(fissure["Activation"]),
                 expiry = expiry,
                 eta = formatDuration(Duration.between(getInstantNow(), expiry)).replace("\\s+".toRegex(), ""),
-                node = node!!.name,
-                missionType = redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${fissure["MissionType"]?.asText()}")
+                node = node.name,
+                missionType = fissure["MissionType"]?.asText()?.let(translations::name)
                     ?: node.type
-                    ?: redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:MT_DEFAULT"),
-                faction = node.faction?.replaceFaction(),
-                modifier = modifierNum!!.value,
+                    ?: translations.name("MT_DEFAULT"),
+                faction = node.faction,
+                modifier = modifierNum.value,
                 modifierValue = modifierNum.num,
                 hard = fissure["Hard"]?.asBoolean() ?: false,
                 storm = isStorm
@@ -291,7 +301,9 @@ class ParseDataUtil {
      * @param stormFissureJson 九重天裂缝数据
      */
     suspend fun parseFissure(fissureJson: JsonNode, stormFissureJson: JsonNode): List<Fissure?>? {
-        if (redisService.hasKey(WF_FISSURE_KEY)) return redisService.getValueTyped<List<Fissure?>>(WF_FISSURE_KEY)
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_FISSURE_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<List<Fissure?>>(cacheKey)
 
         return coroutineScope {
             val fissureJob = async { parseFissureArray(fissureJson) }
@@ -304,7 +316,7 @@ class ParseDataUtil {
                 .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
                 ?.coerceAtMost(300)
                 ?.coerceAtLeast(30) ?: 300
-            redisService.setValueWithExpiry(WF_FISSURE_KEY, filteredFissureList, expire, TimeUnit.SECONDS)
+            redisService.setValueWithExpiry(cacheKey, filteredFissureList, expire, TimeUnit.SECONDS)
             filteredFissureList
         }
     }
@@ -314,78 +326,22 @@ class ParseDataUtil {
      * @param voidTradersJsonNode 虚空商人Json数据Node
      */
     fun parseVoidTraders(voidTradersJsonNode: JsonNode): List<VoidTrader>? {
-        if (redisService.hasKey(WF_VOIDTRADER_KEY)) return redisService.getValueTyped<List<VoidTrader>>(
-            WF_VOIDTRADER_KEY
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_VOIDTRADER_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<List<VoidTrader>>(
+            cacheKey
         )
-        val untranslatedItems = mutableMapOf<String, String>()
-        val translatedItems = mutableMapOf<String, String>()
-        val englishOnlyPattern = Regex("^[a-zA-Z\\s\\-.'·]+$")
-        val itemMap = mapOf(
-            "Skin" to "外观",
-            "New Year Free" to "迎新春",
-            "Sigil" to "纹章",
-            "Glyph" to "浮印",
-            "Display" to "展示图",
-            "Booster" to "加成",
-            "Weapon" to "武器",
-            "Badge Item" to "徽章",
-            "<ARCHWING>" to ""
-        )
-
         val voidTradersList = voidTradersJsonNode.map { voidTrader ->
             val activationTime = parseTimestamp(voidTrader["Activation"])
             val isActive = activationTime?.let {
                 getInstantNow().isAfter(it)
             } ?: false
 
-            // 先收集所有需要翻译的物品ID
-            val itemsToTranslate = mutableListOf<String>()
-            voidTrader["Manifest"]?.forEach { item ->
-                val voidItem = item["ItemType"]?.asText() ?: ""
-                itemsToTranslate.add(voidItem)
-
-                // 从缓存获取翻译
-                val translatedValue =
-                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${voidItem.lowercase()}")?.value
-
-                if (translatedValue != null && !englishOnlyPattern.matches(translatedValue)) {
-                    translatedItems[voidItem] = translatedValue
-                } else {
-                    translatedValue?.let { untranslatedItems[voidItem] = it }
-                }
-            }
-
-            // 尝试从数据库获取未翻译项的翻译
-            if (untranslatedItems.isNotEmpty()) {
-                // untranslatedItems的value是英文名，需要获取英文名到中文名的映射
-                val translatedDbItems = wfLexiconService.getZhNamesMap(untranslatedItems.values.toList())
-
-                // 遍历untranslatedItems，建立voidItem到中文翻译的映射
-                untranslatedItems.forEach { (voidItem, englishName) ->
-                    // 使用英文名获取中文翻译
-                    val chineseName = translatedDbItems[englishName.lowercase()]
-                    // 选择最优的翻译：中文 > 英文 > 格式化名称
-                    translatedItems[voidItem] = chineseName ?: englishName
-                }
-            }
-
-
-            // 现在再创建物品列表，此时translatedItems已包含所有可能的翻译
             val inventory = voidTrader["Manifest"]?.let { manifest ->
                 val items = manifest.map { voidTraderItem ->
                     val voidItem = voidTraderItem["ItemType"]?.asText() ?: ""
-                    val formattedItem = StringUtils.formatWithSpaces(voidItem.split("/").lastOrNull() ?: "")
-
-                    // 获取翻译后的物品名称
-                    val baseItemName = (translatedItems[voidItem] ?: formattedItem)
-
-                    // 检查并替换itemMap中定义的关键词
-                    val finalItemName = itemMap.entries.fold(baseItemName) { itemName, (key, value) ->
-                        itemName.replace(key, value)
-                    }
-
                     VoidTraderItem(
-                        item = finalItemName,
+                        item = translations.name(voidItem),
                         ducats = voidTraderItem["PrimePrice"].asInt(),
                         credits = voidTraderItem["RegularPrice"].asInt(),
                     )
@@ -509,8 +465,7 @@ class ParseDataUtil {
                     formatDuration(Duration.between(now, parseTimestamp(voidTrader["Activation"])))
                 },
                 isActive = isActive,
-                node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${voidTrader["Node"]?.asText()}")?.name
-                    ?: voidTrader["Node"]?.asText(),
+                node = translations.node(voidTrader["Node"]?.asText().orEmpty()).name,
                 inventory = inventory
             )
         }
@@ -518,7 +473,7 @@ class ParseDataUtil {
         val expire = voidTradersList
             .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
             ?.coerceAtLeast(30) ?: 300
-        redisService.setValueWithExpiry(WF_VOIDTRADER_KEY, voidTradersList, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(cacheKey, voidTradersList, expire, TimeUnit.SECONDS)
         return voidTradersList
     }
 
@@ -527,14 +482,12 @@ class ParseDataUtil {
      * @param simarisJson 圣殿结合仪式目标Json
      */
     fun parseSimaris(simarisJson: JsonNode): Simaris? {
-        if (redisService.hasKey(WF_SIMARIS_KEY)) return redisService.getValueTyped<Simaris>(WF_SIMARIS_KEY)
-        val targetItem = simarisJson["LastCompletedTargetType"].textValue().lowercase()
-        var target = wfUtil.getLanguageValue(targetItem) ?: return null
-        if (target == "远古堕落者") target = "corrupted_ancient"
-        target = target.formatSpacesToUnderline().lowercase()
-        val simarisPersistent =
-            redisService.getValueTyped<SimarisPersistent>("${WF_MARKET_CACHE_KEY}SimarisPersistent:${target}")
-                ?: return null
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_SIMARIS_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<Simaris>(cacheKey)
+        val targetItem = simarisJson["LastCompletedTargetType"].textValue()
+        val simarisPersistent = worldStateCatalog.synthesisTarget(targetItem)
+            ?: SimarisPersistent(imageKey = null, name = translations.name(targetItem), locations = emptyList())
         val today = getStartOfDay()
         val nextDay = getTimeOfNextDay(today)
         val simaris = Simaris(
@@ -546,7 +499,7 @@ class ParseDataUtil {
             locations = simarisPersistent.locations,
         )
         val expire = simaris.eta?.parseDuration() ?: 300
-        redisService.setValueWithExpiry(WF_SIMARIS_KEY, simaris, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(cacheKey, simaris, expire, TimeUnit.SECONDS)
         return simaris
     }
 
@@ -555,7 +508,9 @@ class ParseDataUtil {
      * @param invasionsJson 入侵信息Json
      */
     fun parseInvasions(invasionsJson: JsonNode): List<Invasions>? {
-        if (redisService.hasKey(WF_INVASIONS_KEY)) return redisService.getValueTyped<List<Invasions>>(WF_INVASIONS_KEY)
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_INVASIONS_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<List<Invasions>>(cacheKey)
         val invasionsList = invasionsJson.map { invasions ->
             val count = invasions["Count"].intValue()
             val activation = parseTimestamp(invasions["Activation"])
@@ -577,11 +532,10 @@ class ParseDataUtil {
                 activation = activation,
                 eta = if (remainingTime != -9999L) remainingTime.let { Duration.ofMillis(it) }
                     ?.let { formatDuration(it) } else "无法估算",
-                desc = wfUtil.getLanguageValue(invasions["LocTag"].asText().lowercase()),
-                faction = faction.replaceFaction(),
-                defenderFaction = invasions["DefenderFaction"].textValue().replaceFaction(),
-                node = redisService.getValueTyped<Nodes>("${WF_MARKET_CACHE_KEY}Node:${invasions["Node"]?.asText()}")?.name
-                    ?: invasions["Node"]?.asText(),
+                desc = translations.name(invasions["LocTag"].asText()),
+                faction = worldStateCatalog.faction(faction),
+                defenderFaction = worldStateCatalog.faction(invasions["DefenderFaction"].textValue()),
+                node = translations.node(invasions["Node"]?.asText().orEmpty()).name,
                 count = count,
                 requiredRuns = requiredRuns,
                 completion = if (vsInfestation) (1 + count.toDouble() / requiredRuns.toDouble()) * 100 else (1 + count.toDouble() / requiredRuns.toDouble()) * 50,
@@ -589,13 +543,13 @@ class ParseDataUtil {
                 vsInfestation = vsInfestation,
                 attackerReward = if (invasions["AttackerReward"].has("countedItems")) invasions["AttackerReward"]["countedItems"].map { item ->
                     Modifiers(
-                        wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
+                        translations.name(item["ItemType"].asText()),
                         item["ItemCount"].intValue()
                     )
                 } else null,
                 defenderReward = invasions["DefenderReward"]["countedItems"].map { item ->
                     Modifiers(
-                        wfUtil.getLanguageValue(item["ItemType"].asText().lowercase()),
+                        translations.name(item["ItemType"].asText()),
                         item["ItemCount"].intValue()
                     )
                 },
@@ -607,7 +561,7 @@ class ParseDataUtil {
             .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
             ?.coerceAtMost(10)
             ?.coerceAtLeast(5) ?: 10
-        redisService.setValueWithExpiry(WF_INVASIONS_KEY, completedInvasions, expire, TimeUnit.MINUTES)
+        redisService.setValueWithExpiry(cacheKey, completedInvasions, expire, TimeUnit.MINUTES)
         return completedInvasions
     }
 
@@ -615,7 +569,9 @@ class ParseDataUtil {
      * 解析DE紫卡周榜信息
      */
     fun parseWeeklyRiven() {
-        if (redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) && redisService.hasKey(WF_RIVEN_REROLLED_KEY)) return
+        val unRerolledKey = translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY)
+        val rerolledKey = translations.cacheKey(WF_RIVEN_REROLLED_KEY)
+        if (redisService.hasKey(unRerolledKey) && redisService.hasKey(rerolledKey)) return
         val data = HttpUtil.doGetStr(WARFRAME_WEEKLY_RIVEN_PC)
         val jsonData = JacksonUtil.readTree(JacksonUtil.convertSingleJsObjectToStandardJson(data))
         val rawRivenList = jsonData.map { eachRiven ->
@@ -632,63 +588,29 @@ class ParseDataUtil {
             )
         }
 
-        // itemType到中文的映射
-        val itemTypeToChineseMap = mapOf(
-            "Rifle Riven Mod" to "步枪未开",
-            "Pistol Riven Mod" to "手枪未开",
-            "Melee Riven Mod" to "近战未开",
-            "Shotgun Riven Mod" to "霰弹枪未开",
-            "Kitgun Riven Mod" to "组合枪未开",
-            "Zaw Riven Mod" to "Zaw未开",
-            "Archgun Riven Mod" to "Archgun未开"
-        )
-
-        // 批量获取所有需要转换的compatibility值
-        val compatibilityValues = rawRivenList.mapNotNull { it.compatibility }
-        val compatibilityMap = if (compatibilityValues.isNotEmpty()) {
-            if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
-                val entities = redisService.getValueTyped<List<WfRivenEntity>>(WF_MARKET_RIVEN_KEY)
-                entities?.associate { it.enName to it.zhName } ?: emptyMap()
-            } else {
-                // 查询数据库获取所有compatibility对应的中文名
-                val entities = wfRivenService.selectAllRivenData()
-                entities.associate { it.enName to it.zhName }
-            }
-        } else {
-            emptyMap()
-        }
-
-        // 使用映射表转换compatibility值
         val rivenList = rawRivenList.map { riven ->
-            val compatibility = when {
-                riven.compatibility != null -> {
-                    compatibilityMap[riven.compatibility] ?: riven.compatibility
-                }
-
-                itemTypeToChineseMap.containsKey(riven.itemType) -> {
-                    itemTypeToChineseMap[riven.itemType]
-                }
-
-                else -> null
-            }
-            riven.copy(compatibility = compatibility)
+            riven.copy(
+                compatibilityId = riven.compatibility,
+                compatibility = (riven.compatibility ?: riven.itemType)?.let(translations::name)
+            )
         }
-
         // 根据rerolled字段将列表分成两个列表
         val rerolledList = rivenList.filter { it.rerolled == true }
         val unRerolledList = rivenList.filter { it.rerolled == false }
 
         val expire = Duration.between(Instant.now(), getNextMonday()).seconds
 
-        redisService.setValueWithExpiry(WF_RIVEN_UN_REROLLED_KEY, unRerolledList, expire, TimeUnit.SECONDS)
-        redisService.setValueWithExpiry(WF_RIVEN_REROLLED_KEY, rerolledList, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(unRerolledKey, unRerolledList, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(rerolledKey, rerolledList, expire, TimeUnit.SECONDS)
     }
 
     /**
      * 解析回廊相关信息
      */
     fun parseIncarnon(): Incarnon? {
-        if (redisService.hasKey(WF_INCARNON_KEY)) return redisService.getValueTyped<Incarnon>(WF_INCARNON_KEY)
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_INCARNON_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<Incarnon>(cacheKey)
         val expire = Duration.between(Instant.now(), getNextMonday()).seconds
 
         val incarnonJson = JacksonUtil.readTree(File(WARFRAME_INCARNON))
@@ -708,31 +630,21 @@ class ParseDataUtil {
         val ordinaryNextInd = calculateIncarnonIndex(ordinaryScheduleJson, ordinaryJson.size(), expiry)
         val steelNextInd = calculateIncarnonIndex(steelScheduleJson, steelJson.size(), expiry)
 
-        // 缓存获取灵化武器紫卡映射
-        val rivenMap = if (redisService.hasKey(WF_MARKET_RIVEN_KEY)) {
-            val entities = redisService.getValueTyped<List<WfRivenEntity>>(WF_MARKET_RIVEN_KEY)
-            entities?.associate { it.urlName to it.zhName } ?: emptyMap()
-        } else {
-            // 查询数据库获取所有Riven数据
-            val entities = wfRivenService.selectAllRivenData()
-            val map = entities.associate { it.urlName to it.zhName }
-            redisService.setValue(WF_MARKET_RIVEN_KEY, entities)
-            map
-        }
-
         // 确保执行灵化解析时已存在紫卡价格数据
         parseWeeklyRiven()
-        val rivenPriceList = redisService.getValueTyped<List<Riven>>(WF_RIVEN_UN_REROLLED_KEY)
+        val rivenPriceList = redisService.getValueTyped<List<Riven>>(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY))
 
         fun processSteelItems(steelJsonNode: JsonNode): List<Incarnon.SteelItem> {
             return steelJsonNode["items"].map { item ->
                 val urlName = item["url_name"].textValue()
-                val zhName = rivenMap[urlName]
+                val adapter = translations.index().incarnonAdapter(urlName)
                 Incarnon.SteelItem(
-                    name = item["name"].textValue(),
+                    name = translations.name(adapter ?: urlName),
                     riven = item["riven"].doubleValue(),
                     urlName = urlName,
-                    rivenPrice = rivenPriceList?.find { it.compatibility == zhName }?.median ?: 0.0,
+                    rivenPrice = rivenPriceList?.find {
+                        it.compatibilityId.equals(urlName.replace('_', ' '), ignoreCase = true)
+                    }?.median ?: 0.0,
                 )
             }.toList()
         }
@@ -741,7 +653,7 @@ class ParseDataUtil {
             thisWeek = Incarnon.IncarnonData(
                 ordinary = Incarnon.WeekData(
                     week = ordinaryInd + 1,
-                    items = ordinaryJson[ordinaryInd]["items"].map { it.textValue() },
+                    items = ordinaryJson[ordinaryInd]["items"].map { translations.name(it.textValue()) },
                 ),
                 steel = Incarnon.WeekData(
                     week = steelInd + 1,
@@ -751,7 +663,7 @@ class ParseDataUtil {
             nextWeek = Incarnon.IncarnonData(
                 ordinary = Incarnon.WeekData(
                     week = ordinaryNextInd + 1,
-                    items = ordinaryJson[ordinaryNextInd]["items"].map { it.textValue() },
+                    items = ordinaryJson[ordinaryNextInd]["items"].map { translations.name(it.textValue()) },
                 ),
                 steel = Incarnon.WeekData(
                     week = steelNextInd + 1,
@@ -763,7 +675,7 @@ class ParseDataUtil {
             eta = formatDuration(Duration.between(getInstantNow(), expiry))
         )
 
-        redisService.setValueWithExpiry(WF_INCARNON_KEY, incarnon, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(cacheKey, incarnon, expire, TimeUnit.SECONDS)
         return incarnon
     }
 
@@ -786,7 +698,7 @@ class ParseDataUtil {
     fun parseWmMinimalPrice(key: String): Int {
         val headers: MutableMap<String, Any> = mutableMapOf(
             "accept" to "application/json",
-            "language" to "zh-hans",
+            "language" to "en",
             "platform" to "pc",
             "crossplay" to "false"
         )
@@ -829,15 +741,17 @@ class ParseDataUtil {
 
 
     /**
-     * 解析科研任务（深层科研 / 时光科研），仅读取 CD_HARD 难度的数据
+     * 解析科研任务（深层科研 / 时光科研），仅读取 CD_HARD 难度的数据。
+     * 偏差、风险和额外变量使用专项词库；CT_LAB、CT_HEX 保留为前端展示用的协议代码。
      * @param conquestsJson Conquests 数组节点
      */
     fun parseConquestArray(conquestsJson: JsonNode): List<Conquest>? {
-        if (redisService.hasKey(WF_CONQUEST_KEY)) return redisService.getValueTyped<List<Conquest>>(WF_CONQUEST_KEY)
-
-        val conquestEntity = conquestsJson.map { conquest ->
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_CONQUEST_KEY)
+        val now = getInstantNow()
+        val conquestEntity = conquestsJson.filter { isActive(it, now) }.map { conquest ->
             val expiry = parseTimestamp(conquest["Expiry"])
-            val type = conquest["Type"]?.asText()?.let { WfStatus.conquestTypeMap[it] }
+            val type = conquest["Type"]?.asText()
 
             val missions = conquest["Missions"]?.mapNotNull { mission ->
                 val missionTypeKey = mission["missionType"]?.asText()
@@ -848,12 +762,12 @@ class ParseDataUtil {
                 val difficulty = hardDifficulty?.let { diff ->
                     val deviationKey = diff["deviation"]?.asText()
                     val deviationInfo = deviationKey?.let {
-                        redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                        translations.conquestInfo(it)
                     }
                     val risks = diff["risks"]?.mapNotNull { riskNode ->
                         val riskKey = riskNode?.asText()
                         riskKey?.let {
-                            redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                            translations.conquestInfo(it)
                         }
                     } ?: emptyList()
                     ConquestDifficulty(deviation = deviationInfo, risks = risks)
@@ -861,11 +775,10 @@ class ParseDataUtil {
 
                 ConquestMission(
                     faction = factionKey?.let {
-                        redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Faction:${it}")?.value
-                            ?: factionKey
+                        worldStateCatalog.faction(it)
                     },
                     missionType = missionTypeKey?.let {
-                        redisService.getValueTyped<String>("${WF_MARKET_CACHE_KEY}MissionType:${it}")
+                        translations.name(it)
                     },
                     difficulty = difficulty
                 )
@@ -874,7 +787,7 @@ class ParseDataUtil {
             val variables = conquest["Variables"]?.mapNotNull { varNode ->
                 val varKey = varNode?.asText()
                 varKey?.let {
-                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                    translations.conquestInfo(it)
                 }
             } ?: emptyList()
 
@@ -890,19 +803,20 @@ class ParseDataUtil {
             )
         }
 
-        val expire = conquestEntity
-            .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
-            ?.coerceAtLeast(30) ?: 300
-        redisService.setValueWithExpiry(WF_CONQUEST_KEY, conquestEntity, expire, TimeUnit.SECONDS)
+        val expire = rotationCacheSeconds(conquestsJson, now)
+        redisService.setValueWithExpiry(cacheKey, conquestEntity, expire, TimeUnit.SECONDS)
         return conquestEntity
     }
 
     /**
-     * 解析 1999 日历
+     * 解析 1999 日历：挑战与奖励走统一翻译，增幅使用独立本地词库。
+     * 季节和 CET 事件类型保留协议代码，具体标签由前端固定显示。
      * @param calendarJson KnownCalendarSeasons 数组节点
      */
     fun parseCalendarArray(calendarJson: JsonNode): CalendarSeason? {
-        if (redisService.hasKey(WF_CALENDAR_KEY)) return redisService.getValueTyped<CalendarSeason>(WF_CALENDAR_KEY)
+        translations.index()
+        val cacheKey = translations.cacheKey(WF_CALENDAR_KEY)
+        if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<CalendarSeason>(cacheKey)
 
         val seasonNode = calendarJson[0] ?: return null
         val expiry = parseTimestamp(seasonNode["Expiry"])
@@ -921,7 +835,7 @@ class ParseDataUtil {
             }
 
             // 如果是生日（events 为空且是生日日期）
-            val birthday = WfStatus.calendarBirthdayMap[day]
+            val birthday = WorldStateCatalog.birthdays[day]?.let(translations::name)
 
             if (birthday != null) {
                 return@mapNotNull CalendarDay(
@@ -942,14 +856,14 @@ class ParseDataUtil {
                     else -> null
                 }
                 path?.let {
-                    redisService.getValueTyped<Info>("${WF_MARKET_CACHE_KEY}Languages:${it.lowercase()}")
+                    if (event.has("upgrade")) translations.calendarUpgradeInfo(it) else translations.info(it)
                 }
             }?.toList() ?: emptyList()
 
             CalendarDay(
                 day = day,
                 date = wfUtil.dayOfYearToDate(day),
-                type = eventKey?.let { WfStatus.calendarEventTypeMap[it] },
+                type = eventKey,
                 typeKey = eventKey,
                 items = items,
                 birthday = null
@@ -962,13 +876,13 @@ class ParseDataUtil {
             eta = expiry?.let {
                 formatDuration(Duration.between(getInstantNow(), it)).replace("\\s+".toRegex(), "")
             },
-            season = seasonKey?.let { WfStatus.calendarSeasonMap[it] },
+            season = seasonKey,
             seasonKey = seasonKey,
             days = days
         )
 
         val expire = result.eta?.parseDuration() ?: 300L
-        redisService.setValueWithExpiry(WF_CALENDAR_KEY, result, expire, TimeUnit.SECONDS)
+        redisService.setValueWithExpiry(cacheKey, result, expire, TimeUnit.SECONDS)
         return result
     }
 }

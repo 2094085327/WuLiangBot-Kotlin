@@ -1,0 +1,362 @@
+{
+  "AbilityLockout": {
+    "value": "技能禁用",
+    "desc": "小队击杀 50 名敌人前，所有技能均被禁止使用。"
+  },
+  "AcceleratedEnemies": {
+    "value": "激进冒险",
+    "desc": "敌人造成的伤害 -15%，受到的伤害 +15% ，但移动速度、攻击速度和射速 +15%。"
+  },
+  "AlchemicalShields": {
+    "value": "炼金难侵",
+    "desc": "有10%敌人装备了不可穿透的元素屏障，只有对应元素的元素瓶才能摧毁屏障。"
+  },
+  "AntiGuard": {
+    "value": "超宏衰减",
+    "desc": "战甲和友军超宏防护获取量减少 75%。"
+  },
+  "AntiMaterialWeapons": {
+    "value": "指挥型重型炮兵",
+    "desc": "暴戾重型炮兵装备的武器对超宏防护和殁世机甲造成 5 倍的伤害。"
+  },
+  "ArcadeAutomata": {
+    "value": "自动街机",
+    "desc": "敌人的枪械发射巨大且缓慢移动的球体，而不是他们平常的弹药。"
+  },
+  "Armorless": {
+    "value": "破损护甲",
+    "desc": "施放技能会使护甲降低10%，持续10秒。."
+  },
+  "ArtilleryBeacons": {
+    "value": "光能炮信标",
+    "desc": "炽蛇军敌人被击杀时会掉落光能炮信标召唤轰炸。"
+  },
+  "BalloonFest": {
+    "value": "气球嘉年华",
+    "desc": "炽蛇军前哨气球数量更多，攻击和移动速度更快。"
+  },
+  "ChemicalNoise": {
+    "value": "噪音抑制",
+    "desc": "无人机在弗莱尔上方飞行，向他喷射艾弗旺气体。"
+  },
+  "CompetitionSpillover": {
+    "value": "竞争优势",
+    "desc": "在整个任务过程中，阿米尔和碧的“对战”模式将产生随机负面惩罚。"
+  },
+  "ContactDamage": {
+    "value": "二次伤害",
+    "desc": "每次受到伤害时，获得1层穿刺异常状态。"
+  },
+  "ContaminationZone": {
+    "value": "屏住呼吸",
+    "desc": "整个区域会随着玩家停留时间的延长而造成毒素伤害，地狱净化器附近区域除外。一些敌人可能会掉落过滤器，从而创建额外的静态临时安全区。"
+  },
+  "DecayingFlesh": {
+    "value": "永久损伤",
+    "desc": "受到生命值伤害时还会扣减最大生命上限。"
+  },
+  "Deflectors": {
+    "value": "坚不可摧",
+    "desc": "可能会出现守护者卓越者敌人，包括守护者卓越者殁世机甲。"
+  },
+  "DisruptiveSounds": {
+    "value": "破坏之音",
+    "desc": "弗莱尔四周具有干扰力场，干扰技能并消耗能量。如果范围内没有玩家，弗莱尔将流失生命值。他会根据范围内的玩家数量获得生命值。"
+  },
+  "DoubleTrouble": {
+    "value": "双重爆破",
+    "desc": "每个导管都会受到两台爆破型殁世机甲的攻击，这些殁世机甲的生命值降低。"
+  },
+  "DoubleTroubleLegacyte": {
+    "value": "有丝分裂",
+    "desc": "每轮产生两个传承种，需要两倍的捕获次数才能成功。"
+  },
+  "DrainingResiduals": {
+    "value": "恶魔契约",
+    "desc": "敌人被击杀时 4 米范围内的友军会牺牲 50% 的弹药效率以换取 +25% 的射速。"
+  },
+  "DullBlades": {
+    "value": "钝重兵刃",
+    "desc": "近战连击数几率减少 50%。"
+  },
+  "EMPBlackHole": {
+    "value": "迷人弧犬",
+    "desc": "当暴戾弧犬发起攻击时，它们会将战甲拉向自己。"
+  },
+  "EfervonFog": {
+    "value": "浓雾",
+    "desc": "艾弗旺气体覆盖整个关卡。敌人可能会掉落提供短暂缓解的过滤器。"
+  },
+  "EnergyStarved": {
+    "value": "能量缩减",
+    "desc": "最大能量值减少 75%"
+  },
+  "EscalateImmediately": {
+    "value": "破坏补给",
+    "desc": "任务开始时，触发打开补给箱的负面效果，一旦打开就会加剧。未能打开补给箱会导致完成任务所需的击杀数翻倍。"
+  },
+  "Exhaustion": {
+    "value": "能量枯竭",
+    "desc": "周围 10 米范围内的所有敌人使你每秒丢失 2 能量。"
+  },
+  "EximusGrenadiers": {
+    "value": "卓越者元素瓶",
+    "desc": "卓越者敌人必定掉落元素瓶，但只有他们会掉落元素瓶。"
+  },
+  "ExplosiveCrawlers": {
+    "value": "易爆潜能",
+    "desc": "爆裂断肢取代蹒跚断肢。"
+  },
+  "ExplosiveEnergy": {
+    "value": "爆发能量",
+    "desc": "敌人死亡时掉落的自爆虫会立即冲向弗莱尔。"
+  },
+  "ExplosiveSummer": {
+    "value": "过量炸药",
+    "desc": "所有补给箱都被炸药桶替换。"
+  },
+  "FactionSwarm_Scaldra": {
+    "value": "炽蛇军竞速",
+    "desc": "所有敌人被炽蛇军取代，并且移动的更快。"
+  },
+  "FactionSwarm_Techrot": {
+    "value": "科腐者竞速",
+    "desc": "所有敌人被科腐者取代，并且移动的更快。"
+  },
+  "FallFog": {
+    "value": "迷雾秋日",
+    "desc": "迷雾限制了整个任务区的视野。"
+  },
+  "FortifiedFoes": {
+    "value": "密闭装甲",
+    "desc": "非弱点命中对敌人造成的伤害降低90%。"
+  },
+  "FragileNodes": {
+    "value": "统一目标",
+    "desc": "敌人可以瞄准并摧毁导管。"
+  },
+  "Framecurse": {
+    "value": "咒甲减益",
+    "desc": "激活一项技能会对你造成 50 伤害。"
+  },
+  "Gearless": {
+    "value": "携带装备限制",
+    "desc": "无法使用携带装备轮盘"
+  },
+  "GestatingTumors": {
+    "value": "孢子增殖",
+    "desc": "地狱净化器附近会出现科腐者肿瘤，每个活跃的肿瘤都会增加维生系统衰减的速度。"
+  },
+  "GrowingIncursion": {
+    "value": "裂缝激增",
+    "desc": "裂缝在任务中形成，使得敌人的等级每 10 秒提升 1 级。消灭它们以防止等级增加。"
+  },
+  "HarshWords": {
+    "value": "带刺钥符",
+    "desc": "每个浮印在被收集时都会造成少量伤害。"
+  },
+  "HeavyWarfare": {
+    "value": "重装作战",
+    "desc": "敌人受到的非重型武器伤害减少 95%。敌人会掉落重型弹药包，重型武器召回时间减少至 5 秒。"
+  },
+  "HighScalingLegacyte": {
+    "value": "阿尔法传承种",
+    "desc": "传承种明显更加强大，拥有更多能力，但逃脱所需的时间更长"
+  },
+  "HostileOvergrowth": {
+    "value": "它是活的",
+    "desc": "在地下，如果玩家停止移动，敌方增生物就会发起攻击。"
+  },
+  "HostileSecurity": {
+    "value": "侵蚀感官",
+    "desc": "魔耳和魔瞳随着时间逐渐受损，收集所需的荧音浮印可暂停损伤并对它们进行部分修复。"
+  },
+  "InfectedTechrot": {
+    "value": "腐朽之躯",
+    "desc": "科腐者敌人被注入艾弗旺并随时间推移受到伤害。他们被击杀后会爆炸并留下致命的艾弗旺。"
+  },
+  "InfiniteTide": {
+    "value": "无情肢潮",
+    "desc": "断肢潮不会停止攻击。"
+  },
+  "JadeSpring": {
+    "value": "翠玉之灵",
+    "desc": "翠玉之灵徘徊在该区域。如果玩家靠近，它们就会追逐玩家并转变为翠玉光束。"
+  },
+  "Knifestep": {
+    "value": "如履刀尖",
+    "desc": "移动时损失 2 点生命值。跳跃会暂停效果。"
+  },
+  "LostInTranslation": {
+    "value": "浮印膨胀",
+    "desc": "安全系统需要两倍的荧音浮印才能激活。"
+  },
+  "MiasmiteHive": {
+    "value": "自爆虫群",
+    "desc": "在任务过程中，科腐者自爆虫会从阴影中蜂拥而出。"
+  },
+  "MurmurIncursion": {
+    "value": "墙壁之外",
+    "desc": "低语者敌人加入炽蛇军和科腐者阵营。"
+  },
+  "MutatedEnemies": {
+    "value": "平行进化",
+    "desc": "随着传承种进化，其他在场敌人也将获得新技能。"
+  },
+  "NecramechActivation": {
+    "value": "殁世机甲激增",
+    "desc": "殁世机甲出现的频率更高。"
+  },
+  "OperatorLockout": {
+    "value": "传识失真",
+    "desc": "无法传识到指挥官或漂泊者。"
+  },
+  "OverSensitive": {
+    "value": "过敏受体",
+    "desc": "负面异常状态的持续时间增加到三倍"
+  },
+  "PointBlank": {
+    "value": "短视弹药",
+    "desc": "玩家距离敌人 15 米以内时，敌人才会受到伤害。"
+  },
+  "Quicksand": {
+    "value": "牵连",
+    "desc": "被击杀敌人 4 米范围内的友军， 移动速度和跑酷速度会降低。"
+  },
+  "RegeneratingEnemies": {
+    "value": "敌军再生",
+    "desc": "敌人的生命值会缓慢恢复。"
+  },
+  "Reinforcements": {
+    "value": "协调阵线",
+    "desc": "卓越者敌人出现并支援断肢潮和最终的接肢怪。"
+  },
+  "ShieldDelay": {
+    "value": "嗜睡护盾",
+    "desc": "护盾充能延迟增加 500%。"
+  },
+  "ShieldedFoes": {
+    "value": "强化好战",
+    "desc": "所有敌人获得相当于他们最大生命值 50% 的超宏防护。"
+  },
+  "Starvation": {
+    "value": "弹药亏空",
+    "desc": "通过掉落和道具恢复的弹药减少 75%。"
+  },
+  "StickyFingers": {
+    "value": "暴食贪囤",
+    "desc": "所有贪囤断肢都是卓越者。"
+  },
+  "TankReinforcements": {
+    "value": "敌军增援",
+    "desc": "战斗过程中会有敌方援军抵达，首先是炽蛇军，然后是科腐者。"
+  },
+  "TankStrongArmor": {
+    "value": "装甲护板",
+    "desc": "只有热熔火箭弹才能对坦克造成伤害。携带热熔火箭炮的增援部队将在战斗中持续出现。"
+  },
+  "TankSuperToxic": {
+    "value": "毒性坦克",
+    "desc": "坦克拥有毒素光环，留下毒素尾迹，并且所有的攻击会造成毒素伤害。"
+  },
+  "TechrotConjunction": {
+    "value": "科腐围攻",
+    "desc": "科腐者敌人会尝试近战攻击地狱净化器，接触后将其引爆，并使净化器污染增加 25%。"
+  },
+  "TimeDilation": {
+    "value": "缩短技能",
+    "desc": "技能持续时间减少 50%。"
+  },
+  "Undersupplied": {
+    "value": "补给短缺",
+    "desc": "所有武器的弹药最大值减少75%。"
+  },
+  "UnpoweredCapsules": {
+    "value": "寄生装置塔",
+    "desc": "维生装置塔只有在其 15 米范围内杀死 20 名敌人后才会激活。"
+  },
+  "VoidAberration": {
+    "value": "吸血界影",
+    "desc": "行动缓慢且不死的双衍王境界影，能从过于接近的友军身上吸取生命和能量。"
+  },
+  "VoidEnergyOverload": {
+    "value": "技能超载",
+    "desc": "使用技能将在附近打开一道虚空裂隙"
+  },
+  "Voidburst": {
+    "value": "死后冲击",
+    "desc": "被击杀的敌人会爆发出虚空能量。"
+  },
+  "VolatileGrenades": {
+    "value": "高危物资",
+    "desc": "携带元素瓶时会受到与之对应的元素伤害。"
+  },
+  "WinterFrost": {
+    "value": "厚冰",
+    "desc": "极寒卓越者护罩的耐久度是正常值的 30 倍。"
+  },
+  "Withering": {
+    "value": "无法治愈",
+    "desc": "拾取无法提供治疗，并且无法拾取生命球。"
+  },
+  "DamageMomentum": {
+    "value": "致命速率",
+    "desc": "静止不动时无法造成伤害。"
+  },
+  "ScarcityCurse": {
+    "value": "弹药枯竭",
+    "desc": "弹药逐渐耗尽。电池武器充能缓慢。"
+  },
+  "ExposureCurse": {
+    "value": "显露之诅",
+    "desc": "护盾被移除。"
+  },
+  "Sanguine": {
+    "value": "血色减益",
+    "desc": "每当你受到伤害时，还会陷入出血异常状态。"
+  },
+  "Vampyri": {
+    "value": "吸血减益",
+    "desc": "每秒流失生命值。击杀敌人可恢复生命值。"
+  },
+  "Conductive": {
+    "value": "导电侵袭",
+    "desc": "隔几秒就会受到电击伤害。"
+  },
+  "EnemyLink": {
+    "value": "伤害链接",
+    "desc": "相距10米内的敌人形成一个伤害链接群体。任何对单个成员造成的伤害都会平均分摊到整个群体。"
+  },
+  "NecramechLockout": {
+    "value": "敌意支援",
+    "desc": "禁用维生装置塔运送系统。 每90秒生成殁世机甲，击杀时掉落6个维生模块。"
+  },
+  "MisguidedInstructions": {
+    "value": "浮印陷阱",
+    "desc": "某些荧音浮印附有传送门陷阱，接触它时会被传送到250米以外的地方。 传送门现形后持续 45 秒。"
+  },
+  "SameTeam": {
+    "value": "天使同行",
+    "desc": "虚空天使与最终的接肢怪并肩作战。"
+  },
+  "DuoAssassination": {
+    "value": "双重接肢",
+    "desc": "在最终战斗中对战两个接肢怪。"
+  },
+  "Vanquisher": {
+    "value": "卓越支援",
+    "desc": "部署额外的卓越者敌人。"
+  },
+  "RangedOnlyEnemies": {
+    "value": "远程交战",
+    "desc": "只出现远程攻击的敌人。"
+  },
+  "MeleeOnlyEnemies": {
+    "value": "短兵相接",
+    "desc": "只出现近战攻击的敌人。"
+  },
+  "EnemyElementalEnhancement": {
+    "value": "元素效力",
+    "desc": "敌人造成+100%元素伤害，并对元素伤害有+85%抗性。"
+  }
+}

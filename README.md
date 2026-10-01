@@ -220,6 +220,15 @@ github:
   # GitHub访问令牌
   access-token: "your_github_access_token"
 
+# Warframe 世界状态词库数据源配置
+warframe:
+  public-export-plus:
+    # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
+    repository: "2094085327/warframe-public-export-plus"
+    branch: "senpai"
+    directory: "resources/warframe/public-export-plus"
+    # GitHub API 认证复用上面的 github.access-token，公开仓库可留空
+
 # 项目自定义配置
 wuLiang:
   config:
@@ -241,11 +250,6 @@ swagger:
 # Spring框架配置
 ##配置数据源
 spring:
-  # MongoDB配置
-  data:
-    mongodb:
-      # MongoDB连接URI
-      uri: mongodb://username:password@host:port/database
   # Servlet配置
   servlet:
     multipart:
@@ -427,6 +431,8 @@ logging:
 
 ./mvnw clean package java -jar wuliang-admin/target/*.jar
 ```
+双衍轮换规则和结合仪式地点分别读取运行目录下的 `resources/warframe/data/spiral-schedule.json` 和 `resources/warframe/data/synthesis-locations.json`。部署时需随外部资源一起提供这两个文件，它们不打入 JAR；更新后重启生效。
+
 ## 配置说明
 
 ### 主要模块
@@ -461,7 +467,8 @@ logging:
 - `日活` - 查看日活跃用户
 
 #### Warframe指令
-- `更新词库` - 更新Warframe词库
+- `更新词库` - 同步 Market 物品、武器目录和紫卡属性中文
+- `检查世界状态词库更新` / `更新世界状态词库` - 检查或应用 Public Export Plus；详见 [接入说明](wuliang-warframe/PUBLIC_EXPORT_PLUS.md)
 - `wm 物品名` - 查询Warframe Market物品
 - `wr 物品名 词条` - 查询紫卡信息
 - `wl 物品名 属性` - 查询玄骸信息
@@ -487,6 +494,8 @@ logging:
 </details>
 
 ## 特别鸣谢
+
+- [`calamity-inc/warframe-public-export-plus`](https://github.com/calamity-inc/warframe-public-export-plus): 本项目使用其提供的 Warframe 游戏数据与本地化字典，用于游戏内容解析和世界状态词库翻译。
 
 - [`Kloping/qqpd-bot-java`](https://github.com/Kloping/qqpd-bot-java/blob/master/README.md): 本项目采用了Kloping编写的机器人SDK，使用此框架实现对QQ机器人官方的对接。
 

@@ -5,6 +5,7 @@ import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -20,9 +21,10 @@ import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.riven.*
-import bot.wuliang.service.WfLexiconService
+import bot.wuliang.service.WfAliasService
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
+import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.PagedCommand
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.WfUtil
@@ -45,9 +47,10 @@ import java.util.regex.Matcher
 @Component
 @ActionService
 class WfMarketController(
+    private val translations: PublicExportService,
     private val wfUtil: WfUtil,
     private val webImgUtil: WebImgUtil,
-    private val wfLexiconService: WfLexiconService,
+    private val wfAliasService: WfAliasService,
     private val wfRivenService: WfRivenService,
     @Qualifier("otherUtil") private val otherUtil: OtherUtil,
     private val redisService: RedisService,
@@ -68,6 +71,10 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
     suspend fun getMarketItem(context: ExecutionContext, matcher: Matcher) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         val pagedCommand = PagedCommand.parse(matcher.group(1))
         val page = pagedCommand.requestedPage
         val key = pagedCommand.content
@@ -77,7 +84,7 @@ class WfMarketController(
 
         // 移除匹配到的部分并去除多余的空格
         val cleanKey = matchResult?.let { key.replace("${it.value}级", "").replace("满级", "").trim() } ?: key
-        val redisKey = "warframe:lexicon:$cleanKey"
+        val redisKey = translations.cacheKey("$WF_MARKET_CACHE_KEY:Lexicon:$cleanKey")
 
         // 尝试从Redis获取数据
         val lexiconEntity = redisService.getValueTyped<WfMarketItemEntity>(redisKey)
@@ -124,6 +131,11 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\b(wr|wmr)\\s*(\\S+.*)$")
     suspend fun getRiven(context: ExecutionContext, matcher: Matcher) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        val generation = translations.cacheKey(bot.wuliang.config.WfMarketConfig.WF_RIVEN_RESULT_KEY_PREFIX)
         val pagedCommand = PagedCommand.parse(matcher.group(2))
         val key = pagedCommand.content
         val parameterList = key.split(" ")
@@ -184,7 +196,7 @@ class WfMarketController(
 
             is RivenAuctionDecodeResult.Success -> decoded.value
         }
-        val resultId = rivenAuctionResultStore.publish(orderList)
+        val resultId = rivenAuctionResultStore.publish(orderList, generation)
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/riven?resultId=$resultId",
@@ -203,6 +215,11 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\bwl\\s*(\\S+.*)$")
     suspend fun getLich(context: ExecutionContext, matcher: Matcher) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        val generation = translations.cacheKey(WF_LICHORDER_KEY)
         val pagedCommand = PagedCommand.parse(matcher.group(1))
         val key = pagedCommand.content
         val parameterList = key.split(" ")
@@ -225,11 +242,11 @@ class WfMarketController(
         val element: String? = otherParams.firstOrNull { !it.matches(Regex("([有无])")) }
         val ephemera: String? = otherParams.firstOrNull { it.contains("无") || it.contains("有") }
 
-        val urlElement: String? = element?.let { wfLexiconService.getOtherName(it) }
+        val urlElement: String? = element?.let { wfAliasService.getOtherName(it) }
         val lichType = if (itemEntity.urlName!!.contains(KUVA_WEAPON_MARKER)) RivenGroups.LICH else RivenGroups.SISTER
 
         val lichCacheKey =
-            "${WF_LICHORDER_KEY}:${itemEntity.urlName}:${damage}:${element}:${ephemera}:page=${pagedCommand.page}"
+            "${generation}:${itemEntity.urlName}:${damage}:${element}:${ephemera}:page=${pagedCommand.page}"
         if (!redisService.hasKey(lichCacheKey)) {
             val lichJson = wfUtil.getLichAuctionsJson(
                 element = urlElement,
@@ -252,7 +269,7 @@ class WfMarketController(
             val orderPage = matchingOrders.paginate(pagedCommand.page, MarketDefaults.AUCTION_PAGE_SIZE)
             val orderInfos = orderPage.items.map { order ->
                 WfMarketVo.LichOrderInfo(
-                    element = wfLexiconService.getOtherEnName(order["item"]["element"].textValue())!!,
+                    element = translations.name(order["item"]["element"].textValue()),
                     havingEphemera = order["item"]["having_ephemera"].booleanValue(),
                     damage = order["item"]["damage"].intValue(),
                     startPlatinum = order["starting_price"]?.intValue() ?: order["buyout_price"].intValue(),
@@ -327,65 +344,24 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\b翻译 (.*)\\b")
     suspend fun translation(context: ExecutionContext, matcher: Matcher) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         val inputText = matcher.group(1).trim()
-
-        // 判断输入语言类型
-        val hasChinese = Regex("[\\u4e00-\\u9fa5]").containsMatchIn(inputText)
-        val hasEnglish = Regex("[A-Za-z]").containsMatchIn(inputText)
-
-        // 封装查找和模糊搜索逻辑
-        suspend fun findTranslation(
-            query: String,
-            directLookup: (String) -> String?,
-            fuzzyLookup: (String) -> List<String?>
-        ): Boolean {
-            val directResult = directLookup(query)
-            if (directResult != null) {
-                context.sender.sendText(directResult)
-                return true
-            }
-
-            val fuzzyResults = fuzzyLookup(query)
-                .filterNotNull()
-                .takeIf { it.isNotEmpty() }
-                ?.let { otherUtil.findMatchingStrings(query, it) }
-
-            if (!fuzzyResults.isNullOrEmpty()) {
-                context.sender.sendText("${WarframeRespEnum.SEARCH_NOT_FOUND.message}${fuzzyResults.joinToString(", ")}")
-                return true
-            }
-
-            return false
-        }
-
-        // 根据输入语言执行翻译逻辑
-        when {
-            hasChinese && hasEnglish -> {
-                if (!findTranslation(inputText, wfLexiconService::getEnName) { key ->
-                        wfLexiconService.fuzzyQuery(key).map { it?.zhItemName }
-                    }) {
-                    context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
-                    return
-                }
-            }
-
-            hasEnglish -> {
-                if (!findTranslation(inputText, wfLexiconService::getZhName) { key ->
-                        wfLexiconService.fuzzyQuery(key).map { it?.enItemName }
-                    }) {
-                    context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
-                    return
-                }
-            }
-
-            else -> context.sender.sendText(WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message)
-        }
+        val results = translations.index().translateQuery(inputText)
+        context.sender.sendText(
+            results.take(20).joinToString("\n").ifEmpty { WarframeRespEnum.SEARCH_MATCH_NOT_FOUND.message })
     }
 
     @SystemLog(businessName = "获取部件在WM的白金价格")
     @AParameter
     @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
     suspend fun getWmPrice(context: ExecutionContext) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         val imageMessages = context.messages.filterIsInstance<BotMessage.Image>()
 
         if (imageMessages.isEmpty()) {

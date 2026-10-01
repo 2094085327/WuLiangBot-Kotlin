@@ -9,7 +9,6 @@ import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
 import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
@@ -22,35 +21,30 @@ import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
-import bot.wuliang.entity.vo.WfUtilVo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.logAop.SystemLog
-import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.redis.RedisService
 import bot.wuliang.respEnum.WarframeRespEnum
 import bot.wuliang.service.WarframeDataService
+import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
 import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfUtil
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.io.File
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.*
@@ -67,18 +61,22 @@ import java.util.regex.Matcher
 @Component
 @ActionService
 class WfStatusController @Autowired constructor(
+    private val translations: PublicExportService,
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
     private val redisService: RedisService,
     private val parseDataUtil: ParseDataUtil,
     private val warframeDataService: WarframeDataService,
 ) {
-    private val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
     @SystemLog(businessName = "获取裂缝信息")
     @AParameter
     @Executor(action = "\\b(裂缝|裂隙|钢铁裂缝|钢铁裂隙|九重天)\\b")
     suspend fun getFissures(context: ExecutionContext, matcher: Matcher) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         val fissureType = matcher.group(1)
         // 根据不同的裂缝类型构造图片的 URL
         val urlSuffix = when (fissureType) {
@@ -105,12 +103,16 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "奸商")
     suspend fun findVoidTrader(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_VOIDTRADER_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_VOIDTRADER_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseVoidTraders(data["VoidTraders"])
         }
 
-        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
+        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(translations.cacheKey(WF_VOIDTRADER_KEY))
         if (voidTraderList.isNullOrEmpty()) {
             context.sender.sendText("糟糕OωO，虚空商人不见了，请联系管理员进行检查")
             return
@@ -150,6 +152,10 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "钢铁")
     suspend fun getSteelPath(context: ExecutionContext) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/steelPath",
             imgName = "steelPath-${UUID.randomUUID()}",
@@ -166,7 +172,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "突击")
     suspend fun getSortie(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_SORTIE_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_SORTIE_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSorties(data["Sorties"])
         }
@@ -186,7 +196,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "执(?:行|刑)官")
     suspend fun getArchonHunt(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_ARCHONHUNT_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_ARCHONHUNT_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseArchonHunt(data["LiteSorties"])
         }
@@ -207,7 +221,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(电波|午夜电波)\\b")
     suspend fun getNightWave(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_NIGHTWAVE_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_NIGHTWAVE_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseNightWave(data["SeasonInfo"])
         }
@@ -228,11 +246,16 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
     suspend fun phobosStatus(context: ExecutionContext?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_PHOBOS_STATUS_KEY)
+        if (!translations.ready) {
+            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return PublicExportService.UNAVAILABLE_MESSAGE
+        }
+        val cacheKey = translations.cacheKey(WF_PHOBOS_STATUS_KEY)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
         if (wordStatus == null) {
             wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
             redisService.setValueWithExpiry(
-                WF_PHOBOS_STATUS_KEY,
+                cacheKey,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration(),
                 TimeUnit.SECONDS
@@ -251,12 +274,16 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
     suspend fun cetusCycle(context: ExecutionContext?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_CETUS_CYCLE_KEY)
+        if (!translations.ready) {
+            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return PublicExportService.UNAVAILABLE_MESSAGE
+        }
+        val cacheKey = translations.cacheKey(WF_CETUS_CYCLE_KEY)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
         if (wordStatus == null) {
-            val stateMap = mapOf("night" to "夜晚", "day" to "白天")
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS, stateMap)
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS)
             redisService.setValueWithExpiry(
-                WF_CETUS_CYCLE_KEY,
+                cacheKey,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),// 似乎在一定条件下剩余时间会变为负数产生报错
                 TimeUnit.SECONDS
@@ -277,12 +304,16 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
     suspend fun earthCycle(context: ExecutionContext?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_EARTH_CYCLE_KEY)
+        if (!translations.ready) {
+            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return PublicExportService.UNAVAILABLE_MESSAGE
+        }
+        val cacheKey = translations.cacheKey(WF_EARTH_CYCLE_KEY)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
         if (wordStatus == null) {
-            val stateMap = mapOf("night" to "夜晚", "day" to "白天")
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS, stateMap)
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS)
             redisService.setValueWithExpiry(
-                WF_EARTH_CYCLE_KEY,
+                cacheKey,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
@@ -303,12 +334,16 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
     suspend fun venusStatus(context: ExecutionContext?): String {
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(WF_VENUS_STATUS_KEY)
+        if (!translations.ready) {
+            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return PublicExportService.UNAVAILABLE_MESSAGE
+        }
+        val cacheKey = translations.cacheKey(WF_VENUS_STATUS_KEY)
+        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
         if (wordStatus == null) {
-            val stateMap = mapOf("cold" to "寒冷", "warm" to "温暖")
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS, stateMap)
+            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS)
             redisService.setValueWithExpiry(
-                WF_VENUS_STATUS_KEY,
+                cacheKey,
                 wordStatus,
                 wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
                 TimeUnit.SECONDS
@@ -346,7 +381,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b入侵\\b")
     suspend fun invasions(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_INVASIONS_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_INVASIONS_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseInvasions(data["Invasions"])
         }
@@ -367,7 +406,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(本周灵化|这周灵化|灵化|回廊|钢铁回廊|本周回廊)\\b")
     suspend fun incarnon(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_INCARNON_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_INCARNON_KEY))) {
             parseDataUtil.parseIncarnon()
         }
 
@@ -388,77 +431,13 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(双衍|双衍平原|双衍状态|双衍平原状态|回廊状态|虚空平原状态|复眠螺旋|复眠螺旋状态|王境状态)\\b")
     suspend fun moodSpirals(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_MOODSPIRALS_KEY)) {
-            val jsonFile = File(WARFRAME_MOOD_SPIRALS)
-            val mapper = jacksonObjectMapper()
-            var weatherData: WfUtilVo.SpiralsData = mapper.readValue(jsonFile, WfUtilVo.SpiralsData::class.java)
-            val currentTime = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
-
-            weatherData = wfUtil.updateWeathers(weatherData, currentTime)
-            val currentWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, currentTime)
-
-            if (currentWeatherData == null) {
-                context.sender.sendText(WarframeRespEnum.SPIRALS_ERROR.message)
-                return
-            }
-
-            val hoursLater = OffsetDateTime.parse(currentWeatherData.startTime, dateTimeFormatter)
-                .toLocalDateTime()
-                .plusHours(2)
-                .plusMinutes(1)
-
-            weatherData = wfUtil.updateWeathers(weatherData, hoursLater)
-            val hoursLaterWeatherData = wfUtil.findSpiralsCurrentTime(weatherData.wfWeather, hoursLater)
-
-            if (hoursLaterWeatherData == null) {
-                context.sender.sendText(WarframeRespEnum.SPIRALS_ERROR.message)
-                return
-            }
-
-            // 获取当前和下一个天气的状态
-            val currentWeatherState = weatherData.weatherStates[currentWeatherData.stateId]
-            val damageType = weatherData.damageTypes[currentWeatherData.dmgStateId]
-            val nextWeatherState = weatherData.weatherStates[hoursLaterWeatherData.stateId]
-
-            // 确保状态不为null
-            if (currentWeatherState == null || damageType == null || nextWeatherState == null) {
-                context.sender.sendText(WarframeRespEnum.SPIRALS_ABNORMAL_ERROR.message)
-                return
-            }
-
-            // 计算到下一个天气的剩余时间
-            val timeUntilNextWeather = Duration.between(
-                currentTime,
-                OffsetDateTime.parse(hoursLaterWeatherData.startTime, dateTimeFormatter).toLocalDateTime()
-            )
-            val timeUntilNextWeatherFormatted = formatDuration(timeUntilNextWeather)
-
-            // 获取当前和下一个天气的 NPC 和排除场所信息
-            val (npcList, excludeNpcList) = wfUtil.getNpcLists(weatherData, currentWeatherData.stateId)
-            val (excludePlaceList, noExcludePlaceList) = wfUtil.getPlaceLists(weatherData, currentWeatherData.stateId)
-            val nextExcludePlaceList =
-                weatherData.excludePlaces.filter { it.excludeIds.contains(hoursLaterWeatherData.stateId) }
-                    .map { it.name }
-
-            // 创建 MoodSpiralsEntity 实例
-            val moodSpiralsEntity = MoodSpirals(
-                currentState = currentWeatherState,
-                damageType = damageType,
-                npc = npcList,
-                excludeNpc = excludeNpcList,
-                excludePlace = excludePlaceList,
-                noExcludePlace = noExcludePlaceList,
-                remainTime = timeUntilNextWeatherFormatted,
-                nextState = nextWeatherState,
-                nextExcludePlace = nextExcludePlaceList
-            )
-
-            redisService.setValueWithExpiry(
-                WF_MOODSPIRALS_KEY,
-                moodSpiralsEntity,
-                moodSpiralsEntity.remainTime!!.replace(" ", "").parseDuration(),
-                TimeUnit.SECONDS
-            )
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (wfUtil.getMoodSpirals() == null) {
+            context.sender.sendText(WarframeRespEnum.SPIRALS_ERROR.message)
+            return
         }
         // 生成和发送图像
         val imgData = WebImgUtil.ImgData(
@@ -514,7 +493,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(结合仪式|结合|结合目标|大黄脸)\\b")
     suspend fun sanctuarySynthesisTargets(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_SIMARIS_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_SIMARIS_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseSimaris(data["LibraryInfo"])
         }
@@ -535,7 +518,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(紫卡价格|紫卡排行|紫卡|紫卡均价)(\\s+.*)?$")
     suspend fun getRivenRanking(context: ExecutionContext, matcher: Matcher) {
-        if (!redisService.hasKey(WF_RIVEN_UN_REROLLED_KEY) || !redisService.hasKey(WF_RIVEN_REROLLED_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY)) || !redisService.hasKey(translations.cacheKey(WF_RIVEN_REROLLED_KEY))) {
             parseDataUtil.parseWeeklyRiven()
         }
 
@@ -548,7 +535,7 @@ class WfStatusController @Autowired constructor(
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/allRivenPrice$urlParams",
-            imgName = "allRivenPrice-${currentMonday}",
+            imgName = "allRivenPrice-${currentMonday}-${translations.cacheTag()}",
             element = "#app",
             waitElement = ".warframeRivenAllPrice"
         )
@@ -561,7 +548,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(科研|时光科研|深层科研)\\b")
     suspend fun getConquest(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_CONQUEST_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_CONQUEST_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseConquestArray(data["Conquests"])
         }
@@ -583,7 +574,11 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(日历|1999日历|石榴2代|石榴电脑)\\b")
     suspend fun getCalendar(context: ExecutionContext) {
-        if (!redisService.hasKey(WF_CALENDAR_KEY)) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
+        if (!redisService.hasKey(translations.cacheKey(WF_CALENDAR_KEY))) {
             val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
             parseDataUtil.parseCalendarArray(data["KnownCalendarSeasons"])
         }
@@ -604,6 +599,10 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(周常|每周任务)\\b")
     suspend fun getWeekly(context: ExecutionContext) {
+        if (!translations.ready) {
+            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
+            return
+        }
         context.sender.sendImage(wfUtil.getWeeklyImgUrl())
     }
 }

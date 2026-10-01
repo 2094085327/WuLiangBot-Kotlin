@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.WfAliasMapper">
+    <select id="findEnglishName" resultType="java.lang.String">
+        SELECT LOWER(en_item_name)
+        FROM wf_other_name
+        WHERE LOWER(other_name) = LOWER(#{otherName})
+    </select>
+
+    <insert id="save">
+        INSERT INTO wf_other_name (en_item_name, other_name)
+        VALUES (#{enItemName}, #{otherName})
+        ON DUPLICATE KEY UPDATE en_item_name = VALUES(en_item_name),
+                                other_name = VALUES(other_name)
+    </insert>
+
+    <select id="findAll" resultType="bot.wuliang.entity.WfOtherNameEntity">
+        SELECT id, en_item_name, other_name
+        FROM wf_other_name
+        ORDER BY en_item_name
+    </select>
+
+    <delete id="delete">
+        DELETE FROM wf_other_name WHERE id = #{id}
+    </delete>
+
+    <update id="update">
+        UPDATE wf_other_name SET other_name = #{otherName} WHERE id = #{id}
+    </update>
+</mapper>

@@ -5,6 +5,7 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.*
 import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MOODSPIRALS_KEY
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.entity.WfRivenEntity
@@ -15,7 +16,10 @@ import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.httpUtil.ProxyUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
-import bot.wuliang.moudles.Info
+import bot.wuliang.moudles.MoodSpirals
+import bot.wuliang.moudles.Sortie
+import bot.wuliang.moudles.NightWave
+import bot.wuliang.moudles.Conquest
 import bot.wuliang.moudles.VoidTrader
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
@@ -24,21 +28,20 @@ import bot.wuliang.riven.RivenQueryCriteria
 import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.tencentCos.CosFileServiceImpl
+import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.TimeUtils.replaceTime
 import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
 import com.fasterxml.jackson.databind.JsonNode
-import com.github.houbb.opencc4j.util.ZhConverterUtil
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
+import org.springframework.context.annotation.Lazy
 import java.io.File
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
@@ -48,6 +51,13 @@ import java.util.concurrent.TimeUnit
  */
 @Component
 class WfUtil {
+
+    @Autowired
+    private lateinit var translations: PublicExportService
+
+    @Autowired
+    @Lazy
+    private lateinit var parseDataUtil: ParseDataUtil
 
     private data class MarketOrder(
         val hasRank: Boolean,
@@ -89,6 +99,7 @@ class WfUtil {
     @Autowired
     private lateinit var webImgUtil: WebImgUtil
 
+    @Autowired
     @Qualifier("otherUtil")
     private lateinit var otherUtil: OtherUtil
 
@@ -148,7 +159,7 @@ class WfUtil {
     ): List<MarketOrder> = withContext(Dispatchers.IO) {
         val headers = mutableMapOf<String, Any>(
             "accept" to "application/json",
-            "language" to "zh-hans",
+            "language" to "en",
             "platform" to "pc",
         )
         val suffix = if (top) "/top" else ""
@@ -378,7 +389,10 @@ class WfUtil {
      */
     suspend fun handleFuzzySearch(context: ExecutionContext, itemNameKey: String) {
         val fuzzyList = mutableSetOf<String>()
-        itemNameKey.forEach { char ->
+        // 与 wm 一样，不把英文和数字拆成单字符兜底；标点、空白和 SQL 通配符也不参与。
+        val queryCharacters = itemNameKey
+            .filter { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.HAN }.toSet()
+        queryCharacters.forEach { char ->
             wfRivenService.superFuzzyQuery(char.toString())
                 ?.forEach { it?.zhName?.let { name -> fuzzyList.add(name) } }
         }
@@ -526,8 +540,9 @@ class WfUtil {
 
         weatherData.places.forEach { place ->
             place.npc?.forEach { npc ->
-                if (npc.excludeIds.contains(stateId)) excludeNpcList.add(mapOf(npc.name to place.name))
-                else npcList.add(mapOf(npc.name to place.name))
+                val label = mapOf(translations.index().nameById(npc.name) to translations.index().nameById(place.name))
+                if (npc.excludeIds.contains(stateId)) excludeNpcList.add(label)
+                else npcList.add(label)
             }
         }
 
@@ -539,25 +554,48 @@ class WfUtil {
         val noExcludePlaceList = mutableListOf<String>()
 
         weatherData.excludePlaces.forEach { place ->
-            if (place.excludeIds.contains(stateId)) excludePlaceList.add(place.name)
-            else noExcludePlaceList.add(place.name)
+            val label = translations.index().nameById(place.name)
+            if (place.excludeIds.contains(stateId)) excludePlaceList.add(label)
+            else noExcludePlaceList.add(label)
         }
 
         return Pair(excludePlaceList, noExcludePlaceList)
     }
 
-    // 获取几个平原的状态
-    fun getStatus(
-        url: String,
-        stateMap: Map<String, String>? = null
-    ): WfStatusVo.WordStatus {
-        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "zh"), proxy = proxyUtil.randomProxy())
+    fun getMoodSpirals(): MoodSpirals? {
+        val cacheKey = translations.cacheKey(WF_MOODSPIRALS_KEY)
+        val (ttl, cached) = redisService.getExpireAndValueTyped<MoodSpirals>(cacheKey)
+        if (cached != null) return cached.also { it.remainTime = TimeUtils.formatTimeBySecond(ttl ?: 0L) }
+        val data = jacksonObjectMapper().readValue(File(WARFRAME_SPIRAL_SCHEDULE), WfUtilVo.SpiralsData::class.java)
+        val now = LocalDateTime.now(ZoneId.of("Asia/Shanghai"))
+        val current = findSpiralsCurrentTime(updateWeathers(data, now).wfWeather, now) ?: return null
+        val nextTime = OffsetDateTime.parse(current.startTime).toLocalDateTime().plusHours(2)
+        val next = findSpiralsCurrentTime(updateWeathers(data, nextTime.plusMinutes(1)).wfWeather, nextTime.plusMinutes(1))
+            ?: return null
+        val seconds = Duration.between(now, nextTime).seconds.coerceAtLeast(1)
+        val (npc, excludedNpc) = getNpcLists(data, current.stateId)
+        val (excludedPlaces, places) = getPlaceLists(data, current.stateId)
+        val index = translations.index()
+        return MoodSpirals(
+            currentState = data.weatherStates[current.stateId]?.let(index::nameById),
+            nextState = data.weatherStates[next.stateId]?.let(index::nameById),
+            damageType = data.damageTypes[current.dmgStateId]?.let(index::nameById),
+            damageTypeKey = data.damageTypes[current.dmgStateId]?.lowercase(java.util.Locale.ROOT),
+            npc = npc, excludeNpc = excludedNpc, excludePlace = excludedPlaces, noExcludePlace = places,
+            remainTime = TimeUtils.formatTimeBySecond(seconds),
+            nextExcludePlace = data.excludePlaces.filter { next.stateId in it.excludeIds }.map { index.nameById(it.name) }
+        ).also { redisService.setValueWithExpiry(cacheKey, it, seconds, TimeUnit.SECONDS) }
+    }
+
+    // 周期接口只提供时间和原始状态，展示名称统一由 Plus 解析。
+    fun getStatus(url: String): WfStatusVo.WordStatus {
+        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "en"), proxy = proxyUtil.randomProxy())
         val activation = statusJson["activation"].textValue().toEastEightTimeZone()
         val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
         val timeLeft = statusJson["timeLeft"].textValue().replaceTime()
         val state = statusJson["state"].textValue()
 
-        val displayState = stateMap?.get(state) ?: state
+        val displayState = translations.index().nameById(state)
         return WfStatusVo.WordStatus(
             displayState = displayState,
             activation = activation,
@@ -571,80 +609,24 @@ class WfUtil {
      * 根据物品名称获取物品数据
      *
      * @param key
-     * @return WfLexiconEntity 查询到的物品数据
+     * @return WfMarketItemEntity 查询到的市场物品数据
      */
     fun fetchItemEntity(key: String): WfMarketItemEntity? {
+        val cacheKey = translations.cacheKey("warframe:lexicon:$key")
         val itemEntity = wfMarketItemService.selectItemByAccurateNature(key)
         if (itemEntity != null) {
-            redisService.setValueWithExpiry("warframe:lexicon:$key", itemEntity, 30L, TimeUnit.DAYS)
+            redisService.setValueWithExpiry(cacheKey, itemEntity, 30L, TimeUnit.DAYS)
             return itemEntity
         }
 
         val marketItemList = wfMarketItemService.getItemByFuzzyMatching(key)
         if (!marketItemList.isNullOrEmpty()) {
             val firstItemEntity = marketItemList.first()
-            redisService.setValueWithExpiry("warframe:lexicon:$key", firstItemEntity, 30L, TimeUnit.DAYS)
+            redisService.setValueWithExpiry(cacheKey, firstItemEntity, 30L, TimeUnit.DAYS)
             return firstItemEntity
         }
 
         return null
-    }
-
-    /**
-     * 转换json文件简繁
-     */
-    fun processJsonFilesZh(directoryPath: String) {
-        val directory = File(directoryPath)
-        if (!directory.exists() || !directory.isDirectory) {
-            println("无效的目录路径")
-            return
-        }
-
-        // 创建固定大小的线程池
-        val executorService: ExecutorService = Executors.newFixedThreadPool(4)
-
-        // 遍历目录中的所有 JSON 文件
-        val files = directory.walkTopDown()
-            .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
-            .toList()
-
-        // 为每个文件创建一个任务
-        val futures = files.map { file ->
-            CompletableFuture.runAsync({
-                try {
-                    // 读取文件内容
-                    val original = file.readText(Charsets.UTF_8)
-
-                    // 调用工具类进行中文转换
-                    val result = ZhConverterUtil.toSimple(original)
-
-                    // 将处理后的内容写回文件
-                    file.writeText(result, Charsets.UTF_8)
-
-                    println("已处理文件：${file.name}")
-                } catch (e: Exception) {
-                    System.err.println("处理文件 ${file.name} 时出错: ${e.message}")
-                }
-            }, executorService)
-        }
-
-        // 等待所有任务完成
-        CompletableFuture.allOf(*futures.toTypedArray()).join()
-
-        // 关闭线程池
-        executorService.shutdown()
-    }
-
-    fun getLanguageValue(key: String): String? {
-        return redisService.getValueTyped<Info>(
-            "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
-        )?.value
-    }
-
-    fun getLanguageDesc(key: String): String? {
-        return redisService.getValueTyped<Info>(
-            "${WF_MARKET_CACHE_KEY}Languages:${key.lowercase()}"
-        )?.desc
     }
 
     /**
@@ -715,10 +697,13 @@ class WfUtil {
         }
     }
 
+    /**
+     * 读取各 Market 集合的版本号供增量同步使用；缺少版本时终止，避免错误标记同步成功。
+     */
     fun getMarketCollectionVersions(): Map<String, String> {
         val collections = HttpUtil.doGetJson(
             url = WARFRAME_MARKET_VERSIONS_V2,
-            headers = LANGUAGE_ZH_HANS
+            headers = LANGUAGE_EN
         )["data"]["collections"]
 
         return listOf("items", "rivens", "liches", "sisters").associateWith { collection ->
@@ -731,8 +716,11 @@ class WfUtil {
         return this["i18n"]?.get(language)?.get("name")?.textValue()
     }
 
+    /**
+     * 保留 Market 的交易 ID、slug 和属性，展示名称按游戏标识交给统一翻译入口解析。
+     */
     fun getMarketItems(): List<WfMarketItemEntity> {
-        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
+        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_EN)
         val items = json["data"]
 
         return items.map { item ->
@@ -746,15 +734,18 @@ class WfUtil {
                 urlName = item["slug"].textValue(),
                 gameRef = item["gameRef"]?.textValue(),
                 tags = JacksonUtil.toJsonString(tags),
-                zhName = item.localizedName("zh-hans"),
-                enName = item.localizedName("en"),
+                zhName = translations.marketName(item["gameRef"]?.textValue(), item.localizedName("en"), item["slug"]?.textValue()),
+                enName = translations.marketName(item["gameRef"]?.textValue(), item.localizedName("en"), item["slug"]?.textValue(), "en"),
                 ducats = item["ducats"]?.intValue()
             )
         }
     }
 
+    /**
+     * 获取紫卡武器目录；武器名称使用统一翻译，紫卡属性名称由独立属性接口处理。
+     */
     fun getRivenItems(): List<WfRivenEntity> {
-        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
+        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ITEMS_V2, headers = LANGUAGE_EN)
         val items = json["data"]
 
         return items.map { item ->
@@ -762,8 +753,8 @@ class WfUtil {
             WfRivenEntity(
                 id = item["id"].textValue(),
                 urlName = item["slug"].textValue(),
-                zhName = i18n["zh-hans"]["name"]?.textValue(),
-                enName = i18n["en"]["name"]?.textValue(),
+                zhName = translations.marketName(item["gameRef"]?.textValue(), i18n["en"]["name"]?.textValue(), item["slug"]?.textValue()),
+                enName = translations.marketName(item["gameRef"]?.textValue(), i18n["en"]["name"]?.textValue(), item["slug"]?.textValue(), "en"),
                 rGroup = item["group"]?.textValue(),
                 reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
                 rivenType = item["rivenType"]?.textValue(),
@@ -772,14 +763,17 @@ class WfUtil {
         }
     }
 
+    /**
+     * 共用玄骸与姐妹武器目录的解析逻辑，保留所属分组及 Market 协议标识。
+     */
     private fun getV2WeaponItems(url: String, group: String): List<WfRivenEntity> {
-        val items = HttpUtil.doGetJson(url = url, headers = LANGUAGE_ZH_HANS)["data"]
+        val items = HttpUtil.doGetJson(url = url, headers = LANGUAGE_EN)["data"]
         return items.map { item ->
             WfRivenEntity(
                 id = item["id"].textValue(),
                 urlName = item["slug"].textValue(),
-                zhName = item.localizedName("zh-hans"),
-                enName = item.localizedName("en"),
+                zhName = translations.marketName(item["gameRef"]?.textValue(), item.localizedName("en"), item["slug"]?.textValue()),
+                enName = translations.marketName(item["gameRef"]?.textValue(), item.localizedName("en"), item["slug"]?.textValue(), "en"),
                 rGroup = group,
                 reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
             )
@@ -792,6 +786,9 @@ class WfUtil {
     fun getSisterItems(): List<WfRivenEntity> =
         getV2WeaponItems(WARFRAME_MARKET_SISTER_WEAPONS_V2, RivenGroups.SISTER)
 
+    /**
+     * 紫卡属性沿用 Market 的简体中文目录，避免被 Plus 缺失项回退为英文。
+     */
     fun getRivenAttributes(): List<WfRivenAttributeEntity> {
         val items = HttpUtil.doGetJson(
             url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2,
@@ -818,14 +815,36 @@ class WfUtil {
     /**
      * 获取并缓存本周周常图片，图片名固定为本周一日期与奸商状态
      */
-    fun getWeeklyImgUrl(): String {
+    fun getWeeklyImgUrl(worldState: JsonNode? = null): String {
+        // 手动查询与定时任务共用预加载入口，避免依赖其他指令曾经填充过缓存。
+        val archonKey = translations.cacheKey(WfMarketConfig.WF_ARCHONHUNT_KEY)
+        val nightWaveKey = translations.cacheKey(WfMarketConfig.WF_NIGHTWAVE_KEY)
+        val conquestKey = translations.cacheKey(WfMarketConfig.WF_CONQUEST_KEY)
+        val cachedArchon = redisService.getValueTyped<Sortie>(archonKey)
+        val cachedNightWave = redisService.getValueTyped<NightWave>(nightWaveKey)
+        val cachedConquests = redisService.getValueTyped<List<Conquest>>(conquestKey)
+        // 定时任务显式传入新快照时刷新；普通查询在缓存齐全时直接复用。
+        val data = worldState ?: if (cachedArchon == null || cachedNightWave == null || cachedConquests == null) {
+            HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+        } else null
+        val archon = if (data != null) parseDataUtil.parseArchonHunt(data.path("LiteSorties")) else cachedArchon
+        val nightWave = if (data != null) parseDataUtil.parseNightWave(data.path("SeasonInfo")) else cachedNightWave
+        val conquests = if (data != null) parseDataUtil.parseConquestArray(data.path("Conquests")) else cachedConquests
+        // 刷新瞬间上游可能还没发布新一期，不能把缺失状态缓存为整周图片。
+        check(archon != null) { "本周执刑官数据尚未就绪，请稍后重试" }
+        check(nightWave?.activeChallenges?.any { it.isDaily != true } == true) {
+            "本周午夜电波数据尚未就绪，请稍后重试"
+        }
+        check(conquests.orEmpty().map { it.type }.containsAll(listOf("CT_LAB", "CT_HEX"))) {
+            "本周科研数据尚未就绪，请稍后重试"
+        }
         // 周常每周一刷新，按周一日期与奸商状态生成图片名，缓存在COS中一周
         val weeklyKey = TimeUtils.getFirstDayOfWeek()
             .atZone(ZoneId.of("UTC"))
             .toLocalDate()
             .toString()
         // 奸商激活状态写入缓存key，抵达后第一次生成周常图会带上库存
-        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(WF_VOIDTRADER_KEY)
+        val voidTraderList = redisService.getValueTyped<List<VoidTrader>>(translations.cacheKey(WF_VOIDTRADER_KEY))
         val voidTraderState = when {
             voidTraderList?.any { it.isActive == true } == true -> "active"
             voidTraderList.isNullOrEmpty() -> "none"
@@ -835,7 +854,7 @@ class WfUtil {
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/weekly",
-            imgName = "weekly-$weeklyKey-$voidTraderState",
+            imgName = "weekly-v2-$weeklyKey-$voidTraderState-${translations.cacheTag()}",
             element = "#app",
             waitElement = ".warframeWeekly"
         )
