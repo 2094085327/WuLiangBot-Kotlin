@@ -21,7 +21,7 @@ const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_SPIRAL_SCHEDULE = "$WARFRAME_RESOURCES/data/spiral-schedule.json"
 const val WARFRAME_SYNTHESIS_LOCATIONS = "$WARFRAME_RESOURCES/data/synthesis-locations.json"
-const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/incarnon.json"
+const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/data/incarnon.json"
 const val WARFRAME_AMP_PNG = "$WARFRAME_RESOURCES/img/amp.png"
 const val WARFRAME_CETUS_WISP_PNG = "$WARFRAME_RESOURCES/img/cetusWisp.png"
 
