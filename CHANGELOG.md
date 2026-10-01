@@ -1,5 +1,50 @@
 # Changelog
 
+## [2.2.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.1.0...2.2.0) (2026-10-01)
+
+
+### ✨ Features
+
+* **system,warframe:** 添加Warframe市场词库V2版本支持和帮助详情功能 ([5d87791](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5d8779187a2fa828069ca8cc21aef7f803ce6c03))
+* **system,warframe:** 添加Warframe市场词库V2版本支持和帮助详情功能 ([1ca0d26](https://github.com/2094085327/WuLiangBot-Kotlin/commit/1ca0d2646f75ebbb5e52213d654f7029f101fd97))
+* **warframe,system,common:** 添加Warframe周常信息，添加Help详情，添加腾讯云COS生命周期管理功能 ([bd6fa05](https://github.com/2094085327/WuLiangBot-Kotlin/commit/bd6fa05835713f00b254ed3a84648f2d08bab60d))
+* **warframe,system,common:** 添加Warframe周常信息，添加Help详情，添加腾讯云COS生命周期管理功能 ([857b655](https://github.com/2094085327/WuLiangBot-Kotlin/commit/857b6559363fc1b90fa0d977bb61c7c4cdcb6e27))
+* **warframe:** 为Warframe增加1999日历功能 ([467a2e7](https://github.com/2094085327/WuLiangBot-Kotlin/commit/467a2e702c88a38492e0d2836193ac3272d4268d))
+* **warframe:** 为Warframe增加1999日历功能 ([e46d6c6](https://github.com/2094085327/WuLiangBot-Kotlin/commit/e46d6c6a58cfb35c0bba0e17714b81d56239931e))
+* **warframe:** 优化Warframe市场订单查询功能 ([86dca38](https://github.com/2094085327/WuLiangBot-Kotlin/commit/86dca38fd5e2718e983528ea7ba25e62a841d76c))
+* **warframe:** 优化Warframe市场订单查询功能 ([5b6e782](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5b6e7821bc6687019ac338d55b873da8cf43ce9a))
+* **warframe:** 增加科研任务查询 ([66600a8](https://github.com/2094085327/WuLiangBot-Kotlin/commit/66600a829591614edb7b5528539e77114c741db9))
+* **warframe:** 增加科研任务查询 ([11861ae](https://github.com/2094085327/WuLiangBot-Kotlin/commit/11861ae09be86751e3b6fa21983f9eb59caa9d5a))
+* **warframe:** 重构紫卡与玄骸市场查询 ([2c4be38](https://github.com/2094085327/WuLiangBot-Kotlin/commit/2c4be382e2fa8c9a1c39008fe51ce8f03edf562e))
+* **warframe:** 重构紫卡与玄骸市场查询 ([13d6478](https://github.com/2094085327/WuLiangBot-Kotlin/commit/13d6478a846d5c6aefa34812507c7d660d5fb33b))
+
+
+### 🐛 Bug Fixes
+
+* **qq-adapter:** 修复QQ消息@机器人检测和前缀剥离逻辑 ([e903e9a](https://github.com/2094085327/WuLiangBot-Kotlin/commit/e903e9a732da5fc99b71e803c5e2bb45cbaf0173))
+* **qq-adapter:** 修复QQ消息@机器人检测和前缀剥离逻辑 ([8c7f94d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/8c7f94dac6e80108f55059dfe93d5d0b425501fc))
+* **qq-adapter:** 修复QQ消息处理中的图片消息解析问题 ([d284d33](https://github.com/2094085327/WuLiangBot-Kotlin/commit/d284d330912a667bb4ba70d13f544e85756274d6))
+* **qq-adapter:** 修复QQ消息处理中的图片消息解析问题 ([86a4ce6](https://github.com/2094085327/WuLiangBot-Kotlin/commit/86a4ce65529bb64d14edc5bad1aa53187fd879c5))
+* **riven:** 添加缺少的文件 ([6593000](https://github.com/2094085327/WuLiangBot-Kotlin/commit/659300047342100dfc9ecee27e336b4687c700d3))
+* **warframe:** 提交缺少的科研任务文件 ([c7acd06](https://github.com/2094085327/WuLiangBot-Kotlin/commit/c7acd062221929d18326fac390a73e144b0170e1))
+* **warframe:** 提交缺少的科研任务文件 ([c54eb95](https://github.com/2094085327/WuLiangBot-Kotlin/commit/c54eb95b1a57330d805855804227a47fad6e752a))
+* **warframe:** 添加1999日历数据类 ([ea22cbd](https://github.com/2094085327/WuLiangBot-Kotlin/commit/ea22cbda36e8885ef7f5b892a2244f4ffdb9c7cd))
+* **warframe:** 添加1999日历数据类 ([30ce03d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/30ce03d3186bacde6f5122df1b0f967549a6df2e))
+* **warframe:** 添加未提交的Warframe市场数据获取方法 ([8f9b6d9](https://github.com/2094085327/WuLiangBot-Kotlin/commit/8f9b6d93e70dfb967cc7d8c01a1f42cb56f89777))
+* **warframe:** 添加未提交的Warframe市场数据获取方法 ([a9c5004](https://github.com/2094085327/WuLiangBot-Kotlin/commit/a9c50046c7d07944213f3687201d1d685abb0429))
+
+
+### ⚡ Performance Improvements
+
+* **warframe:** 优化紫卡与玄骸查询性能及代码结构 ([91cfe17](https://github.com/2094085327/WuLiangBot-Kotlin/commit/91cfe17bdcc8d737243ee0226773841f873a4ac1))
+
+
+### ♻️ Code Refactoring
+
+* **warframe:** 调整wm查询过滤，修改翻译，修复多虚空商人的索引问题 ([868e3e2](https://github.com/2094085327/WuLiangBot-Kotlin/commit/868e3e22a61e482b2739e6a5651d81cb6c8220d7))
+* **warframe:** 调整wm查询过滤，修改翻译，修复多虚空商人的索引问题 ([8701fb5](https://github.com/2094085327/WuLiangBot-Kotlin/commit/8701fb5ede3e6813dfc579dbdaeb2d32d97fff9c))
+* **warframe:** 迁移统一词库并完善世界状态解析与缓存 ([6d29afd](https://github.com/2094085327/WuLiangBot-Kotlin/commit/6d29afd2952ce7d3dd87f5120ca4e907bb4238f9))
+
 ## [2.1.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.0.3...2.1.0) (2026-06-24)
 
 
