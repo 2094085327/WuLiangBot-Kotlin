@@ -40,7 +40,9 @@ class WebConfig : WebMvcConfigurer {
             "/dailyJson",
             "/botConfig/**",
             "/category/**",
-            "/directives/**"
+            "/directives/**",
+            // 上传接口复用管理后台登录校验，在进入文件操作前拦截未登录请求。
+            "/upload/**"
         )
     }
 }

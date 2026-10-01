@@ -1,19 +1,3 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : 122.51.5.228
- Source Server Type    : MariaDB
- Source Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- Source Host           : 122.51.5.228:3306
- Source Schema         : wuliang
-
- Target Server Type    : MariaDB
- Target Server Version : 101108 (10.11.8-MariaDB-0ubuntu0.24.04.1)
- File Encoding         : 65001
-
- Date: 03/12/2025 10:59:26
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -194,20 +178,6 @@ CREATE TABLE `user`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for wf_lexicon
--- ----------------------------
-DROP TABLE IF EXISTS `wf_lexicon`;
-CREATE TABLE `wf_lexicon`  (
-  `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `en_item_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `zh_item_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `url_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `in_market` int(2) NULL DEFAULT NULL,
-  `use_count` int(11) NULL DEFAULT NULL COMMENT '使用次数',
-  UNIQUE INDEX `id_en_zh_url_optimized`(`id` ASC, `en_item_name` ASC, `zh_item_name` ASC, `url_name` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
 -- Table structure for wf_market_item
 -- ----------------------------
 DROP TABLE IF EXISTS `wf_market_item`;
@@ -220,30 +190,6 @@ CREATE TABLE `wf_market_item`  (
   `tags` json NULL COMMENT 'Warframe Market v2物品标签',
   `use_count` int(10) NULL DEFAULT NULL COMMENT '使用次数',
   `ducats` int(10) NULL DEFAULT NULL COMMENT '物品对应杜卡德数量',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for wf_mission_type
--- ----------------------------
-DROP TABLE IF EXISTS `wf_mission_type`;
-CREATE TABLE `wf_mission_type`  (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '任务类型ID',
-  `mission_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务类型',
-  `mission_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '中文任务类型',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for wf_missions
--- ----------------------------
-DROP TABLE IF EXISTS `wf_missions`;
-CREATE TABLE `wf_missions`  (
-  `id` int(11) NOT NULL COMMENT '任务ID',
-  `mission_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务名',
-  `mission_type_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务类型ID',
-  `mission_zh` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务中文名',
-  `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务地点',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

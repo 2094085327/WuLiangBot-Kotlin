@@ -16,6 +16,7 @@ package bot.wuliang.moudles
 data class MoodSpirals(
     val currentState: String? = null,
     val damageType: String? = null,
+    val damageTypeKey: String? = null,
     val npc: List<Map<String, String>>? = null,
     val excludeNpc: List<Map<String, String>>? = null,
     val excludePlace: List<String>? = null,

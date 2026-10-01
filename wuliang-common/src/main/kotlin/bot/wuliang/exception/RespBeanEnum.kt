@@ -7,6 +7,8 @@ enum class RespBeanEnum(
     SUCCESS(200, "SUCCESS"),
     ERROR(500, "服务端异常"),
 
+    CHUNKS_ERROR(500, "无分块文件"),
+
     BIND_ERROR(5001, "参数校验异常"),
     LOGIN_ERROR(500210, "用户名或者密码不正确"),
     NO_USER(500211, "用户不存在"),

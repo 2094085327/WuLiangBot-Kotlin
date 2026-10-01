@@ -57,10 +57,14 @@ class DatabaseRivenAttributeCatalog(
     }
 
     /** 使用刚完成同步的数据原子替换查询快照，避免再次读取数据库。 */
+    @Synchronized
     fun refresh(entities: Collection<WfRivenAttributeEntity>) {
         snapshot = CatalogSnapshot.from(entities.mapNotNull(::toDefinition))
     }
 
+    /**
+     * 首次查询时从独立属性表构建快照，后续由同步流程主动刷新，避免每次查询访问数据库。
+     */
     private fun currentSnapshot(): CatalogSnapshot = snapshot ?: synchronized(this) {
         snapshot ?: CatalogSnapshot.from(
             attributeMapper.selectList(null).mapNotNull(::toDefinition)
@@ -99,12 +103,16 @@ class DatabaseRivenAttributeCatalog(
         return previous[right.length]
     }
 
+    /**
+     * 保留属性表中的 Market 中文名称；缺失时依次回退英文和 slug，不调用 Plus 翻译。
+     */
     private fun toDefinition(entity: WfRivenAttributeEntity?): RivenAttributeDefinition? {
         entity ?: return null
         return RivenAttributeDefinition(
             id = entity.id ?: return null,
             slug = entity.urlName ?: return null,
-            zhName = entity.zhName.orEmpty(),
+            zhName = entity.zhName?.takeIf { it.isNotBlank() }
+                ?: entity.enName?.takeIf { it.isNotBlank() } ?: entity.urlName,
             enName = entity.enName.orEmpty(),
             group = entity.rGroup,
             unit = entity.unit,

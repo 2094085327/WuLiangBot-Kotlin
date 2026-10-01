@@ -70,6 +70,14 @@ github:
   # GitHub访问令牌
   access-token: "your_github_access_token"
 
+# Warframe 世界状态词库数据源配置
+warframe:
+  public-export-plus:
+    # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
+    repository: "2094085327/warframe-public-export-plus"
+    branch: "senpai"
+    directory: "resources/warframe/public-export-plus"
+
 # 项目自定义配置
 wuLiang:
   config:
@@ -91,11 +99,6 @@ swagger:
 # Spring框架配置
 ##配置数据源
 spring:
-  # MongoDB配置
-  data:
-    mongodb:
-      # MongoDB连接URI
-      uri: mongodb://username:password@host:port/database
   # Servlet配置
   servlet:
     multipart:
