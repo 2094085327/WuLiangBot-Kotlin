@@ -137,7 +137,7 @@
   },
   "Framecurse": {
     "value": "咒甲减益",
-    "desc": "激活一项技能会对你造成 50 伤害。"
+    "desc": "激活一项技能会对你造成 50 伤害，对护盾造成3倍伤害。"
   },
   "Gearless": {
     "value": "携带装备限制",
@@ -358,5 +358,29 @@
   "EnemyElementalEnhancement": {
     "value": "元素效力",
     "desc": "敌人造成+100%元素伤害，并对元素伤害有+85%抗性。"
+  },
+  "ChannelDrain": {
+    "value": "贪婪导引",
+    "desc": "导引技能激活期间，最大护盾和过载护盾每秒都会降低。完全恢复需要10秒的冷却时间。"
+  },
+  "NoPets": {
+    "value": "宠物禁入",
+    "desc": "禁用同伴。"
+  },
+  "InfectedWounds": {
+    "value": "感染伤口",
+    "desc": "每次受伤时获得1层毒素异常状态。"
+  },
+  "AnemicShields": {
+    "value": "乏能护盾",
+    "desc": "护盾与超宏防护的上限为500点。"
+  },
+  "ShortenedReach": {
+    "value": "咫尺天涯",
+    "desc": "技能范围减半。"
+  },
+  "LowYield": {
+    "value": "精准失控",
+    "desc": "武器范围伤害最大范围为3米。"
   }
 }
