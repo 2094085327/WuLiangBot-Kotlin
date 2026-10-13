@@ -220,14 +220,42 @@ github:
   # GitHub访问令牌
   access-token: "your_github_access_token"
 
-# Warframe 世界状态词库数据源配置
+# Warframe 数据源、翻译资源及缓存配置（代码入口：WarframeProperties.kt）
 warframe:
+  official-export:
+    index-base-url: "https://origin.warframe.com/PublicExport/"
+    content-base-url: "https://content.warframe.com/PublicExport/Manifest/"
   public-export-plus:
-    # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
+    # owner/repo 格式，可替换为上游或自己的 fork
     repository: "2094085327/warframe-public-export-plus"
     branch: "senpai"
     directory: "resources/warframe/public-export-plus"
-    # GitHub API 认证复用上面的 github.access-token，公开仓库可留空
+  languages-bin:
+    repository: "calamity-inc/warframe-languages-bin-data"
+    branch: "senpai"
+  # GitHub API 认证仍使用 github.access-token；令牌不会附加到 raw 或官方请求
+  github-export:
+    api-base-url: "https://api.github.com/"
+    raw-base-url: "https://raw.githubusercontent.com/"
+    api-version: "2022-11-28"
+  # 官方导出和两个 GitHub 数据源共享连接池，单位均为秒
+  export-http:
+    connect-timeout-seconds: 15
+    read-timeout-seconds: 90
+    call-timeout-seconds: 120
+  world-state:
+    url: "https://api.warframe.com/cdn/worldState.php"
+    cache-seconds: 300          # 30..600；激活/结束及 UTC 日更边界可提前失效
+    retry-seconds: 30           # 失败退避、轮换发布延迟、Baro 空库存缓存共用
+    stale-seconds: 1800         # 允许使用旧快照的最长时间，不小于 cache-seconds
+    request-timeout-seconds: 20
+  # 本地修正资源，修改内容后重启加载
+  sortie-data: "resources/warframe/data/sortieData.json"
+  conquest-data: "resources/warframe/data/conquestData.json"
+  calendar-upgrades: "resources/warframe/data/calendarUpgrades.json"
+  translation-aliases: "resources/warframe/data/translationAliases.json"
+  spiral-translations: "resources/warframe/data/spiralTranslations.json"
+  synthesis-locations: "resources/warframe/data/synthesis-locations.json"
 
 # 项目自定义配置
 wuLiang:
@@ -432,6 +460,7 @@ logging:
 ./mvnw clean package java -jar wuliang-admin/target/*.jar
 ```
 双衍轮换规则和结合仪式地点分别读取运行目录下的 `resources/warframe/data/spiral-schedule.json` 和 `resources/warframe/data/synthesis-locations.json`。部署时需随外部资源一起提供这两个文件，它们不打入 JAR；更新后重启生效。
+世界状态赏金同样读取该目录下的 `ZarimanJobManifest.json`、`EntratiLabsJobManifest.json` 和 `WF1999JobManifest.json`，部署时需随外部资源一起提供；来源与固定版本见 `resources/warframe/data/BOUNTY_SOURCES.md`，更新后重启生效。
 
 ## 配置说明
 
@@ -468,8 +497,9 @@ logging:
 
 #### Warframe指令
 - `更新词库` - 同步 Market 物品、武器目录和紫卡属性中文
-- `检查世界状态词库更新` / `更新世界状态词库` - 检查或应用 Public Export Plus；详见 [接入说明](wuliang-warframe/PUBLIC_EXPORT_PLUS.md)
+- `检查世界状态词库更新` / `更新世界状态词库` - 同时检查或应用官方 Public Export、Plus 补充数据和完整游戏语言表；详见 [接入说明](wuliang-warframe/PUBLIC_EXPORT_PLUS.md)
 - `wm 物品名` - 查询Warframe Market物品
+- `wm` 和部件 WM 价格查询使用 Market 自身的简体中文名称，包含“一套”等交易组合，不依赖世界状态词库。已有部署更新后执行一次 `更新词库`，可修复此前保存的英文名称并清理物品查询缓存。
 - `wr 物品名 词条` - 查询紫卡信息
 - `wl 物品名 属性` - 查询玄骸信息
 - `裂缝` - 查看普通裂缝信息
@@ -495,7 +525,8 @@ logging:
 
 ## 特别鸣谢
 
-- [`calamity-inc/warframe-public-export-plus`](https://github.com/calamity-inc/warframe-public-export-plus): 本项目使用其提供的 Warframe 游戏数据与本地化字典，用于游戏内容解析和世界状态词库翻译。
+- [`calamity-inc/warframe-public-export-plus`](https://github.com/calamity-inc/warframe-public-export-plus): 本项目使用其游戏元数据与本地化字典，补充官方 Public Export 缺失的对象、字段和译文。
+- [`calamity-inc/warframe-languages-bin-data`](https://github.com/calamity-inc/warframe-languages-bin-data): 本项目使用其完整游戏语言表补齐 Plus 未收录的世界状态文本。
 
 - [`Kloping/qqpd-bot-java`](https://github.com/Kloping/qqpd-bot-java/blob/master/README.md): 本项目采用了Kloping编写的机器人SDK，使用此框架实现对QQ机器人官方的对接。
 

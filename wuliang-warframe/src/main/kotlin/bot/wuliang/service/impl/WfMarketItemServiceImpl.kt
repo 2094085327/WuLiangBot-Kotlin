@@ -6,7 +6,6 @@ import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfOtherNameEntity
 import bot.wuliang.mapper.WfMarketItemMapper
 import bot.wuliang.service.WfMarketItemService
-import bot.wuliang.translation.PublicExportService
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,9 +20,6 @@ import kotlin.math.ln
  */
 @Service
 class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEntity?>(), WfMarketItemService {
-    @Autowired
-    private lateinit var translations: PublicExportService
-
     @Autowired
     private lateinit var wfMarketItemMapper: WfMarketItemMapper
 
@@ -118,18 +114,17 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
 
     override fun selectItemByAccurateNature(key: String): WfMarketItemEntity? {
         val wfMarketItemEntity = wfMarketItemMapper.getUrlNameFromKey(key)
-            ?: translations.index().translateQuery(key).asSequence().mapNotNull(wfMarketItemMapper::getUrlNameFromKey)
-                .firstOrNull()
 
         return if (wfMarketItemEntity != null) {
             wfMarketItemEntity.useCount = wfMarketItemEntity.useCount?.plus(1)
             wfMarketItemMapper.updateById(wfMarketItemEntity)
-            translations.localize(wfMarketItemEntity)
+            // 数据库已保存 Market 中文，查询时保留原名，避免套装回退为英文。
+            wfMarketItemEntity
         } else null
     }
 
     override fun selectListZhNameList(keyList: List<String>): List<WfMarketItemEntity>? {
-        return wfMarketItemMapper.batchSelectByZhNameList(keyList)?.map(translations::localize)
+        return wfMarketItemMapper.batchSelectByZhNameList(keyList)
     }
 
     override fun getItemByFuzzyMatching(key: String): List<WfMarketItemEntity>? {
@@ -217,7 +212,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
             it.useCount = it.useCount?.plus(1)
             wfMarketItemMapper.updateById(it)
         }
-        return sortedResultList.map(translations::localize)
+        return sortedResultList
     }
 
     override fun fuzzyQuery(key: String): List<WfMarketItemEntity?> {
@@ -227,7 +222,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
             .apply("zh_name REGEXP {0}", regex)
             .or()
             .like("en_name", "%$key%")
-        return wfMarketItemMapper.selectList(queryWrapper).map { it?.let(translations::localize) }
+        return wfMarketItemMapper.selectList(queryWrapper)
     }
 
 

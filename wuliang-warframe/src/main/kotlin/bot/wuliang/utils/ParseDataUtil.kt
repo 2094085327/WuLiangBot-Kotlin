@@ -3,6 +3,7 @@ package bot.wuliang.utils
 import bot.wuliang.config.WARFRAME_INCARNON
 import bot.wuliang.config.WARFRAME_MARKET_ITEMS_ORDERS_V2
 import bot.wuliang.config.WARFRAME_WEEKLY_RIVEN_PC
+import bot.wuliang.config.WarframeProperties
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
@@ -31,6 +32,7 @@ import bot.wuliang.utils.TimeUtils.getStartOfDay
 import bot.wuliang.utils.TimeUtils.getTimeOfNextDay
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.TimeUtils.toNow
+import bot.wuliang.worldstate.WorldStateTime
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -57,6 +59,9 @@ class ParseDataUtil {
 
     @Autowired
     private lateinit var wfUtil: WfUtil
+
+    @Autowired
+    private lateinit var warframeProperties: WarframeProperties
 
     private val incarnonWeekSeconds = 604800L
 
@@ -182,11 +187,7 @@ class ParseDataUtil {
         return Pair(steelPathEntity.eta?.parseDuration(), steelPathEntity)
     }
 
-    private fun parseTimestamp(dateNode: JsonNode?): Instant? {
-        return dateNode?.get("\$date")?.get("\$numberLong")?.asText()
-            ?.toLongOrNull()
-            ?.let { Instant.ofEpochMilli(it) }
-    }
+    private fun parseTimestamp(dateNode: JsonNode?): Instant? = WorldStateTime.instant(dateNode)
 
     /** 生效时间判断 */
     private fun isActive(node: JsonNode, now: Instant): Boolean {
@@ -331,11 +332,12 @@ class ParseDataUtil {
         if (redisService.hasKey(cacheKey)) return redisService.getValueTyped<List<VoidTrader>>(
             cacheKey
         )
+        val now = getInstantNow()
         val voidTradersList = voidTradersJsonNode.map { voidTrader ->
             val activationTime = parseTimestamp(voidTrader["Activation"])
-            val isActive = activationTime?.let {
-                getInstantNow().isAfter(it)
-            } ?: false
+            val expiryTime = parseTimestamp(voidTrader["Expiry"])
+            val isActive = activationTime != null && expiryTime != null &&
+                    !now.isBefore(activationTime) && now.isBefore(expiryTime)
 
             val inventory = voidTrader["Manifest"]?.let { manifest ->
                 val items = manifest.map { voidTraderItem ->
@@ -453,16 +455,14 @@ class ParseDataUtil {
             }
 
 
-            val now = getInstantNow()
-
             VoidTrader(
                 id = voidTrader["_id"]?.get("\$oid")?.asText() ?: "",
-                activation = parseTimestamp(voidTrader["Activation"]),
-                expiry = parseTimestamp(voidTrader["Expiry"]),
+                activation = activationTime,
+                expiry = expiryTime,
                 eta = if (isActive) {
-                    formatDuration(Duration.between(now, parseTimestamp(voidTrader["Expiry"])))
+                    formatDuration(Duration.between(now, expiryTime))
                 } else {
-                    formatDuration(Duration.between(now, parseTimestamp(voidTrader["Activation"])))
+                    formatDuration(Duration.between(now, activationTime))
                 },
                 isActive = isActive,
                 node = translations.node(voidTrader["Node"]?.asText().orEmpty()).name,
@@ -470,9 +470,18 @@ class ParseDataUtil {
             )
         }
 
-        val expire = voidTradersList
-            .minOfOrNull { it.eta?.parseDuration() ?: Long.MAX_VALUE }
-            ?.coerceAtLeast(30) ?: 300
+        // 上游发布延迟或世界状态获取失败时可能仍返回空库存/已结束的旧轮换，不能缓存到离开时间。
+        val pendingRotation = voidTradersList.any { trader ->
+            (trader.isActive == true && trader.inventory.isNullOrEmpty()) ||
+                    trader.expiry?.let { !now.isBefore(it) } != false
+        }
+        val expire =
+            if (pendingRotation || voidTradersList.isEmpty()) warframeProperties.worldState.retrySeconds else voidTradersList
+                .minOf { trader ->
+                    val boundary = if (trader.isActive == true) trader.expiry else trader.activation
+                    boundary?.let { Duration.between(now, it).seconds.coerceAtLeast(1) }
+                        ?: warframeProperties.worldState.retrySeconds
+                }
         redisService.setValueWithExpiry(cacheKey, voidTradersList, expire, TimeUnit.SECONDS)
         return voidTradersList
     }

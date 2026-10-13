@@ -1,6 +1,6 @@
 package bot.wuliang.translation
 
-import bot.wuliang.config.WARFRAME_SYNTHESIS_LOCATIONS
+import bot.wuliang.config.WarframeProperties
 import bot.wuliang.moudles.Boss
 import bot.wuliang.moudles.Modifiers
 import bot.wuliang.moudles.SimarisLocation
@@ -11,8 +11,8 @@ import java.io.File
 
 /** 维护世界状态代码间的关联和社区补充的玩法数据，展示文本统一交给翻译服务。 */
 @Component
-class WorldStateCatalog(private val translations: PublicExportService) {
-    private val synthesis = jacksonObjectMapper().readTree(File(WARFRAME_SYNTHESIS_LOCATIONS))
+class WorldStateCatalog(private val translations: PublicExportService, properties: WarframeProperties) {
+    private val synthesis = jacksonObjectMapper().readTree(File(properties.synthesisLocations))
 
     data class SteelReward(val item: String, val cost: Int, val count: Int = 1)
 
@@ -51,7 +51,7 @@ class WorldStateCatalog(private val translations: PublicExportService) {
     fun faction(code: String): String = translations.faction(code)
 
     /**
-     * 组合结合仪式目标与社区刷新地点，优先使用 Plus 节点元数据补全地点译名。
+     * 组合结合仪式目标与社区刷新地点，使用官方节点信息和补充数据生成地点译名。
      * 未收录的目标返回 null，由调用方决定展示方式。
      */
     fun synthesisTarget(id: String): SimarisPersistent? {
@@ -62,15 +62,16 @@ class WorldStateCatalog(private val translations: PublicExportService) {
             imageKey = imageKey,
             name = translations.name(nameKey),
             locations = row["locations"].map { location ->
-                val node = location["nodeId"]?.asText()?.let { translations.index().metadata(it) }
+                val nodeId = location["nodeId"]?.asText()
+                val node = nodeId?.let(translations::node)
+                val system = nodeId?.let { translations.index().officialField(it, "systemName") }
                 SimarisLocation(
                     level = location["level"].asText(),
                     spawnRate = location["spawnRate"].asText(),
-                    mission = (node?.get("name")?.asText() ?: location["missionKey"].asText()).let(translations::name),
-                    planet = (node?.get("systemName")?.asText()
-                        ?: location["planetKey"].asText()).let(translations::name),
-                    faction = faction(node?.get("faction")?.asText() ?: location["factionKey"].asText()),
-                    type = (node?.get("missionType")?.asText() ?: location["typeKey"].asText()).let(translations::name),
+                    mission = nodeId?.let(translations::name) ?: translations.name(location["missionKey"].asText()),
+                    planet = system ?: translations.name(location["planetKey"].asText()),
+                    faction = node?.faction ?: faction(location["factionKey"].asText()),
+                    type = node?.type ?: translations.name(location["typeKey"].asText()),
                 )
             }
         )

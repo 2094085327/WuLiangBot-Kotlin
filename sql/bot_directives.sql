@@ -68,7 +68,7 @@ INSERT INTO `bot_directives` VALUES (44, 4, '抽卡链接', '获取原神抽卡�
 INSERT INTO `bot_directives` VALUES (45, 2, '翻译', '获取物品对应翻译', '输入需要翻译的中文/英文，进行对应的转换', '(?i)\\b(翻译 (.*))\\b', 1, 0, '2025-06-27 10:05:16', '2025-08-15 16:18:06');
 INSERT INTO `bot_directives` VALUES (46, 2, '结合仪式', '今日圣殿结合仪式目标', '用于获取今日圣殿结合仪式目标，查看出没任务，可用指令「结合仪式|结合|结合目标|大黄脸」', '\\b(结合仪式|结合|结合目标|大黄脸)\\b', 1, 0, '2025-08-21 15:41:22', '2025-08-28 16:27:21');
 
-INSERT INTO `bot_directives` VALUES (47, 2, '检查世界状态词库更新', '检查 Public Export Plus 版本', '只检查文件变化，不应用更新', '^检查世界状态词库更新$', 1, 0, NOW(), NULL);
-INSERT INTO `bot_directives` VALUES (48, 2, '更新世界状态词库', '更新 Public Export Plus 词库', '增量下载、验证并应用统一游戏词库', '^更新世界状态词库$', 1, 0, NOW(), NULL);
+INSERT INTO `bot_directives` VALUES (47, 2, '检查世界状态词库更新', '检查 Plus 和完整游戏语言表版本', '只检查文件变化，不应用更新', '^检查世界状态词库更新$', 1, 0, NOW(), NULL);
+INSERT INTO `bot_directives` VALUES (48, 2, '更新世界状态词库', '更新 Plus 和完整游戏语言表', '增量下载、验证并应用统一游戏词库', '^更新世界状态词库$', 1, 0, NOW(), NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

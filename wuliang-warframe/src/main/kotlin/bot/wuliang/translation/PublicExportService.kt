@@ -1,12 +1,11 @@
 package bot.wuliang.translation
 
-import bot.wuliang.config.WARFRAME_RESOURCES
-import bot.wuliang.entity.WfMarketItemEntity
+import bot.wuliang.config.PublicExportPolicy
+import bot.wuliang.config.WarframeProperties
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.Nodes
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -16,24 +15,36 @@ import javax.annotation.PostConstruct
 @Service
 class PublicExportService(
     remote: PublicExportRemote,
-    @Value("\${warframe.public-export-plus.directory:$WARFRAME_RESOURCES/public-export-plus}") directory: String,
-    @Value("\${warframe.sortie-data:$WARFRAME_RESOURCES/data/sortieData.json}") sortieData: String = "$WARFRAME_RESOURCES/data/sortieData.json",
-    @Value("\${warframe.conquest-data:$WARFRAME_RESOURCES/data/conquestData.json}") conquestData: String = "$WARFRAME_RESOURCES/data/conquestData.json",
-    @Value("\${warframe.calendar-upgrades:$WARFRAME_RESOURCES/data/calendarUpgrades.json}") calendarUpgrades: String = "$WARFRAME_RESOURCES/data/calendarUpgrades.json",
+    properties: WarframeProperties,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val store = PublicExportStore(Path.of(directory), remote)
+    private val translationAliases = properties.translationAliases
+    private val sortieData = properties.sortieData
+    private val aliases = runCatching { LocalTranslationAliases.load(Path.of(translationAliases)) }
+        .onFailure { logger.warn("本地翻译关联表加载失败：{}，原因：{}", translationAliases, it.message) }
+        .getOrDefault(LocalTranslationAliases.EMPTY)
+    private val store = PublicExportStore(Path.of(properties.publicExportPlus.directory), remote, aliases.entries)
     private val sortieTranslations = runCatching { LocalSortieTranslations.load(Path.of(sortieData)) }
-        .onFailure { logger.warn("本地突击修正词库加载失败：{}，使用 Plus 或原始标识；原因：{}", sortieData, it.message) }
+        .onFailure { logger.warn("本地突击修正词库加载失败：{}，使用统一索引或原始标识；原因：{}", sortieData, it.message) }
         .getOrDefault(LocalSortieTranslations.EMPTY)
-    private val conquestTranslations = loadInfoTranslations(conquestData) { it.matches(Regex("[A-Za-z][A-Za-z0-9_]*")) }
+    private val conquestTranslations = loadInfoTranslations(properties.conquestData, CONQUEST_KEY_PATTERN::matches)
     private val calendarTranslations =
-        loadInfoTranslations(calendarUpgrades) { it.startsWith("/Lotus/Upgrades/Calendar/", ignoreCase = true) }
+        loadInfoTranslations(properties.calendarUpgrades) {
+            it.startsWith(
+                "/Lotus/Upgrades/Calendar/",
+                ignoreCase = true
+            )
+        }
+    private val spiralTranslations = loadInfoTranslations(properties.spiralTranslations) {
+        it.isNotBlank() && (!it.startsWith("/") || it.startsWith("/Lotus/Language/Duviri/", ignoreCase = true))
+    }
     private val localRevision = PublicExportStore.gitBlobSha(
         listOf(
             sortieTranslations.revision,
             conquestTranslations.revision,
-            calendarTranslations.revision
+            calendarTranslations.revision,
+            spiralTranslations.revision,
+            aliases.revision,
         ).joinToString(":").toByteArray(Charsets.UTF_8)
     )
 
@@ -50,7 +61,7 @@ class PublicExportService(
     @PostConstruct
     fun loadLocal() {
         runCatching { store.load()?.let(::publish) }
-            .onFailure { logger.error("Public Export Plus 本地快照无效，等待手动更新", it) }
+            .onFailure { logger.error("Warframe 词库本地快照无效，等待手动更新", it) }
         if (!ready) logger.warn(UNAVAILABLE_MESSAGE)
     }
 
@@ -77,25 +88,28 @@ class PublicExportService(
     fun index(): PublicExportIndex = applied?.index ?: throw PublicExportUnavailableException()
 
     /**
-     * 中文突击修正优先使用独立本地词库，其余名称交给 Plus 索引解析。
+     * 官方译名优先，缺项再使用本地突击修正和补充词库。
      */
     fun name(key: String, locale: String = "zh"): String {
         val current = index()
-        return (if (locale == "zh") sortieTranslations.name(key) else null) ?: current.name(key, locale)
+        return current.officialField(key, "name", locale)
+            ?: (if (locale == "zh") sortieTranslations.name(key) else null) ?: current.name(key, locale)
     }
 
     fun info(key: String): Info = Info(value = name(key), desc = description(key))
 
     /**
-     * 优先读取本地突击修正说明，再查询 Plus；未提供说明时返回 null。
+     * 官方说明优先，缺项再使用本地突击修正和补充词库；未提供说明时返回 null。
      */
     fun description(key: String): String? {
         val current = index()
-        return sortieTranslations.description(key) ?: current.description(key)
+        return current.officialField(key, "description") ?: sortieTranslations.description(key) ?: current.description(
+            key
+        )
     }
 
     /**
-     * 派系字段沿用紧凑简称；未匹配的派系仍通过 Plus 解析。
+     * 派系字段沿用紧凑简称；未匹配的派系仍通过统一索引解析。
      */
     fun faction(key: String): String {
         val current = index()
@@ -105,19 +119,32 @@ class PublicExportService(
     fun node(id: String): Nodes = index().node(id, ::faction)
 
     /**
-     * 科研偏差、风险和额外变量优先使用独立词库，缺项再走统一翻译入口。
+     * 科研偏差、风险和额外变量使用官方字段，缺项由本地独立词库补齐。
      */
     fun conquestInfo(key: String): Info {
-        index()
-        return conquestTranslations.info(key) ?: info(key)
+        return supplementInfo(key, conquestTranslations.info(key))
     }
 
     /**
-     * 日历增幅优先使用独立词库，避免把 Plus 未收录的增幅路径直接作为说明。
+     * 日历增幅优先使用官方译文，缺项由本地独立词库补齐。
      */
     fun calendarUpgradeInfo(key: String): Info {
-        index()
-        return calendarTranslations.info(key) ?: info(key)
+        return supplementInfo(key, calendarTranslations.info(key))
+    }
+
+    /** 双衍轮换使用官方名称，本地词库补齐未导出的情绪、伤害类型、NPC 和地点。 */
+    fun spiralName(key: String): String {
+        val current = index()
+        return current.officialField(key, "name") ?: spiralTranslations.info(key)?.value ?: current.name(key)
+    }
+
+    /** 本地专用修正按字段补缺，已有官方译文时不覆盖。 */
+    private fun supplementInfo(key: String, supplemental: Info?): Info {
+        val current = index()
+        return Info(
+            value = current.officialField(key, "name") ?: supplemental?.value ?: name(key),
+            desc = current.officialField(key, "description") ?: supplemental?.desc ?: description(key),
+        )
     }
 
     /**
@@ -126,15 +153,15 @@ class PublicExportService(
     fun cacheKey(base: String): String = "$base:${cacheTag()}"
 
     /**
-     * 组合解析规则版本、Plus 提交和本地补充词库指纹，可用于 Redis 键和图片文件名。
+     * 组合解析规则版本、多源快照版本和本地补充词库指纹，可用于 Redis 键和图片文件名。
      */
     fun cacheTag(): String {
         val snapshot = applied ?: throw PublicExportUnavailableException()
-        return "${snapshot.manifest.appliedCommit}-local-$localRevision"
+        return "${PublicExportPolicy.TRANSLATION_CACHE_VERSION}-${snapshot.manifest.appliedCommit}-local-$localRevision"
     }
 
     /**
-     * 按游戏对象路径或英文名称生成 Market 展示名，保留交易协议使用的 ID 和 slug。
+     * 按游戏对象路径或英文名称生成紫卡、玄骸武器展示名，保留交易协议使用的 ID 和 slug。
      * 套装单独匹配；缺失译名时保留英文名称或标识，并记录缺失项。
      */
     fun marketName(gameRef: String?, englishName: String?, slug: String?, locale: String = "zh"): String {
@@ -157,10 +184,6 @@ class PublicExportService(
         }
     }
 
-    fun localize(item: WfMarketItemEntity): WfMarketItemEntity = item.copy(
-        zhName = marketName(item.gameRef, item.enName, item.urlName)
-    )
-
     fun localize(item: WfRivenEntity): WfRivenEntity = item.copy(
         zhName = marketName(null, item.enName, item.urlName)
     )
@@ -172,8 +195,14 @@ class PublicExportService(
         missing.clear()
         snapshot.index.onMissing = ::recordMissing
         applied = snapshot
+        if (snapshot.manifest.files.none { PublicExportStore.acceptsOfficial(it.path) }) {
+            logger.warn("当前快照尚未包含官方对象导出，请执行“更新世界状态词库”切换到官方优先翻译")
+        }
+        if (!snapshot.manifest.files.map { it.path }.containsAll(PublicExportStore.languageFiles)) {
+            logger.warn("当前快照尚未包含完整游戏语言表，请执行“更新世界状态词库”补齐")
+        }
         logger.info(
-            "Public Export Plus 已应用：{}，{} 个文件",
+            "世界状态词库已应用：{}，{} 个文件",
             snapshot.manifest.appliedCommit,
             snapshot.manifest.files.size
         )
@@ -184,20 +213,21 @@ class PublicExportService(
      */
     private fun loadInfoTranslations(path: String, accepts: (String) -> Boolean): LocalInfoTranslations =
         runCatching { LocalInfoTranslations.load(Path.of(path), accepts) }
-            .onFailure { logger.warn("本地世界状态词库加载失败：{}，使用 Plus 或原始标识；原因：{}", path, it.message) }
+            .onFailure { logger.warn("本地世界状态词库加载失败：{}，使用统一索引或原始标识；原因：{}", path, it.message) }
             .getOrDefault(LocalInfoTranslations.EMPTY)
 
     private fun recordMissing(key: String, locale: String, field: String) {
         // 同一版本的相同缺失项只记录一次，并限制总量，避免外部标识撑满内存或日志。
         val entry = "$locale:$field:$key"
         if (missing.size < 5000 && missing.add(entry)) logger.warn(
-            "Public Export Plus 缺失翻译 [{}] {}",
+            "Warframe 词库缺失翻译 [{}] {}",
             revision,
             entry
         )
     }
 
     companion object {
+        private val CONQUEST_KEY_PATTERN = Regex("[A-Za-z][A-Za-z0-9_]*")
         const val UNAVAILABLE_MESSAGE = "Warframe 词库尚未初始化，请管理员执行“更新世界状态词库”"
     }
 }
