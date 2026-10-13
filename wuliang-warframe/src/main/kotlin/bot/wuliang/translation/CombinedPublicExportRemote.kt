@@ -1,13 +1,14 @@
 package bot.wuliang.translation
 
 import bot.wuliang.config.PublicExportPolicy
+import java.nio.file.Path
 
 /** 来源提交分别固定；一个来源失败时不返回候选版本，存储层继续保留旧快照。 */
 internal class CombinedPublicExportRemote(
     private val plus: PublicExportRemote,
     private val languages: PublicExportRemote,
     private val official: PublicExportRemote,
-) : PublicExportRemote {
+) : FilePublicExportRemote {
     override fun revision(): ExportRevision {
         val primary = official.revision()
         val export = plus.revision().also(PublicExportStore::validateRevision)
@@ -31,5 +32,16 @@ internal class CombinedPublicExportRemote(
         return if (file.path in PublicExportStore.languageFiles) {
             languages.download(sourceCommit, file.copy(path = file.path.removePrefix("languages.")))
         } else plus.download(sourceCommit, file)
+    }
+
+    override fun downloadTo(commit: String, file: ExportFile, target: Path) {
+        if (PublicExportStore.acceptsOfficial(file.path)) {
+            official.downloadTo(commit, file, target)
+            return
+        }
+        val sourceCommit = requireNotNull(file.sourceCommit) { "合并快照文件缺少来源提交" }
+        if (file.path in PublicExportStore.languageFiles) {
+            languages.downloadTo(sourceCommit, file.copy(path = file.path.removePrefix("languages.")), target)
+        } else plus.downloadTo(sourceCommit, file, target)
     }
 }

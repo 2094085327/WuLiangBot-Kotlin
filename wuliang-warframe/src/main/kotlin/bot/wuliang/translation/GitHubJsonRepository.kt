@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
+import java.nio.file.Path
 
 /** 从单个 GitHub 仓库读取根目录 JSON；只下载已固定提交的文件。 */
 internal class GitHubJsonRepository(
@@ -15,7 +16,7 @@ internal class GitHubJsonRepository(
     private val accepts: (String) -> Boolean,
     private val settings: WarframeProperties.GitHubExport,
     private val http: PublicExportHttpClient,
-) : PublicExportRemote {
+) : FilePublicExportRemote {
     private val mapper = jacksonObjectMapper()
 
     init {
@@ -55,6 +56,11 @@ internal class GitHubJsonRepository(
         return get(http.request(url).build())
     }
 
+    override fun downloadTo(commit: String, file: ExportFile, target: Path) {
+        val url = rawUrl.newBuilder().addPathSegment(commit).addPathSegment(file.path).build()
+        http.download(http.request(url).build(), target, ::downloadError)
+    }
+
     private fun getApiJson(vararg segments: String): JsonNode {
         val url = apiUrl.newBuilder().apply {
             segments.forEach { addPathSegment(it) }
@@ -64,12 +70,14 @@ internal class GitHubJsonRepository(
             .header("X-GitHub-Api-Version", settings.apiVersion)
             .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
             .build()
-        return mapper.readTree(get(request))
+        return http.read(request, ::downloadError) { mapper.readTree(it) }
     }
 
-    private fun get(request: Request): ByteArray = http.get(request) { status ->
+    private fun get(request: Request): ByteArray = http.get(request, ::downloadError)
+
+    private fun downloadError(status: Int): String {
         val detail = if (status == 403 || status == 429) "（可能达到 GitHub 限额，请稍后重试或配置 GitHub token）" else ""
-        "词库 $repository 下载失败：HTTP $status$detail"
+        return "词库 $repository 下载失败：HTTP $status$detail"
     }
 
     private companion object {
