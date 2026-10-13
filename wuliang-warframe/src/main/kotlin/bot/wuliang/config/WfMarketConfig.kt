@@ -13,6 +13,9 @@ object WfMarketConfig {
     /** Warframe缓存key*/
     const val WF_MARKET_CACHE_KEY = "Wuliang:Warframe:"
 
+    /** Market 物品查询独立缓存，避免复用统一游戏词库时期缓存的英文套装名。 */
+    const val WF_MARKET_ITEM_LEXICON_KEY_PREFIX = WF_MARKET_CACHE_KEY + "marketItems:lexicon:"
+
     /**
      * 别名缓存
      */
@@ -34,9 +37,9 @@ object WfMarketConfig {
     const val WF_STEELPATH_KEY = WF_MARKET_CACHE_KEY + "steelPath"
 
     /**
-     * 虚空商人缓存
+     * 虚空商人缓存；版本升级隔离旧逻辑可能写入的整次到访空库存。
      */
-    const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader"
+    const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader:v2"
 
     /**
      * 玄骸缓存

@@ -1,7 +1,10 @@
 package bot.wuliang.controller
 
 import bot.wuliang.adapter.context.ExecutionContext
-import bot.wuliang.config.*
+import bot.wuliang.config.WARFRAME_STATUS_CETUS_STATUS
+import bot.wuliang.config.WARFRAME_STATUS_EARTH_STATUS
+import bot.wuliang.config.WARFRAME_STATUS_PHOBOS_STATUS
+import bot.wuliang.config.WARFRAME_STATUS_VENUS_STATUS
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
@@ -21,7 +24,6 @@ import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.entity.vo.WfStatusVo
-import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.logAop.SystemLog
 import bot.wuliang.moudles.VoidTrader
@@ -35,6 +37,7 @@ import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfUtil
+import bot.wuliang.worldstate.WorldStateSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -61,6 +64,7 @@ import java.util.regex.Matcher
 @Component
 @ActionService
 class WfStatusController @Autowired constructor(
+    private val worldStateSource: WorldStateSource,
     private val translations: PublicExportService,
     private val webImgUtil: WebImgUtil,
     private val wfUtil: WfUtil,
@@ -108,7 +112,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_VOIDTRADER_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseVoidTraders(data["VoidTraders"])
         }
 
@@ -177,7 +181,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_SORTIE_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseSorties(data["Sorties"])
         }
         val imgData = WebImgUtil.ImgData(
@@ -201,7 +205,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_ARCHONHUNT_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseArchonHunt(data["LiteSorties"])
         }
 
@@ -226,7 +230,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_NIGHTWAVE_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseNightWave(data["SeasonInfo"])
         }
 
@@ -386,7 +390,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_INVASIONS_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseInvasions(data["Invasions"])
         }
         val imgData = WebImgUtil.ImgData(
@@ -498,7 +502,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_SIMARIS_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseSimaris(data["LibraryInfo"])
         }
 
@@ -522,7 +526,12 @@ class WfStatusController @Autowired constructor(
             context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
             return
         }
-        if (!redisService.hasKey(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY)) || !redisService.hasKey(translations.cacheKey(WF_RIVEN_REROLLED_KEY))) {
+        if (!redisService.hasKey(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY)) || !redisService.hasKey(
+                translations.cacheKey(
+                    WF_RIVEN_REROLLED_KEY
+                )
+            )
+        ) {
             parseDataUtil.parseWeeklyRiven()
         }
 
@@ -553,7 +562,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_CONQUEST_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseConquestArray(data["Conquests"])
         }
 
@@ -579,7 +588,7 @@ class WfStatusController @Autowired constructor(
             return
         }
         if (!redisService.hasKey(translations.cacheKey(WF_CALENDAR_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             parseDataUtil.parseCalendarArray(data["KnownCalendarSeasons"])
         }
 

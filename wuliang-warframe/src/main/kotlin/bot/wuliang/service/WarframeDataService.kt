@@ -1,18 +1,20 @@
 package bot.wuliang.service
 
-import bot.wuliang.config.WARFRAME_STATUS_URL
 import bot.wuliang.config.WfMarketConfig.WF_FISSURE_KEY
-import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.moudles.Fissure
 import bot.wuliang.redis.RedisService
 import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.ParseDataUtil
+import bot.wuliang.worldstate.WorldStateSource
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
 class WarframeDataService {
+    @Autowired
+    private lateinit var worldStateSource: WorldStateSource
+
     @Autowired
     private lateinit var translations: PublicExportService
 
@@ -27,7 +29,7 @@ class WarframeDataService {
      */
     fun getFissuresData(): List<Fissure?>? {
         if (!redisService.hasKey(translations.cacheKey(WF_FISSURE_KEY))) {
-            val data = HttpUtil.doGetJson(WARFRAME_STATUS_URL)
+            val data = worldStateSource.get()
             runBlocking {
                 return@runBlocking parseDataUtil.parseFissure(data["ActiveMissions"], data["VoidStorms"])
             }

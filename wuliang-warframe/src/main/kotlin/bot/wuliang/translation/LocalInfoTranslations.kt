@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.nio.file.Files
 import java.nio.file.Path
 
-/** 为科研和1999日历单独维护的词库加载器 */
+/** 为科研、1999日历和双衍轮换单独维护的词库加载器 */
 internal class LocalInfoTranslations private constructor(
     private val entries: Map<String, Info>,
     val revision: String,

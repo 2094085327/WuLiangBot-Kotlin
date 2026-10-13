@@ -5,7 +5,7 @@ import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
 import bot.wuliang.config.WfMarketConfig.WF_LICHORDER_KEY
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_CACHE_KEY
+import bot.wuliang.config.WfMarketConfig.WF_MARKET_ITEM_LEXICON_KEY_PREFIX
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -71,10 +71,6 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
     suspend fun getMarketItem(context: ExecutionContext, matcher: Matcher) {
-        if (!translations.ready) {
-            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return
-        }
         val pagedCommand = PagedCommand.parse(matcher.group(1))
         val page = pagedCommand.requestedPage
         val key = pagedCommand.content
@@ -84,7 +80,7 @@ class WfMarketController(
 
         // 移除匹配到的部分并去除多余的空格
         val cleanKey = matchResult?.let { key.replace("${it.value}级", "").replace("满级", "").trim() } ?: key
-        val redisKey = translations.cacheKey("$WF_MARKET_CACHE_KEY:Lexicon:$cleanKey")
+        val redisKey = WF_MARKET_ITEM_LEXICON_KEY_PREFIX + cleanKey
 
         // 尝试从Redis获取数据
         val lexiconEntity = redisService.getValueTyped<WfMarketItemEntity>(redisKey)
@@ -358,10 +354,6 @@ class WfMarketController(
     @AParameter
     @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
     suspend fun getWmPrice(context: ExecutionContext) {
-        if (!translations.ready) {
-            context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return
-        }
         val imageMessages = context.messages.filterIsInstance<BotMessage.Image>()
 
         if (imageMessages.isEmpty()) {
