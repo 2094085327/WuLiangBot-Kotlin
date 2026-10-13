@@ -462,6 +462,26 @@ logging:
 双衍轮换规则和结合仪式地点分别读取运行目录下的 `resources/warframe/data/spiral-schedule.json` 和 `resources/warframe/data/synthesis-locations.json`。部署时需随外部资源一起提供这两个文件，它们不打入 JAR；更新后重启生效。
 世界状态赏金同样读取该目录下的 `ZarimanJobManifest.json`、`EntratiLabsJobManifest.json` 和 `WF1999JobManifest.json`，部署时需随外部资源一起提供；来源与固定版本见 `resources/warframe/data/BOUNTY_SOURCES.md`，更新后重启生效。
 
+### Jenkins 打包与 Playwright 驱动裁剪
+
+Linux x86_64 部署时， Maven 构建命令中添加 `-Dplaywright.platform=linux`。例如在根目录执行：
+
+```bash
+mvn -B clean package -Dmaven.test.skip=true -Dplaywright.platform=linux
+```
+
+该属性自动激活 `wuliang-admin` 的 `playwright-platform` profile，在 Spring Boot `repackage` 完成后运行 `scripts/TrimPlaywrightDriver.java`，只保留 `driver/linux/`。Jenkins 需要使用 JDK 17 或更高版本；首次启用时 Maven 会下载 `exec-maven-plugin:3.1.0`。裁剪后的驱动包约 33 MiB，相比 Playwright 1.38.0 的完整驱动包约减少 122 MiB。实际大小会打印在构建日志中。
+
+最终产物为 `wuliang-admin/target/wuliang-admin-${project.version}.jar`。裁剪只处理 `target` 内的最终 JAR，不修改 Maven 依赖缓存。驱动内的类、元数据以及 Spring Boot 内嵌 JAR 的 STORED 格式均被保留。
+
+Windows 本地打包运行可执行：
+
+```powershell
+mvn clean package "-Dmaven.test.skip=true" "-Dplaywright.platform=win32_x64"
+```
+
+需要让同一个 JAR 同时支持 Windows x64 和 Linux x64 时，使用 `"-Dplaywright.platform=win32_x64,linux"`，驱动包约 61 MiB。Linux ARM64 对应 `linux-arm64`。这里的平台参数指最终运行环境。
+
 ## 配置说明
 
 ### 主要模块

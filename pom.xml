@@ -143,12 +143,6 @@
             <version>${playwright.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>4.8.1</version>
-        </dependency>
-
         <!-- 数据库 -->
         <dependency>
             <groupId>com.mysql</groupId>
