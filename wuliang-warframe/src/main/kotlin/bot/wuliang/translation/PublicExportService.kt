@@ -20,11 +20,11 @@ class PublicExportService(
     private val logger = LoggerFactory.getLogger(javaClass)
     private val translationAliases = properties.translationAliases
     private val sortieData = properties.sortieData
-    private val aliases = runCatching { LocalTranslationAliases.load(Path.of(translationAliases)) }
+    private val aliases = recoverExportData { LocalTranslationAliases.load(Path.of(translationAliases)) }
         .onFailure { logger.warn("本地翻译关联表加载失败：{}，原因：{}", translationAliases, it.message) }
         .getOrDefault(LocalTranslationAliases.EMPTY)
     private val store = PublicExportStore(Path.of(properties.publicExportPlus.directory), remote, aliases.entries)
-    private val sortieTranslations = runCatching { LocalSortieTranslations.load(Path.of(sortieData)) }
+    private val sortieTranslations = recoverExportData { LocalSortieTranslations.load(Path.of(sortieData)) }
         .onFailure { logger.warn("本地突击修正词库加载失败：{}，使用统一索引或原始标识；原因：{}", sortieData, it.message) }
         .getOrDefault(LocalSortieTranslations.EMPTY)
     private val conquestTranslations = loadInfoTranslations(properties.conquestData, CONQUEST_KEY_PATTERN::matches)
@@ -60,7 +60,7 @@ class PublicExportService(
      */
     @PostConstruct
     fun loadLocal() {
-        runCatching { store.load()?.let(::publish) }
+        recoverExportData { store.load()?.let(::publish) }
             .onFailure { logger.error("Warframe 词库本地快照无效，等待手动更新", it) }
         if (!ready) logger.warn(UNAVAILABLE_MESSAGE)
     }
@@ -77,8 +77,8 @@ class PublicExportService(
      */
     @Synchronized
     fun update(): ExportCheck {
-        val (check, snapshot) = store.update()
-        publish(snapshot)
+        val (check, snapshot) = store.update(applied)
+        if (snapshot !== applied) publish(snapshot)
         return check
     }
 
@@ -212,7 +212,7 @@ class PublicExportService(
      * 按限定的标识范围加载补充词库；格式错误时记录原因并回退为空词库。
      */
     private fun loadInfoTranslations(path: String, accepts: (String) -> Boolean): LocalInfoTranslations =
-        runCatching { LocalInfoTranslations.load(Path.of(path), accepts) }
+        recoverExportData { LocalInfoTranslations.load(Path.of(path), accepts) }
             .onFailure { logger.warn("本地世界状态词库加载失败：{}，使用统一索引或原始标识；原因：{}", path, it.message) }
             .getOrDefault(LocalInfoTranslations.EMPTY)
 

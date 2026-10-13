@@ -5,6 +5,7 @@ import bot.wuliang.config.PublicExportPolicy
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.channels.FileChannel
+import java.nio.channels.OverlappingFileLockException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
@@ -44,6 +45,21 @@ interface PublicExportRemote {
     fun download(commit: String, file: ExportFile): ByteArray
 }
 
+/** 内部文件下载能力；不要求已有 PublicExportRemote 实现新增方法。 */
+internal interface FilePublicExportRemote : PublicExportRemote {
+    fun downloadTo(commit: String, file: ExportFile, target: Path)
+}
+
+internal fun PublicExportRemote.downloadTo(commit: String, file: ExportFile, target: Path) {
+    if (this is FilePublicExportRemote) {
+        downloadTo(commit, file, target)
+        return
+    }
+    val bytes = download(commit, file)
+    require(bytes.size <= PublicExportPolicy.MAX_FILE_BYTES) { "导出文件超过允许大小" }
+    Files.write(target, bytes)
+}
+
 /** 先构建并验证完整快照，再原子替换当前指针，避免读到半更新的词库。 */
 class PublicExportStore(
     private val root: Path,
@@ -62,12 +78,7 @@ class PublicExportStore(
         val directory = currentDirectory() ?: return null
         val manifest = readManifest(directory)
         validateRevision(ExportRevision(manifest.appliedCommit, manifest.files, manifest.sources))
-        val documents = manifest.files.associate { file ->
-            val bytes = Files.readAllBytes(directory.resolve(file.path))
-            validateBytes(file, bytes)
-            file.path to mapper.readTree(bytes)
-        }
-        return AppliedExport(manifest, PublicExportIndex(documents, aliases))
+        return AppliedExport(manifest, PublicExportIndex.fromFiles(directory, manifest.files, aliases))
     }
 
     /**
@@ -75,56 +86,75 @@ class PublicExportStore(
      */
     fun check(): ExportCheck = locked {
         val revision = remote.revision().also(::validateRevision)
-        compare(revision, runCatching { currentDirectory() }.getOrNull())
+        compare(revision, recoverExportData { currentDirectory() }.getOrNull())
     }
 
     /**
      * 固定远端提交，复用校验通过的未变文件，只下载变化或损坏的文件。
      * 全部内容及索引验证成功后才发布指针；返回检查结果和完整的新快照。
+     * 文件内容未变时复用与当前磁盘清单一致的已应用索引；来源版本变化仍发布新的清单。
      */
-    fun update(): Pair<ExportCheck, AppliedExport> = locked {
+    @JvmOverloads
+    fun update(applied: AppliedExport? = null): Pair<ExportCheck, AppliedExport> = locked {
         val revision = remote.revision().also(::validateRevision)
-        val current = runCatching { currentDirectory() }.getOrNull()
+        val current = recoverExportData { currentDirectory() }.getOrNull()
+        val previous = current?.let { recoverExportData { readManifest(it) }.getOrNull() }
+        val existing = applied?.takeIf { it.manifest == previous }
         val check = compare(revision, current)
-        if (check.changed.isEmpty() && check.removed.isEmpty()) {
-            val loaded = runCatching { load() }.getOrNull()
-            if (loaded != null && loaded.manifest.appliedCommit == revision.commit) return@locked check to loaded
-        }
+        val manifest = ExportManifest(revision.commit, revision.files, revision.sources)
+        val reusable = if (check.changed.isEmpty() && check.removed.isEmpty()) {
+            existing ?: requireNotNull(load()) { "已校验的词库快照已丢失" }
+        } else null
+        if (reusable != null && reusable.manifest == manifest) return@locked check to reusable
         // 新目录仅用于构建候选快照；校验和指针发布成功前，查询仍使用旧快照。
         val directory = root.resolve("snapshots").resolve("${revision.commit}-${UUID.randomUUID()}")
         Files.createDirectories(directory)
-        val documents = revision.files.associate { file ->
-            val bytes = if (file.path !in check.changed && current != null) {
-                Files.readAllBytes(current.resolve(file.path))
-            } else {
-                remote.download(revision.commit, file)
-            }
-            validateBytes(file, bytes)
-            val document = mapper.readTree(bytes)
-            require(document != null && document.isContainerNode) { "${file.path} 必须是 JSON 对象或数组" }
-            Files.write(directory.resolve(file.path), bytes)
-            file.path to document
-        }
-        val index = PublicExportIndex(documents, aliases)
-        val manifest = ExportManifest(revision.commit, revision.files, revision.sources)
-        Files.write(directory.resolve("manifest.json"), mapper.writeValueAsBytes(manifest))
+        val changed = check.changed.toSet()
         val temporaryPointer = root.resolve("current-${UUID.randomUUID()}.tmp")
-        Files.write(temporaryPointer, mapper.writeValueAsBytes(Pointer(directory.fileName.toString())))
-        // 文件系统不支持原子替换时直接失败，不能降级为可能留下不完整指针的普通移动。
-        Files.move(temporaryPointer, root.resolve("current.json"), ATOMIC_MOVE, REPLACE_EXISTING)
-        check to AppliedExport(manifest, index)
+        try {
+            revision.files.forEach { file ->
+                val target = directory.resolve(file.path)
+                if (file.path !in changed && current != null) {
+                    Files.copy(current.resolve(file.path), target)
+                } else {
+                    remote.downloadTo(revision.commit, file, target)
+                }
+                ExportFileIO.validate(file, target)
+            }
+            val index = reusable?.index ?: PublicExportIndex.fromFiles(
+                directory, revision.files, aliases, existing?.index,
+                revision.files.map { it.path }.toSet() - changed,
+            )
+            Files.write(directory.resolve("manifest.json"), mapper.writeValueAsBytes(manifest))
+            Files.write(temporaryPointer, mapper.writeValueAsBytes(Pointer(directory.fileName.toString())))
+            // 提前构造返回值，让原子替换成为最后一个可能失败的操作，成功后直接返回。
+            // 文件系统不支持原子替换时直接失败，不能降级为可能留下不完整指针的普通移动。
+            val result = check to AppliedExport(manifest, index)
+            Files.move(temporaryPointer, root.resolve("current.json"), ATOMIC_MOVE, REPLACE_EXISTING)
+            result
+        } catch (failure: Throwable) {
+            // 清理未发布的候选目录；资源错误也只做清理后重新抛出，不降级为数据损坏。
+            try {
+                Files.deleteIfExists(temporaryPointer)
+                Files.list(directory).use { paths -> paths.forEach { Files.deleteIfExists(it) } }
+                Files.deleteIfExists(directory)
+            } catch (cleanup: Throwable) {
+                if (cleanup !== failure) failure.addSuppressed(cleanup)
+            }
+            throw failure
+        }
     }
 
     /**
      * 同时比较文件元数据与实际字节；即使 SHA 清单未变，缺失或损坏的文件也需修复。
      */
     private fun compare(revision: ExportRevision, current: Path?): ExportCheck {
-        val previous = current?.let { runCatching { readManifest(it) }.getOrNull() }
+        val previous = current?.let { recoverExportData { readManifest(it) }.getOrNull() }
         val oldFiles = previous?.files.orEmpty().associateBy { it.path }
         val changed = revision.files.filter { file ->
             // 来源提交变化不代表文件内容变化；相同 blob 继续复用，避免重下整个语言表。
-            oldFiles[file.path]?.let { it.sha != file.sha || it.size != file.size } != false || current == null || !runCatching {
-                validateBytes(file, Files.readAllBytes(current.resolve(file.path)))
+            oldFiles[file.path]?.let { it.sha != file.sha || it.size != file.size } != false || current == null || !recoverExportData {
+                ExportFileIO.validate(file, current.resolve(file.path))
             }.isSuccess
         }.map { it.path }
         return ExportCheck(
@@ -155,7 +185,11 @@ class PublicExportStore(
     private fun <T> locked(action: () -> T): T {
         Files.createDirectories(root)
         return FileChannel.open(root.resolve("sync.lock"), CREATE, WRITE).use { channel ->
-            val lock = runCatching { channel.tryLock() }.getOrNull()
+            val lock = try {
+                channel.tryLock()
+            } catch (_: OverlappingFileLockException) {
+                null
+            }
                 ?: error("Warframe 词库正在检查或更新，请稍后重试")
             lock.use { action() }
         }
@@ -212,8 +246,5 @@ class PublicExportStore(
             return digest.digest(bytes).joinToString("") { "%02x".format(it) }
         }
 
-        private fun validateBytes(file: ExportFile, bytes: ByteArray) {
-            require(bytes.size.toLong() == file.size && gitBlobSha(bytes) == file.sha) { "${file.path} 完整性校验失败" }
-        }
     }
 }
