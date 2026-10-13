@@ -70,4 +70,43 @@
 
     </dependencies>
 
+    <profiles>
+        <!-- 根据部署平台裁剪驱动；不指定属性时保留完整驱动，方便 IDE 开发。 -->
+        <profile>
+            <id>playwright-platform</id>
+            <activation>
+                <property>
+                    <name>playwright.platform</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- 在上面的 Spring Boot repackage 完成后处理最终可执行 JAR。 -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>trim-playwright-driver</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/java</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/../scripts/TrimPlaywrightDriver.java</argument>
+                                        <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+                                        <argument>${playwright.platform}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
