@@ -25,8 +25,7 @@ import bot.wuliang.service.WfMarketItemService
 import bot.wuliang.service.WfRivenService
 import bot.wuliang.tencentCos.CosFileServiceImpl
 import bot.wuliang.translation.PublicExportService
-import bot.wuliang.utils.TimeUtils.replaceTime
-import bot.wuliang.utils.WfUtil.WfUtilObject.toEastEightTimeZone
+import bot.wuliang.worldstate.WorldStateCycles
 import bot.wuliang.worldstate.WorldStateSource
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -464,28 +463,6 @@ class WfUtil {
         return zonedDateTime.toOffsetDateTime().format(dateTimeFormatter) // 转换为 OffsetDateTime 并格式化
     }
 
-
-    /**
-     * 定义一个扩展函数，用于将UTC时间字符串转换为东八区的时间字符串
-     *
-     * @return 东八时区时间字符串
-     */
-    object WfUtilObject {
-        fun String.toEastEightTimeZone(): String {
-            // 解析 UTC 时间字符串为 ZonedDateTime
-            val utcTime = ZonedDateTime.parse(this, DateTimeFormatter.ISO_DATE_TIME)
-
-            // 转换为东八区，即中国标准时间
-            val targetZoneId = ZoneId.of("Asia/Shanghai")
-            val targetTime = utcTime.withZoneSameInstant(targetZoneId)
-
-            // 格式化输出
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-            return targetTime.format(formatter)
-        }
-    }
-
-
     fun findSpiralsCurrentTime(
         wfWeathers: List<WfUtilVo.WfWeather>,
         currentTime: LocalDateTime
@@ -588,21 +565,21 @@ class WfUtil {
         ).also { redisService.setValueWithExpiry(cacheKey, it, seconds, TimeUnit.SECONDS) }
     }
 
-    // 周期接口只提供时间和原始状态，展示名称统一由 Plus 解析。
-    fun getStatus(url: String): WfStatusVo.WordStatus {
-        val statusJson = HttpUtil.doGetJson(url, params = mapOf("language" to "en"), proxy = proxyUtil.randomProxy())
-        val activation = statusJson["activation"].textValue().toEastEightTimeZone()
-        val expiry = statusJson["expiry"].textValue().toEastEightTimeZone()
-        val timeLeft = statusJson["timeLeft"].textValue().replaceTime()
-        val state = statusJson["state"].textValue()
-
-        val displayState = translations.index().nameById(state)
-        return WfStatusVo.WordStatus(
-            displayState = displayState,
-            activation = activation,
-            expiry = expiry,
-            timeLeft = timeLeft
-        )
+    /** 同一份官方快照、同一查询时刻生成全部平原状态，不依赖第三方 timeLeft 字段。 */
+    fun getCycleStatuses(): Map<String, WfStatusVo.WordStatus> {
+        val data = worldStateSource.get()
+        val now = System.currentTimeMillis()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("Asia/Shanghai"))
+        return WorldStateCycles.parse(data, now)
+            .filter { it.id in setOf("earth", "cetus", "cambion", "vallis") }
+            .associate { cycle ->
+                cycle.id to WfStatusVo.WordStatus(
+                    displayState = cycle.subtitle,
+                    activation = cycle.activation?.let { formatter.format(Instant.ofEpochMilli(it)) },
+                    expiry = cycle.expiry?.let { formatter.format(Instant.ofEpochMilli(it)) },
+                    timeLeft = cycle.expiry?.let { TimeUtils.formatTimeBySecond(((it - now) / 1000).coerceAtLeast(0)) }
+                )
+            }
     }
 
 

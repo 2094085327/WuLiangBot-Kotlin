@@ -12,8 +12,6 @@ const val WARFRAME_MARKET_BASE_URL_V2 = "https://api.warframe.market/v2"
 
 const val WARFRAME_MARKET_VERSIONS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/versions"
 
-const val WARFRAME_STATUS_BASE_URL = "https://api.warframestat.us"
-
 const val WARFRAME_STATUS_URL = "https://api.warframe.com/cdn/worldState.php"
 const val WARFRAME_WEEKLY_RIVEN_PC = "https://www-static.warframe.com/repos/weeklyRivensPC.json"
 const val WARFRAME_EXPORT_INDEX_URL = "https://origin.warframe.com/PublicExport/"
@@ -91,23 +89,3 @@ const val WARFRAME_MARKET_RIVEN_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE
  */
 const val WARFRAME_MARKET_LICH_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=lich"
 const val WARFRAME_MARKET_SISTER_AUCTIONS = "$WARFRAME_MARKET_RIVEN_AUCTIONS_BASE/search?type=sister"
-
-/**
- * 火卫二世界状态
- */
-const val WARFRAME_STATUS_PHOBOS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cambionCycle"
-
-/**
- * 金星平原状态
- */
-const val WARFRAME_STATUS_VENUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/vallisCycle"
-
-/**
- * 希图斯状态
- */
-const val WARFRAME_STATUS_CETUS_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/cetusCycle"
-
-/**
- * 地球状态
- */
-const val WARFRAME_STATUS_EARTH_STATUS = "$WARFRAME_STATUS_BASE_URL/pc/earthCycle"
