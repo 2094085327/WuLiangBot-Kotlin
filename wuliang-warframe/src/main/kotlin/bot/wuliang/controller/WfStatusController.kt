@@ -1,29 +1,20 @@
 package bot.wuliang.controller
 
 import bot.wuliang.adapter.context.ExecutionContext
-import bot.wuliang.config.WARFRAME_STATUS_CETUS_STATUS
-import bot.wuliang.config.WARFRAME_STATUS_EARTH_STATUS
-import bot.wuliang.config.WARFRAME_STATUS_PHOBOS_STATUS
-import bot.wuliang.config.WARFRAME_STATUS_VENUS_STATUS
 import bot.wuliang.config.WfMarketConfig.WF_ARCHONHUNT_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CALENDAR_KEY
-import bot.wuliang.config.WfMarketConfig.WF_CETUS_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_CONQUEST_KEY
-import bot.wuliang.config.WfMarketConfig.WF_EARTH_CYCLE_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
 import bot.wuliang.config.WfMarketConfig.WF_INVASIONS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_NIGHTWAVE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_PHOBOS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SORTIE_KEY
-import bot.wuliang.config.WfMarketConfig.WF_VENUS_STATUS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_VOIDTRADER_KEY
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
-import bot.wuliang.entity.vo.WfStatusVo
 import bot.wuliang.imageProcess.WebImgUtil
 import bot.wuliang.logAop.SystemLog
 import bot.wuliang.moudles.VoidTrader
@@ -35,9 +26,9 @@ import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
 import bot.wuliang.utils.TimeUtils.formatDuration
 import bot.wuliang.utils.TimeUtils.getNextRefreshTime
-import bot.wuliang.utils.TimeUtils.parseDuration
 import bot.wuliang.utils.WfUtil
 import bot.wuliang.worldstate.WorldStateSource
+import bot.wuliang.worldstate.WorldStateUnavailableException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -51,7 +42,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 
 
@@ -249,136 +239,54 @@ class WfStatusController @Autowired constructor(
     @SystemLog(businessName = "获取火卫二循环信息")
     @AParameter
     @Executor(action = "\\b(火卫二状态|火星状态|火星平原状态|火卫二平原状态|火卫二平原|火星平原)\\b")
-    suspend fun phobosStatus(context: ExecutionContext?): String {
-        if (!translations.ready) {
-            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return PublicExportService.UNAVAILABLE_MESSAGE
-        }
-        val cacheKey = translations.cacheKey(WF_PHOBOS_STATUS_KEY)
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
-        if (wordStatus == null) {
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_PHOBOS_STATUS)
-            redisService.setValueWithExpiry(
-                cacheKey,
-                wordStatus,
-                wordStatus.timeLeft!!.parseDuration(),
-                TimeUnit.SECONDS
-            )
-        }
-
-        val sendMsg =
-            "当前火卫二平原的状态为: ${wordStatus.displayState} \n开始时间:${wordStatus.activation}\n结束时间:${wordStatus.expiry}\n剩余:${wordStatus.timeLeft}"
-        return if (context != null) {
-            context.sender.sendText(sendMsg)
-            sendMsg
-        } else sendMsg
-    }
+    suspend fun phobosStatus(context: ExecutionContext?): String = sendCycleStatus(context, "cambion")
 
     @SystemLog(businessName = "获取夜灵平原昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球平原状态|希图斯状态|夜灵平原状态|地球平原|夜灵平原)\\b")
-    suspend fun cetusCycle(context: ExecutionContext?): String {
-        if (!translations.ready) {
-            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return PublicExportService.UNAVAILABLE_MESSAGE
-        }
-        val cacheKey = translations.cacheKey(WF_CETUS_CYCLE_KEY)
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
-        if (wordStatus == null) {
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_CETUS_STATUS)
-            redisService.setValueWithExpiry(
-                cacheKey,
-                wordStatus,
-                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),// 似乎在一定条件下剩余时间会变为负数产生报错
-                TimeUnit.SECONDS
-            )
-        }
-        val sendMsg = "当前希图斯平原的状态为 ${wordStatus.displayState} \n" +
-                "开始时间:${wordStatus.activation}\n" +
-                "结束时间:${wordStatus.expiry}\n" +
-                "剩余:${wordStatus.timeLeft}"
-
-        return if (context != null) {
-            context.sender.sendText(sendMsg)
-            sendMsg
-        } else sendMsg
-    }
+    suspend fun cetusCycle(context: ExecutionContext?): String = sendCycleStatus(context, "cetus")
 
     @SystemLog(businessName = "获取地球昼夜循环信息")
     @AParameter
     @Executor(action = "\\b(地球状态|地球时间|地球)\\b")
-    suspend fun earthCycle(context: ExecutionContext?): String {
-        if (!translations.ready) {
-            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return PublicExportService.UNAVAILABLE_MESSAGE
-        }
-        val cacheKey = translations.cacheKey(WF_EARTH_CYCLE_KEY)
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
-        if (wordStatus == null) {
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_EARTH_STATUS)
-            redisService.setValueWithExpiry(
-                cacheKey,
-                wordStatus,
-                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
-                TimeUnit.SECONDS
-            )
-        }
-        val sendMsg = "当前地球昼夜的状态为 ${wordStatus.displayState} \n" +
-                "开始时间:${wordStatus.activation}\n" +
-                "结束时间:${wordStatus.expiry}\n" +
-                "剩余:${wordStatus.timeLeft}"
-
-        return if (context != null) {
-            context.sender.sendText(sendMsg)
-            sendMsg
-        } else sendMsg
-    }
+    suspend fun earthCycle(context: ExecutionContext?): String = sendCycleStatus(context, "earth")
 
     @SystemLog(businessName = "获取金星冷热循环信息")
     @AParameter
     @Executor(action = "\\b(金星状态|金星平原状态|福尔图娜状态|福尔图娜平原状态|金星平原|福尔图娜)\\b")
-    suspend fun venusStatus(context: ExecutionContext?): String {
-        if (!translations.ready) {
-            context?.sender?.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
-            return PublicExportService.UNAVAILABLE_MESSAGE
+    suspend fun venusStatus(context: ExecutionContext?): String = sendCycleStatus(context, "vallis")
+
+    private fun cycleMessages(): Map<String, String> {
+        val titles = linkedMapOf(
+            "cambion" to "火卫二平原", "cetus" to "希图斯平原",
+            "earth" to "地球昼夜", "vallis" to "金星平原"
+        )
+        val statuses = try {
+            wfUtil.getCycleStatuses()
+        } catch (error: WorldStateUnavailableException) {
+            return titles.mapValues { error.message.orEmpty() }
         }
-        val cacheKey = translations.cacheKey(WF_VENUS_STATUS_KEY)
-        var wordStatus = redisService.getValueTyped<WfStatusVo.WordStatus>(cacheKey)
-        if (wordStatus == null) {
-            wordStatus = wfUtil.getStatus(WARFRAME_STATUS_VENUS_STATUS)
-            redisService.setValueWithExpiry(
-                cacheKey,
-                wordStatus,
-                wordStatus.timeLeft!!.parseDuration().coerceAtLeast(1),
-                TimeUnit.SECONDS
-            )
+        return titles.mapValues { (id, title) ->
+            val status = statuses[id]
+            if (status == null) "暂时无法获取${title}状态，官方尚未发布有效的周期数据，请稍后重试"
+            else "当前${title}的状态为 ${status.displayState}\n" +
+                    "开始时间:${status.activation}\n" +
+                    "结束时间:${status.expiry}\n" +
+                    "剩余:${status.timeLeft}"
         }
-        val sendMsg = "当前金星平原的状态为 ${wordStatus.displayState} \n" +
-                "开始时间:${wordStatus.activation}\n" +
-                "结束时间:${wordStatus.expiry}\n" +
-                "剩余:${wordStatus.timeLeft}"
-        return if (context != null) {
-            context.sender.sendText(sendMsg)
-            sendMsg
-        } else sendMsg
+    }
+
+    private suspend fun sendCycleStatus(context: ExecutionContext?, id: String): String {
+        val message = cycleMessages().getValue(id)
+        context?.sender?.sendText(message)
+        return message
     }
 
     @SystemLog(businessName = "获取全部平原循环信息")
     @AParameter
     @Executor(action = "\\b(平原|全部平原|平原时间)\\b")
     suspend fun allPlain(context: ExecutionContext) {
-        val phobosDeferred = phobosStatus(null)
-        val cetusDeferred = cetusCycle(null)
-        val earthDeferred = earthCycle(null)
-        val venusDeferred = venusStatus(null)
-
-        // 整合所有状态信息
-        val allStatus = "$phobosDeferred\n\n" +
-                "\n$cetusDeferred\n\n" +
-                "\n$earthDeferred\n\n" +
-                "\n$venusDeferred"
-
-        context.sender.sendText(allStatus)
+        context.sender.sendText(cycleMessages().values.distinct().joinToString("\n\n"))
     }
 
     @SystemLog(businessName = "获取入侵列表")

@@ -3,7 +3,6 @@ package bot.wuliang.worldstate
 import bot.wuliang.translation.PublicExportIndex
 import bot.wuliang.translation.WorldStateCatalog
 import com.fasterxml.jackson.databind.JsonNode
-import java.time.Instant
 import java.time.LocalDate
 
 data class WorldEntry(
@@ -95,7 +94,7 @@ class WorldStatePanel(
         return WorldPanel(
             snapshot.fetchedAt, root.path("Time").asLong() * 1000, now,
             snapshot.stale || now - root.path("Time").asLong() * 1000 > 600_000,
-            cycles = cycles(syndicates, now), sections = sections
+            cycles = WorldStateCycles.parse(root, now), sections = sections
         )
     }
 
@@ -435,51 +434,4 @@ class WorldStatePanel(
                 activation = date(v["StartDate"]), expiry = date(v["EndDate"])
             )
         })
-
-    private fun cycles(syndicates: Map<String, JsonNode>, now: Long): List<WorldEntry> = buildList {
-        val earthPhase = Math.floorMod(now, 28_800_000)
-        add(
-            WorldEntry(
-                "earth",
-                "地球",
-                subtitle = if (earthPhase < 14_400_000) "白天" else "夜晚",
-                expiry = now + 14_400_000 - earthPhase % 14_400_000
-            )
-        )
-        syndicates["CetusSyndicate"]?.let { date(it["Expiry"]) }?.let { end ->
-            val day = end - now > 3_000_000
-            val expiry = if (day) end - 3_000_000 else end
-            add(WorldEntry("cetus", "希图斯", subtitle = if (day) "白天" else "夜晚", expiry = expiry))
-            add(WorldEntry("cambion", "魔胎之境", subtitle = if (day) "Fass" else "Vome", expiry = expiry))
-        }
-        // 奥布山谷和双衍使用固定时间锚点推算，标注来源性质，避免误认为官方实时字段。
-        val vallisPhase = Math.floorMod(now - Instant.parse("2026-02-04T19:46:48Z").toEpochMilli(), 1_600_000)
-        add(
-            WorldEntry(
-                "vallis", "奥布山谷", subtitle = if (vallisPhase < 400_000) "温暖" else "寒冷",
-                expiry = now + (if (vallisPhase < 400_000) 400_000 else 1_600_000) - vallisPhase,
-                details = listOf("周期推算")
-            )
-        )
-        val duviriPhase = Math.floorMod(now / 1000 - 52, 36_000)
-        add(
-            WorldEntry(
-                "duviri",
-                "双衍王境",
-                subtitle = listOf("悲伤", "恐惧", "喜悦", "愤怒", "嫉妒")[(duviriPhase / 7200)],
-                expiry = now + (7200 - duviriPhase % 7200) * 1000,
-                details = listOf("周期推算")
-            )
-        )
-        syndicates["ZarimanSyndicate"]?.takeIf { it.path("Seed").isIntegralNumber }?.let {
-            add(
-                WorldEntry(
-                    "zariman",
-                    "扎里曼",
-                    subtitle = if (it.path("Seed").asLong() and 1L == 0L) "Grineer" else "Corpus",
-                    expiry = date(it["Expiry"])
-                )
-            )
-        }
-    }
 }
