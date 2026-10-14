@@ -25,20 +25,22 @@ import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.ParseDataUtil
 import bot.wuliang.utils.TimeUtils
 import bot.wuliang.utils.TimeUtils.formatDuration
-import bot.wuliang.utils.TimeUtils.getNextRefreshTime
 import bot.wuliang.utils.WfUtil
 import bot.wuliang.worldstate.WorldStateSource
 import bot.wuliang.worldstate.WorldStateUnavailableException
+import bot.wuliang.worldstate.WikiWeaponRotationSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.*
@@ -61,6 +63,7 @@ class WfStatusController @Autowired constructor(
     private val redisService: RedisService,
     private val parseDataUtil: ParseDataUtil,
     private val warframeDataService: WarframeDataService,
+    private val wikiWeaponRotations: WikiWeaponRotationSource,
 ) {
 
     @SystemLog(businessName = "获取裂缝信息")
@@ -369,36 +372,25 @@ class WfStatusController @Autowired constructor(
     @AParameter
     @Executor(action = "\\b(佩兰|信条|终幕|信条轮换|终幕轮换)\\b")
     suspend fun weaponRotation(context: ExecutionContext) {
-        // 信条刷新日期 2025-03-29 08:00:00
-        val tenetStartDate = LocalDateTime.of(2025, 3, 29, 8, 0, 0)
-        // 终幕刷新日期 2025-03-19 08:00:00
-        val codaStartDate = LocalDateTime.of(2025, 3, 19, 8, 0, 0)
-
-        // 每4天刷新一次
-        val refreshInterval = Duration.ofDays(4)
-
-        val now = LocalDateTime.now()
-        // 每4天刷新一次，计算剩余刷新时间
-        val tenetNextRefresh = getNextRefreshTime(tenetStartDate, now, refreshInterval)
-        // 计算下一次终幕刷新时间
-        val codaNextRefresh = getNextRefreshTime(codaStartDate, now, refreshInterval)
-
-        // 计算剩余时间
-        val tenetRemainingTime = Duration.between(now, tenetNextRefresh)
-        val codaRemainingTime = Duration.between(now, codaNextRefresh)
-
-        // 格式化剩余时间
-        val formattedTenetRemainingTime = formatDuration(tenetRemainingTime)
-        val formattedCodaRemainingTime = formatDuration(codaRemainingTime)
-
-        // 定义日期时间格式化器
-        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-
-        // 格式化下一次刷新时间
-        val formattedTenetNextRefresh = tenetNextRefresh.format(dateTimeFormatter)
-        val formattedCodaNextRefresh = codaNextRefresh.format(dateTimeFormatter)
-
-        context.sender.sendText("信条下一次刷新时间: $formattedTenetNextRefresh  剩余时间: $formattedTenetRemainingTime\n终幕下一次刷新时间: $formattedCodaNextRefresh  剩余时间: $formattedCodaRemainingTime")
+        val reports = withContext(Dispatchers.IO) { wikiWeaponRotations.reports() }
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Shanghai"))
+        val elements = mapOf("Electricity" to "电击", "Cold" to "冰冻", "Heat" to "火焰", "Impact" to "冲击",
+            "Magnetic" to "磁力", "Radiation" to "辐射", "Toxin" to "毒素")
+        val message = reports.joinToString("\n\n") { report ->
+            buildString {
+                appendLine("${report.title}轮换${report.batch?.let { " · 批次 $it" }.orEmpty()}")
+                appendLine("下次刷新：${formatter.format(Instant.ofEpochMilli(report.expiry))}")
+                appendLine("剩余：${formatDuration(Duration.ofMillis((report.expiry - System.currentTimeMillis()).coerceAtLeast(0)))}")
+                report.wikiUpdatedAt?.let { appendLine("Wiki 修订：${formatter.format(Instant.ofEpochMilli(it))}") }
+                appendLine(report.note)
+                report.weapons.forEach { offer ->
+                    val name = if (translations.ready) translations.name(offer.name) else offer.name
+                    val bonus = java.math.BigDecimal.valueOf(offer.bonus).stripTrailingZeros().toPlainString()
+                    appendLine("$name · ${elements[offer.element] ?: offer.element} +$bonus%")
+                }
+            }
+        }
+        context.sender.sendText(message)
     }
 
     @SystemLog(businessName = "获取圣殿结合仪式目标")
