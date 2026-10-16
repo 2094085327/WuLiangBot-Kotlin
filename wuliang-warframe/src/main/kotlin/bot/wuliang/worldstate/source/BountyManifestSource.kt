@@ -9,12 +9,15 @@ import java.io.File
 
 /** 本地赏金配置首次读取后复用；文件更新需重启，解析算法本身不承担文件访问。 */
 internal object BountyManifestSource {
-    val manifests: Map<String, JsonNode> by lazy {
-        val mapper = jacksonObjectMapper()
-        mapOf(
-            "ZarimanSyndicate" to WARFRAME_ZARIMAN_BOUNTIES,
-            "EntratiLabSyndicate" to WARFRAME_ENTRATI_BOUNTIES, "HexSyndicate" to WARFRAME_HEX_BOUNTIES
-        )
-            .mapValues { (_, path) -> mapper.readTree(File(path)).path("data") }
-    }
+    private val mapper = jacksonObjectMapper()
+    private val manifests = mapOf(
+        "ZarimanSyndicate" to WARFRAME_ZARIMAN_BOUNTIES,
+        "EntratiLabSyndicate" to WARFRAME_ENTRATI_BOUNTIES,
+        "HexSyndicate" to WARFRAME_HEX_BOUNTIES,
+    ).mapValues { (_, path) -> lazy { mapper.readTree(File(path)).path("data") } }
+
+    val tags: List<String> = manifests.keys.toList()
+
+    /** 按集团独立加载，某份配置缺失不会阻断其他集团的查询。 */
+    fun manifest(tag: String): JsonNode = manifests.getValue(tag).value
 }

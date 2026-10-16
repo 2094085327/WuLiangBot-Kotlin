@@ -71,4 +71,12 @@ INSERT INTO `bot_directives` VALUES (46, 2, '结合仪式', '今日圣殿结合�
 INSERT INTO `bot_directives` VALUES (47, 2, '检查世界状态词库更新', '检查 Plus 和完整游戏语言表版本', '只检查文件变化，不应用更新', '^检查世界状态词库更新$', 1, 0, NOW(), NULL);
 INSERT INTO `bot_directives` VALUES (48, 2, '更新世界状态词库', '更新 Plus 和完整游戏语言表', '增量下载、验证并应用统一游戏词库', '^更新世界状态词库$', 1, 0, NOW(), NULL);
 
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '地球赏金', '查看地球平原赏金', '可用指令：希图斯赏金、地球赏金、地球平原赏金。返回当前任务及候选奖励池图片。', '^(希图斯赏金|地球赏金|地球平原赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '金星赏金', '查看金星平原赏金', '可用指令：索拉里斯赏金、金星赏金、金星平原赏金。返回当前任务及候选奖励池图片。', '^(索拉里斯赏金|金星赏金|金星平原赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '火卫二赏金', '查看火卫二平原赏金', '可用指令：英择谛赏金、火卫二赏金、火卫二平原赏金、火星赏金。返回当前任务及候选奖励池图片。', '^(英择谛赏金|火卫二赏金|火卫二平原赏金|火星赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '扎里曼赏金', '查看坚守者赏金', '可用指令：坚守者赏金、扎里曼赏金。返回当前任务、挑战条件及候选奖励池图片。', '^(坚守者赏金|扎里曼赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '圣所赏金', '查看解剖圣所赏金', '可用指令：科纬兽赏金、科维兽赏金、圣所赏金、解刨圣所赏金、解剖圣所赏金。返回当前任务、挑战条件及候选奖励池图片。', '^(科纬兽赏金|科维兽赏金|圣所赏金|解刨圣所赏金|解剖圣所赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '1999赏金', '查看六人组赏金', '可用指令：六人组赏金、1999赏金。返回当前任务、协助角色、挑战条件及候选奖励池图片。', '^(六人组赏金|1999赏金)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '赏金', '查看全部六类赏金', '汇总显示地球赏金、金星赏金、火卫二赏金、扎里曼赏金、圣所赏金、1999赏金。', '^赏金$', 1, 0, NOW());
+
 SET FOREIGN_KEY_CHECKS = 1;

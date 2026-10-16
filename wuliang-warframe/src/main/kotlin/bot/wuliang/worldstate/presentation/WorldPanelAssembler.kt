@@ -3,10 +3,8 @@ package bot.wuliang.worldstate.presentation
 import bot.wuliang.translation.PublicExportIndex
 import bot.wuliang.worldstate.model.WorldPanel
 import bot.wuliang.worldstate.model.WorldSnapshot
+import bot.wuliang.worldstate.parser.BountyParser
 import bot.wuliang.worldstate.parser.WorldStateCycles
-import bot.wuliang.worldstate.parser.activeRecords
-import bot.wuliang.worldstate.parser.text
-import bot.wuliang.worldstate.parser.timestamp
 
 /**
  * 将一份官方快照组装为后台面板。
@@ -36,8 +34,7 @@ class WorldPanelAssembler(
      */
     fun assemble(snapshot: WorldSnapshot, now: Long = System.currentTimeMillis()): WorldPanel {
         val root = snapshot.data
-        val syndicates = root.path("SyndicateMissions").activeRecords(now).groupBy { it.text("Tag") }
-            .mapValues { (_, records) -> records.maxBy { it.timestamp("Activation")!! } }
+        val syndicates = BountyParser.currentSyndicates(root, now)
         return WorldPanel(
             fetchedAt = snapshot.fetchedAt, worldTime = root.path("Time").asLong() * 1000, serverTime = now,
             stale = snapshot.stale || now - root.path("Time").asLong() * 1000 > 600_000,

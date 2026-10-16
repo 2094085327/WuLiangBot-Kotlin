@@ -16,8 +16,11 @@ internal class BountySections(private val display: WorldStateDisplay) {
     )
 
     /** 将当前集团记录中的经典赏金转换为面板条目，展开候选奖励池并附上说明。 */
-    fun classicBounties(syndicates: Map<String, JsonNode>): WorldSection {
-        val entries = listOf("CetusSyndicate", "SolarisSyndicate", "EntratiSyndicate").flatMap { tag ->
+    fun classicBounties(
+        syndicates: Map<String, JsonNode>,
+        tags: List<String> = listOf("CetusSyndicate", "SolarisSyndicate", "EntratiSyndicate"),
+    ): WorldSection {
+        val entries = tags.flatMap { tag ->
             val group = syndicates[tag] ?: return@flatMap emptyList()
             group.items("Jobs").mapIndexed { i, job ->
                 WorldEntry(
@@ -39,9 +42,12 @@ internal class BountySections(private val display: WorldStateDisplay) {
     }
 
     /** 使用当前集团种子和本地配置重建赏金，单个集团失败时保留其他结果并附上失败说明。 */
-    fun challengeBounties(syndicates: Map<String, JsonNode>): WorldSection {
+    fun challengeBounties(
+        syndicates: Map<String, JsonNode>,
+        tags: List<String> = BountyManifestSource.tags,
+    ): WorldSection {
         val errors = mutableListOf<String>()
-        val entries = BountyManifestSource.manifests.flatMap { (tag, manifest) ->
+        val entries = tags.flatMap { tag ->
             val record = syndicates[tag] ?: return@flatMap emptyList()
             if (!record.path("Seed").isIntegralNumber) {
                 errors.add("${syndicateNames[tag]}缺少有效种子")
@@ -49,6 +55,7 @@ internal class BountySections(private val display: WorldStateDisplay) {
             }
             // 单个集团重建失败时保留其他集团结果，并附上失败说明。
             runCatching {
+                val manifest = BountyManifestSource.manifest(tag)
                 BountyGenerator.compute(manifest, record.path("Seed").asLong(), tag == "HexSyndicate")
                     .mapIndexed { i, bounty ->
                         val tier = bounty.tier
