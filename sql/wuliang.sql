@@ -65,18 +65,6 @@ CREATE TABLE `bot_log`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1717 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for bot_md_template
--- ----------------------------
-DROP TABLE IF EXISTS `bot_md_template`;
-CREATE TABLE `bot_md_template`  (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `bot_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `template_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
 -- Table structure for bot_platform_stats
 -- ----------------------------
 DROP TABLE IF EXISTS `bot_platform_stats`;

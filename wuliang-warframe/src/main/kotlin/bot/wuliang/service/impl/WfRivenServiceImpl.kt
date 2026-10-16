@@ -36,14 +36,15 @@ class WfRivenServiceImpl(
     }
 
     /**
-     * 插入或更新玄骸词库
+     * 按物品标识批量插入或更新武器目录。
      *
-     * @param wfEnRivenList
+     * @param wfEnRivenList 待写入的武器目录记录。
      */
     override fun insertRiven(wfEnRivenList: List<WfRivenEntity>) {
         rivenMapper.insertOrUpdateBatch(wfEnRivenList)
     }
 
+    /** 按中英文名称及翻译候选精确查询标准紫卡武器，排除玄骸和姐妹分组，命中后更新展示译名。 */
     override fun turnKeyToUrlNameByRiven(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .nested { it.eq("zh", zh).or().eq("en", zh).or().`in`("en", translations.index().translateQuery(zh) + zh) }
@@ -51,6 +52,7 @@ class WfRivenServiceImpl(
         return rivenMapper.selectOne(queryWrapper)?.let(translations::localize)
     }
 
+    /** 按中英文名称及翻译候选精确查询玄骸或姐妹武器，命中后更新展示译名。 */
     override fun turnKeyToUrlNameByLich(zh: String): WfRivenEntity? {
         val queryWrapper = QueryWrapper<WfRivenEntity>()
             .nested { it.eq("zh", zh).or().eq("en", zh).or().`in`("en", translations.index().translateQuery(zh) + zh) }
@@ -58,6 +60,7 @@ class WfRivenServiceImpl(
         return rivenMapper.selectOne(queryWrapper)?.let(translations::localize)
     }
 
+    /** 按中文或英文包含关系查询候选并更新展示译名；空关键词返回空列表。 */
     override fun superFuzzyQuery(key: String): List<WfRivenEntity?>? {
         if (key.isBlank()) return emptyList()
         val queryWrapper = QueryWrapper<WfRivenEntity>()
@@ -67,6 +70,7 @@ class WfRivenServiceImpl(
         return rivenMapper.selectList(queryWrapper).map { it?.let(translations::localize) }
     }
 
+    /** 执行 [queryWrapper] 查询，补齐译名并去重，再按名称相似度及 ID 降序排列。 */
     fun getWfRivenEntityLike(queryWrapper: QueryWrapper<WfRivenEntity>, key: String): List<WfRivenEntity?> {
         // 获取查询结果
         val resultList = rivenMapper.selectList(queryWrapper).map { it?.let(translations::localize) }
@@ -84,6 +88,7 @@ class WfRivenServiceImpl(
     fun String.onlyLetters() = all { it.isLetter() }
 
 
+    /** 在玄骸与姐妹分组中按 slug、中英文名称模糊查询，再按相似度排序。 */
     override fun turnKeyToUrlNameByLichLike(key: String): List<WfRivenEntity?> {
         // 构造正则表达式用于模糊查询
         val regex = if (!key.onlyLetters()) key.replace("", ".*").drop(2).dropLast(2) else key
@@ -102,6 +107,7 @@ class WfRivenServiceImpl(
         return getWfRivenEntityLike(queryWrapper, key)
     }
 
+    /** 按 slug、中英文名称模糊查询武器目录，去重后按名称相似度排序。 */
     override fun searchByRivenLike(key: String): List<WfRivenEntity?> {
         // 构造正则表达式用于模糊查询
         val regex = if (!key.onlyLetters()) key.replace("", ".*").drop(2).dropLast(2) else key
@@ -118,6 +124,7 @@ class WfRivenServiceImpl(
     }
 
 
+    /** 读取全部紫卡武器目录，并使用当前词库补齐展示名称。 */
     override fun selectAllRivenData(): List<WfRivenEntity> {
         return rivenMapper.selectAllRiven().map(translations::localize)
     }

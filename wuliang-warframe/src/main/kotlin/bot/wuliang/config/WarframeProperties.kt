@@ -14,6 +14,7 @@ class WarframeProperties {
     var githubExport = GitHubExport()
     var exportHttp = ExportHttp()
     var worldState = WorldState()
+    var wikiRotation = WikiRotation()
     var sortieData = WARFRAME_SORTIE_DATA
     var conquestData = WARFRAME_CONQUEST_DATA
     var calendarUpgrades = WARFRAME_CALENDAR_UPGRADES
@@ -54,12 +55,25 @@ class WarframeProperties {
         var requestTimeoutSeconds = 20L
     }
 
+    class WikiRotation {
+        var baseUrl = "https://wiki.warframe.com/w/"
+        var cacheSeconds = 900L
+        var retrySeconds = 60L
+        var staleSeconds = 3600L
+        var requestTimeoutSeconds = 20L
+    }
+
+    /** 在配置绑定完成后校验数据源地址、超时和缓存时长，拒绝不满足约束的配置。 */
     @PostConstruct
     fun validate() {
         require(worldState.cacheSeconds in 30..600) { "warframe.world-state.cache-seconds 必须在 30..600 内" }
         require(worldState.retrySeconds in 1..worldState.cacheSeconds) { "world-state.retry-seconds 必须为正数且不超过 cache-seconds" }
         require(worldState.staleSeconds >= worldState.cacheSeconds) { "world-state.stale-seconds 不能小于 cache-seconds" }
         require(worldState.requestTimeoutSeconds > 0) { "world-state.request-timeout-seconds 必须为正数" }
+        require(wikiRotation.cacheSeconds in 60..3600) { "wiki-rotation.cache-seconds 必须在 60..3600 内" }
+        require(wikiRotation.retrySeconds in 1..wikiRotation.cacheSeconds) { "wiki-rotation.retry-seconds 必须为正数且不超过 cache-seconds" }
+        require(wikiRotation.staleSeconds >= wikiRotation.cacheSeconds) { "wiki-rotation.stale-seconds 不能小于 cache-seconds" }
+        require(wikiRotation.requestTimeoutSeconds > 0) { "wiki-rotation.request-timeout-seconds 必须为正数" }
         require(
             listOf(
                 exportHttp.connectTimeoutSeconds,

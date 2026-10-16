@@ -10,6 +10,10 @@
     <artifactId>wuliang-warframe</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
         <!-- 官方 Public Export 的端点清单使用 LZMA 压缩。 -->
         <dependency>
             <groupId>org.tukaani</groupId>

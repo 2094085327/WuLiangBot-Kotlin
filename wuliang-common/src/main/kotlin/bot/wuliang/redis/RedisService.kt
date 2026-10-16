@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.core.script.DefaultRedisScript
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.util.*
@@ -64,6 +65,22 @@ class RedisService {
             expiryTime = 1
         }
         redisTemplate.opsForValue()[key, value, expiryTime] = timeUnit
+    }
+
+    /** 严格读取；需要区分缓存未命中与 Redis 不可用的调用方使用此方法。 */
+    fun getValueOrThrow(key: String): Any? = redisTemplate.opsForValue().get(key)
+
+    /** 原子设置带有效期的占位值，供多个实例合并同一数据源的刷新请求。 */
+    fun setValueIfAbsent(key: String, value: Any, timeout: Long, timeUnit: TimeUnit): Boolean =
+        redisTemplate.opsForValue().setIfAbsent(key, value, timeout.coerceAtLeast(1), timeUnit) == true
+
+    /** 只释放自己持有的占位值，避免删除过期后其他实例取得的新锁。 */
+    fun deleteValueIfMatches(key: String, value: Any): Boolean {
+        val script = DefaultRedisScript(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long::class.javaObjectType,
+        )
+        return redisTemplate.execute(script, listOf(key), value) == 1L
     }
 
     fun incrementValue(key: String): Int? {

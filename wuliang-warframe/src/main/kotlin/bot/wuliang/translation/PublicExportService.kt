@@ -96,6 +96,7 @@ class PublicExportService(
             ?: (if (locale == "zh") sortieTranslations.name(key) else null) ?: current.name(key, locale)
     }
 
+    /** 组合标识 [key] 的展示名称和描述，返回原有页面使用的译文结构。 */
     fun info(key: String): Info = Info(value = name(key), desc = description(key))
 
     /**
@@ -116,6 +117,7 @@ class PublicExportService(
         return FactionDisplayNames.name(key) ?: current.name(key)
     }
 
+    /** 通过当前已应用索引读取节点、星球、任务和派系信息，派系使用统一简称规则。 */
     fun node(id: String): Nodes = index().node(id, ::faction)
 
     /**
@@ -184,6 +186,7 @@ class PublicExportService(
         }
     }
 
+    /** 复制紫卡武器对象并按当前统一词库更新中英文展示名称，其他字段保持不变。 */
     fun localize(item: WfRivenEntity): WfRivenEntity = item.copy(
         zhName = marketName(null, item.enName, item.urlName)
     )
@@ -216,6 +219,7 @@ class PublicExportService(
             .onFailure { logger.warn("本地世界状态词库加载失败：{}，使用统一索引或原始标识；原因：{}", path, it.message) }
             .getOrDefault(LocalInfoTranslations.EMPTY)
 
+    /** 按版本对缺失翻译去重并记录日志，最多保存五千个缺失项以限制内存和日志规模。 */
     private fun recordMissing(key: String, locale: String, field: String) {
         // 同一版本的相同缺失项只记录一次，并限制总量，避免外部标识撑满内存或日志。
         val entry = "$locale:$field:$key"

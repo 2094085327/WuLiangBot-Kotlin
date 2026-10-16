@@ -19,15 +19,26 @@ internal class PublicExportHttpClient(settings: WarframeProperties.ExportHttp) {
         .callTimeout(settings.callTimeoutSeconds, TimeUnit.SECONDS)
         .build()
 
+    /** 构造访问 [url] 的请求并附上统一 User-Agent，其他来源请求头由调用方补充。 */
     fun request(url: HttpUrl): Request.Builder = Request.Builder().url(url)
         .header("User-Agent", PublicExportPolicy.USER_AGENT)
 
+    /** 执行有界 HTTP 请求并返回响应字节，非成功状态使用 [errorMessage] 生成错误说明。 */
     fun get(request: Request, errorMessage: (Int) -> String): ByteArray = read(request, errorMessage) { it.readBytes() }
 
+    /** 执行有界 HTTP 下载，将响应流写入 [target]，输入与输出流由此方法管理关闭。 */
     fun download(request: Request, target: Path, errorMessage: (Int) -> String) {
         read(request, errorMessage) { input -> Files.newOutputStream(target).use { input.copyTo(it) } }
     }
 
+    /**
+     * 执行请求并将有界响应流交给 [consume]，消费后继续读取剩余内容以校验总量。
+     *
+     * @param request 已配置来源地址及请求头的请求。
+     * @param errorMessage 根据非成功 HTTP 状态生成错误说明。
+     * @param consume 流式消费操作，其关闭请求不会提前关闭底层校验流。
+     * @return 消费操作的返回值。
+     */
     fun <T> read(request: Request, errorMessage: (Int) -> String, consume: (InputStream) -> T): T =
         client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { errorMessage(response.code) }

@@ -33,6 +33,7 @@ internal class OfficialPublicExportRemote(
     private data class IndexEntry(val category: String, val location: String)
     private data class CachedExport(val path: Path, val size: Long, val sha: String)
 
+    /** 重新获取官方中英文索引，固定各导出内容地址并生成可校验的候选版本清单。 */
     override fun revision(): ExportRevision {
         Files.createDirectories(cache)
         val sources = linkedMapOf<String, String>()
@@ -48,6 +49,7 @@ internal class OfficialPublicExportRemote(
         return ExportRevision(version, files.sortedBy { it.path }, sources)
     }
 
+    /** 下载并解压 [locale] 对应索引，校验体积、分类唯一性及必要导出类别。 */
     private fun readIndex(locale: String): List<IndexEntry> {
         // 索引每次重新获取，只有固定内容地址的导出文件允许持久缓存。
         val url = indexUrl.newBuilder().addPathSegment("index_$locale.txt.lzma").build()
@@ -68,6 +70,7 @@ internal class OfficialPublicExportRemote(
         return entries
     }
 
+    /** 根据固定内容地址读取或下载缓存，生成包含规范化内容大小和摘要的文件描述。 */
     private fun exportFile(entry: IndexEntry, locale: String): ExportFile {
         // 保持已有缓存地址的指纹格式，升级时仍可复用本地副本。
         val asset = PublicExportStore.gitBlobSha("$contentUrl${entry.location}".toByteArray(Charsets.UTF_8))
@@ -75,6 +78,7 @@ internal class OfficialPublicExportRemote(
         return ExportFile("official.${entry.category}.$locale.json", cached.sha, cached.size, asset)
     }
 
+    /** 读取已固定的官方候选文件字节，并重新校验大小及 Git blob 摘要。 */
     override fun download(commit: String, file: ExportFile): ByteArray {
         val cached = candidate(file)
         return Files.readAllBytes(cached.path).also {
@@ -84,10 +88,12 @@ internal class OfficialPublicExportRemote(
         }
     }
 
+    /** 将已校验的官方候选文件复制到 [target]，避免再次下载浮动来源。 */
     override fun downloadTo(commit: String, file: ExportFile, target: Path) {
         Files.copy(candidate(file).path, target)
     }
 
+    /** 根据文件清单定位固定内容缓存，验证缓存仍与候选文件的大小及摘要一致。 */
     private fun candidate(file: ExportFile): CachedExport {
         val asset = requireNotNull(file.sourceCommit) { "官方文件缺少固定内容地址" }
         val cached = requireNotNull(readCached(asset)) { "官方候选文件已损坏或丢失，请重新检查或更新词库" }
@@ -109,6 +115,7 @@ internal class OfficialPublicExportRemote(
         CachedExport(path, size, sha)
     }.onFailure { logger.warn("官方导出缓存校验失败，将重新获取：{}，{}", asset, it.message) }.getOrNull()
 
+    /** 下载并流式规范化官方 JSON，写入内容与摘要临时文件后原子发布缓存，结束时清理临时文件。 */
     private fun downloadCached(asset: String, entry: IndexEntry, locale: String): CachedExport {
         val temporary = cache.resolve("$asset-${UUID.randomUUID()}.tmp")
         val temporarySha = cache.resolve("$asset-${UUID.randomUUID()}.sha.tmp")
@@ -175,5 +182,6 @@ internal class OfficialPublicExportRemote(
         }
     }
 
+    /** 生成包含 HTTP 状态和来源 URL 的官方导出下载错误提示。 */
     private fun downloadError(status: Int, url: String) = "官方 Public Export 下载失败：HTTP $status，$url"
 }

@@ -9,6 +9,7 @@ internal class CombinedPublicExportRemote(
     private val languages: PublicExportRemote,
     private val official: PublicExportRemote,
 ) : FilePublicExportRemote {
+    /** 固定官方、Plus 和完整语言表的来源版本，校验必要文件后生成合并候选版本。 */
     override fun revision(): ExportRevision {
         val primary = official.revision()
         val export = plus.revision().also(PublicExportStore::validateRevision)
@@ -26,6 +27,7 @@ internal class CombinedPublicExportRemote(
         return ExportRevision(version, files.sortedBy { it.path }, sources).also(PublicExportStore::validateRevision)
     }
 
+    /** 按文件所属来源路由下载，使用文件固定的来源提交而非浮动分支。 */
     override fun download(commit: String, file: ExportFile): ByteArray {
         if (PublicExportStore.acceptsOfficial(file.path)) return official.download(commit, file)
         val sourceCommit = requireNotNull(file.sourceCommit) { "合并快照文件缺少来源提交" }
@@ -34,6 +36,7 @@ internal class CombinedPublicExportRemote(
         } else plus.download(sourceCommit, file)
     }
 
+    /** 将指定文件按固定来源版本直接写入 [target]，由存储层继续校验完整性。 */
     override fun downloadTo(commit: String, file: ExportFile, target: Path) {
         if (PublicExportStore.acceptsOfficial(file.path)) {
             official.downloadTo(commit, file, target)

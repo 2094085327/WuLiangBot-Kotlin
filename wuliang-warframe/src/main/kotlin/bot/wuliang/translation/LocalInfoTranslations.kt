@@ -10,6 +10,7 @@ internal class LocalInfoTranslations private constructor(
     private val entries: Map<String, Info>,
     val revision: String,
 ) {
+    /** 按大小写规范化的标识 [key] 查询本地专项译文，未收录时返回 null。 */
     fun info(key: String): Info? = entries[PublicExportIndex.normalize(key)]
 
     companion object {

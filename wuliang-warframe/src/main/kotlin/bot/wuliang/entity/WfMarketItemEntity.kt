@@ -7,7 +7,7 @@ import java.io.Serializable
 
 @TableName("wf_market_item")
 data class WfMarketItemEntity(
-    /***
+    /**
      * 词条ID
      */
     @TableId(value = "id")

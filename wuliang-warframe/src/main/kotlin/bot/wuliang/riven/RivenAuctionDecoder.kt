@@ -21,6 +21,15 @@ sealed interface RivenAuctionDecodeResult {
 class RivenAuctionDecoder(
     private val attributeCatalog: RivenAttributeCatalog,
 ) {
+    /**
+     * 按洗次数筛选拍卖并按卖家状态排序，分页后补齐属性名称、单位和展示时间。
+     *
+     * @param rivenJson Market 拍卖接口原始响应。
+     * @param itemZhName 用于结果展示的中文物品名称。
+     * @param reRollTimes 洗次数，为 null 时不限制。
+     * @param page 请求页码，从一开始。
+     * @return 页面结果；筛选后没有拍卖时返回 Empty。
+     */
     fun decode(rivenJson: JsonNode, itemZhName: String, reRollTimes: Int?, page: Int = 1): RivenAuctionDecodeResult {
         val matchingOrders = rivenJson["payload"]["auctions"].asSequence()
             .filter { reRollTimes == null || it["item"]["re_rolls"].intValue() == reRollTimes }
@@ -77,6 +86,7 @@ class RivenAuctionDecoder(
         )
     }
 
+    /** 根据属性单位生成数值文本，非整数保留至两位小数并去除末尾零，未知单位按原值展示。 */
     private fun formatAttributeValue(value: Double, unit: String?): String {
         val number = if (value.absoluteValue % 1.0 == 0.0) {
             value.toLong().toString()
@@ -93,6 +103,7 @@ class RivenAuctionDecoder(
         }
     }
 
+    /** 将卖家状态映射为排序优先级：游戏中、在线、离线、未知。 */
     private fun statusOrder(status: String): Int = when (status) {
         MarketUserStatuses.IN_GAME -> 0
         MarketUserStatuses.ONLINE -> 1
@@ -100,15 +111,18 @@ class RivenAuctionDecoder(
         else -> 3
     }
 
+    /** 将 Market 卖家状态转换为中文展示文本，未识别的状态按离线展示。 */
     private fun displayStatus(status: String): String = when (status) {
         MarketUserStatuses.IN_GAME -> "游戏中"
         MarketUserStatuses.ONLINE -> "游戏在线"
         else -> "离线"
     }
 
+    /** 按空格和连字符拆分名称，将各部分首字母转为大写后以空格连接。 */
     private fun capitalizeName(value: String): String = value.split(" ", "-")
         .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
 
+    /** 解析 ISO 偏移时间 [value]，根据 [now] 生成相对更新时间文本。 */
     private fun timeAgo(value: String, now: Instant): String {
         val duration = Duration.between(
             OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant(),

@@ -10,6 +10,7 @@ import java.nio.file.Path
 /** 统一组装官方主源及社区补充源，避免来源配置散落在下载器中。 */
 @Configuration
 class PublicExportConfiguration {
+    /** 装配共用 HTTP 客户端及官方、Plus、语言表来源，返回用于快照存储的组合远端。 */
     @Bean
     fun publicExportRemote(
         properties: WarframeProperties,

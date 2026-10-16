@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode
 
 /** Market 物品名称使用其自身词库，保留官方游戏词库没有的套装等交易组合。 */
 object WfMarketItemParser {
+    /** 把 Market v2 物品转换为数据库对象，名称优先使用 Market 中文，缺项时回退英文或 slug。 */
     fun parse(item: JsonNode): WfMarketItemEntity {
         val englishName = item["i18n"]?.get("en")?.get("name")?.textValue()?.takeIf { it.isNotBlank() }
         val chineseName = item["i18n"]?.get("zh-hans")?.get("name")?.textValue()?.takeIf { it.isNotBlank() }

@@ -9,6 +9,7 @@ internal data class LocalTranslationAliases(val entries: Map<String, String>, va
     companion object {
         val EMPTY = LocalTranslationAliases(emptyMap(), "unavailable")
 
+        /** 读取本地关联文件，校验对象路径与语言键并计算内容指纹；文件不可读或格式无效时抛出异常。 */
         fun load(path: Path): LocalTranslationAliases {
             val bytes = Files.readAllBytes(path)
             val root = jacksonObjectMapper().readTree(bytes)

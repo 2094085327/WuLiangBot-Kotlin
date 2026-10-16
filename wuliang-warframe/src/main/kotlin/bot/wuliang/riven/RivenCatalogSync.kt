@@ -5,8 +5,8 @@ import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.mapper.WfRivenAttributeMapper
 import bot.wuliang.mapper.WfRivenMapper
+import bot.wuliang.market.MarketCatalogSource
 import bot.wuliang.redis.RedisService
-import bot.wuliang.utils.WfUtil
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -19,14 +19,19 @@ data class RivenCatalogSyncResult(
 
 @Component
 class RivenCatalogSync(
-    private val wfUtil: WfUtil,
+    private val marketCatalogSource: MarketCatalogSource,
     private val writer: RivenCatalogWriter,
     private val attributeCatalog: DatabaseRivenAttributeCatalog,
     private val redisService: RedisService,
 ) {
+    /**
+     * 获取并校验 Market 武器和属性目录，事务替换数据库后刷新属性快照及武器缓存。
+     *
+     * @return 本次同步的武器数量和属性数量。
+     */
     fun sync(): RivenCatalogSyncResult {
-        val weapons = wfUtil.getRivenItems()
-        val attributes = wfUtil.getRivenAttributes()
+        val weapons = marketCatalogSource.getRivenItems()
+        val attributes = marketCatalogSource.getRivenAttributes()
         RivenCatalogValidator.validate(weapons, attributes)
         writer.replace(weapons, attributes)
         attributeCatalog.refresh(attributes)
@@ -41,6 +46,7 @@ class RivenCatalogWriter(
     private val rivenMapper: WfRivenMapper,
     private val attributeMapper: WfRivenAttributeMapper,
 ) {
+    /** 在同一事务中替换标准紫卡武器和属性表，保留独立维护的玄骸与姐妹武器目录。 */
     @Transactional
     fun replace(weapons: List<WfRivenEntity>, attributes: List<WfRivenAttributeEntity>) {
         // lich/sister 仍由各自的数据源维护，因此这里只替换标准紫卡武器。

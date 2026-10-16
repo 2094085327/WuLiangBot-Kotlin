@@ -33,6 +33,7 @@ internal class LocalSortieTranslations private constructor(
         fun load(path: Path): LocalSortieTranslations {
             val bytes = Files.readAllBytes(path)
             val root = jacksonObjectMapper().readTree(bytes)
+            /** 从本地突击词库读取 [field] 对应的非空分区，校验修正标识与文本后转为映射。 */
             fun section(field: String): Map<String, String> {
                 val entries = root?.get(field)
                 require(entries?.isObject == true && entries.size() > 0) { "sortieData.$field 必须是非空对象" }

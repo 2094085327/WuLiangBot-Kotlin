@@ -12,6 +12,7 @@ class DatabaseRivenAttributeCatalog(
     @Volatile
     private var snapshot: CatalogSnapshot? = null
 
+    /** 解析属性名称，优先采用唯一精确匹配，其次采用唯一模糊匹配，并区分未知或多候选结果。 */
     override fun resolve(name: String): RivenAttributeMatch {
         val normalizedName = name.trim()
         val candidates = currentSnapshot().definitions.filter { definition ->
@@ -33,16 +34,19 @@ class DatabaseRivenAttributeCatalog(
         }
     }
 
+    /** 按去重后的 Market 属性标识查询快照；结果只包含已经收录的标识。 */
     override fun findBySlugs(slugs: Collection<String>): Map<String, RivenAttributeDefinition> {
         if (slugs.isEmpty()) return emptyMap()
         val definitionsBySlug = currentSnapshot().definitionsBySlug
         return slugs.distinct().mapNotNull { slug -> definitionsBySlug[slug]?.let { slug to it } }.toMap()
     }
 
+    /** 按中英文名称及 slug 的最小归一化编辑距离推荐候选，最多返回 [limit] 项。 */
     override fun suggest(name: String, limit: Int): List<RivenAttributeDefinition> {
         if (name.isBlank() || limit <= 0) return emptyList()
         val normalizedName = name.trim().lowercase()
         return currentSnapshot().definitions
+            .asSequence()
             .map { definition ->
                 definition to minOf(
                     normalizedDistance(normalizedName, definition.zhName.lowercase()),
@@ -54,6 +58,7 @@ class DatabaseRivenAttributeCatalog(
             .sortedBy { (_, distance) -> distance }
             .take(limit)
             .map { (definition) -> definition }
+            .toList()
     }
 
     /** 使用刚完成同步的数据原子替换查询快照，避免再次读取数据库。 */
@@ -71,6 +76,7 @@ class DatabaseRivenAttributeCatalog(
         ).also { snapshot = it }
     }
 
+    /** 判断 [query] 的字符是否作为子序列按顺序出现在当前字符串中，空查询不匹配。 */
     private fun String.containsCharactersInOrder(query: String): Boolean {
         if (query.isEmpty()) return false
         var queryIndex = 0
@@ -80,12 +86,14 @@ class DatabaseRivenAttributeCatalog(
         return false
     }
 
+    /** 计算按最长字符串长度归一化的编辑距离；互相包含时视为零距离，空字符串返回一。 */
     private fun normalizedDistance(left: String, right: String): Double {
         if (left.isEmpty() || right.isEmpty()) return 1.0
         if (right.contains(left) || left.contains(right)) return 0.0
         return editDistance(left, right).toDouble() / maxOf(left.length, right.length)
     }
 
+    /** 使用动态规划计算 [left] 与 [right] 的最少插入、删除和替换次数。 */
     private fun editDistance(left: String, right: String): Int {
         var previous = IntArray(right.length + 1) { it }
         left.forEachIndexed { leftIndex, leftChar ->
@@ -128,6 +136,7 @@ class DatabaseRivenAttributeCatalog(
         val definitionsBySlug: Map<String, RivenAttributeDefinition>,
     ) {
         companion object {
+            /** 复制属性定义列表并建立 slug 索引，生成供查询原子发布的目录快照。 */
             fun from(definitions: List<RivenAttributeDefinition>) = CatalogSnapshot(
                 definitions = definitions.toList(),
                 definitionsBySlug = definitions.associateBy { it.slug },

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component
 class RivenQueryCriteriaResolver(
     private val attributeCatalog: RivenAttributeCatalog,
 ) {
+    /** 解析武器 slug 及指令条件，将属性名称转换为无歧义的 Market 标识，返回查询条件或可读错误。 */
     fun resolve(weaponSlug: String, tokens: List<String>): RivenCriteriaResolution {
         val positiveAttributes = mutableListOf<RivenAttributeDefinition>()
         var negativeConstraint: RivenNegativeConstraint? = null
