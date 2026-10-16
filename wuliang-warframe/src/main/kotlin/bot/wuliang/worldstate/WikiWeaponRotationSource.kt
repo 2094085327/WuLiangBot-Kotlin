@@ -40,8 +40,10 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
     private val sourceHash = MessageDigest.getInstance("SHA-256")
         .digest(settings.baseUrl.trimEnd('/').toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
+    /** 按轮换类型顺序获取信条与终幕武器报告，复用各自的获取和缓存策略。 */
     fun reports(): List<WeaponRotationReport> = WeaponRotationKind.entries.map(::report)
 
+    /** 获取指定武器类型的轮换报告；在同步锁内复用缓存，异常时返回带原因的不可用报告。 */
     @Synchronized
     fun report(kind: WeaponRotationKind): WeaponRotationReport {
         return try {
@@ -53,6 +55,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         }
     }
 
+    /** 校验内存及 Redis 缓存所属轮次，按刷新间隔获取新报告；失败时仅在允许时限内回退。 */
     private fun cachedReport(kind: WeaponRotationKind): WeaponRotationReport {
         val now = System.currentTimeMillis()
         val period = kind.period(now)
@@ -113,6 +116,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         }
     }
 
+    /** 下载指定武器类型的 Wiki 编辑页并解析，记录获取时刻与所属轮换区间。 */
     private fun fetch(kind: WeaponRotationKind): Cached {
         // 沿用“本地翻译暂存”中已验证的公开编辑页请求方式。
         val request = Request.Builder().url(pageUrl(kind) + "?action=edit")
@@ -128,9 +132,11 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         return Cached(page, fetchedAt, kind.period(fetchedAt).activation)
     }
 
+    /** 按来源指纹、武器类型及轮换开始时间生成独立的 Redis 缓存键。 */
     private fun cacheKey(kind: WeaponRotationKind, periodStart: Long) =
         "$WF_WIKI_WEAPON_ROTATION_KEY_PREFIX$sourceHash:${kind.name.lowercase()}:$periodStart"
 
+    /** 读取并校验 Redis 中的 Wiki 记录；损坏、轮次不符或过旧的缓存返回 null。 */
     private fun readCache(key: String, kind: WeaponRotationKind, now: Long): Cached? {
         val raw = redis.getValueOrThrow(key) ?: return null
         return try {
@@ -155,9 +161,11 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         }
     }
 
+    /** 判断缓存记录距 [now] 是否仍在配置的正常刷新间隔内。 */
     private fun isFresh(value: Cached, now: Long) =
         now - value.fetchedAt < TimeUnit.SECONDS.toMillis(settings.cacheSeconds)
 
+    /** 在允许的旧数据有效期内生成带过期说明的报告，不能回退时生成不可用报告。 */
     private fun fallback(
         kind: WeaponRotationKind, value: Cached?, now: Long,
         message: String = "暂时无法获取 Wiki 社区轮换记录，请稍后重试",
@@ -169,6 +177,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         return unavailable(kind, now, message)
     }
 
+    /** 生成无可用武器列表的轮换报告，保留当前轮次、来源地址和错误说明。 */
     private fun unavailable(kind: WeaponRotationKind, now: Long, message: String): WeaponRotationReport {
         val current = kind.period(now)
         return WeaponRotationReport(
@@ -177,8 +186,10 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
         )
     }
 
+    /** 将配置的 Wiki 基础地址与武器类型的页面名称拼接为来源 URL。 */
     private fun pageUrl(kind: WeaponRotationKind) = settings.baseUrl.trimEnd('/') + "/" + kind.page
 
+    /** 根据当前轮次选择武器批次，并附上获取时间、修订时间及过期或等待更新标记。 */
     private fun render(
         kind: WeaponRotationKind, value: Cached, now: Long, stale: Boolean,
         cacheNote: String = "获取失败，暂时使用本期缓存"

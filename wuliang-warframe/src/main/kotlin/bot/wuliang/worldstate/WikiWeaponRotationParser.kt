@@ -11,6 +11,7 @@ enum class WeaponRotationKind(val title: String, val page: String, val anchor: L
     TENET("信条武器", "Tenet_Weapons", Instant.parse("2015-12-03T00:00:00Z").toEpochMilli()),
     CODA("终幕武器", "Coda_Weapons", Instant.parse("2025-03-18T00:00:00Z").toEpochMilli());
 
+    /** 根据固定锚点计算 [now] 所处的四日轮换区间，并为终幕武器确定 A/B 批次。 */
     fun period(now: Long): WeaponRotationPeriod {
         val cycle = Math.floorDiv(now - anchor, PERIOD_MILLIS)
         val start = anchor + cycle * PERIOD_MILLIS
@@ -45,6 +46,13 @@ object WikiWeaponRotationParser {
     private val elements = setOf("Electricity", "Cold", "Heat", "Impact", "Magnetic", "Radiation", "Toxin")
     private val editTime = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
 
+    /**
+     * 读取 Wiki 编辑页中的武器加成表和修订时间，校验武器、元素、加成与批次。
+     *
+     * @param html Wiki 编辑页 HTML，其中包含原始 Wikitext。
+     * @param kind 信条或终幕武器轮换类型。
+     * @return 经过校验的修订时间及各批次武器列表。
+     */
     fun parse(html: String, kind: WeaponRotationKind): WikiWeaponPage {
         val document = Jsoup.parse(html)
         val source = document.selectFirst("textarea#wpTextbox1")?.`val`()

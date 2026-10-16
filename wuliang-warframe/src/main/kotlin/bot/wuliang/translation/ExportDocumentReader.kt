@@ -10,12 +10,14 @@ internal class ExportDocumentReader(private val directory: Path, files: List<Exp
     private val files = files.associateBy { it.path }
     private val mapper = jacksonObjectMapper()
 
+    /** 校验并读取 [path] 对应的 JSON 对象或数组，空内容或非容器数据不作为有效文档。 */
     fun document(path: String): JsonNode = ExportFileIO.read(files.getValue(path), directory.resolve(path)) { input ->
         requireNotNull(mapper.readTree(input)) { "$path 必须是 JSON 对象或数组" }.also {
             require(it.isContainerNode) { "$path 必须是 JSON 对象或数组" }
         }
     }
 
+    /** 流式读取 [path] 的字符串字典并合并到 [result]，避免构建完整 JSON 根树。 */
     fun dictionary(path: String, result: MutableMap<String, String>) {
         ExportFileIO.read(files.getValue(path), directory.resolve(path)) { input ->
             mergeExportDictionary(path, result) { accept ->
@@ -36,6 +38,7 @@ internal class ExportDocumentReader(private val directory: Path, files: List<Exp
     }
 }
 
+/** 统一字典键的大小写，拒绝同键不同值并清理空文本，再合并到目标字典。 */
 internal fun mergeExportDictionary(
     file: String,
     result: MutableMap<String, String>,
@@ -55,8 +58,10 @@ internal class CanonicalExportDictionary(
     private val target: MutableMap<String, String>,
     private val canonicalKeys: MutableMap<String, String>,
 ) : MutableMap<String, String> by target {
+    /** 使用共用字符串池中的规范键写入目标字典，返回该键原有的值。 */
     override fun put(key: String, value: String): String? = target.put(canonicalKeys.getOrPut(key) { key }, value)
 
+    /** 逐项写入 [from]，使所有键都经过共用字符串池规范化。 */
     override fun putAll(from: Map<out String, String>) {
         from.forEach { (key, value) -> put(key, value) }
     }

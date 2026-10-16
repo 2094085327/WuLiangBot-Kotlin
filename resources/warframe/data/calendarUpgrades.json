@@ -110,5 +110,9 @@
   "/Lotus/Upgrades/Calendar/RadialJavelinOnHeavy": {
     "value": "重型标枪",
     "desc": "近战重击会发射一枚范围为3米、基础伤害为1000的广域标枪，并受到连击倍率加成。"
+  },
+  "/Lotus/Upgrades/Calendar/MeleeSlideFowardMomentumOnEnemyHit": {
+    "value": "斩筋断骨",
+    "desc": "每次近战滑行攻击都会增加5%滑行攻击暴击几率，20%滑行速度，同时减少10%滑行摩擦力，持续10秒。最多可叠加10层。"
   }
 }

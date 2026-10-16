@@ -11,6 +11,7 @@ data class PagedCommand(
     companion object {
         private val PAGE_SUFFIX = Regex("""(?:^|\s)-(\d+)\s*$""")
 
+        /** 从指令末尾提取形如 `-2` 的正整数页码，返回去除页码后的内容；未指定有效页码时保留默认页约定。 */
         fun parse(raw: String): PagedCommand {
             val trimmed = raw.trim()
             val match = PAGE_SUFFIX.find(trimmed)

@@ -56,11 +56,13 @@ internal class GitHubJsonRepository(
         return get(http.request(url).build())
     }
 
+    /** 从固定提交 [commit] 下载原始文件到 [target]，不跟随配置分支后续变化。 */
     override fun downloadTo(commit: String, file: ExportFile, target: Path) {
         val url = rawUrl.newBuilder().addPathSegment(commit).addPathSegment(file.path).build()
         http.download(http.request(url).build(), target, ::downloadError)
     }
 
+    /** 根据路径段请求 GitHub API，附上配置的 API 版本及可选 token，并解析 JSON 响应。 */
     private fun getApiJson(vararg segments: String): JsonNode {
         val url = apiUrl.newBuilder().apply {
             segments.forEach { addPathSegment(it) }
@@ -73,8 +75,10 @@ internal class GitHubJsonRepository(
         return http.read(request, ::downloadError) { mapper.readTree(it) }
     }
 
+    /** 使用共用有界 HTTP 客户端读取原始响应字节，失败时提供仓库对应的错误说明。 */
     private fun get(request: Request): ByteArray = http.get(request, ::downloadError)
 
+    /** 生成包含仓库和 HTTP 状态的错误提示，限额相关状态追加重试或 token 配置说明。 */
     private fun downloadError(status: Int): String {
         val detail = if (status == 403 || status == 429) "（可能达到 GitHub 限额，请稍后重试或配置 GitHub token）" else ""
         return "词库 $repository 下载失败：HTTP $status$detail"

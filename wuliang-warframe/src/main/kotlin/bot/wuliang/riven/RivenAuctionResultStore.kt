@@ -37,6 +37,7 @@ class RivenAuctionResultStore(
     fun get(resultId: UUID): WfMarketVo.RivenOrderList? =
         redisService.getValueTyped<WfMarketVo.RivenOrderList>(key(resultId))
 
+    /** 为 [resultId] 生成带当前翻译版本的结果缓存键，隔离不同词库版本的查询结果。 */
     private fun key(resultId: UUID): String = translations.cacheKey(WF_RIVEN_RESULT_KEY_PREFIX) + ":" + resultId
 
     companion object {

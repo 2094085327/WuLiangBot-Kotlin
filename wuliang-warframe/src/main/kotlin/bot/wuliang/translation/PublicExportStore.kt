@@ -47,9 +47,11 @@ interface PublicExportRemote {
 
 /** 内部文件下载能力；不要求已有 PublicExportRemote 实现新增方法。 */
 internal interface FilePublicExportRemote : PublicExportRemote {
+    /** 将固定版本的文件直接写入目标路径，具体数据源负责流式传输。 */
     fun downloadTo(commit: String, file: ExportFile, target: Path)
 }
 
+/** 为不支持直接流式下载的来源提供适配，将 [download] 返回的字节写入 [target]。 */
 internal fun PublicExportRemote.downloadTo(commit: String, file: ExportFile, target: Path) {
     if (this is FilePublicExportRemote) {
         downloadTo(commit, file, target)
@@ -176,6 +178,7 @@ class PublicExportStore(
         return root.resolve("snapshots").resolve(name)
     }
 
+    /** 读取并反序列化快照目录中的 manifest.json，文件读取或解析失败时向调用方抛出异常。 */
     private fun readManifest(directory: Path): ExportManifest =
         mapper.readValue(Files.readAllBytes(directory.resolve("manifest.json")))
 
@@ -202,6 +205,7 @@ class PublicExportStore(
         /** 仅接收根目录下的社区和官方导出 JSON、中英文字典及完整语言表。 */
         fun accepts(path: String): Boolean = acceptsPlus(path) || path in languageFiles || acceptsOfficial(path)
 
+        /** 判断文件路径是否符合允许收录的官方对象导出命名规则。 */
         fun acceptsOfficial(path: String): Boolean = PublicExportPolicy.OFFICIAL_FILE_PATTERN.matches(path)
 
         /** 无官方文件的旧快照可以读取；新快照必须包含完整、成对的核心分类。 */
@@ -218,6 +222,7 @@ class PublicExportStore(
             require(en == zh) { "官方中英文对象导出分类不一致" }
         }
 
+        /** 判断文件路径是否符合允许收录的 Plus JSON 命名规则。 */
         fun acceptsPlus(path: String): Boolean = PublicExportPolicy.PLUS_FILE_PATTERN.matches(path)
 
         /** 校验提交、必需文件、重复路径、文件大小和 blob SHA，拒绝不完整的远端清单。 */

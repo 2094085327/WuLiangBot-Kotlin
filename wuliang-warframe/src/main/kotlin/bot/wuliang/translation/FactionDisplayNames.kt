@@ -13,5 +13,6 @@ internal object FactionDisplayNames {
         "双方交战" to listOf("/Lotus/Language/Missions/DualDefenseCompare"),
     ).flatMap { (label, keys) -> (keys + label).map { PublicExportIndex.normalize(it) to label } }.toMap()
 
+    /** 查询派系标识或已知名称对应的中文简称，未收录的标识返回 null。 */
     fun name(key: String): String? = aliases[PublicExportIndex.normalize(key)]
 }

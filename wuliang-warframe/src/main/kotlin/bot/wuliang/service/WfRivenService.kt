@@ -54,7 +54,7 @@ interface WfRivenService : IService<WfRivenEntity?> {
     /**
      * 获取所有紫卡信息
      *
-     * @return
+     * @return 使用当前词库补齐展示名称的全部紫卡武器目录。
      */
     fun selectAllRivenData(): List<WfRivenEntity>
 }

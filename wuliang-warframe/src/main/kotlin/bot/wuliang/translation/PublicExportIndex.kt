@@ -78,6 +78,7 @@ class PublicExportIndex private constructor(
         reusable?.dictionaries?.values?.forEach { dictionary ->
             dictionary.keys.forEach { canonicalKeys.putIfAbsent(it, it) }
         }
+        /** 规范化标识并复用构建期字符串池中的键，减少中英文目录重复字符串。 */
         fun canonicalId(value: String): String = normalize(value).let { canonicalKeys.getOrPut(it) { it } }
         require(paths.containsAll(PublicExportStore.requiredFiles)) { "词库缺少必要文件" }
         PublicExportStore.validateOfficialFiles(paths)
@@ -103,6 +104,7 @@ class PublicExportIndex private constructor(
                 if (file in PublicExportStore.requiredFiles) {
                     require(root.isObject && root.size() > 0) { "$file 目录为空或格式错误" }
                 }
+                /** 递归收集 Plus 对象、节点和奖励池，校验大小写冲突并建立物品元数据目录。 */
                 fun collect(node: JsonNode) {
                     if (node.isObject) node.fields().forEach { (key, value) ->
                         val regionEntry = file == "ExportRegions.json" && node === root
@@ -137,6 +139,7 @@ class PublicExportIndex private constructor(
                 require(root.isObject && root.path(category).isArray && root.path(category).size() > 0) {
                     "$file 官方对象目录为空或格式错误"
                 }
+                /** 递归收集官方对象及其 uniqueName，合并缺失字段并建立分语言的官方目录。 */
                 fun collectOfficial(node: JsonNode) {
                     if (node.isObject) {
                         val key = node["uniqueName"]?.takeIf(JsonNode::isTextual)?.asText()?.takeIf(String::isNotBlank)
@@ -177,6 +180,7 @@ class PublicExportIndex private constructor(
                 objects[key] = primary
             }
         }
+        /** 按标识前缀 [prefix] 构建协议数字索引到目录标识的映射。 */
         fun catalogIndices(prefix: String): Map<Int, String> = linkedMapOf<Int, String>().also { entries ->
             identities.keys.forEach { key ->
                 if (key.startsWith(prefix)) {
@@ -214,6 +218,7 @@ class PublicExportIndex private constructor(
                 }
             }
         }.build()
+        /** 从指定语言的官方对象建立名称反查索引，名称规范化后保留所有候选标识。 */
         fun officialNames(locale: String): ExportNameIndex = ExportNameIndex.Builder().also { names ->
             officialObjects.getValue(locale).keys.forEach { id ->
                 officialField(id, "name", locale)?.let { names.add(normalize(it), id) }
@@ -239,6 +244,7 @@ class PublicExportIndex private constructor(
         return values.singleOrNull()
     }
 
+    /** 读取同语言官方对象字段，处理商店路径与任务数量占位符，空值或未解析路径返回 null。 */
     private fun officialObjectField(key: String, field: String, locale: String): String? {
         val dictionary = officialObjects.getValue(locale)
         val normalized = normalize(key)
@@ -255,10 +261,6 @@ class PublicExportIndex private constructor(
             .takeIf(String::isNotBlank)
     }
 
-    /** 只按协议标识解析名称，不通过英文同名反查，以免借用无关物品的译名。 */
-    fun nameById(key: String): String = resolve(key, "zh", "name", mutableSetOf())?.let(::clean)
-        ?: key.also { onMissing(it, "zh", "name") }
-
     /**
      * 把 Market 武器 slug 对应到进化适配器对象路径；只有唯一匹配时才返回结果。
      */
@@ -270,9 +272,11 @@ class PublicExportIndex private constructor(
         }
     }
 
+    /** 解析指定语言的名称，无法解析时记录缺失项并返回原始标识。 */
     fun name(key: String, locale: String = "zh"): String =
         field(key, "name", locale) ?: key.also { onMissing(key, locale, "name") }
 
+    /** 解析指定语言的说明文本，缺失时返回 null 并沿用统一字段查询的缺失记录策略。 */
     fun description(key: String, locale: String = "zh"): String? = field(key, "description", locale)
 
     /**
@@ -303,6 +307,7 @@ class PublicExportIndex private constructor(
         val node = metadata(id) ?: return Nodes(name = name(id), faction = null, type = null)
         val label = name(id)
         val system = officialField(id, "systemName") ?: node["systemName"]?.asText()?.let(::name)
+        /** 读取节点中的数字字段 [field]，按 [catalog] 转换为目录标识，缺失或无法匹配时返回 null。 */
         fun catalogByIndex(catalog: Map<Int, String>, field: String): String? =
             node[field]?.takeIf(JsonNode::isNumber)?.asInt()?.let(catalog::get)
         return Nodes(
@@ -412,6 +417,7 @@ class PublicExportIndex private constructor(
     }
 
     companion object {
+        /** 从已经校验的快照文件构建只读词库索引，允许复用上一版本中内容未变的目录。 */
         internal fun fromFiles(
             directory: Path,
             files: List<ExportFile>,
@@ -428,6 +434,7 @@ class PublicExportIndex private constructor(
 
         private val REGION_KEY_PATTERN = Regex("(?:SolNode|SettlementNode|ClanNode|MT_|FC_).*", RegexOption.IGNORE_CASE)
         private val MARKUP_PATTERN = Regex("<[^>]+>")
+        /** 判断元数据字段是否缺失、为 null、为空文本或为空容器。 */
         private fun missingField(value: JsonNode?): Boolean = value == null || value.isNull ||
                 (value.isTextual && value.asText().isBlank()) || (value.isContainerNode && value.size() == 0)
 
@@ -449,7 +456,9 @@ class PublicExportIndex private constructor(
             return merged
         }
 
+        /** 按 [Locale.ROOT] 统一标识大小写，避免受系统语言环境影响。 */
         fun normalize(value: String): String = value.lowercase(Locale.ROOT)
+        /** 清理 HTML 标签与颜色标记，并去除展示文本两端空白。 */
         fun clean(value: String): String = (if ('<' in value) value.replace(MARKUP_PATTERN, "") else value)
             .replace("|COLOR|", "").replace("|NO_COLOR|", "").trim()
     }

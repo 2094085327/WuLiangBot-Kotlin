@@ -63,6 +63,7 @@ class WarframeProperties {
         var requestTimeoutSeconds = 20L
     }
 
+    /** 在配置绑定完成后校验数据源地址、超时和缓存时长，拒绝不满足约束的配置。 */
     @PostConstruct
     fun validate() {
         require(worldState.cacheSeconds in 30..600) { "warframe.world-state.cache-seconds 必须在 30..600 内" }

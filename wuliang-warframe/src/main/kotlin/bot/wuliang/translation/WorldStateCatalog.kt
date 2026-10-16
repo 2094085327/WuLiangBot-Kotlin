@@ -27,6 +27,7 @@ class WorldStateCatalog(private val translations: PublicExportService, propertie
         SteelReward("/Lotus/Language/Omega/OmegaShotgunMod", 75),
     )
 
+    /** 翻译钢路奖励物品，数量不为一时在名称前补充数量文本。 */
     fun steelName(reward: SteelReward): String =
         (if (reward.count == 1) "" else "${reward.count} × ") + translations.name(reward.item)
 
@@ -48,6 +49,7 @@ class WorldStateCatalog(private val translations: PublicExportService, propertie
             num = number ?: 0)
     }
 
+    /** 通过统一翻译服务把派系协议代码转换为展示简称。 */
     fun faction(code: String): String = translations.faction(code)
 
     /**
@@ -78,6 +80,7 @@ class WorldStateCatalog(private val translations: PublicExportService, propertie
     }
 
     companion object {
+        /** 为 [suffix] 补上官方 `/Lotus/Language/` 本地化路径前缀。 */
         private fun key(suffix: String) = "/Lotus/Language/$suffix"
         val bosses = mapOf(
             "HYENA" to ("Bosses/BossTheHyena" to "FC_CORPUS"),

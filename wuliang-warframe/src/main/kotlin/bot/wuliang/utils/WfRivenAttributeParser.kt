@@ -4,6 +4,7 @@ import bot.wuliang.entity.WfRivenAttributeEntity
 import com.fasterxml.jackson.databind.JsonNode
 
 object WfRivenAttributeParser {
+    /** 把 Market v2 紫卡属性转换为数据库对象，保留单位与前后缀，中文缺项时回退英文或 slug。 */
     fun parse(item: JsonNode): WfRivenAttributeEntity = WfRivenAttributeEntity(
         id = item["id"]?.textValue(),
         urlName = item["slug"]?.textValue(),

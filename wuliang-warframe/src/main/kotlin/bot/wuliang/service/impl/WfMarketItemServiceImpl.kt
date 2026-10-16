@@ -74,6 +74,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
      * @param item 物品信息
      * @param finalQueryString 最终查询字符串
      * @param maxUseCount 最大使用次数
+     * @param areAllCoefficientsEqual 候选名称相似度是否全部相同，用于决定是否应用蓝图额外权重。
      * @return 计算后的权重
      */
     private fun calculateWeight(
@@ -100,6 +101,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
     }
 
 
+    /** 将市场物品目录按每批五百条分批写入数据库。 */
     override fun updateMarketItem(marketItemList: List<WfMarketItemEntity>) {
         // 每批插入500条
         val batchSize = 500
@@ -112,6 +114,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
         }
     }
 
+    /** 精确查询 [key] 对应物品，命中后增加数据库使用次数；未命中时返回 null。 */
     override fun selectItemByAccurateNature(key: String): WfMarketItemEntity? {
         val wfMarketItemEntity = wfMarketItemMapper.getUrlNameFromKey(key)
 
@@ -123,10 +126,12 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
         } else null
     }
 
+    /** 按中文名称列表 [keyList] 批量查询市场物品。 */
     override fun selectListZhNameList(keyList: List<String>): List<WfMarketItemEntity>? {
         return wfMarketItemMapper.batchSelectByZhNameList(keyList)
     }
 
+    /** 结合别名、蓝图标记、名称相似度及使用次数匹配物品，按权重排序并增加首项使用次数；无候选时返回 null。 */
     override fun getItemByFuzzyMatching(key: String): List<WfMarketItemEntity>? {
         // 移除关键词中的"蓝图"字样以优化匹配
         val cleanZh = key.replace("总图", "蓝图").replace("蓝图", "")
@@ -215,6 +220,7 @@ class WfMarketItemServiceImpl : ServiceImpl<WfMarketItemMapper?, WfMarketItemEnt
         return sortedResultList
     }
 
+    /** 使用中文字符顺序正则和英文包含条件查询市场物品，不增加使用次数。 */
     override fun fuzzyQuery(key: String): List<WfMarketItemEntity?> {
         // 构造正则表达式用于模糊查询
         val regex = key.replace("", ".*").drop(2).dropLast(2)
