@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
 @Service
 class MarketOrderService(
     private val redisService: RedisService,
+    private val marketApi: MarketApiClient,
 ) {
     private data class MarketOrder(
         val hasRank: Boolean,
@@ -98,7 +99,7 @@ class MarketOrderService(
         val orderNodes = if (cachedOrders != null) {
             JacksonUtil.readTree(cachedOrders).toList()
         } else {
-            val json = HttpUtil.doGetJson(
+            val json = marketApi.getJson(
                 url = url,
                 headers = headers,
                 params = requestedRank?.let { mapOf("rank" to it) },

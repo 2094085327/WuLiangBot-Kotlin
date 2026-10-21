@@ -54,6 +54,9 @@ const val WARFRAME_ARBYS_DATA = "https://browse.wf/arbys.txt"
 const val WARFRAME_MARKET_ITEMS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/items"
 const val WARFRAME_MARKET_ITEMS_ORDERS_V2 = "$WARFRAME_MARKET_BASE_URL_V2/orders/item"
 
+/** Market V1 成交统计，%s 为物品 slug。 */
+const val WARFRAME_MARKET_ITEMS_STATISTICS = "$WARFRAME_MARKET_BASE_URL/items/%s/statistics"
+
 /**
  * Market 紫卡武器
  */

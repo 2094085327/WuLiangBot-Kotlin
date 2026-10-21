@@ -15,6 +15,9 @@ import org.apache.ibatis.annotations.Select
  */
 @Mapper
 interface WfMarketItemMapper : BaseMapper<WfMarketItemEntity?> {
+    @Select("SELECT id FROM wf_market_item WHERE url_name=#{slug} LIMIT 1")
+    fun findIdBySlug(@Param("slug") slug: String): String?
+
     /**
      * 更新/插入物品信息
      *
@@ -22,13 +25,16 @@ interface WfMarketItemMapper : BaseMapper<WfMarketItemEntity?> {
      */
     fun insertMarketItem(marketItemList: List<WfMarketItemEntity>)
 
+    /** 采集目录同步只更新元数据，保留原有物品查询使用次数。 */
+    fun upsertCatalogMetadata(@Param("items") items: List<WfMarketItemEntity>)
+
     /**
      * 根据关键字获取物品信息
      *
      * @param key 关键字
      * @return 物品信息
      */
-    @Select("select id,zh_name,en_name,url_name,game_ref,tags,ducats,use_count from wf_market_item where (zh_name = #{key} or en_name = #{key})")
+    @Select("select id,zh_name,en_name,url_name,game_ref,tags,max_rank,max_amber_stars,max_cyan_stars,ducats,use_count from wf_market_item where (zh_name = #{key} or en_name = #{key})")
     fun getUrlNameFromKey(@Param("key") key: String): WfMarketItemEntity?
 
     /**

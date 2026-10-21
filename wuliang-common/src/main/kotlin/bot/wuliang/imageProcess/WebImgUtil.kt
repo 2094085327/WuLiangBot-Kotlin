@@ -319,14 +319,26 @@ class WebImgUtil(
      * @return 返回的图片链接
      */
     fun returnUrlImgByTxCos(imgData: ImgData): String {
-        val input: InputStream
-        if (!imgData.local) {
-            val byte = getImgByte(imgData)
-            input = ByteArrayInputStream(byte)
+        return if (!imgData.local) {
+            val bytes = getImgByte(imgData)
+            bytes.inputStream().use { input ->
+                txCosService.uploadFile(
+                    inputStream = input,
+                    fileName = imgData.imgName!!,
+                    mime = "jpeg",
+                    contentLength = bytes.size.toLong()
+                )
+            }
         } else {
-            input = FileInputStream(imgData.url)
+            FileInputStream(imgData.url).use { input ->
+                txCosService.uploadFile(
+                    inputStream = input,
+                    fileName = imgData.imgName!!,
+                    mime = "jpeg",
+                    contentLength = input.channel.size()
+                )
+            }
         }
-        return txCosService.uploadFile(inputStream = input, fileName = imgData.imgName!!, mime = "jpeg")
     }
 
     /**

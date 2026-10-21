@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.MarketDailyTradeMapper">
+    <sql id="rankingEligibility">
+        <!-- 仅排行榜查询排除PVP/恐鸟MOD和Atragraph，采集与历史不按此规则过滤。
+             部分MOD缺少类型标签，因此同时检查游戏引用路径。 -->
+        AND (
+        JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE('mod'))=0
+        OR (
+        JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE('pvp'))=0
+        AND JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE('moa'))=0
+        AND LOWER(COALESCE(i.game_ref, '')) NOT LIKE '%pvp%'
+        AND LOWER(COALESCE(i.game_ref, '')) NOT LIKE '%/moa/%'
+        AND LOWER(COALESCE(i.game_ref, '')) NOT LIKE '%/moapets/%'
+        AND COALESCE(LOWER(JSON_UNQUOTE(JSON_EXTRACT(s.variant_json, '$.subtype'))), '') &lt;&gt; 'atragraph'
+        )
+        )
+        <foreach collection="criteria.category.requiredTags" item="tag">
+            AND JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE(#{tag}))=1
+        </foreach>
+        <foreach collection="criteria.category.excludedTags" item="tag">
+            AND JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE(#{tag}))=0
+        </foreach>
+        <if test="criteria.category.primedMod != null">
+            <!-- 两类互斥；前缀中的下划线按字面匹配，不使用 LIKE 通配符。 -->
+            AND (LEFT(LOWER(COALESCE(i.url_name, '')), 7)='primed_')=#{criteria.category.primedMod}
+        </if>
+    </sql>
+    <delete id="deleteItemDay">
+        DELETE
+        FROM wf_market_daily_trade_average
+        WHERE item_id = #{itemId}
+          AND platform = #{platform}
+          AND source = #{source}
+          AND trade_day = #{day}
+    </delete>
+    <insert id="insertRecords">
+        INSERT INTO wf_market_daily_trade_average
+        (item_id, platform, source, trade_day, variant_key, variant_json, `rank`, min_price, max_price, average_price,
+        volume, fetched_at)
+        VALUES
+        <foreach collection="records" item="r" separator=",">
+            (#{r.itemId}, #{r.platform}, #{r.source}, #{r.tradeDay}, #{r.variantKey}, #{r.variantJson},
+            #{r.rank}, #{r.minPrice}, #{r.maxPrice}, #{r.averagePrice}, #{r.volume}, #{r.fetchedAt})
+        </foreach>
+    </insert>
+    <delete id="deleteExpired">
+        DELETE
+        FROM wf_market_daily_trade_average
+        WHERE platform = #{platform}
+          AND source = #{source}
+          AND trade_day NOT IN (#{targetDay}, #{previousDay})
+        ORDER BY trade_day
+        LIMIT #{limit}
+    </delete>
+    <select id="selectPreviousDataDay" resultType="java.time.LocalDate">
+        SELECT MAX(trade_day)
+        FROM wf_market_daily_trade_average
+        WHERE platform = #{platform}
+          AND source = #{source}
+          AND trade_day &lt; #{day}
+    </select>
+    <select id="countDay" resultType="long">
+        SELECT COUNT(*)
+        FROM wf_market_daily_trade_average
+        WHERE platform = #{platform}
+          AND source = #{source}
+          AND trade_day = #{day}
+          AND average_price &gt; 0
+          AND volume &gt; 0
+    </select>
+    <select id="selectRanking" resultType="bot.wuliang.market.history.MarketDailyTradeAverage">
+        SELECT s.*, i.url_name, i.zh_name, i.en_name, i.max_rank
+        FROM wf_market_daily_trade_average s JOIN wf_market_item i ON i.id=s.item_id
+        WHERE s.platform=#{platform} AND s.source=#{source} AND s.trade_day=#{day}
+        AND s.average_price &gt; 0 AND s.volume &gt; 0
+        <!-- 旧记录可能缺失极值；在选规格和分页之前排除，不将空值当作零。 -->
+        <choose>
+            <when test="criteria.metric.name() == 'TRADE_MIN_PRICE'">AND s.min_price &gt; 0</when>
+            <when test="criteria.metric.name() == 'TRADE_MAX_PRICE'">AND s.max_price &gt; 0</when>
+        </choose>
+        <include refid="rankingEligibility"/>
+        <choose>
+            <when test="criteria.rankSelection.name() == 'PREFERRED'">
+                <!-- 无买卖方向；优先最高已报告等级，同等级按变体键稳定选择一个。 -->
+                AND NOT EXISTS (
+                SELECT 1 FROM wf_market_daily_trade_average p
+                WHERE p.item_id=s.item_id AND p.platform=s.platform AND p.source=s.source AND p.trade_day=s.trade_day
+                AND p.average_price &gt; 0 AND p.volume &gt; 0
+                <choose>
+                    <when test="criteria.metric.name() == 'TRADE_MIN_PRICE'">AND p.min_price &gt; 0</when>
+                    <when test="criteria.metric.name() == 'TRADE_MAX_PRICE'">AND p.max_price &gt; 0</when>
+                </choose>
+                AND (JSON_CONTAINS(COALESCE(i.tags, '[]'), JSON_QUOTE('mod'))=0
+                OR COALESCE(LOWER(JSON_UNQUOTE(JSON_EXTRACT(p.variant_json, '$.subtype'))), '') &lt;&gt; 'atragraph')
+                AND (p.`rank` &gt; s.`rank` OR (p.`rank`=s.`rank` AND p.variant_key &lt; s.variant_key))
+                )
+            </when>
+            <when test="criteria.rankSelection.name() == 'BASE'">AND s.`rank`=0</when>
+            <when test="criteria.rankSelection.name() == 'MAX'">AND i.max_rank IS NOT NULL AND s.`rank`=i.max_rank
+            </when>
+            <when test="criteria.rankSelection.name() == 'EXACT'">AND s.`rank`=#{criteria.exactRank}</when>
+        </choose>
+        ORDER BY
+        <choose>
+            <when test="criteria.metric.name() == 'TRADE_MIN_PRICE'">s.min_price</when>
+            <when test="criteria.metric.name() == 'TRADE_MAX_PRICE'">s.max_price</when>
+            <when test="criteria.metric.name() == 'TRADE_VOLUME'">s.volume</when>
+            <otherwise>s.average_price</otherwise>
+        </choose>
+        <choose>
+            <when test="criteria.descending">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+        , s.item_id, s.variant_key
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

@@ -4,7 +4,6 @@ import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import bot.wuliang.config.WARFRAME_MARKET_LICH_AUCTIONS
 import bot.wuliang.config.WARFRAME_MARKET_RIVEN_AUCTIONS
 import bot.wuliang.config.WARFRAME_MARKET_SISTER_AUCTIONS
-import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.riven.RivenGroups
 import bot.wuliang.riven.RivenQueryCriteria
 import com.fasterxml.jackson.databind.JsonNode
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service
 
 /** 访问紫卡、玄骸和姐妹拍卖接口，统一处理查询参数与请求失败。 */
 @Service
-class MarketAuctionSource {
+class MarketAuctionSource(private val marketApi: MarketApiClient) {
 
     /** 构造按价格升序的玄骸拍卖参数；元素或幻纹条件为空时不加入该条件。 */
     private fun createLichQueryParams(
@@ -31,7 +30,7 @@ class MarketAuctionSource {
 
     /** 按结构化紫卡条件请求 Market 拍卖接口，失败时记录日志并返回 null。 */
     fun getRivenAuctionsJson(criteria: RivenQueryCriteria): JsonNode? = try {
-        HttpUtil.doGetJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = criteria.toMarketParams())
+        marketApi.getJson(WARFRAME_MARKET_RIVEN_AUCTIONS, params = criteria.toMarketParams())
     } catch (e: Exception) {
         logError("WM紫卡查询错误:$e")
         null
@@ -49,8 +48,8 @@ class MarketAuctionSource {
 
         return try {
             when (lichType) {
-                RivenGroups.LICH -> HttpUtil.doGetJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
-                else -> HttpUtil.doGetJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
+                RivenGroups.LICH -> marketApi.getJson(WARFRAME_MARKET_LICH_AUCTIONS, params = queryParams)
+                else -> marketApi.getJson(WARFRAME_MARKET_SISTER_AUCTIONS, params = queryParams)
             }
         } catch (e: Exception) {
             logError("WM玄骸查询错误:$e")

@@ -5,9 +5,9 @@
 <mapper namespace="bot.wuliang.mapper.WfMarketItemMapper">
 
     <insert id="insertMarketItem" parameterType="java.util.List">
-        INSERT INTO wf_market_item (id, en_name, zh_name, url_name, game_ref, tags, ducats, use_count) VALUES
+        INSERT INTO wf_market_item (id, en_name, zh_name, url_name, game_ref, tags, max_rank, max_amber_stars, max_cyan_stars, ducats, use_count) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.id}, #{item.enName}, #{item.zhName}, #{item.urlName}, #{item.gameRef}, #{item.tags}, #{item.ducats}, #{item.useCount})
+            (#{item.id}, #{item.enName}, #{item.zhName}, #{item.urlName}, #{item.gameRef}, #{item.tags}, #{item.maxRank}, #{item.maxAmberStars}, #{item.maxCyanStars}, #{item.ducats}, #{item.useCount})
         </foreach>
         ON DUPLICATE KEY UPDATE
         en_name = VALUES(en_name),
@@ -15,8 +15,18 @@
         url_name = VALUES(url_name),
         game_ref = VALUES(game_ref),
         tags = VALUES(tags),
+        max_rank = VALUES(max_rank), max_amber_stars = VALUES(max_amber_stars), max_cyan_stars = VALUES(max_cyan_stars),
         ducats = VALUES(ducats),
         use_count = VALUES(use_count);
+    </insert>
+
+    <insert id="upsertCatalogMetadata">
+        INSERT INTO wf_market_item (id, en_name, zh_name, url_name, game_ref, tags, max_rank, max_amber_stars, max_cyan_stars, ducats, use_count) VALUES
+        <foreach collection="items" item="item" separator=",">
+            (#{item.id}, #{item.enName}, #{item.zhName}, #{item.urlName}, #{item.gameRef}, #{item.tags}, #{item.maxRank}, #{item.maxAmberStars}, #{item.maxCyanStars}, #{item.ducats}, 0)
+        </foreach>
+        ON DUPLICATE KEY UPDATE en_name=VALUES(en_name), zh_name=VALUES(zh_name), url_name=VALUES(url_name),
+            game_ref=VALUES(game_ref), tags=VALUES(tags), max_rank=VALUES(max_rank), max_amber_stars=VALUES(max_amber_stars), max_cyan_stars=VALUES(max_cyan_stars), ducats=VALUES(ducats)
     </insert>
 
     <select id="batchSelectBySubstrings" resultType="bot.wuliang.entity.WfOtherNameEntity">
@@ -36,7 +46,7 @@
     </select>
 
     <select id="selectItemByFuzzyMatching" parameterType="java.util.Map" resultType="bot.wuliang.entity.WfMarketItemEntity">
-        SELECT id, en_name, zh_name, url_name, game_ref, tags, ducats, use_count
+        SELECT id, en_name, zh_name, url_name, game_ref, tags, max_rank, max_amber_stars, max_cyan_stars, ducats, use_count
         FROM wf_market_item
         WHERE (url_name LIKE CONCAT('%', #{paramsMap.finalQueryString}, '%')
             OR zh_name REGEXP #{paramsMap.finalQueryStringRegex}
@@ -48,7 +58,7 @@
     </select>
 
     <select id="batchSelectByZhNameList" parameterType="java.util.List" resultType="bot.wuliang.entity.WfMarketItemEntity">
-        SELECT id, en_name, zh_name, url_name, game_ref, tags, ducats, use_count
+        SELECT id, en_name, zh_name, url_name, game_ref, tags, max_rank, max_amber_stars, max_cyan_stars, ducats, use_count
         FROM wf_market_item
         WHERE
         <foreach collection="zhNameList" item="zhName" open="(" separator=" OR " close=")">
