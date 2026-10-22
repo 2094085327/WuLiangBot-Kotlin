@@ -16,6 +16,9 @@ object WfMarketItemParser {
             urlName = item["slug"].textValue(),
             gameRef = item["gameRef"]?.textValue(),
             tags = JacksonUtil.toJsonString(tags),
+            maxRank = item["maxRank"]?.takeIf { it.isIntegralNumber }?.intValue(),
+            maxAmberStars = item["maxAmberStars"]?.takeIf { it.isIntegralNumber }?.intValue(),
+            maxCyanStars = item["maxCyanStars"]?.takeIf { it.isIntegralNumber }?.intValue(),
             // 仅在 Market 自身缺少中文时回退英文或 slug，不再用单件物品译名覆盖套装。
             zhName = chineseName ?: englishName ?: item["slug"].textValue(),
             enName = englishName,

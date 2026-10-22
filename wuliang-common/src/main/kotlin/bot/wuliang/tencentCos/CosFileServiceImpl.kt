@@ -3,11 +3,7 @@ package bot.wuliang.tencentCos
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
 import com.qcloud.cos.exception.CosClientException
 import com.qcloud.cos.exception.CosServiceException
-import com.qcloud.cos.model.BucketLifecycleConfiguration
-import com.qcloud.cos.model.GetBucketLifecycleConfigurationRequest
-import com.qcloud.cos.model.ObjectMetadata
-import com.qcloud.cos.model.PutObjectRequest
-import com.qcloud.cos.model.SetBucketLifecycleConfigurationRequest
+import com.qcloud.cos.model.*
 import com.qcloud.cos.model.lifecycle.LifecycleFilter
 import com.qcloud.cos.model.lifecycle.LifecyclePrefixPredicate
 import kotlinx.coroutines.CoroutineScope
@@ -16,7 +12,10 @@ import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.InputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,43 +46,53 @@ class CosFileServiceImpl(
     }
 
     override fun uploadFile(file: File, mime: String): String {
-        var url = ""
-        try {
-            url = uploadFile(file.name, FileInputStream(file), mime)
+        return try {
+            FileInputStream(file).use { inputStream ->
+                uploadFile(file.name, inputStream, mime, inputStream.channel.size())
+            }
         } catch (e: IOException) {
-            // 图片上传失败
-            logError("图片上传失败：", e)
+            logError("文件上传失败：", e)
+            ""
         }
-        return url
     }
 
 
-    override fun uploadFile(fileName: String?, inputStream: InputStream?, mime: String): String {
+    override fun uploadFile(
+        fileName: String?,
+        inputStream: InputStream?,
+        mime: String,
+        contentLength: Long
+    ): String {
         var thisFileName = fileName
         var url = ""
         checkNotNull(thisFileName)
+        requireNotNull(inputStream) { "上传输入流不能为空" }
+        require(contentLength >= 0) { "上传内容长度不能为负数" }
         thisFileName = txCosConfig.path + fileName + ".$mime"
         // 判断上传的文件是否是合法的
         if (IMG_SUFFIX.contains(mime) || VIDEO_SUFFIX.contains(mime) || AUDIO_SUFFIX.contains(mime)) {
             val transferManager = txCosConfig.createTransferManager(cosClient)
 
             val bucketName: String = txCosConfig.bucketName //储存桶名称
-            val putObjectRequest = PutObjectRequest(bucketName, thisFileName, inputStream, ObjectMetadata())
+            val metadata = ObjectMetadata().apply {
+                this.contentLength = contentLength
+            }
+            val putObjectRequest = PutObjectRequest(bucketName, thisFileName, inputStream, metadata)
 
             try {
                 val upload = transferManager.upload(putObjectRequest) //上传
-                val uploadResult = upload.waitForUploadResult()
-                uploadResult.key //上传后的文件名字
+                upload.waitForUploadResult()
+                url = txCosConfig.url + thisFileName
             } catch (e: CosServiceException) {
-                logError("上传连接获取失败:${e.printStackTrace()}")
+                logError("COS文件上传失败: key=$thisFileName", e)
             } catch (e: CosClientException) {
-                logError("上传连接获取失败:${e.printStackTrace()}")
+                logError("COS文件上传失败: key=$thisFileName", e)
             } catch (e: InterruptedException) {
-                logError("上传连接获取失败:${e.printStackTrace()}")
+                Thread.currentThread().interrupt()
+                logError("COS文件上传被中断: key=$thisFileName", e)
             } finally {
                 transferManager.shutdownNow(false)
             }
-            url = txCosConfig.url + thisFileName
         } else {
             //错误的类型，返回错误提示
             logError("文件格式错误")
@@ -100,7 +109,6 @@ class CosFileServiceImpl(
         val fileExtension = uploadFile.originalFilename?.substringAfterLast(".", "") ?: ""
 
         // 校验上传的格式
-        // 封装Result对象，而且将文件的byte数组放置到result对象中
         if (IMG_SUFFIX.contains(fileExtension.lowercase(Locale.getDefault())) ||
             VIDEO_SUFFIX.contains(fileExtension.lowercase(Locale.getDefault())) ||
             AUDIO_SUFFIX.contains(fileExtension.lowercase(Locale.getDefault()))
@@ -115,11 +123,16 @@ class CosFileServiceImpl(
                 // 指定要上传到 COS 上对象键
                 val key = filePath
                 //这里的key是查找文件的依据，妥善保管
-                cosClient.putObject(bucketName, key, ByteArrayInputStream(uploadFile.bytes), null)
+                val metadata = ObjectMetadata().apply {
+                    contentLength = uploadFile.size
+                }
+                uploadFile.inputStream.use { inputStream ->
+                    cosClient.putObject(bucketName, key, inputStream, metadata)
+                }
                 //设置输出信息
                 return txCosConfig.url + filePath
             } catch (e: Exception) {
-                logError("上传连接获取失败:${e.printStackTrace()}")
+                logError("COS文件上传失败: key=$filePath", e)
             }
         } else {
             logError("请选择正确的文件格式")

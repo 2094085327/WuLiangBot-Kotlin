@@ -176,6 +176,9 @@ CREATE TABLE `wf_market_item`  (
   `url_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '物品URL名',
   `game_ref` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'Warframe游戏内部引用路径',
   `tags` json NULL COMMENT 'Warframe Market v2物品标签',
+  `max_rank` int NULL COMMENT '最高等级，NULL表示无等级',
+  `max_amber_stars` int NULL COMMENT '雕像满星琥珀容量',
+  `max_cyan_stars` int NULL COMMENT '雕像满星青蓝容量',
   `use_count` int(10) NULL DEFAULT NULL COMMENT '使用次数',
   `ducats` int(10) NULL DEFAULT NULL COMMENT '物品对应杜卡德数量',
   PRIMARY KEY (`id`) USING BTREE
@@ -227,5 +230,41 @@ CREATE TABLE `wf_riven_attribute`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_wf_riven_attribute_url_name`(`url_name` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'Warframe紫卡属性词库' ROW_FORMAT = Dynamic;
+
+CREATE TABLE IF NOT EXISTS wf_market_statistics_sync (
+    item_id VARCHAR(50) NOT NULL,
+    platform VARCHAR(16) NOT NULL,
+    source VARCHAR(32) NOT NULL DEFAULT 'wm_v1_closed_daily',
+    last_attempt_at BIGINT NULL,
+    last_success_at BIGINT NULL,
+    last_data_day DATE NULL COMMENT '每日聚合已成功处理的UTC日期，含有效空结果',
+    collection_day DATE NULL COMMENT '当前采集批次UTC统计日，冻结本轮商品分母',
+    daily_attempts INT NOT NULL DEFAULT 0 COMMENT '该统计日已尝试轮数，含首次，跨日重置',
+    published_day DATE NULL COMMENT '该商品最后一次被发布批次的UTC日，供Redis丢失恢复',
+    published_success TINYINT(1) NOT NULL DEFAULT 0 COMMENT '该发布批次中本商品是否成功，含有效无成交',
+    consecutive_failures INT NOT NULL DEFAULT 0,
+    last_error VARCHAR(1000) NULL,
+    PRIMARY KEY (item_id, platform, source),
+    KEY idx_market_sync_collection (platform, source, collection_day),
+    KEY idx_market_sync_publication (platform, source, published_day)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS wf_market_daily_trade_average (
+    item_id VARCHAR(50) NOT NULL,
+    platform VARCHAR(16) NOT NULL,
+    source VARCHAR(32) NOT NULL DEFAULT 'wm_v1_closed_daily',
+    trade_day DATE NOT NULL COMMENT '上一个完整UTC日',
+    variant_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    variant_json JSON NOT NULL COMMENT '统计接口实际返回的等级/规格，不假定缺失的subtype',
+    `rank` INT NOT NULL DEFAULT -1,
+    min_price DECIMAL(18,6) NULL COMMENT '同日同规格最低成交价；旧记录未知为NULL',
+    max_price DECIMAL(18,6) NULL COMMENT '同日同规格最高成交价；旧记录未知为NULL',
+    average_price DECIMAL(18,6) NOT NULL COMMENT 'statistics_closed.90days目标日wa_price',
+    volume BIGINT NOT NULL COMMENT '同日同规格WM关闭订单统计量，不是在线挂单数',
+    fetched_at BIGINT NOT NULL COMMENT 'UTC Unix毫秒',
+    PRIMARY KEY (item_id, platform, source, trade_day, variant_key),
+    KEY idx_market_trade_ranking (platform, source, trade_day, average_price),
+    KEY idx_market_trade_expiry (trade_day)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

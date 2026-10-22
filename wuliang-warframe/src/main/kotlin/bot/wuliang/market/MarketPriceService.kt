@@ -1,12 +1,11 @@
 package bot.wuliang.market
 
 import bot.wuliang.config.WARFRAME_MARKET_ITEMS_ORDERS_V2
-import bot.wuliang.httpUtil.HttpUtil
 import org.springframework.stereotype.Service
 
 /** 查询最低卖价；优先读取精选订单，缺项时回退到可见卖单。 */
 @Service
-class MarketPriceService {
+class MarketPriceService(private val marketApi: MarketApiClient) {
 
     /**
      * 优先读取精选卖单首项价格，缺项时回退查询可见卖单中的最低价格。
@@ -21,7 +20,7 @@ class MarketPriceService {
             "platform" to "pc",
             "crossplay" to "false"
         )
-        val topJson = HttpUtil.doGetJson(
+        val topJson = marketApi.getJson(
             url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key/top",
             headers = headers
         )
@@ -33,7 +32,7 @@ class MarketPriceService {
             return topOrders.first()["platinum"].intValue()
         }
 
-        val json = HttpUtil.doGetJson(
+        val json = marketApi.getJson(
             url = "$WARFRAME_MARKET_ITEMS_ORDERS_V2/$key",
             headers = headers
         )

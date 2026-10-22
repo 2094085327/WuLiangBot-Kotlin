@@ -40,6 +40,16 @@ data class WfMarketItemEntity(
     @TableField("tags")
     var tags: String? = null,
 
+    /** Market 目录提供的最高等级；null 表示不支持等级，用于满级排行筛选。 */
+    @TableField("max_rank")
+    var maxRank: Int? = null,
+
+    /** 雕像满星容量。 */
+    @TableField("max_amber_stars")
+    var maxAmberStars: Int? = null,
+    @TableField("max_cyan_stars")
+    var maxCyanStars: Int? = null,
+
     /**
      * 物品对应的杜卡德金币值
      * 可能为null

@@ -4,7 +4,6 @@ import bot.wuliang.config.*
 import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.entity.WfRivenEntity
-import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.riven.RivenGroups
 import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.WfMarketItemParser
@@ -14,12 +13,16 @@ import org.springframework.stereotype.Service
 
 /** 获取 Market 集合版本与物品目录，供增量同步和词库更新共用。 */
 @Service
-class MarketCatalogSource(private val translations: PublicExportService) {
+class MarketCatalogSource(
+    private val translations: PublicExportService,
+    private val marketApi: MarketApiClient,
+) {
     /** 缺少集合版本时终止同步，避免把不完整的目录记录为已更新。 */
     fun getMarketCollectionVersions(): Map<String, String> {
-        val collections = HttpUtil.doGetJson(
+        val collections = marketApi.getJson(
             url = WARFRAME_MARKET_VERSIONS_V2,
-            headers = LANGUAGE_EN
+            headers = LANGUAGE_EN,
+            priority = MarketRequestPriority.BACKGROUND,
         )["data"]["collections"]
 
         return listOf("items", "rivens", "liches", "sisters").associateWith { collection ->
@@ -37,7 +40,10 @@ class MarketCatalogSource(private val translations: PublicExportService) {
      * 使用 Market 自身的简体中文目录，包含游戏词库没有维护的套装交易名称。
      */
     fun getMarketItems(): List<WfMarketItemEntity> {
-        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_ZH_HANS)
+        val json = marketApi.getJson(
+            url = WARFRAME_MARKET_ITEMS_V2, headers = LANGUAGE_ZH_HANS,
+            priority = MarketRequestPriority.BACKGROUND,
+        )
         val items = json["data"]
 
         return items.map(WfMarketItemParser::parse)
@@ -47,7 +53,10 @@ class MarketCatalogSource(private val translations: PublicExportService) {
      * 获取紫卡武器目录；武器名称使用统一翻译，紫卡属性名称由独立属性接口处理。
      */
     fun getRivenItems(): List<WfRivenEntity> {
-        val json = HttpUtil.doGetJson(url = WARFRAME_MARKET_RIVEN_ITEMS_V2, headers = LANGUAGE_EN)
+        val json = marketApi.getJson(
+            url = WARFRAME_MARKET_RIVEN_ITEMS_V2, headers = LANGUAGE_EN,
+            priority = MarketRequestPriority.BACKGROUND,
+        )
         val items = json["data"]
 
         return items.map { item ->
@@ -78,7 +87,9 @@ class MarketCatalogSource(private val translations: PublicExportService) {
      * 共用玄骸与姐妹武器目录的解析逻辑，保留所属分组及 Market 协议标识。
      */
     private fun getV2WeaponItems(url: String, group: String): List<WfRivenEntity> {
-        val items = HttpUtil.doGetJson(url = url, headers = LANGUAGE_EN)["data"]
+        val items = marketApi.getJson(
+            url = url, headers = LANGUAGE_EN, priority = MarketRequestPriority.BACKGROUND,
+        )["data"]
         return items.map { item ->
             WfRivenEntity(
                 id = item["id"].textValue(),
@@ -112,9 +123,10 @@ class MarketCatalogSource(private val translations: PublicExportService) {
      * 紫卡属性沿用 Market 的简体中文目录，避免被 Plus 缺失项回退为英文。
      */
     fun getRivenAttributes(): List<WfRivenAttributeEntity> {
-        val items = HttpUtil.doGetJson(
+        val items = marketApi.getJson(
             url = WARFRAME_MARKET_RIVEN_ATTRIBUTES_V2,
-            headers = LANGUAGE_ZH_HANS
+            headers = LANGUAGE_ZH_HANS,
+            priority = MarketRequestPriority.BACKGROUND,
         )["data"]
         return items.map(WfRivenAttributeParser::parse)
     }
