@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.3.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.2.1...2.3.0) (2026-10-22)
+
+
+### ✨ Features
+
+* **bounty:** 新增六类平原赏金查询指令 ([31fa92b](https://github.com/2094085327/WuLiangBot-Kotlin/commit/31fa92bb65a3bef8acb6abe9957daf99dbc6c772))
+* **conquest:** 更新科研数据配置 ([42e2f7e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/42e2f7ebf74d1c8cde02631c8792852581663f37))
+* **warframe:** 接入 Wiki 信条武器与终幕武器轮换数据 ([0de289e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/0de289e36f055235ff727496740810fb5100a0dc))
+* **warframe:** 新增每日成交排行榜与按需历史查询 ([0293e33](https://github.com/2094085327/WuLiangBot-Kotlin/commit/0293e33723cd14844a0aa15d0a4b44146da79505))
+* **warframe:** 新增物品价格走势命令及图片生成 ([0f5d267](https://github.com/2094085327/WuLiangBot-Kotlin/commit/0f5d267b2398b163a86d21f2a4d08d6aff92babc))
+* **warframe:** 添加世界状态解析、赏金轮换生成器及多源词库合并 ([2e1bcf3](https://github.com/2094085327/WuLiangBot-Kotlin/commit/2e1bcf36ce62697fb7a68f968bc111c0a1f8e901))
+
+
+### 🐛 Bug Fixes
+
+* **worldstate:** 补充世界状态周期计算模块 ([0eac077](https://github.com/2094085327/WuLiangBot-Kotlin/commit/0eac0777778bf3be8cc1451c728ad767070eb9ab))
+
+
+### ♻️ Code Refactoring
+
+* **translation:** 翻译词库导出加载改为流式处理以降低内存占用 ([56dd1ec](https://github.com/2094085327/WuLiangBot-Kotlin/commit/56dd1ec88aa6f40bb17446d30c5ba373acbc30c8))
+* **warframe:** 拆分指令、查询服务与世界状态解析模块 ([8b56c47](https://github.com/2094085327/WuLiangBot-Kotlin/commit/8b56c471d9030043d2fb6469e4d80e46a7d00ae2))
+* **worldstate:** 修复并统一平原周期状态查询为单次快照获取 ([e629955](https://github.com/2094085327/WuLiangBot-Kotlin/commit/e62995540e0326abf576402202e953dceada4dc8))
+
+
+### 📦 Build System
+
+* **playwright:** 按平台裁剪Playwright驱动以减小最终 JAR 体积 ([b7bcb7d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/b7bcb7d0a757c697a34052edb34db57c42d5b109))
+
 ## [2.2.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.2.0...2.2.1) (2026-10-01)
 
 
