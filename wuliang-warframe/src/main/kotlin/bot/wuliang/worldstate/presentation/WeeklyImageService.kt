@@ -72,7 +72,7 @@ class WeeklyImageService(
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/weekly",
-            imgName = "weekly-v2-$weeklyKey-$voidTraderState-${translations.cacheTag()}",
+            imgName = "weekly-$weeklyKey-$voidTraderState-${translations.cacheTag()}",
             element = "#app",
             waitElement = ".warframeWeekly"
         )

@@ -375,9 +375,9 @@
     "value": "乏能护盾",
     "desc": "护盾与超宏防护的上限为500点。"
   },
-  "RangeDebuff": {
-    "value": "咫尺之限",
-    "desc": "技能范围减少 50%。"
+  "ShortenedReach": {
+    "value": "咫尺天涯",
+    "desc": "技能范围减半。"
   },
   "LowYield": {
     "value": "精准失控",

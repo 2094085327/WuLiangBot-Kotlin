@@ -30,12 +30,12 @@ class MarketHistoryService(
 ) {
     private val locks = Array(64) { Any() }
 
-    fun query(slug: String, window: String): MarketHistoryResult {
+    /** 两个窗口来自同一次缓存快照，供趋势图与摘要共用。 */
+    fun queryWindows(slug: String): Map<String, MarketHistoryResult> {
         require(slug.length in 1..128 && slug.matches(Regex("[a-z0-9_]+"))) { "商品 slug 无效。" }
-        require(window in setOf("48hours", "90days")) { "仅支持 48hours 或 90days。" }
         require(items.findIdBySlug(slug) != null) { "未找到该市场商品。" }
         val platform = properties.statistics.platform
-        val key = "${properties.redisKeyPrefix}:history:closed:v1:$platform:$slug"
+        val key = "${properties.redisKeyPrefix}:history:closed:$platform:$slug"
         // 同实例合并同一商品的并发查询；跨实例的请求仍受全局限流控制。
         val cached = synchronized(locks[(key.hashCode() and Int.MAX_VALUE) % locks.size]) {
             redis.opsForValue().get(key)?.let(objectMapper::readTree) ?: run {
@@ -58,9 +58,11 @@ class MarketHistoryService(
                 }
             }
         }
-        return MarketHistoryResult(
-            slug, platform, "wm_v1_closed", window,
-            cached.path("fetchedAt").asLong(), cached.path("closed").get(window)
-        )
+        return listOf("48hours", "90days").associateWith { window ->
+            MarketHistoryResult(
+                slug, platform, "wm_closed", window,
+                cached.path("fetchedAt").asLong(), cached.path("closed").get(window)
+            )
+        }
     }
 }

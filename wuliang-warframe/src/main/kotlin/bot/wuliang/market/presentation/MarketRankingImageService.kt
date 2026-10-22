@@ -48,14 +48,14 @@ class MarketRankingImageService(
                 publication = report.publication.copy(publishedAt = 0, recovered = false),
             )
             val fingerprint = mapper.writeValueAsString(cacheReport).toMd5()
-            val imageName = "market-ranking-v1-${report.tradeDay}-$fingerprint"
+            val imageName = "market-ranking-${report.tradeDay}-$fingerprint"
             cos.ensureLifecycleRule("market-ranking-", 1)
             val url = webImgUtil.getImgUrl(
                 WebImgUtil.ImgData(
                     url = "http://${webImgUtil.frontendAddress}/marketRanking",
                     data = mapper.writeValueAsString(report),
                     imgName = imageName,
-                    element = ".market-ranking-image",
+                    element = "#app",
                     waitElement = ".market-ranking-image[data-ready='true']",
                 )
             )
