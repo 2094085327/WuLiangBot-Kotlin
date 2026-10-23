@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.3.0...2.4.0) (2026-10-23)
+
+
+### ✨ Features
+
+* **warframe:** 新增仲裁查询与排期图片缓存 ([9c272a8](https://github.com/2094085327/WuLiangBot-Kotlin/commit/9c272a8828183cfcd809d4dcdf91b7831b9b8bf2))
+
 ## [2.3.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.2.1...2.3.0) (2026-10-22)
 
 
