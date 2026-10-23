@@ -54,7 +54,7 @@ class AuctionCommands(
         val generation = translations.cacheKey(bot.wuliang.config.WfMarketConfig.WF_RIVEN_RESULT_KEY_PREFIX)
         val pagedCommand = PagedCommand.parse(matcher.group(2))
         val key = pagedCommand.content
-        val parameterList = key.split(" ")
+        val parameterList = key.trim().split(Regex("\\s+"))
 
         // 正则匹配紫卡循环次数
         val pattern = """(?<=\D)\d+(?=洗)""".toRegex()
@@ -84,7 +84,7 @@ class AuctionCommands(
 
             is RivenCriteriaResolution.AmbiguousAttribute -> {
                 val candidates = resolution.candidates.joinToString("、") { it.zhName.ifBlank { it.enName } }
-                context.sender.sendText("紫卡词条存在歧义，可能的紫卡词条：$candidates")
+                context.sender.sendText("紫卡词条存在歧义，请输入更完整的名称：$candidates")
                 return
             }
 

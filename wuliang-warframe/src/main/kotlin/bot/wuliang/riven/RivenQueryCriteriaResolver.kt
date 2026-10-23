@@ -32,8 +32,7 @@ class RivenQueryCriteriaResolver(
 
                 val isNegative = token.startsWith(NEGATIVE_MARKER) || token.endsWith(NEGATIVE_MARKER)
                 val rawAttributeName = if (isNegative) token.trim(NEGATIVE_MARKER.single()) else token
-                val attributeName = ATTRIBUTE_ALIASES[rawAttributeName] ?: rawAttributeName
-                when (val resolved = attributeCatalog.resolve(attributeName)) {
+                when (val resolved = attributeCatalog.resolve(rawAttributeName)) {
                     RivenAttributeMatch.Unknown -> return RivenCriteriaResolution.UnknownAttribute(
                         token = token,
                         suggestions = attributeCatalog.suggest(rawAttributeName),
@@ -69,13 +68,5 @@ class RivenQueryCriteriaResolver(
         private const val NO_NEGATIVE_TOKEN = "无负"
         private const val NEGATIVE_MARKER = "负"
         private val REROLL_TOKEN = Regex("""\d+洗""")
-        private val ATTRIBUTE_ALIASES = mapOf(
-            "暴击" to "critical_chance",
-            "爆击" to "critical_chance",
-            "暴击率" to "critical_chance",
-            "爆击率" to "critical_chance",
-            "暴伤" to "critical_damage",
-            "爆伤" to "critical_damage",
-        )
     }
 }
