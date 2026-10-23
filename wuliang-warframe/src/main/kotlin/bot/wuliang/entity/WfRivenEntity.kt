@@ -62,12 +62,4 @@ data class WfRivenEntity(
     @JsonProperty("zhName")
     @TableField(value = "zh")
     var zhName: String? = null,
-
-
-    /**
-     * 倾向
-     */
-    @JsonProperty("disposition")
-    @TableField(value = "disposition")
-    var disposition: Float? = null,
 ) : Serializable

@@ -208,7 +208,6 @@ CREATE TABLE `wf_riven`  (
   `riven_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '紫卡类型',
   `zh` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '中文名',
   `en` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '英文名',
-  `disposition` float NULL DEFAULT NULL COMMENT '倾向',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `id_en_zh_url`(`id` ASC, `url_name` ASC, `zh` ASC, `en` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

@@ -78,7 +78,6 @@ class MarketCatalogSource(
                 rGroup = item["group"]?.textValue(),
                 reqMasteryRank = item["reqMasteryRank"]?.floatValue(),
                 rivenType = item["rivenType"]?.textValue(),
-                disposition = item["disposition"]?.floatValue(),
             )
         }
     }
