@@ -1,5 +1,6 @@
 package bot.wuliang.translation
 
+import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
 import bot.wuliang.config.PublicExportPolicy
 import bot.wuliang.config.WarframeProperties
 import com.fasterxml.jackson.core.JsonToken
@@ -8,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import org.slf4j.LoggerFactory
 import org.tukaani.xz.LZMAInputStream
 import java.io.InputStream
 import java.nio.file.Files
@@ -23,7 +23,6 @@ internal class OfficialPublicExportRemote(
     settings: WarframeProperties.OfficialExport,
     private val http: PublicExportHttpClient,
 ) : FilePublicExportRemote {
-    private val logger = LoggerFactory.getLogger(javaClass)
     private val indexUrl = settings.indexBaseUrl.toHttpUrl()
     private val contentUrl = settings.contentBaseUrl.toHttpUrl()
 
@@ -113,7 +112,7 @@ internal class OfficialPublicExportRemote(
         val sha = Files.readString(shaPath)
         require(PublicExportPolicy.SHA_PATTERN.matches(sha) && ExportFileIO.blobSha(path) == sha)
         CachedExport(path, size, sha)
-    }.onFailure { logger.warn("官方导出缓存校验失败，将重新获取：{}，{}", asset, it.message) }.getOrNull()
+    }.onFailure { logWarn("官方导出缓存校验失败，将重新获取：{}，{}", asset, it.message, it) }.getOrNull()
 
     /** 下载并流式规范化官方 JSON，写入内容与摘要临时文件后原子发布缓存，结束时清理临时文件。 */
     private fun downloadCached(asset: String, entry: IndexEntry, locale: String): CachedExport {

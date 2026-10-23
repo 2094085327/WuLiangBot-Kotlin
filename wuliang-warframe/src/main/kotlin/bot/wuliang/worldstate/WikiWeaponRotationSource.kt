@@ -1,12 +1,12 @@
 package bot.wuliang.worldstate
 
+import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
 import bot.wuliang.config.WarframeProperties
 import bot.wuliang.config.WfMarketConfig.WF_WIKI_WEAPON_ROTATION_KEY_PREFIX
 import bot.wuliang.redis.RedisService
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.security.MessageDigest
 import java.util.*
@@ -31,7 +31,6 @@ data class WeaponRotationReport(
 @Service
 class WikiWeaponRotationSource(properties: WarframeProperties, private val redis: RedisService) {
     private val settings = properties.wikiRotation
-    private val logger = LoggerFactory.getLogger(javaClass)
     private val client = OkHttpClient.Builder().callTimeout(settings.requestTimeoutSeconds, TimeUnit.SECONDS).build()
     private val mapper = jacksonObjectMapper()
 
@@ -50,7 +49,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
             cachedReport(kind)
         } catch (error: Exception) {
             // Redis 不可用时不绕过缓存直连 Wiki，避免每个请求都打到上游。
-            logger.warn("{} Wiki 轮换缓存不可用：{}", kind.title, error.message)
+            logWarn("{} Wiki 轮换缓存不可用：{}", kind.title, error.message, error)
             unavailable(kind, System.currentTimeMillis(), "轮换缓存暂时不可用，请稍后重试")
         }
     }
@@ -93,7 +92,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
                         TimeUnit.MILLISECONDS
                     )
                 }
-                logger.warn("{} Wiki 轮换数据获取失败：{}", kind.title, error.message)
+                logWarn("{} Wiki 轮换数据获取失败：{}", kind.title, error.message, error)
                 return fallback(kind, latest, failedAt)
             }
             val freshPeriod = kind.period(fresh.fetchedAt)
@@ -111,7 +110,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
             try {
                 redis.deleteValueIfMatches(lockKey, token)
             } catch (error: Exception) {
-                logger.warn("{} Wiki 轮换刷新锁释放失败，将按有效期自动释放：{}", kind.title, error.message)
+                logWarn("{} Wiki 轮换刷新锁释放失败，将按有效期自动释放：{}", kind.title, error.message, error)
             }
         }
     }
@@ -155,7 +154,7 @@ class WikiWeaponRotationSource(properties: WarframeProperties, private val redis
             }
             value
         } catch (error: Exception) {
-            logger.warn("{} Wiki 轮换缓存无效，重新获取：{}", kind.title, error.message)
+            logWarn("{} Wiki 轮换缓存无效，重新获取：{}", kind.title, error.message, error)
             redis.deleteKey(key)
             null
         }

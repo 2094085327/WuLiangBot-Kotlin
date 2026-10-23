@@ -22,6 +22,7 @@ const val WARFRAME_EXPORT_GITHUB_RAW_URL = "https://raw.githubusercontent.com/"
 const val WARFRAME_RESOURCES = "$RESOURCES_PATH/warframe"
 
 const val WARFRAME_SPIRAL_SCHEDULE = "$WARFRAME_RESOURCES/data/spiral-schedule.json"
+const val WARFRAME_ARBITRATION_TIERS = "$WARFRAME_RESOURCES/data/arbitration-tiers.json"
 const val WARFRAME_SYNTHESIS_LOCATIONS = "$WARFRAME_RESOURCES/data/synthesis-locations.json"
 const val WARFRAME_INCARNON = "$WARFRAME_RESOURCES/data/incarnon.json"
 const val WARFRAME_EXPORT_DIRECTORY = "$WARFRAME_RESOURCES/public-export-plus"
