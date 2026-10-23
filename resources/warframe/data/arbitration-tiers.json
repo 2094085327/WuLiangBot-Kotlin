@@ -1,0 +1,21 @@
+{
+  "highValueTiers": ["S", "A+", "A"],
+  "tiers": {
+    "SolNode450": "S",
+    "SolNode106": "S",
+    "SolNode25": "S",
+    "SolNode64": "S",
+    "SolNode23": "A+",
+    "SolNode172": "A+",
+    "SolNode719": "A+",
+    "SolNode147": "A+",
+    "SolNode224": "A",
+    "SolNode167": "A",
+    "SolNode412": "A",
+    "SolNode211": "A",
+    "SolNode43": "A-",
+    "SolNode85": "A-",
+    "SolNode185": "C",
+    "SolNode18": "C"
+  }
+}

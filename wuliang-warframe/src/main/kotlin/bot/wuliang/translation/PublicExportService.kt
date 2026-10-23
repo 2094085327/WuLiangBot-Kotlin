@@ -1,11 +1,13 @@
 package bot.wuliang.translation
 
+import bot.wuliang.botLog.logUtil.LoggerUtils.logError
+import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
+import bot.wuliang.botLog.logUtil.LoggerUtils.logWarn
 import bot.wuliang.config.PublicExportPolicy
 import bot.wuliang.config.WarframeProperties
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.Nodes
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -17,15 +19,14 @@ class PublicExportService(
     remote: PublicExportRemote,
     properties: WarframeProperties,
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
     private val translationAliases = properties.translationAliases
     private val sortieData = properties.sortieData
     private val aliases = recoverExportData { LocalTranslationAliases.load(Path.of(translationAliases)) }
-        .onFailure { logger.warn("本地翻译关联表加载失败：{}，原因：{}", translationAliases, it.message) }
+        .onFailure { logWarn("本地翻译关联表加载失败：{}，原因：{}", translationAliases, it.message, it) }
         .getOrDefault(LocalTranslationAliases.EMPTY)
     private val store = PublicExportStore(Path.of(properties.publicExportPlus.directory), remote, aliases.entries)
     private val sortieTranslations = recoverExportData { LocalSortieTranslations.load(Path.of(sortieData)) }
-        .onFailure { logger.warn("本地突击修正词库加载失败：{}，使用统一索引或原始标识；原因：{}", sortieData, it.message) }
+        .onFailure { logWarn("本地突击修正词库加载失败：{}，使用统一索引或原始标识；原因：{}", sortieData, it.message, it) }
         .getOrDefault(LocalSortieTranslations.EMPTY)
     private val conquestTranslations = loadInfoTranslations(properties.conquestData, CONQUEST_KEY_PATTERN::matches)
     private val calendarTranslations =
@@ -61,8 +62,8 @@ class PublicExportService(
     @PostConstruct
     fun loadLocal() {
         recoverExportData { store.load()?.let(::publish) }
-            .onFailure { logger.error("Warframe 词库本地快照无效，等待手动更新", it) }
-        if (!ready) logger.warn(UNAVAILABLE_MESSAGE)
+            .onFailure { logError("Warframe 词库本地快照无效，等待手动更新", it) }
+        if (!ready) logWarn(UNAVAILABLE_MESSAGE)
     }
 
     /**
@@ -199,12 +200,12 @@ class PublicExportService(
         snapshot.index.onMissing = ::recordMissing
         applied = snapshot
         if (snapshot.manifest.files.none { PublicExportStore.acceptsOfficial(it.path) }) {
-            logger.warn("当前快照尚未包含官方对象导出，请执行“更新世界状态词库”切换到官方优先翻译")
+            logWarn("当前快照尚未包含官方对象导出，请执行“更新世界状态词库”切换到官方优先翻译")
         }
         if (!snapshot.manifest.files.map { it.path }.containsAll(PublicExportStore.languageFiles)) {
-            logger.warn("当前快照尚未包含完整游戏语言表，请执行“更新世界状态词库”补齐")
+            logWarn("当前快照尚未包含完整游戏语言表，请执行“更新世界状态词库”补齐")
         }
-        logger.info(
+        logInfo(
             "世界状态词库已应用：{}，{} 个文件",
             snapshot.manifest.appliedCommit,
             snapshot.manifest.files.size
@@ -216,14 +217,14 @@ class PublicExportService(
      */
     private fun loadInfoTranslations(path: String, accepts: (String) -> Boolean): LocalInfoTranslations =
         recoverExportData { LocalInfoTranslations.load(Path.of(path), accepts) }
-            .onFailure { logger.warn("本地世界状态词库加载失败：{}，使用统一索引或原始标识；原因：{}", path, it.message) }
+            .onFailure { logWarn("本地世界状态词库加载失败：{}，使用统一索引或原始标识；原因：{}", path, it.message, it) }
             .getOrDefault(LocalInfoTranslations.EMPTY)
 
     /** 按版本对缺失翻译去重并记录日志，最多保存五千个缺失项以限制内存和日志规模。 */
     private fun recordMissing(key: String, locale: String, field: String) {
         // 同一版本的相同缺失项只记录一次，并限制总量，避免外部标识撑满内存或日志。
         val entry = "$locale:$field:$key"
-        if (missing.size < 5000 && missing.add(entry)) logger.warn(
+        if (missing.size < 5000 && missing.add(entry)) logWarn(
             "Warframe 词库缺失翻译 [{}] {}",
             revision,
             entry
