@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.4.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.4.0...2.4.1) (2026-10-25)
+
+
+### ♻️ Code Refactoring
+
+* **riven:** 重构紫卡词条解析为分层优先级匹配 ([4c2d792](https://github.com/2094085327/WuLiangBot-Kotlin/commit/4c2d7926bfaa01b11ae175a0121b2b910c59c1ec))
+* **warframe:** 改用日归档同步市场成交排行榜 ([4795fc5](https://github.com/2094085327/WuLiangBot-Kotlin/commit/4795fc583f1c837d363833488d852f86b123f77a))
+* **warframe:** 移除紫卡倾向相关数据与逻辑 ([5b1b82f](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5b1b82f094163e7b415a506630db7ce2c31dbf7a))
+
 ## [2.4.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.3.0...2.4.0) (2026-10-23)
 
 
