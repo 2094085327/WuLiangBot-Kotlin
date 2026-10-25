@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service
 
 class MarketRankingUnavailableException(message: String) : RuntimeException(message)
 
-/** 读取一次已发布快照并注入图片页；同日补采、分页和筛选改变时均刷新图片缓存。 */
+/** 读取一次已发布快照并注入图片页，按成交内容、分页和筛选复用图片缓存。 */
 @Service
 class MarketRankingImageService(
     private val ranking: MarketRankingService,
@@ -42,10 +42,10 @@ class MarketRankingImageService(
                     else "${report.tradeDay} 的所选分类和规格暂无成交记录，可以切换等级或排序指标。"
                 )
             }
-            // 生成时间和 Redis 标记恢复时间不影响画面；成交内容与缺项数仍参与缓存键。
+            // 生成时间和发布时间不影响画面；成交内容参与缓存键。
             val cacheReport = report.copy(
                 generatedAt = 0,
-                publication = report.publication.copy(publishedAt = 0, recovered = false),
+                publication = report.publication.copy(publishedAt = 0),
             )
             val fingerprint = mapper.writeValueAsString(cacheReport).toMd5()
             val imageName = "market-ranking-${report.tradeDay}-$fingerprint"

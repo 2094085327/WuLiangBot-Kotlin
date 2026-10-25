@@ -6,8 +6,6 @@ import java.time.LocalDate
 /** WM已关闭订单的单日聚合。 */
 data class MarketDailyTradeAverage(
     var itemId: String = "",
-    var platform: String = "pc",
-    var source: String = SOURCE,
     var tradeDay: LocalDate = LocalDate.ofEpochDay(0),
     var variantKey: String = "",
     var variantJson: String = "{}",
@@ -21,8 +19,4 @@ data class MarketDailyTradeAverage(
     var zhName: String? = null,
     var enName: String? = null,
     var maxRank: Int? = null,
-) {
-    companion object {
-        const val SOURCE = "wm_v1_closed_daily"
-    }
-}
+)

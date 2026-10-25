@@ -26,53 +26,43 @@
             AND (LEFT(LOWER(COALESCE(i.url_name, '')), 7)='primed_')=#{criteria.category.primedMod}
         </if>
     </sql>
-    <delete id="deleteItemDay">
+    <delete id="deleteStaleDay">
         DELETE
         FROM wf_market_daily_trade_average
-        WHERE item_id = #{itemId}
-          AND platform = #{platform}
-          AND source = #{source}
+        WHERE platform = 'pc'
           AND trade_day = #{day}
+          AND fetched_at &lt;&gt; #{fetchedAt}
     </delete>
     <insert id="insertRecords">
         INSERT INTO wf_market_daily_trade_average
-        (item_id, platform, source, trade_day, variant_key, variant_json, `rank`, min_price, max_price, average_price,
+        (item_id, platform, trade_day, variant_key, variant_json, `rank`, min_price, max_price, average_price,
         volume, fetched_at)
         VALUES
         <foreach collection="records" item="r" separator=",">
-            (#{r.itemId}, #{r.platform}, #{r.source}, #{r.tradeDay}, #{r.variantKey}, #{r.variantJson},
+            (#{r.itemId}, 'pc', #{r.tradeDay}, #{r.variantKey}, #{r.variantJson},
             #{r.rank}, #{r.minPrice}, #{r.maxPrice}, #{r.averagePrice}, #{r.volume}, #{r.fetchedAt})
         </foreach>
+        ON DUPLICATE KEY UPDATE
+            variant_json=VALUES(variant_json), `rank`=VALUES(`rank`),
+            min_price=VALUES(min_price), max_price=VALUES(max_price),
+            average_price=VALUES(average_price), volume=VALUES(volume), fetched_at=VALUES(fetched_at)
     </insert>
     <delete id="deleteExpired">
         DELETE
         FROM wf_market_daily_trade_average
-        WHERE platform = #{platform}
-          AND source = #{source}
+        WHERE platform = 'pc'
           AND trade_day NOT IN (#{targetDay}, #{previousDay})
         ORDER BY trade_day
-        LIMIT #{limit}
+        LIMIT 5000
     </delete>
-    <select id="selectPreviousDataDay" resultType="java.time.LocalDate">
-        SELECT MAX(trade_day)
-        FROM wf_market_daily_trade_average
-        WHERE platform = #{platform}
-          AND source = #{source}
-          AND trade_day &lt; #{day}
-    </select>
-    <select id="countDay" resultType="long">
-        SELECT COUNT(*)
-        FROM wf_market_daily_trade_average
-        WHERE platform = #{platform}
-          AND source = #{source}
-          AND trade_day = #{day}
-          AND average_price &gt; 0
-          AND volume &gt; 0
+    <select id="countImportedRecords" resultType="long">
+        SELECT COUNT(*) FROM wf_market_daily_trade_average
+        WHERE platform='pc' AND trade_day=#{day} AND fetched_at=#{fetchedAt}
     </select>
     <select id="selectRanking" resultType="bot.wuliang.market.history.MarketDailyTradeAverage">
         SELECT s.*, i.url_name, i.zh_name, i.en_name, i.max_rank
         FROM wf_market_daily_trade_average s JOIN wf_market_item i ON i.id=s.item_id
-        WHERE s.platform=#{platform} AND s.source=#{source} AND s.trade_day=#{day}
+        WHERE s.platform='pc' AND s.trade_day=#{day}
         AND s.average_price &gt; 0 AND s.volume &gt; 0
         <!-- 旧记录可能缺失极值；在选规格和分页之前排除，不将空值当作零。 -->
         <choose>
@@ -85,7 +75,7 @@
                 <!-- 无买卖方向；优先最高已报告等级，同等级按变体键稳定选择一个。 -->
                 AND NOT EXISTS (
                 SELECT 1 FROM wf_market_daily_trade_average p
-                WHERE p.item_id=s.item_id AND p.platform=s.platform AND p.source=s.source AND p.trade_day=s.trade_day
+                WHERE p.item_id=s.item_id AND p.platform=s.platform AND p.trade_day=s.trade_day
                 AND p.average_price &gt; 0 AND p.volume &gt; 0
                 <choose>
                     <when test="criteria.metric.name() == 'TRADE_MIN_PRICE'">AND p.min_price &gt; 0</when>

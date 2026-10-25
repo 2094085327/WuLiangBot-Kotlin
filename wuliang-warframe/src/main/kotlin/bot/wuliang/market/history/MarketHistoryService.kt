@@ -34,14 +34,13 @@ class MarketHistoryService(
     fun queryWindows(slug: String): Map<String, MarketHistoryResult> {
         require(slug.length in 1..128 && slug.matches(Regex("[a-z0-9_]+"))) { "商品 slug 无效。" }
         require(items.findIdBySlug(slug) != null) { "未找到该市场商品。" }
-        val platform = properties.statistics.platform
-        val key = "${properties.redisKeyPrefix}:history:closed:$platform:$slug"
+        val key = "${properties.redisKeyPrefix}:history:closed:$slug"
         // 同实例合并同一商品的并发查询；跨实例的请求仍受全局限流控制。
         val cached = synchronized(locks[(key.hashCode() and Int.MAX_VALUE) % locks.size]) {
             redis.opsForValue().get(key)?.let(objectMapper::readTree) ?: run {
                 val response = api.getJson(
                     WARFRAME_MARKET_ITEMS_STATISTICS.format(slug),
-                    headers = mapOf("Platform" to platform, "Language" to "en", "Crossplay" to "false"),
+                    headers = mapOf("Platform" to "pc", "Language" to "en", "Crossplay" to "false"),
                 )
                 val closed = response.path("payload").path("statistics_closed")
                 val clean = objectMapper.createObjectNode()
@@ -60,7 +59,7 @@ class MarketHistoryService(
         }
         return listOf("48hours", "90days").associateWith { window ->
             MarketHistoryResult(
-                slug, platform, "wm_closed", window,
+                slug, "pc", "wm_closed", window,
                 cached.path("fetchedAt").asLong(), cached.path("closed").get(window)
             )
         }

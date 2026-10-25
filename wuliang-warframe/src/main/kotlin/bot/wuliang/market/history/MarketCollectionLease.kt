@@ -21,9 +21,9 @@ class MarketCollectionLease(private val redis: StringRedisTemplate) {
 
     fun nextRoundAt(key: String): Long = redis.opsForValue().get("$key:next")?.toLongOrNull() ?: 0L
 
-    /** 校验所有者与共享冷却；逐商品恢复由统计日水位负责。 */
-    fun beginRound(key: String, owner: String, now: Long): Boolean = redis.execute(
-        BEGIN, listOf(key, "$key:next"), owner, now.toString(),
+    /** 校验所有者与下轮同步时间，避免多实例重复下载。 */
+    fun beginRound(key: String, owner: String, now: Long, recoverMissingPublication: Boolean): Boolean = redis.execute(
+        BEGIN, listOf(key, "$key:next"), owner, now.toString(), if (recoverMissingPublication) "1" else "0",
     ) == 1L
 
     fun finishRound(key: String, owner: String, nextAt: Long) {
@@ -32,17 +32,11 @@ class MarketCollectionLease(private val redis: StringRedisTemplate) {
         }
     }
 
-    fun isSourcePaused(key: String, source: String): Boolean = redis.hasKey("$key:paused:$source")
-
-    fun pauseSource(key: String, source: String, duration: Duration) {
-        redis.opsForValue().set("$key:paused:$source", "1", duration)
-    }
-
     companion object {
         private val BEGIN = DefaultRedisScript(
             """
             if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
-            if tonumber(redis.call('GET', KEYS[2]) or '0') > tonumber(ARGV[2]) then return 0 end
+            if ARGV[3] ~= '1' and tonumber(redis.call('GET', KEYS[2]) or '0') > tonumber(ARGV[2]) then return 0 end
             return 1
             """.trimIndent(),
             Long::class.javaObjectType,

@@ -222,6 +222,13 @@ github:
 
 # Warframe 数据源、翻译资源及缓存配置（代码入口：WarframeProperties.kt）
 warframe:
+  market:
+    statistics:
+      enabled: true
+      history-request-timeout-seconds: 120
+      daily-sync-utc-hour: 2
+      daily-sync-utc-minute: 30
+      interval-hours: 1
   official-export:
     index-base-url: "https://origin.warframe.com/PublicExport/"
     content-base-url: "https://content.warframe.com/PublicExport/Manifest/"

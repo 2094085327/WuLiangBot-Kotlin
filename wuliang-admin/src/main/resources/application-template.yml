@@ -72,6 +72,15 @@ github:
 
 # Warframe 世界状态词库数据源配置
 warframe:
+  market:
+    statistics:
+      enabled: true
+      history-request-timeout-seconds: 120
+      # UTC 02:30 = 北京时间 10:30，同步前一完整 UTC 日。
+      daily-sync-utc-hour: 2
+      daily-sync-utc-minute: 30
+      # 归档未发布或同步失败时，每小时重试；成功后等待下一日。
+      interval-hours: 1
   public-export-plus:
     # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
     repository: "2094085327/warframe-public-export-plus"

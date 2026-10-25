@@ -11,6 +11,17 @@ data class MarketRankingRequest(
     val pageSize: Int = 20,
     val fullCategory: Boolean = false,
 ) {
+    init {
+        require(page in 1..1000 && pageSize in 1..100) { "页码需在 1–1000 之间，每页需在 1–100 之间。" }
+        require(exactRank == null || exactRank in 0..100) { "等级需在 0–100 之间。" }
+        require(rankSelection != MarketRankSelection.EXACT || exactRank != null) { "EXACT 模式必须提供 exactRank。" }
+        require(exactRank == null || rankSelection == MarketRankSelection.EXACT) { "exactRank 只能与 EXACT 模式一起使用。" }
+        require(category != null || page == 1) { "综合榜不分页，请指定分类或 ALL。" }
+        require(!fullCategory || category != null && category != MarketItemCategory.ALL && page == 1) {
+            "分类全榜需指定具体分类，且不能同时指定页码。"
+        }
+    }
+
     fun criteria(forCategory: MarketItemCategory, size: Int = pageSize): MarketRankingCriteria {
         val requested = rankSelection ?: defaultRank(forCategory, overview = category == null)
         // 套装和普通成品武器无可升级等级，允许复用 MAX 等级筛选。
