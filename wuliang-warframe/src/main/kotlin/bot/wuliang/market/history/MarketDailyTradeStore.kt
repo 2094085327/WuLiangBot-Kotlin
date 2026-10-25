@@ -1,76 +1,60 @@
 package bot.wuliang.market.history
 
-import bot.wuliang.mapper.MarketCollectionMapper
+import bot.wuliang.entity.WfMarketItemEntity
 import bot.wuliang.mapper.MarketDailyTradeMapper
-import bot.wuliang.market.MarketProperties
+import bot.wuliang.mapper.WfMarketItemMapper
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Service
 class MarketDailyTradeStore(
     private val mapper: MarketDailyTradeMapper,
-    private val sync: MarketCollectionMapper,
-    private val properties: MarketProperties,
+    private val items: WfMarketItemMapper,
 ) {
-    /** 空结果表示当日没有可用成交聚合 */
-    @Transactional
-    fun save(itemId: String, day: LocalDate, records: List<MarketDailyTradeAverage>) {
-        require(records.all { it.itemId == itemId && it.tradeDay == day && it.platform == properties.statistics.platform && it.source == MarketDailyTradeAverage.SOURCE })
-        mapper.deleteItemDay(itemId, properties.statistics.platform, MarketDailyTradeAverage.SOURCE, day)
-        records.chunked(100).forEach(mapper::insertRecords)
-        sync.markDataSuccess(
-            itemId,
-            properties.statistics.platform,
-            MarketDailyTradeAverage.SOURCE,
-            System.currentTimeMillis(),
-            day
-        )
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = [Exception::class], timeout = 30)
+    fun saveCatalogBatch(catalog: List<WfMarketItemEntity>, ensureLease: () -> Unit) {
+        ensureLease()
+        items.upsertCatalogMetadata(catalog)
+        ensureLease()
     }
 
-    /** 决定额外保留哪一天。 */
-    fun previousDataDay(day: LocalDate): LocalDate? = mapper.selectPreviousDataDay(
-        properties.statistics.platform, MarketDailyTradeAverage.SOURCE, day,
-    )
+    /** 每 500 条独立提交；重试按主键覆盖。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = [Exception::class], timeout = 30)
+    fun saveTradeBatch(records: List<MarketDailyTradeAverage>, ensureLease: () -> Unit) {
+        ensureLease()
+        mapper.insertRecords(records)
+        ensureLease()
+    }
 
-    /** 持久化逐商品批次事实，事务提交后调用方才能更新 Redis 发布标记。 */
-    @Transactional
-    fun checkpointPublication(day: LocalDate): MarketCollectionProgress? {
-        val progress = sync.selectProgress(
-            properties.statistics.platform, MarketDailyTradeAverage.SOURCE,
-            day, properties.statistics.dailyRetryLimit + 1
-        )
-        if (!progress.publishable || mapper.countDay(
-                properties.statistics.platform,
-                MarketDailyTradeAverage.SOURCE,
-                day
-            ) == 0L
-        ) {
-            return null
+    /** 读到文件末尾后，事务内清理旧重试残留并核对数量；返回后才更新 Redis 发布日。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = [Exception::class], timeout = 30)
+    fun finalizeImport(
+        day: LocalDate,
+        imported: MarketDailyTradeImport,
+        ensureLease: () -> Unit
+    ): MarketTradePublication {
+        ensureLease()
+        mapper.deleteStaleDay(day, imported.fetchedAt)
+        check(mapper.countImportedRecords(day, imported.fetchedAt) == imported.recordCount) {
+            "归档入库数量与完整文件不符，保留旧榜"
         }
-        sync.checkpointPublication(properties.statistics.platform, MarketDailyTradeAverage.SOURCE, day)
-        return progress
+        val publication =
+            MarketTradePublication(day, System.currentTimeMillis(), imported.itemCount, imported.recordCount)
+        ensureLease()
+        return publication
     }
 
-    fun publicationCheckpoint(): MarketPublicationCheckpoint? = sync.selectPublicationCheckpoint(
-        properties.statistics.platform, MarketDailyTradeAverage.SOURCE,
-    )
+    /** 只保留最近两期已发布数据，清理其他日的残留。 */
+    fun deleteExpiredBatch(day: LocalDate, previousDay: LocalDate): Int =
+        mapper.deleteExpired(day, previousDay)
 
-    /** 只保留本轮目标日和仍在展示的旧日。 */
-    fun deleteExpiredBatch(targetDay: LocalDate, previousDay: LocalDate): Int = mapper.deleteExpired(
-        properties.statistics.platform, MarketDailyTradeAverage.SOURCE, targetDay, previousDay, 5000,
-    )
-
-    /** 查询固定完整UTC日，所有商品同一统计窗口。 */
     fun ranking(
         criteria: MarketRankingCriteria,
         day: LocalDate,
-        limit: Int = criteria.pageSize + 1
+        limit: Int = criteria.pageSize + 1,
     ): List<MarketDailyTradeAverage> {
-        require(limit > 0)
-        return mapper.selectRanking(
-            properties.statistics.platform, MarketDailyTradeAverage.SOURCE, day,
-            criteria, (criteria.page - 1L) * criteria.pageSize, limit
-        )
+        return mapper.selectRanking(day, criteria, (criteria.page - 1L) * criteria.pageSize, limit)
     }
 }

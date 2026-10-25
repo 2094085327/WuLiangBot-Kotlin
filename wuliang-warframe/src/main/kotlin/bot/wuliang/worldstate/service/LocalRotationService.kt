@@ -127,14 +127,13 @@ class LocalRotationService(
         rivenRankingService.refreshRanking()
         val rivenPriceList = redisService.getValueTyped<List<Riven>>(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY))
 
-        /** 将钢铁回廊候选转换为名称、倾向和紫卡价格，缺少价格时使用零值。 */
+        /** 将钢铁回廊候选转换为名称和紫卡价格，缺少价格时使用零值。 */
         fun processSteelItems(steelJsonNode: JsonNode): List<Incarnon.SteelItem> {
             return steelJsonNode["items"].map { item ->
                 val urlName = item["url_name"].textValue()
                 val adapter = translations.index().incarnonAdapter(urlName)
                 Incarnon.SteelItem(
                     name = translations.name(adapter ?: urlName),
-                    riven = item["riven"].doubleValue(),
                     urlName = urlName,
                     rivenPrice = rivenPriceList?.find {
                         it.compatibilityId.equals(urlName.replace('_', ' '), ignoreCase = true)

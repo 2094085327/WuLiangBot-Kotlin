@@ -13,9 +13,4 @@ data class MarketRankingCriteria(
     val page: Int = 1,
     val pageSize: Int = 20,
     val metric: MarketRankingMetric = MarketRankingMetric.TRADE_AVERAGE,
-) {
-    init {
-        require(page >= 1 && pageSize in 1..100)
-        require(rankSelection != MarketRankSelection.EXACT || (exactRank != null && exactRank >= 0))
-    }
-}
+)

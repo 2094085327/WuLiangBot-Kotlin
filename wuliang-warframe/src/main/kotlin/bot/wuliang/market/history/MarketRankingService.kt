@@ -1,6 +1,5 @@
 package bot.wuliang.market.history
 
-import bot.wuliang.market.MarketProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -39,14 +38,11 @@ data class MarketRankingSection(
 )
 
 data class MarketRankingResult(
-    val platform: String,
-    val source: String,
     val metric: MarketRankingMetric,
     val metricLabel: String,
     val descending: Boolean,
     val overview: Boolean,
     val generatedAt: Long,
-    val notice: String,
     val sections: List<MarketRankingSection>,
     val tradeDay: LocalDate? = null,
     val publication: MarketTradePublication? = null,
@@ -57,18 +53,9 @@ data class MarketRankingResult(
 class MarketRankingService(
     private val trades: MarketDailyTradeStore,
     private val publications: MarketTradePublicationService,
-    private val properties: MarketProperties,
     private val objectMapper: ObjectMapper,
 ) {
     fun query(request: MarketRankingRequest): MarketRankingResult {
-        require(request.page in 1..1000 && request.pageSize in 1..100) { "页码需在 1–1000 之间，每页需在 1–100 之间。" }
-        require(request.exactRank == null || request.exactRank in 0..100) { "等级需在 0–100 之间。" }
-        require(request.rankSelection != MarketRankSelection.EXACT || request.exactRank != null) { "EXACT 模式必须提供 exactRank。" }
-        require(request.exactRank == null || request.rankSelection == MarketRankSelection.EXACT) { "exactRank 只能与 EXACT 模式一起使用。" }
-        require(request.category != null || request.page == 1) { "综合榜不分页，请指定分类或 ALL。" }
-        require(!request.fullCategory || request.category != null && request.category != MarketItemCategory.ALL && request.page == 1) {
-            "分类全榜需指定具体分类，且不能同时指定页码。"
-        }
         val categories = request.category?.let(::listOf) ?: OVERVIEW_CATEGORIES
         val publication = publications.current()
         val tradeDay = publication?.tradeDay
@@ -91,18 +78,14 @@ class MarketRankingService(
             )
         }
         return MarketRankingResult(
-            properties.statistics.platform,
-            MarketDailyTradeAverage.SOURCE,
-            request.metric,
-            metricLabel(request.metric),
-            request.descending,
-            request.category == null,
-            System.currentTimeMillis(),
-            if (publication == null) "首个完整UTC日正在同步，成功处理率达到99%且有有效成交数据后发布。"
-            else "使用WM已关闭订单统计中 $tradeDay（UTC完整日）的${metricSource(request.metric)}；${if (request.metric == MarketRankingMetric.TRADE_VOLUME) "成交量单位：件" else "价格单位：白金"}，各规格独立，不是游戏官方成交记录。已成功处理 ${publication.processedItems}/${publication.totalItems} 件，缺项 ${publication.pendingItems} 件；失败商品不使用旧日价格补位。MOD排除PVP、恐鸟及上游明确标识的Atragraph；无法识别上游未报告的subtype。",
-            sections,
-            tradeDay,
-            publication,
+            metric = request.metric,
+            metricLabel = metricLabel(request.metric),
+            descending = request.descending,
+            overview = request.category == null,
+            generatedAt = System.currentTimeMillis(),
+            sections = sections,
+            tradeDay = tradeDay,
+            publication = publication,
         )
     }
 
@@ -168,11 +151,5 @@ class MarketRankingService(
             MarketRankingMetric.TRADE_VOLUME -> "每日成交量"
         }
 
-        private fun metricSource(metric: MarketRankingMetric): String = when (metric) {
-            MarketRankingMetric.TRADE_AVERAGE -> "wa_price成交加权均价"
-            MarketRankingMetric.TRADE_MIN_PRICE -> "min_price最低成交价"
-            MarketRankingMetric.TRADE_MAX_PRICE -> "max_price最高成交价"
-            MarketRankingMetric.TRADE_VOLUME -> "volume成交量"
-        }
     }
 }

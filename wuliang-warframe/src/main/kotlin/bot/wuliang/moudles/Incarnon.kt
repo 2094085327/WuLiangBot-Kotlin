@@ -24,7 +24,6 @@ data class Incarnon(
 
     data class SteelItem(
         val name: String? = null,
-        val riven: Double? = null,
         val urlName: String? = null,
         val rivenPrice: Double? = null,
     )
