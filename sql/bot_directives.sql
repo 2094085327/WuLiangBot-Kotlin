@@ -33,6 +33,14 @@ INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `d
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '更新词库', '同步Warframe市场目录', '同步Market物品、武器目录及紫卡属性中文', '\\b更新词库\\b', 1, 0, NOW());
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, 'wm', 'wm市场物品查询', '使用指令「wm 物品名」来查询Warframe Market上的物品订单\n如「wm Saryn Prime Set」，支持中文模糊查询', '(?i)\\bwm\\s*(\\S+.*)$', 1, 0, NOW());
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, 'wr', 'wm市场紫卡查询', '使用指令「wr 物品名 词条」来查询Warframe Market上的紫卡订单\n如「wr 战刃 暴击 无负」，支持中文模糊查询', '(?i)\\b(wr|wmr)\\s*(\\S+.*)$', 1, 0, NOW());
+INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '紫卡分析', '分析紫卡图片或文字词条', '发送「紫卡分析」和一张紫卡图片；或先发送指令，再于1分钟内发送图片。图片可用「紫卡分析 等级8」指定等级。文字示例：紫卡分析 -文字 绝路/+220.9% 伤害/+108.6% 触发几率', CONCAT(
+        '^紫卡分析(?:', CHAR(92 USING utf8mb4),
+        's+(?:等级', CHAR(92 USING utf8mb4),
+        's*)?([0-8])|', CHAR(92 USING utf8mb4),
+        's+-文字(?:', CHAR(92 USING utf8mb4),
+        's+[', CHAR(92 USING utf8mb4),
+        's', CHAR(92 USING utf8mb4), 'S]*)?)?$'
+    ), 1, 0, NOW());
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, 'wl', 'wm市场玄骸查询', '使用指令「wl 物品名 有无幻纹 属性 伤害数值等」来查询Warframe Market上的玄骸订单\n如「wl 信条·冷冻光束步枪 火 无 60」，支持中文模糊查询', '(?i)\\bwl\\s*(\\S+.*)$', 1, 0, NOW());
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '裂缝', '裂缝信息', '获取 Warframe 普通裂缝的信息', '\\b(裂缝|裂隙)\\b', 1, 0, NOW());
 INSERT INTO `bot_directives` (`category_id`, `directive_name`, `description`, `detail`, `regex`, `enable`, `del_status`, `create_time`) VALUES (2, '钢铁裂缝', '钢铁裂缝信息', '获取 Warframe 钢铁裂缝的信息', '\\b(钢铁裂缝|钢铁裂隙)\\b', 1, 0, NOW());

@@ -13,10 +13,10 @@ object WfMarketConfig {
     /** Warframe缓存key*/
     const val WF_MARKET_CACHE_KEY = "Wuliang:Warframe:"
 
-    /** Wiki 原始英文轮换记录，与翻译版本无关；按来源、武器类型和轮换期隔离。 */
-    const val WF_WIKI_WEAPON_ROTATION_KEY_PREFIX = WF_MARKET_CACHE_KEY + "wikiWeaponRotation:v1:"
+    /** Wiki 原始英文轮换记录 */
+    const val WF_WIKI_WEAPON_ROTATION_KEY_PREFIX = WF_MARKET_CACHE_KEY + "wikiWeaponRotation:"
 
-    /** Market 物品查询独立缓存，避免复用统一游戏词库时期缓存的英文套装名。 */
+    /** Market 物品查询独立缓存 */
     const val WF_MARKET_ITEM_LEXICON_KEY_PREFIX = WF_MARKET_CACHE_KEY + "marketItems:lexicon:"
 
     /**
@@ -40,9 +40,9 @@ object WfMarketConfig {
     const val WF_STEELPATH_KEY = WF_MARKET_CACHE_KEY + "steelPath"
 
     /**
-     * 虚空商人缓存；版本升级隔离旧逻辑可能写入的整次到访空库存。
+     * 虚空商人缓存
      */
-    const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader:v2"
+    const val WF_VOIDTRADER_KEY = WF_MARKET_CACHE_KEY + "voidTrader"
 
     /**
      * 玄骸缓存
@@ -94,12 +94,7 @@ object WfMarketConfig {
      */
     const val WF_RIVEN_REROLLED_KEY = WF_MARKET_CACHE_KEY + "riven:rerolled"
 
-    /**
-     * 紫卡Market Riven数据
-     */
-    const val WF_MARKET_RIVEN_KEY = WF_MARKET_CACHE_KEY + "riven:market"
-
-    /** 单次紫卡查询结果；实际 Redis key 会追加请求 UUID。 */
+    /** 单次紫卡查询结果 */
     const val WF_RIVEN_RESULT_KEY_PREFIX = WF_MARKET_CACHE_KEY + "riven:result:"
 
     /**

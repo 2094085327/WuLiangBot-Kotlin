@@ -10,6 +10,9 @@ data class RivenAttributeDefinition(
     val unit: String?,
 )
 
+/** 卡名完整性校验。 */
+data class RivenNameAffix(val attribute: String, val prefix: String, val suffix: String)
+
 object RivenGroups {
     const val LICH = "lich"
     const val SISTER = "sister"

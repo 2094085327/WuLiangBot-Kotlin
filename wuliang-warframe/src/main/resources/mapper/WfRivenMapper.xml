@@ -26,7 +26,8 @@
             url_name AS urlName,
             en AS enName,
             zh AS zhName,
-            r_group AS rGroup
+            r_group AS rGroup,
+            riven_type AS rivenType
         FROM wf_riven
         WHERE r_group NOT IN ('lich', 'sister')
         ORDER BY url_name

@@ -16,6 +16,10 @@ class MarketProperties {
     var maxAttempts = 3
     var historyCacheSeconds = 1800L
     var statistics = Statistics()
+    /**
+     * 合约搜索与其他 Market 请求同时受全局预算约束。
+     */
+    var contractSearchRequestsPerMinute = 4
 
     class Statistics {
         var enabled = true
@@ -38,6 +42,7 @@ class MarketProperties {
         require(backgroundRequestsPerSecond in 1..2 && backgroundRequestsPerSecond <= globalRequestsPerSecond)
         require(requestTimeoutSeconds in 1..120 && maxAttempts in 1..5)
         require(historyCacheSeconds in 60..86400)
+        require(contractSearchRequestsPerMinute in 1..10)
         require(statistics.dailySyncUtcHour in 0..23)
         require(statistics.dailySyncUtcMinute in 0..59)
         require(statistics.historyRequestTimeoutSeconds in 30..600)

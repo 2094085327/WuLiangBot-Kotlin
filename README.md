@@ -79,7 +79,7 @@ cd WuLiangBot-Kotlin
 
 在使用本机器人前需要配置配置文件,配置文件放置于`wuliang-admin/src/main/resources`目录下.
 <details>
-<summary>application.yml</summary>
+<summary>application.yaml</summary>
 
 ```yaml
 server:
@@ -91,10 +91,6 @@ spring:
     pathmatch:
       matching-strategy: ant-path-matcher
   profiles.active: prod
-
-  redis:
-    host: 127.0.0.1
-    port: 6379
 
 frontend:
   port: 16666
@@ -113,7 +109,7 @@ logging:
     # 日志文件最大大小
     max-size: 50MB
   level:
-    bot.wuliang: debug
+    bot.wuliang: info
     # 日志文件配置
   config: classpath:logback-spring.xml
 
@@ -137,10 +133,8 @@ mybatis-plus:
     map-underscore-to-camel-case: true
     # 如果查询结果中包含空值的列，则 MyBatis 在映射的时候，不会映射这个字段
     call-setters-on-nulls: true
-    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    # 关闭日志
-    # log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    # 调试时可启用org.apache.ibatis.logging.stdout.StdOutImpl。
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 ```
 
 </details>
@@ -167,9 +161,9 @@ qi_niu:
     # 存储桶名称
     bucket: "your_bucket_name"
     # 七牛云域名
-    url: "http://your-domain.com/"
+    url: "https://qiniu.example.com/"
     # 路径前缀
-    path: "img/"
+    path: "images/"
     # 策略过期时间(秒)
     policy_expire: 3600
 
@@ -185,14 +179,15 @@ tencent:
     # 存储桶名称
     bucket: "your_bucket_name"
     # 腾讯云COS域名
-    url: "https://your-cos-domain.com/"
+    url: "https://cos.example.com/"
     # 路径前缀
-    path: "img/"
+    path: "images/"
     # 策略过期时间(秒)
     policy_expire: 3600
     # 编码格式
     code_format: "UTF-8"
- 
+
+
 # 百度云平台OCR配置
 aip_ocr:
   # 应用ID
@@ -220,57 +215,74 @@ github:
   # GitHub访问令牌
   access-token: "your_github_access_token"
 
-# Warframe 数据源、翻译资源及缓存配置（代码入口：WarframeProperties.kt）
+# Warframe 世界状态词库数据源配置
 warframe:
   market:
+    # 普通物品的每日成交统计同步。
     statistics:
+      # 是否启用每日成交归档同步。
       enabled: true
+      # 下载历史归档的单次请求超时，秒；范围30～600。
       history-request-timeout-seconds: 120
+      # UTC 02:30 = 北京时间 10:30，同步前一完整 UTC 日。
+      # 每日同步的UTC小时，范围0～23。
       daily-sync-utc-hour: 2
+      # 每日同步的分钟，范围0～59。
       daily-sync-utc-minute: 30
+      # 归档未发布或同步失败时，每小时重试；成功后等待下一日。
+      # 重试间隔，小时；范围1～168。
       interval-hours: 1
-  official-export:
-    index-base-url: "https://origin.warframe.com/PublicExport/"
-    content-base-url: "https://content.warframe.com/PublicExport/Manifest/"
+    # 紫卡合约搜索每分钟的请求上限，与其他WM请求共用全局限流。
+    # 用户查询、分析补采和预热共用此分钟额度。
+    contract-search-requests-per-minute: 4
+    # 紫卡样本、价格参考和热门武器预热。
+    riven-samples:
+      # 样本入库、价格参考和维护总开关；关闭后用户查询短缓存仍可用。
+      enabled: true
+      # 非空查询结果的缓存时长，秒；范围60～3600。
+      cache-seconds: 600
+      # 成功空结果的缓存时长，秒；不短于cache-seconds，最多86400。
+      empty-cache-seconds: 1800
+      # 同一查询条件失败后的冷却时长，分钟；范围1～1440。
+      failure-cooldown-minutes: 15
+      # 每UTC日预热与分析补采的总额度；USER另计，共用分钟限流。
+      daily-limit: 140
+      analysis:
+        # 缓存不占额；发送前占额，失败或崩溃不返还。
+        daily-limit: 40
+        refresh-hours: 6
+        weapon-interval-minutes: 60
+      # 三类价格参考的观察窗口，小时；范围1～168，与observation-max-hours取较小值。
+      reference-max-age-hours: 72
+      # 距最近观察超过此小时数时，样本无效；范围1～168。
+      observation-max-hours: 72
+      # 相似估价和零洗参考各次读取的样本上限，条；范围100～10000。
+      maximum-reference-samples: 2000
+      # 每日热门预热；只有上面的样本总开关开启时才生效。
+      warmup:
+        # 是否启用预热；关闭后仍保留按需查询和样本清理。
+        enabled: true
+        # 每UTC日最多100次，给分析补采保留40次；北京时间08:00重置。
+        daily-limit: 100
+        # 两次预热尝试的最小间隔，秒；范围30～3600，共用Redis的实例共享。
+        interval-seconds: 300
+        weapon-limit: 50
+        hot-weapon-count: 10
+        hot-refresh-hours: 4
+        refresh-hours: 24
   public-export-plus:
-    # owner/repo 格式，可替换为上游或自己的 fork
+    # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
     repository: "2094085327/warframe-public-export-plus"
     branch: "senpai"
     directory: "resources/warframe/public-export-plus"
-  languages-bin:
-    repository: "calamity-inc/warframe-languages-bin-data"
-    branch: "senpai"
-  # GitHub API 认证仍使用 github.access-token；令牌不会附加到 raw 或官方请求
-  github-export:
-    api-base-url: "https://api.github.com/"
-    raw-base-url: "https://raw.githubusercontent.com/"
-    api-version: "2022-11-28"
-  # 官方导出和两个 GitHub 数据源共享连接池，单位均为秒
-  export-http:
-    connect-timeout-seconds: 15
-    read-timeout-seconds: 90
-    call-timeout-seconds: 120
-  world-state:
-    url: "https://api.warframe.com/cdn/worldState.php"
-    cache-seconds: 300          # 30..600；激活/结束及 UTC 日更边界可提前失效
-    retry-seconds: 30           # 失败退避、轮换发布延迟、Baro 空库存缓存共用
-    stale-seconds: 1800         # 允许使用旧快照的最长时间，不小于 cache-seconds
-    request-timeout-seconds: 20
-  # 本地修正资源，修改内容后重启加载
-  sortie-data: "resources/warframe/data/sortieData.json"
-  conquest-data: "resources/warframe/data/conquestData.json"
-  calendar-upgrades: "resources/warframe/data/calendarUpgrades.json"
-  translation-aliases: "resources/warframe/data/translationAliases.json"
-  spiral-translations: "resources/warframe/data/spiralTranslations.json"
-  synthesis-locations: "resources/warframe/data/synthesis-locations.json"
 
 # 项目自定义配置
 wuLiang:
   config:
     # 图床路径，用于自动更新图片
-    gallery: "https://your-gallery-domain.com/"
+    gallery: "your_gallery_path"
     # 原神本地图片路径
-    localPath: "resources/Image/Genshin/"
+    localPath: "./images/genshin/"
     # 后台管理账号密码
     userName: "your_admin_username"
     password: "your_admin_password"
@@ -297,9 +309,9 @@ spring:
   # Redis配置
   redis:
     # Redis主机地址
-    host: your_redis_host
+    host: "127.0.0.1"
     # Redis端口
-    port: your_redis_port
+    port: 6379
     # Redis密码
     password: "your_redis_password"
   # Thymeleaf模板引擎配置
@@ -311,7 +323,7 @@ spring:
     # 模板模式
     mode: HTML5
     # 是否启用缓存
-    cache: false
+    cache: true
   # 数据源配置
   datasource:
     # 数据库驱动类名
@@ -319,21 +331,21 @@ spring:
     # 数据库连接URL
     url: jdbc:mariadb://your_host:port/database
     # 数据库用户名
-    username: your_database_username
+    username: "your_database_username"
     # 数据库密码
-    password: your_database_password
+    password: "your_database_password"
     # 数据源类型
     type: com.alibaba.druid.pool.DruidDataSource
     # Druid连接池配置
     druid:
       # 初始化连接数
-      initial-size: 5
+      initial-size: 1
       # 最小空闲连接数
-      min-idle: 5
+      min-idle: 1
       # 最大活跃连接数
-      max-active: 20
+      max-active: 6
       # 获取连接等待超时的时间
-      max-wait: 60000
+      max-wait: 5000
       # 连接有效性检测SQL
       validation-query: SELECT 1
       # 验证查询超时时间
@@ -341,7 +353,7 @@ spring:
       # 空闲时是否验证连接有效性
       test-while-idle: true
       # 获取连接时是否验证有效性
-      test-on-borrow: true
+      test-on-borrow: false
       # 归还连接时是否验证有效性
       test-on-return: false
       # 是否开启连接保活机制
@@ -383,21 +395,21 @@ spring:
       # 是否允许重置统计
       reset-enable: true
       # 监控页面登录用户名
-      login-username: your_druid_username
+      login-username: "your_druid_username"
       # 监控页面登录密码
-      login-password: your_druid_password
+      login-password: "your_druid_password"
       # 允许访问的IP地址
       allow: 127.0.0.1
   # RabbitMQ消息队列配置
   rabbitmq:
     # RabbitMQ主机地址
-    host: your_rabbitmq_host
+    host: "127.0.0.1"
     # RabbitMQ端口
-    port: your_rabbitmq_port
+    port: 5672
     # RabbitMQ用户名
-    username: your_rabbitmq_username
+    username: "your_rabbitmq_username"
     # RabbitMQ密码
-    password: your_rabbitmq_password
+    password: "your_rabbitmq_password"
     # 消息发送到交换机确认机制
     publisher-confirm-type: correlated
     # 消息发送到队列确认机制
@@ -448,7 +460,7 @@ mybatis-plus:
 logging:
   level:
     # 项目日志级别
-    bot.demo.txbot: error
+    bot.wuliang: info
     # 腾讯云SDK日志级别
     com.qcloud: error
 

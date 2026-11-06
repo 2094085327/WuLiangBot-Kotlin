@@ -233,7 +233,7 @@ class PublicExportService(
 
     companion object {
         private val CONQUEST_KEY_PATTERN = Regex("[A-Za-z][A-Za-z0-9_]*")
-        const val UNAVAILABLE_MESSAGE = "Warframe 词库尚未初始化，请管理员执行“更新世界状态词库”"
+        const val UNAVAILABLE_MESSAGE = "Warframe 词库尚未初始化，请执行“更新世界状态词库”"
     }
 }
 

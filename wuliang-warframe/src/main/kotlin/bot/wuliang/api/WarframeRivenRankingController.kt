@@ -1,12 +1,8 @@
 package bot.wuliang.api
 
-import bot.wuliang.config.WfMarketConfig.WF_RIVEN_REROLLED_KEY
-import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.exception.RespBean
 import bot.wuliang.moudles.Riven
-import bot.wuliang.redis.RedisService
 import bot.wuliang.riven.RivenRankingService
-import bot.wuliang.translation.PublicExportService
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/warframe")
 class WarframeRivenRankingController(
     private val rivenRankingService: RivenRankingService,
-    private val translations: PublicExportService,
-    private val redisService: RedisService,
 ) {
 
     /**
@@ -38,30 +32,18 @@ class WarframeRivenRankingController(
         @RequestParam("sort") sort: String? = "desc",
         @RequestParam("rerolled") rerolled: Boolean = false
     ): RespBean<out List<Riven>> {
-        if (!redisService.hasKey(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY)) || !redisService.hasKey(
-                translations.cacheKey(
-                    WF_RIVEN_REROLLED_KEY
-                )
-            )
-        ) {
-            rivenRankingService.refreshRanking()
-        }
-
-        val redisKey = if (rerolled) translations.cacheKey(WF_RIVEN_REROLLED_KEY) else translations.cacheKey(
-            WF_RIVEN_UN_REROLLED_KEY
-        )
-        val rivenList = redisService.getValueTyped<List<Riven>>(redisKey) ?: return RespBean.error()
+        val rivenList = rivenRankingService.ranking(rerolled)
         val result = if (type != null) rivenList.filter { it.itemType == type } else rivenList
 
         val filteredResult = result.filter { it.median != null }
 
         val sortResult = when (sort ?: "desc") {
-            "asc" -> filteredResult.sortedWith(compareBy({ it.pop ?: 0 }, { it.median }))
+            "asc" -> filteredResult.sortedWith(compareBy({ it.pop ?: 0.0 }, { it.median }))
             "desc" -> filteredResult.sortedWith(compareByDescending<Riven> {
-                it.pop ?: 0
+                it.pop ?: 0.0
             }.thenByDescending { it.median })
 
-            else -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0 }.thenByDescending { it.median })
+            else -> filteredResult.sortedWith(compareByDescending<Riven> { it.pop ?: 0.0 }.thenByDescending { it.median })
         }
 
         return RespBean.success(sortResult)

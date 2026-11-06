@@ -7,9 +7,6 @@ import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.qiNiuCos.QiNiuService
 import bot.wuliang.tencentCos.CosFileServiceImpl
 import com.luciad.imageio.webp.WebPWriteParam
-import com.microsoft.playwright.ElementHandle
-import com.microsoft.playwright.Page
-import com.microsoft.playwright.Playwright
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -37,7 +34,8 @@ class WebImgUtil(
     @Value("\${web_config.port}") var usePort: String,
     @Value("\${web_config.img_bed_path}") var imgBedPath: String,
     @Value("\${frontend.port}") var frontendPort: String,
-    @Value("\${frontend.host}") var frontendHost: String
+    @Value("\${frontend.host}") var frontendHost: String,
+    private val renderer: WebScreenshotRenderer,
 ) {
     @Autowired
     private lateinit var qiNiuService: QiNiuService
@@ -213,35 +211,12 @@ class WebImgUtil(
     }
 
     fun getImgByte(imgData: ImgData): ByteArray {
-        val playwright = Playwright.create()
-        val browser = playwright.chromium().launch()
-        val page: Page = browser.newPage()
-        try {
-            if (imgData.data != null) {
-                page.addInitScript("window.INJECTED_DATA = " + imgData.data)
-            }
-
-            page.navigate(imgData.url)
-            var byteArray = page.screenshot(Page.ScreenshotOptions().setFullPage(true))
-
-            if (imgData.element != null) {
-                page.waitForSelector(imgData.waitElement)
-                val body: ElementHandle = page.querySelector(imgData.element)!!
-                // 截图
-                byteArray = body.screenshot(ElementHandle.ScreenshotOptions())
-            }
-
-            if (imgData.scale != null) {
-                val thumbnailBuilder = Thumbnails.of(byteArray.inputStream()).scale(imgData.scale).asBufferedImage()
-                byteArray = bufferedImageToByteArray(thumbnailBuilder, imgData.imageType!!)
-            }
-
-            return byteArray
-        } finally {
-            // 确保资源被正确关闭
-            page.close()
-            browser?.close()
-            playwright?.close()
+        val bytes = renderer.render(imgData)
+        return if (imgData.scale != null && imgData.scale != 1.0) {
+            val scaled = Thumbnails.of(bytes.inputStream()).scale(imgData.scale).asBufferedImage()
+            bufferedImageToByteArray(scaled, imgData.imageType!!)
+        } else {
+            bytes
         }
     }
 
