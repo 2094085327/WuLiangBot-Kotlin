@@ -12,29 +12,36 @@ class DatabaseRivenAttributeCatalog(
     @Volatile
     private var snapshot: CatalogSnapshot? = null
 
+    /** 复用属性快照中的词根，不重新查询属性表。 */
+    fun nameAffixes(): List<RivenNameAffix> = currentSnapshot().nameAffixes
+
     /** 按完整名称、常用别名、连续包含、中文跳字匹配的优先级解析，只在同一层级保留歧义。 */
     override fun resolve(name: String): RivenAttributeMatch {
-        val normalizedName = name.trim()
+        val normalizedName = RivenAttributeAliases.normalize(name)
         if (normalizedName.isEmpty()) return RivenAttributeMatch.Unknown
         val catalog = currentSnapshot()
         val exact = catalog.definitions.filter {
-            it.zhName == normalizedName || it.enName.equals(normalizedName, ignoreCase = true) ||
-                    it.slug.equals(normalizedName, ignoreCase = true)
+            RivenAttributeAliases.normalize(it.zhName) == normalizedName ||
+                    RivenAttributeAliases.normalize(it.enName) == normalizedName ||
+                    RivenAttributeAliases.normalize(it.slug) == normalizedName
         }
         if (exact.isNotEmpty()) return exact.toMatch()
 
         // 别名直接绑定协议标识，不再对其目标做模糊匹配，避免命中其他属性。
-        ATTRIBUTE_ALIASES[normalizedName]?.let { slug ->
+        RivenAttributeAliases.slugFor(normalizedName)?.let { slug ->
             return catalog.definitionsBySlug[slug]?.let(RivenAttributeMatch::Found)
                 ?: RivenAttributeMatch.Unknown
         }
 
         val contained = catalog.definitions.filter {
-            it.zhName.contains(normalizedName) || it.enName.contains(normalizedName, ignoreCase = true)
+            RivenAttributeAliases.normalize(it.zhName).contains(normalizedName) ||
+                    RivenAttributeAliases.normalize(it.enName).contains(normalizedName)
         }
         if (contained.isNotEmpty()) return contained.toMatch()
 
-        return catalog.definitions.filter { it.zhName.containsCharactersInOrder(normalizedName) }.toMatch()
+        return catalog.definitions.filter {
+            RivenAttributeAliases.normalize(it.zhName).containsCharactersInOrder(normalizedName)
+        }.toMatch()
     }
 
     /** 同一优先级中只有一个候选时才自动选取。 */
@@ -74,16 +81,26 @@ class DatabaseRivenAttributeCatalog(
     /** 使用刚完成同步的数据原子替换查询快照，避免再次读取数据库。 */
     @Synchronized
     fun refresh(entities: Collection<WfRivenAttributeEntity>) {
-        snapshot = CatalogSnapshot.from(entities.mapNotNull(::toDefinition))
+        snapshot = buildSnapshot(entities)
     }
 
     /**
      * 首次查询时从独立属性表构建快照，后续由同步流程主动刷新，避免每次查询访问数据库。
      */
     private fun currentSnapshot(): CatalogSnapshot = snapshot ?: synchronized(this) {
-        snapshot ?: CatalogSnapshot.from(
-            attributeMapper.selectList(null).mapNotNull(::toDefinition)
-        ).also { snapshot = it }
+        snapshot ?: buildSnapshot(attributeMapper.selectList(null)).also { snapshot = it }
+    }
+
+    private fun buildSnapshot(entities: Collection<WfRivenAttributeEntity?>): CatalogSnapshot {
+        val affixes = entities.mapNotNull { entity ->
+            entity ?: return@mapNotNull null
+            val attribute = entity.urlName ?: return@mapNotNull null
+            val prefix = entity.prefix?.trim()?.lowercase() ?: return@mapNotNull null
+            val suffix = entity.suffix?.trim()?.lowercase() ?: return@mapNotNull null
+            if (!NAME_PART.matches(prefix) || !NAME_PART.matches(suffix)) return@mapNotNull null
+            RivenNameAffix(attribute, prefix, suffix)
+        }.distinct()
+        return CatalogSnapshot.from(entities.mapNotNull(::toDefinition), affixes)
     }
 
     /** 判断 [query] 的字符是否作为子序列按顺序出现在当前字符串中，空查询不匹配。 */
@@ -138,48 +155,21 @@ class DatabaseRivenAttributeCatalog(
     }
 
     companion object {
+        private val NAME_PART = Regex("[a-z]+")
         private const val MAX_SUGGESTION_DISTANCE = 0.6
-
-        /** 常用写法统一映射到 Market slug，不依赖中文译名是否带“几率”“伤害”等后缀。 */
-        private val ATTRIBUTE_ALIASES = buildMap {
-            fun aliases(slug: String, vararg names: String) {
-                names.forEach { put(it, slug) }
-            }
-
-            aliases("critical_chance", "暴击", "爆击", "暴击率", "爆击率", "暴击几率", "爆击几率")
-            aliases("critical_damage", "暴伤", "爆伤", "暴击伤害", "爆击伤害")
-            aliases("base_damage_/_melee_damage", "伤害", "基础伤害", "基伤", "近战伤害")
-            aliases("fire_rate_/_attack_speed", "射速", "攻速", "攻击速度", "射速/攻击速度")
-            aliases("multishot", "多重", "多重射击")
-            aliases("toxin_damage", "毒伤", "毒素", "毒素伤害")
-            aliases("cold_damage", "冰伤", "冰冻", "冰冻伤害")
-            aliases("heat_damage", "火伤", "火焰", "火焰伤害")
-            aliases("electric_damage", "电伤", "电击", "电击伤害")
-            aliases("impact_damage", "冲击", "冲击伤害")
-            aliases("puncture_damage", "穿刺", "穿刺伤害")
-            aliases("slash_damage", "切割", "切割伤害")
-            aliases("status_chance", "触发", "触发率", "触发几率", "异常几率", "异常状态几率")
-            aliases("status_duration", "触发时间", "触发持续时间", "异常持续时间", "异常状态持续时间")
-            aliases("projectile_speed", "弹速", "投射物速度", "投射物飞行速度")
-            aliases("reload_speed", "装填", "装填速度", "换弹", "换弹速度")
-            aliases("magazine_capacity", "弹匣", "弹匣容量")
-            aliases("ammo_maximum", "弹药", "弹药上限")
-            aliases("punch_through", "穿透")
-            aliases("range", "范围", "攻击范围")
-            aliases("recoil", "后坐", "后坐力")
-            aliases("zoom", "变焦", "变焦倍率")
-        }
     }
 
     private data class CatalogSnapshot(
         val definitions: List<RivenAttributeDefinition>,
         val definitionsBySlug: Map<String, RivenAttributeDefinition>,
+        val nameAffixes: List<RivenNameAffix>,
     ) {
         companion object {
             /** 复制属性定义列表并建立 slug 索引，生成供查询原子发布的目录快照。 */
-            fun from(definitions: List<RivenAttributeDefinition>) = CatalogSnapshot(
+            fun from(definitions: List<RivenAttributeDefinition>, affixes: List<RivenNameAffix>) = CatalogSnapshot(
                 definitions = definitions.toList(),
                 definitionsBySlug = definitions.associateBy { it.slug },
+                nameAffixes = affixes.toList(),
             )
         }
     }

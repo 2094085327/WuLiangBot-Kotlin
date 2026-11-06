@@ -53,8 +53,8 @@ class ScheduledInit {
         }
     }
 
-    /** 执行周一定时刷新，等待周常数据及图片预缓存流程完成。 */
-    @Scheduled(cron = "1 0 8 * * 1", zone = "Asia/Shanghai")
+    /** 等待官方周榜发布十分钟后，再刷新周常数据和图片。 */
+    @Scheduled(cron = "1 10 8 * * 1", zone = "Asia/Shanghai")
     fun weeklyInit() = runBlocking {
         refreshWeeklyDataAndCache()
     }

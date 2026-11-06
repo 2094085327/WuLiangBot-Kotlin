@@ -2,7 +2,6 @@ package bot.wuliang.worldstate.service
 
 import bot.wuliang.config.WARFRAME_INCARNON
 import bot.wuliang.config.WfMarketConfig.WF_INCARNON_KEY
-import bot.wuliang.config.WfMarketConfig.WF_RIVEN_UN_REROLLED_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.config.WfMarketConfig.WF_STEELPATH_KEY
 import bot.wuliang.jacksonUtil.JacksonUtil
@@ -124,8 +123,7 @@ class LocalRotationService(
         val steelNextInd = calculateIncarnonIndex(steelScheduleJson, steelJson.size(), expiry)
 
         // 确保执行灵化解析时已存在紫卡价格数据
-        rivenRankingService.refreshRanking()
-        val rivenPriceList = redisService.getValueTyped<List<Riven>>(translations.cacheKey(WF_RIVEN_UN_REROLLED_KEY))
+        val rivenPriceList = rivenRankingService.ranking(rerolled = false, localize = false)
 
         /** 将钢铁回廊候选转换为名称和紫卡价格，缺少价格时使用零值。 */
         fun processSteelItems(steelJsonNode: JsonNode): List<Incarnon.SteelItem> {
@@ -135,7 +133,7 @@ class LocalRotationService(
                 Incarnon.SteelItem(
                     name = translations.name(adapter ?: urlName),
                     urlName = urlName,
-                    rivenPrice = rivenPriceList?.find {
+                    rivenPrice = rivenPriceList.find {
                         it.compatibilityId.equals(urlName.replace('_', ' '), ignoreCase = true)
                     }?.median ?: 0.0,
                 )

@@ -7,6 +7,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.lang.reflect.Method
 import java.util.regex.Matcher
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 
@@ -43,8 +45,7 @@ class ReflectiveBotCommand(private val bean: Any, private val method: Method) : 
     /**
      * 调用方法（支持同步和异步）
      *
-     * 对于 suspend 函数，在 Dispatchers.Default 调度器中执行；
-     * 对于普通函数，直接通过反射调用
+     * 命令包含同步网络、数据库和截图调用，统一在 IO 调度器中执行。
      *
      * @param method 要调用的方法
      * @param bean Bean 实例
@@ -57,12 +58,12 @@ class ReflectiveBotCommand(private val bean: Any, private val method: Method) : 
         method.isAccessible = true
 
         return try {
-            if (isSuspend) {
-                withContext(Dispatchers.Default) {
+            withContext(Dispatchers.IO) {
+                if (isSuspend) {
                     callSuspendMethod(bean, method, parameters)
+                } else {
+                    method.invoke(bean, *parameters)
                 }
-            } else {
-                method.invoke(bean, *parameters)
             }
         } catch (e: CancellationException) {
             throw e
@@ -106,7 +107,8 @@ class ReflectiveBotCommand(private val bean: Any, private val method: Method) : 
             val suspendParams = parameters.copyOf(parameters.size + 1)
             suspendParams[suspendParams.size - 1] = continuation
 
-            method.invoke(bean, *suspendParams)
+            val result = method.invoke(bean, *suspendParams)
+            if (result !== COROUTINE_SUSPENDED) continuation.resume(result)
         } catch (ex: Exception) {
             val cause = ex.cause ?: ex
             continuation.resumeWithException(cause)

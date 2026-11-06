@@ -8,6 +8,7 @@ import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.message.BotMessage
 import bot.wuliang.message.MessageBus
+import bot.wuliang.message.MessageContinuation
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.BotConfigService
@@ -35,7 +36,8 @@ class BotMessageBus(
     private val directivesService: DirectivesService,
     private val botConfigService: BotConfigService,
     private val redisService: RedisService,
-    private val logService: LogService
+    private val logService: LogService,
+    private val continuations: List<MessageContinuation> = emptyList(),
 ) : MessageBus {
 
     /**
@@ -56,6 +58,16 @@ class BotMessageBus(
         if (!allEnableConfig) {
             context.sender.sendText("无量姬当前所有的指令都被关闭了，可能正在维护中~")
             return
+        }
+
+        // 纯图片没有指令文本，必须在提取文本之前交给已开启的等待会话。
+        if (context.messages.any { it is BotMessage.Image }) {
+            for (continuation in continuations) {
+                val enabled = directivesService.selectDirectivesMatch(continuation.commandText).any {
+                    it.regex?.toRegex()?.matches(continuation.commandText) == true
+                }
+                if (enabled && continuation.handleIfPending(context)) return
+            }
         }
 
         val match = extractMatch(context.messages) ?: return
@@ -137,17 +149,14 @@ class BotMessageBus(
     /**
      * 从消息列表中提取指令文本
      *
-     * 遍历消息列表，提取第一个文本消息的内容，并去除前后空格和前缀"/"。
+     * 合并文本片段，跳过剥离 @ 提及后留下的空文本，再去除前后空格和前缀"/"。
      *
      * @param message 机器人消息列表
      * @return 提取后的指令文本，如果没有文本消息则返回null
      */
     private fun extractMatch(message: List<BotMessage>): String? {
-        return message.firstNotNullOfOrNull { botMessage ->
-            if (botMessage is BotMessage.Text) {
-                botMessage.content.trim().removePrefix("/")
-            } else null
-        }
+        return message.filterIsInstance<BotMessage.Text>().map { it.content.trim() }
+            .filter(String::isNotEmpty).joinToString(" ").trim().removePrefix("/")
+            .takeIf(String::isNotBlank)
     }
 }
-

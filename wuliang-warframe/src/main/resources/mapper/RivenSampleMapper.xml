@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.RivenSampleMapper">
+    <sql id="observationColumns">
+        query_key AS queryKey, weapon_slug AS weaponSlug, query_json AS queryJson,
+        source, last_attempt_at AS lastAttemptAt, last_success_at AS lastSuccessAt, raw_count AS rawCount,
+        stored_count AS storedCount, skipped_json AS skippedJson, last_error AS lastError, retry_after AS retryAfter
+    </sql>
+    <select id="observation" resultType="bot.wuliang.riven.samples.RivenQueryObservation">
+        SELECT
+        <include refid="observationColumns"/>
+        FROM wf_riven_sample_query
+        WHERE query_key=#{key}
+    </select>
+    <select id="warmupObservations" resultType="bot.wuliang.riven.samples.RivenQueryObservation">
+        SELECT query_key AS queryKey, last_success_at AS lastSuccessAt, retry_after AS retryAfter
+        FROM wf_riven_sample_query
+        WHERE query_key IN
+        <foreach collection="keys" item="key" open="(" separator="," close=")">#{key}</foreach>
+    </select>
+    <insert id="success">
+        INSERT INTO wf_riven_sample_query
+        (query_key, weapon_slug, query_json, source, last_attempt_at, last_success_at,
+         raw_count, stored_count, skipped_json, last_error, retry_after)
+        VALUES (#{o.queryKey}, #{o.weaponSlug}, #{o.queryJson}, #{o.source},
+                #{o.lastAttemptAt}, #{o.lastSuccessAt}, #{o.rawCount}, #{o.storedCount}, #{o.skippedJson}, NULL, 0)
+        ON DUPLICATE KEY UPDATE source=VALUES(source),
+                                last_attempt_at=VALUES(last_attempt_at),
+                                last_success_at=VALUES(last_success_at),
+                                raw_count=VALUES(raw_count),
+                                stored_count=VALUES(stored_count),
+                                skipped_json=VALUES(skipped_json),
+                                last_error=NULL,
+                                retry_after=0
+    </insert>
+    <insert id="failure">
+        INSERT INTO wf_riven_sample_query
+        (query_key, weapon_slug, query_json, source, last_attempt_at, skipped_json, last_error, retry_after)
+        VALUES (#{o.queryKey}, #{o.weaponSlug}, #{o.queryJson}, #{o.source},
+                #{o.lastAttemptAt}, '{}', #{o.lastError}, #{o.retryAfter})
+        ON DUPLICATE KEY UPDATE last_attempt_at=VALUES(last_attempt_at),
+                                last_error=VALUES(last_error),
+                                retry_after=VALUES(retry_after)
+    </insert>
+    <sql id="sampleColumns">
+        auction_id AS auctionId, weapon_slug AS weaponSlug, seller_id AS sellerId,
+        price, mod_rank AS `rank`, rerolls, mastery, polarity,
+        attributes_json AS attributesJson, raw_item_json AS rawItemJson,
+        created_at AS createdAt, updated_at AS updatedAt, seller_last_seen AS sellerLastSeen,
+        seller_status AS sellerStatus, active, first_observed_at AS firstObservedAt,
+        last_observed_at AS lastObservedAt
+    </sql>
+    <select id="existing" resultType="bot.wuliang.riven.samples.RivenSampleRecord">
+        SELECT
+        <include refid="sampleColumns"/>
+        FROM wf_riven_sample WHERE auction_id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+        ORDER BY auction_id FOR UPDATE
+    </select>
+    <insert id="upsert">
+        INSERT INTO wf_riven_sample
+        (auction_id, weapon_slug, seller_id, price, mod_rank, rerolls,
+        mastery, polarity, attributes_json, raw_item_json, created_at, updated_at, seller_last_seen,
+        seller_status, active, first_observed_at, last_observed_at) VALUES
+        <foreach collection="records" item="r" separator=",">
+            (#{r.auctionId}, #{r.weaponSlug}, #{r.sellerId},
+            #{r.price}, #{r.rank}, #{r.rerolls}, #{r.mastery}, #{r.polarity}, #{r.attributesJson}, #{r.rawItemJson},
+            #{r.createdAt}, #{r.updatedAt}, #{r.sellerLastSeen}, #{r.sellerStatus}, #{r.active},
+            #{r.firstObservedAt}, #{r.lastObservedAt})
+        </foreach>
+        ON DUPLICATE KEY UPDATE weapon_slug=VALUES(weapon_slug), seller_id=VALUES(seller_id),
+        price=VALUES(price), mod_rank=VALUES(mod_rank),
+        rerolls=VALUES(rerolls), mastery=VALUES(mastery), polarity=VALUES(polarity),
+        attributes_json=VALUES(attributes_json), raw_item_json=VALUES(raw_item_json), created_at=VALUES(created_at),
+        updated_at=VALUES(updated_at), seller_last_seen=VALUES(seller_last_seen), seller_status=VALUES(seller_status),
+        active=VALUES(active), last_observed_at=VALUES(last_observed_at)
+    </insert>
+    <update id="invalidate">
+        UPDATE wf_riven_sample SET active=0, last_observed_at=#{now}
+        WHERE weapon_slug=#{weapon} AND auction_id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+    </update>
+    <sql id="eligible">
+        active=1 AND last_observed_at &gt;=
+        #{observedAfter}
+        AND
+        created_at
+        &gt;=
+        #{createdAfter}
+        AND
+        (
+        seller_last_seen
+        IS
+        NULL
+        OR
+        seller_last_seen
+        &gt;=
+        #{sellerAfter}
+        )
+    </sql>
+    <select id="comparable" resultType="bot.wuliang.riven.samples.RivenSampleRecord">
+        SELECT
+        <include refid="sampleColumns"/>
+        FROM wf_riven_sample
+        WHERE weapon_slug=#{weapon} AND
+        <include refid="eligible"/>
+        AND JSON_CONTAINS(attributes_json, #{attributes})
+        <choose>
+            <when test="positiveOnly">
+                AND ((JSON_LENGTH(attributes_json)=#{attributeCount}
+                AND JSON_CONTAINS(attributes_json, '{"positive":false}')=0)
+                OR (JSON_LENGTH(attributes_json)=#{attributeCount}+1
+                AND JSON_CONTAINS(attributes_json, '{"positive":false}')=1))
+            </when>
+            <otherwise>AND JSON_LENGTH(attributes_json)=#{attributeCount}</otherwise>
+        </choose>
+        <if test="rank != null">AND mod_rank=#{rank}</if>
+        ORDER BY last_observed_at DESC, auction_id LIMIT 500
+    </select>
+    <select id="zeroRollReference" resultType="bot.wuliang.riven.samples.RivenSampleRecord">
+        SELECT auction_id AS auctionId, weapon_slug AS weaponSlug,
+        seller_id AS sellerId, price, created_at AS createdAt,
+        seller_last_seen AS sellerLastSeen, active, last_observed_at AS lastObservedAt
+        FROM wf_riven_sample
+        WHERE weapon_slug=#{weapon} AND
+        <include refid="eligible"/>
+        AND rerolls=0
+        ORDER BY last_observed_at DESC, auction_id LIMIT #{limit}
+    </select>
+    <select id="valuationReference" resultType="bot.wuliang.riven.samples.RivenSampleRecord">
+        SELECT auction_id AS auctionId, weapon_slug AS weaponSlug,
+        seller_id AS sellerId, price, attributes_json AS attributesJson,
+        created_at AS createdAt, seller_last_seen AS sellerLastSeen,
+        seller_status AS sellerStatus, active, last_observed_at AS lastObservedAt
+        FROM wf_riven_sample
+        WHERE weapon_slug=#{weapon} AND
+        <include refid="eligible"/>
+        AND price &gt; 0 AND seller_status IN ('online', 'ingame')
+        ORDER BY last_observed_at DESC, auction_id DESC LIMIT #{limit}
+    </select>
+    <delete id="pruneQueries">DELETE
+                              FROM wf_riven_sample_query
+                              WHERE last_attempt_at &lt; #{cutoff}
+                              LIMIT 500</delete>
+    <delete id="pruneSamples">DELETE
+                              FROM wf_riven_sample
+                              WHERE last_observed_at &lt; #{cutoff}
+                              LIMIT 500</delete>
+</mapper>

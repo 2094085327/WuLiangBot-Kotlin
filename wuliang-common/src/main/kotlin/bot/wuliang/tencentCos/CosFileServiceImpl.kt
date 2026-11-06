@@ -71,7 +71,9 @@ class CosFileServiceImpl(
         thisFileName = txCosConfig.path + fileName + ".$mime"
         // 判断上传的文件是否是合法的
         if (IMG_SUFFIX.contains(mime) || VIDEO_SUFFIX.contains(mime) || AUDIO_SUFFIX.contains(mime)) {
-            val transferManager = txCosConfig.createTransferManager(cosClient)
+            val transferManager = if (contentLength >= 5L * 1024 * 1024) {
+                txCosConfig.createTransferManager(cosClient)
+            } else null
 
             val bucketName: String = txCosConfig.bucketName //储存桶名称
             val metadata = ObjectMetadata().apply {
@@ -80,8 +82,8 @@ class CosFileServiceImpl(
             val putObjectRequest = PutObjectRequest(bucketName, thisFileName, inputStream, metadata)
 
             try {
-                val upload = transferManager.upload(putObjectRequest) //上传
-                upload.waitForUploadResult()
+                if (transferManager == null) cosClient.putObject(putObjectRequest)
+                else transferManager.upload(putObjectRequest).waitForUploadResult()
                 url = txCosConfig.url + thisFileName
             } catch (e: CosServiceException) {
                 logError("COS文件上传失败: key=$thisFileName", e)
@@ -91,7 +93,7 @@ class CosFileServiceImpl(
                 Thread.currentThread().interrupt()
                 logError("COS文件上传被中断: key=$thisFileName", e)
             } finally {
-                transferManager.shutdownNow(false)
+                transferManager?.shutdownNow(false)
             }
         } else {
             //错误的类型，返回错误提示

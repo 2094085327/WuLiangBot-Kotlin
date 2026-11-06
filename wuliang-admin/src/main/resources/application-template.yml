@@ -73,14 +73,58 @@ github:
 # Warframe 世界状态词库数据源配置
 warframe:
   market:
+    # 普通物品的每日成交统计同步。
     statistics:
+      # 是否启用每日成交归档同步。
       enabled: true
+      # 下载历史归档的单次请求超时，秒；范围30～600。
       history-request-timeout-seconds: 120
       # UTC 02:30 = 北京时间 10:30，同步前一完整 UTC 日。
+      # 每日同步的UTC小时，范围0～23。
       daily-sync-utc-hour: 2
+      # 每日同步的分钟，范围0～59。
       daily-sync-utc-minute: 30
       # 归档未发布或同步失败时，每小时重试；成功后等待下一日。
+      # 重试间隔，小时；范围1～168。
       interval-hours: 1
+    # 紫卡合约搜索每分钟的请求上限，与其他WM请求共用全局限流。
+    # Cloudflare 对 /v1/auctions/search 实测约 5～7 次/分钟，超出封锁 120 秒；4 次/分钟留余量。
+    contract-search-requests-per-minute: 4
+    # 紫卡样本、价格参考和热门武器预热。
+    riven-samples:
+      # 样本入库、价格参考和维护总开关；关闭后用户查询短缓存仍可用。
+      enabled: true
+      # 非空查询结果的缓存时长，秒；范围60～3600。
+      cache-seconds: 600
+      # 成功空结果的缓存时长，秒；不短于cache-seconds，最多86400。
+      empty-cache-seconds: 1800
+      # 同一查询条件失败后的冷却时长，分钟；范围1～1440。
+      failure-cooldown-minutes: 15
+      # 每UTC日预热与分析补采的总额度；USER另计，共用分钟限流。
+      daily-limit: 140
+      analysis:
+        # 缓存不占额；发送前占额，失败或崩溃不返还。
+        daily-limit: 40
+        refresh-hours: 6
+        weapon-interval-minutes: 60
+      # 三类价格参考的观察窗口，小时；范围1～168，与observation-max-hours取较小值。
+      reference-max-age-hours: 72
+      # 距最近观察超过此小时数时，样本无效；范围1～168。
+      observation-max-hours: 72
+      # 相似估价和零洗参考各次读取的样本上限，条；范围100～10000。
+      maximum-reference-samples: 2000
+      # 每日热门预热；只有上面的样本总开关开启时才生效。
+      warmup:
+        # 是否启用预热；关闭后仍保留按需查询和样本清理。
+        enabled: true
+        # 每UTC日最多100次，给分析补采保留40次；北京时间08:00重置。
+        daily-limit: 100
+        # 两次预热尝试的最小间隔，秒；范围30～3600，共用Redis的实例共享。
+        interval-seconds: 300
+        weapon-limit: 50
+        hot-weapon-count: 10
+        hot-refresh-hours: 4
+        refresh-hours: 24
   public-export-plus:
     # owner/repo 格式，可替换为上游 calamity-inc/warframe-public-export-plus 或自己的 fork
     repository: "2094085327/warframe-public-export-plus"
@@ -134,7 +178,7 @@ spring:
     # 模板模式
     mode: HTML5
     # 是否启用缓存
-    cache: false
+    cache: true
   # 数据源配置
   datasource:
     # 数据库驱动类名
@@ -150,21 +194,21 @@ spring:
     # Druid连接池配置
     druid:
       # 初始化连接数
-      initial-size: 5
+      initial-size: 1
       # 最小空闲连接数
-      min-idle: 5
+      min-idle: 1
       # 最大活跃连接数
-      max-active: 20
+      max-active: 6
       # 获取连接等待超时的时间
-      max-wait: 60000
+      max-wait: 5000
       # 连接有效性检测SQL
       validation-query: SELECT 1
       # 验证查询超时时间
       validation-query-timeout: 5
       # 空闲时是否验证连接有效性
       test-while-idle: true
-        # 获取连接时是否验证有效性
-      test-on-borrow: true
+      # 获取连接时是否验证有效性
+      test-on-borrow: false
       # 归还连接时是否验证有效性
       test-on-return: false
       # 是否开启连接保活机制
@@ -271,6 +315,6 @@ mybatis-plus:
 logging:
   level:
     # 项目日志级别
-    bot.demo.txbot: error
+    bot.wuliang: info
     # 腾讯云SDK日志级别
     com.qcloud: error

@@ -1,12 +1,11 @@
 package bot.wuliang.riven
 
-import bot.wuliang.config.WfMarketConfig.WF_MARKET_RIVEN_KEY
 import bot.wuliang.entity.WfRivenAttributeEntity
 import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.mapper.WfRivenAttributeMapper
 import bot.wuliang.mapper.WfRivenMapper
 import bot.wuliang.market.MarketCatalogSource
-import bot.wuliang.redis.RedisService
+import bot.wuliang.riven.analysis.RivenWeaponCatalog
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -22,7 +21,7 @@ class RivenCatalogSync(
     private val marketCatalogSource: MarketCatalogSource,
     private val writer: RivenCatalogWriter,
     private val attributeCatalog: DatabaseRivenAttributeCatalog,
-    private val redisService: RedisService,
+    private val weaponCatalog: RivenWeaponCatalog,
 ) {
     /**
      * 获取并校验 Market 武器和属性目录，事务替换数据库后刷新属性快照及武器缓存。
@@ -34,8 +33,9 @@ class RivenCatalogSync(
         val attributes = marketCatalogSource.getRivenAttributes()
         RivenCatalogValidator.validate(weapons, attributes)
         writer.replace(weapons, attributes)
+        // replace 返回时事务已提交，再失效本地武器索引。
+        weaponCatalog.invalidate()
         attributeCatalog.refresh(attributes)
-        redisService.setValue(WF_MARKET_RIVEN_KEY, weapons)
         return RivenCatalogSyncResult(weapons.size, attributes.size)
     }
 }

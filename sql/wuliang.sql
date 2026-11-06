@@ -230,6 +230,49 @@ CREATE TABLE `wf_riven_attribute`  (
   UNIQUE INDEX `uk_wf_riven_attribute_url_name`(`url_name` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'Warframe紫卡属性词库' ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Table structure for current riven samples
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS wf_riven_sample (
+    auction_id varchar(24) NOT NULL COMMENT 'Warframe Market挂牌ID；样本唯一标识',
+    weapon_slug varchar(128) NOT NULL COMMENT 'Warframe Market武器标识，例如magistar',
+    seller_id varchar(24) NOT NULL COMMENT 'Warframe Market卖家ID',
+    price int NOT NULL COMMENT '直接出售挂牌价格，单位为白金；不是成交价',
+    mod_rank int NOT NULL COMMENT '紫卡模组等级，范围0至8',
+    rerolls int NOT NULL COMMENT '紫卡洗练次数，0表示未洗',
+    mastery int NOT NULL COMMENT '使用紫卡所需的精通段位',
+    polarity varchar(32) NOT NULL COMMENT '紫卡极性标识',
+    attributes_json longtext NOT NULL COMMENT '规范化词条JSON，包含属性标识、正负方向和原始数值',
+    raw_item_json longtext NOT NULL COMMENT '上游原始紫卡item JSON；数值不自动按等级换算',
+    created_at bigint NOT NULL COMMENT '上游挂牌创建时间，UTC毫秒时间戳',
+    updated_at bigint NOT NULL COMMENT '上游挂牌最近修改时间，UTC毫秒时间戳；不等同于改价时间',
+    seller_last_seen bigint DEFAULT NULL COMMENT '卖家最近活跃时间，UTC毫秒时间戳；NULL表示未知',
+    seller_status varchar(32) NOT NULL COMMENT '观察时卖家状态，例如online、ingame、offline',
+    active tinyint(1) NOT NULL COMMENT '观察时挂牌是否可用，1为可用，0为不可用；不表示已成交',
+    first_observed_at bigint NOT NULL COMMENT '本系统首次观察该挂牌的时间，UTC毫秒时间戳',
+    last_observed_at bigint NOT NULL COMMENT '本系统最近实际观察时间，UTC毫秒时间戳；读取缓存不刷新',
+    PRIMARY KEY (auction_id),
+    KEY idx_riven_sample_weapon (weapon_slug, last_observed_at),
+    KEY idx_riven_sample_expiry (last_observed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='紫卡直接出售挂牌的当前样本；用于近期挂牌参考';
+
+CREATE TABLE IF NOT EXISTS wf_riven_sample_query (
+    query_key char(64) NOT NULL COMMENT '规范化查询参数的SHA-256摘要；查询条件唯一标识',
+    weapon_slug varchar(128) NOT NULL COMMENT 'Warframe Market武器标识，例如magistar',
+    query_json longtext NOT NULL COMMENT '规范化查询条件JSON，包含词条、负面限制和出售口径',
+    source varchar(16) NOT NULL COMMENT '查询来源：USER用户查询，ANALYSIS紫卡分析，WARMUP预热',
+    last_attempt_at bigint NOT NULL COMMENT '最近尝试查询的时间，UTC毫秒时间戳',
+    last_success_at bigint DEFAULT NULL COMMENT '最近成功查询的时间，UTC毫秒时间戳；NULL表示未成功',
+    raw_count int NOT NULL DEFAULT 0 COMMENT '最近成功响应中的原始挂牌数',
+    stored_count int NOT NULL DEFAULT 0 COMMENT '最近成功响应中通过校验并按挂牌ID去重后的数量',
+    skipped_json longtext NOT NULL COMMENT '跳过原因及各原因对应数量的JSON',
+    last_error varchar(1000) DEFAULT NULL COMMENT '最近查询错误摘要；成功后清空',
+    retry_after bigint NOT NULL DEFAULT 0 COMMENT '本条件失败冷却结束时间，UTC毫秒时间戳；0表示无冷却',
+    PRIMARY KEY (query_key),
+    KEY idx_riven_query_weapon (weapon_slug, last_attempt_at),
+    KEY idx_riven_query_expiry (last_attempt_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='紫卡按条件查询状态；保存成功时间、空结果和失败冷却';
+
 CREATE TABLE IF NOT EXISTS wf_market_daily_trade_average (
     item_id VARCHAR(50) NOT NULL,
     platform VARCHAR(16) NOT NULL,

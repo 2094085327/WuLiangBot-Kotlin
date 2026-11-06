@@ -17,6 +17,8 @@ import io.github.kloping.qqbot.entities.ex.Image
 import io.github.kloping.qqbot.entities.ex.PlainText
 import io.github.kloping.qqbot.impl.ListenerHost
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.springframework.stereotype.Component
 import java.util.*
 import javax.annotation.PostConstruct
@@ -34,7 +36,11 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 @Component
 class QQMessageHandler(private val messageBus: MessageBus, private val starter: Starter) {
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val processing = Semaphore(4)
+    // 4 条正在处理，最多 16 条等待
+    private val pending = java.util.concurrent.Semaphore(20)
+    private val lastBusyLog = java.util.concurrent.atomic.AtomicLong(0)
 
     /**
      * 初始化QQ消息监听器
@@ -69,16 +75,25 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
         starter.registerListenerHost(object : ListenerHost() {
             @EventReceiver
             fun onMessage(event: MessageV2Event) {
-
-                scope.launch {
+                if (!pending.tryAcquire()) {
+                    val now = System.currentTimeMillis()
+                    val previous = lastBusyLog.get()
+                    if (now - previous >= 10_000 && lastBusyLog.compareAndSet(previous, now)) {
+                        logInfo("QQ消息处理队列已满，跳过超出容量的消息")
+                    }
+                    return
+                }
+                val job = scope.launch {
                     try {
-                        handleQQMessage(event)
+                        processing.withPermit { handleQQMessage(event) }
                     } catch (e: CancellationException) {
                         logInfo("消息处理被取消: ${e.message}")
                     } catch (e: Exception) {
                         logError("未能处理用户发出的QQ消息: ${event.message}", e)
                     }
                 }
+                // 协程在开始执行前被取消，也要归还占位。
+                job.invokeOnCompletion { pending.release() }
             }
         })
     }
@@ -161,12 +176,12 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
         return message.mapNotNull {
             when (it) {
                 is FileMsg -> {
-                    if (it.type == "image/png") {
+                    if (it is Image || it.type?.startsWith("image/", ignoreCase = true) == true) {
                         BotMessage.Image(
                             url = it.url ?: "",
                             bytes = it.bytes ?: byteArrayOf(),
-                            type = "image/jpeg",
-                            fileName = "${UUID.randomUUID()}.jpg"
+                            type = it.type?.takeIf { type -> type.startsWith("image/") } ?: "image/jpeg",
+                            fileName = it.name ?: "${UUID.randomUUID()}.jpg"
                         )
                     } else null
                 }

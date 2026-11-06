@@ -1,5 +1,6 @@
 package bot.wuliang.market
 
+import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
 import bot.wuliang.httpUtil.HttpUtil
 import bot.wuliang.jacksonUtil.JacksonUtil
 import com.fasterxml.jackson.databind.JsonNode
@@ -32,7 +33,10 @@ class MarketApiClient(
         headers: Map<String, Any>? = null,
         params: Map<String, Any>? = null,
         priority: MarketRequestPriority = MarketRequestPriority.INTERACTIVE,
+        attempts: Int = properties.maxAttempts,
+        budgetWaitMillis: Long? = null,
     ): JsonNode {
+        require(attempts in 1..properties.maxAttempts)
         val target = url.toHttpUrl().newBuilder().apply {
             params?.forEach { (key, value) -> addQueryParameter(key, value.toString()) }
         }.build()
@@ -42,37 +46,43 @@ class MarketApiClient(
             header("User-Agent", properties.userAgent)
         }.build()
 
-        for (attempt in 1..properties.maxAttempts) {
-            limiter.acquire(priority)
+        for (attempt in 1..attempts) {
+            limiter.acquire(priority, target.encodedPath == "/v1/auctions/search", budgetWaitMillis)
             try {
                 client.newCall(request).execute().use { response ->
                     val body = response.body.string()
                     if (response.isSuccessful) return JacksonUtil.readTree(body)
                     if (response.code in setOf(429, 509)) {
-                        limiter.cooldown(retryDelay(response.header("Retry-After"), attempt))
+                        val delay = limiter.cooldown(retryDelay(response.header("Retry-After"), body))
+                        logInfo("WM HTTP ${response.code}：path=${target.encodedPath}, priority=$priority, " +
+                            "attempt=$attempt/$attempts，共享退避=${delay}ms")
                     }
-                    if (attempt == properties.maxAttempts || response.code !in setOf(429, 509, 500, 502, 503, 504)) {
+                    if (attempt == attempts || response.code !in setOf(429, 509, 500, 502, 503, 504)) {
                         throw HttpUtil.HttpException(response.code, body)
                     }
                 }
             } catch (error: IOException) {
-                if (Thread.currentThread().isInterrupted || attempt == properties.maxAttempts) throw error
+                if (Thread.currentThread().isInterrupted || attempt == attempts) throw error
             }
             Thread.sleep(1_000L shl (attempt - 1))
         }
         error("Market 请求未返回结果")
     }
 
-    private fun retryDelay(retryAfter: String?, attempt: Int): Long {
-        retryAfter?.toLongOrNull()?.let { return it.coerceIn(1, 300) * 1_000 }
-        if (retryAfter != null) {
-            runCatching {
+    private fun retryDelay(retryAfter: String?, body: String): Long {
+        val headerDelay = retryAfter?.toLongOrNull()?.let(::secondsToMillis) ?: runCatching {
+            if (retryAfter == null) null else {
                 ZonedDateTime.parse(retryAfter, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli()
+                    .minus(System.currentTimeMillis()).coerceAtLeast(0)
             }
-                .getOrNull()?.let { return it - System.currentTimeMillis() }
-        }
-        return 5_000L shl (attempt - 1)
+        }.getOrNull() ?: 0L
+        val bodyDelay = runCatching {
+            JacksonUtil.readTree(body).path("retry_after").asText().toLongOrNull()?.let(::secondsToMillis)
+        }.getOrNull() ?: 0L
+        return maxOf(headerDelay, bodyDelay)
     }
+
+    private fun secondsToMillis(seconds: Long): Long = seconds.coerceIn(0, 31_536_000) * 1_000
 
     @PreDestroy
     fun close() {
