@@ -8,14 +8,12 @@ import bot.wuliang.config.CommonConfig.RESOURCES_PATH
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
-import bot.wuliang.event.ResourceUpdateEvent
 import bot.wuliang.otherUtil.OtherUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.ApplicationContext
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.RestController
@@ -30,7 +28,7 @@ import javax.annotation.PostConstruct
 @Component
 @ActionService
 @RestController
-class UpdateResources(private val applicationContext: ApplicationContext) {
+class UpdateResources {
     companion object {
         private var owner: String = ""
         private var repoName: String = ""
@@ -80,9 +78,6 @@ class UpdateResources(private val applicationContext: ApplicationContext) {
             }
             context.sender.sendText("资源更新完成，本次共更新${downloadCheck.second}个资源")
             OtherUtil.fileCount = 0
-
-            // 发布资源更新事件
-            applicationContext.publishEvent(ResourceUpdateEvent(this))
         }
     }
 

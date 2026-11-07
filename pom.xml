@@ -20,7 +20,6 @@
         <module>wuliang-admin</module>
         <module>wuliang-common</module>
         <module>wuliang-warframe</module>
-        <module>wuliang-genshin</module>
         <module>wuliang-game</module>
         <module>wuliang-weather</module>
         <module>wuliang-system</module>
@@ -69,13 +68,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <!--Thymeleaf模板引擎-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
             <version>${spring.version}</version>
         </dependency>
 
@@ -291,13 +283,6 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!--genshin模块-->
-            <dependency>
-                <groupId>bot.wuliang</groupId>
-                <artifactId>wuliang-genshin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
             <!--天气模块-->
             <dependency>
                 <groupId>bot.wuliang</groupId>
@@ -371,11 +356,6 @@
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>1.17.2</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.wanghaomiao</groupId>
-                <artifactId>JsoupXpath</artifactId>
-                <version>2.2.1</version>
             </dependency>
 
             <!--七牛云对象存储服务-->

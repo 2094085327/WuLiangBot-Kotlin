@@ -41,7 +41,6 @@ WuLiangBot-Kotlin 是一个功能丰富的QQ机器人，集成了多个游戏和
 
 ### 🎮 游戏娱乐
 - **人生重开模拟器**: 体验不同的人生轨迹
-- **原神模拟抽卡**: 模拟原神游戏的抽卡系统（已停止维护）
 - **Warframe信息查询**: 提供全面的Warframe游戏信息
 
 ### 🌍 实用工具
@@ -279,10 +278,6 @@ warframe:
 # 项目自定义配置
 wuLiang:
   config:
-    # 图床路径，用于自动更新图片
-    gallery: "your_gallery_path"
-    # 原神本地图片路径
-    localPath: "./images/genshin/"
     # 后台管理账号密码
     userName: "your_admin_username"
     password: "your_admin_password"
@@ -314,16 +309,6 @@ spring:
     port: 6379
     # Redis密码
     password: "your_redis_password"
-  # Thymeleaf模板引擎配置
-  thymeleaf:
-    # 模板前缀
-    prefix: classpath:/templates/
-    # 编码格式
-    encoding: UTF-8
-    # 模板模式
-    mode: HTML5
-    # 是否启用缓存
-    cache: true
   # 数据源配置
   datasource:
     # 数据库驱动类名
@@ -510,7 +495,6 @@ mvn clean package "-Dmaven.test.skip=true" "-Dplaywright.platform=win32_x64"
 | `wuliang-admin`    | 主应用入口和管理界面       |
 | `wuliang-adapter`  | 适配器模块，负责适配外部消息结构 |
 | `wuliang-common`   | 公共工具和基础类         |
-| `wuliang-genshin`  | 原神相关功能（已停止维护）    |
 | `wuliang-game`     | 人生重开模拟器游戏        |
 | `wuliang-system`   | 系统核心功能           |
 | `wuliang-warframe` | Warframe游戏信息查询   |
@@ -556,11 +540,6 @@ mvn clean package "-Dmaven.test.skip=true" "-Dplaywright.platform=win32_x64"
 - `随机` - 随机分配属性
 - `继续` - 继续游戏进程
 
-#### 原神相关（已停止维护）
-- `全部卡池` - 查看所有卡池
-- `启用卡池` - 更改模拟抽卡卡池
-- `十连` - 进行十连抽卡
-- `历史记录` - 查看抽卡历史
 </details>
 
 ## 特别鸣谢
