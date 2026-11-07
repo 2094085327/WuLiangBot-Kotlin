@@ -314,8 +314,9 @@ class RivenOcrParser(
         private const val DIGITS = "[0-9OoIiLl]+(?:\\s+(?=[0-9])[0-9OoIiLl]+)*"
         private const val NUMBER = "$DIGITS(?:\\s*[.,。·]\\s*$DIGITS)*"
         private val SIGNED_NUMBER = Regex("(?<![A-Za-z])[+-]\\s*$NUMBER")
-        private val MULTIPLIER_PREFIX = Regex("(?i)(?<![A-Za-z])[x×✕]\\s*($NUMBER)")
-        private val MULTIPLIER_SUFFIX = Regex("(?i)($NUMBER)\\s*[x×✕](?!\\s*[0-9A-Za-z.,])")
+        // O/I/l 可作为误读数字，但不能从 satitox 等英文卡名中截取倍率。
+        private val MULTIPLIER_PREFIX = Regex("(?i)(?<![A-Za-z0-9])[x×✕]\\s*($NUMBER)(?![A-Za-z0-9])")
+        private val MULTIPLIER_SUFFIX = Regex("(?i)(?<![A-Za-z0-9])($NUMBER)\\s*[x×✕](?!\\s*[0-9A-Za-z.,])")
         private val UNSIGNED_NUMBER = Regex("(?<![A-Za-z0-9])$NUMBER")
         private val UNIT = Regex("^\\s*(?:%|米|秒|[ms](?=\\s|\\p{IsHan}|$))", RegexOption.IGNORE_CASE)
         private val ANNOTATION = Regex("\\([^()]*\\)")
