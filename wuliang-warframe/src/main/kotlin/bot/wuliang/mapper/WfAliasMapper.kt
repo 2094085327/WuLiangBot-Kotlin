@@ -17,6 +17,8 @@ interface WfAliasMapper {
     fun save(@Param("enItemName") enItemName: String, @Param("otherName") otherName: String): Int
     /** 读取别名表中的全部记录。 */
     fun findAll(): List<WfOtherNameEntity>
+    /** 批量读取指定英文物品名称的别名。 */
+    fun findByEnglishNames(@Param("enNames") enNames: Collection<String>): List<WfOtherNameEntity>
     /** 删除主键为 [id] 的别名记录。 */
     fun delete(@Param("id") id: Int)
     /** 将主键为 [id] 的别名记录更新为 [otherName]。 */
