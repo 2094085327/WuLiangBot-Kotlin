@@ -134,10 +134,6 @@ warframe:
 # 项目自定义配置
 wuLiang:
   config:
-    # 图床路径，用于自动更新图片
-    gallery: "https://your-gallery-domain.com/"
-    # 原神本地图片路径
-    localPath: "resources/Image/Genshin/"
     # 后台管理账号密码
     userName: "your_admin_username"
     password: "your_admin_password"
@@ -169,16 +165,6 @@ spring:
     port: your_redis_port
     # Redis密码
     password: "your_redis_password"
-  # Thymeleaf模板引擎配置
-  thymeleaf:
-    # 模板前缀
-    prefix: classpath:/templates/
-    # 编码格式
-    encoding: UTF-8
-    # 模板模式
-    mode: HTML5
-    # 是否启用缓存
-    cache: true
   # 数据源配置
   datasource:
     # 数据库驱动类名

@@ -2,7 +2,6 @@ package bot.wuliang.config
 
 import bot.wuliang.otherUtil.CookieUtil
 import bot.wuliang.redis.RedisService
-import bot.wuliang.user.service.UserService
 import bot.wuliang.user.entity.vo.UserVo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
@@ -11,7 +10,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
-import org.thymeleaf.util.StringUtils
 import javax.servlet.http.HttpServletRequest
 
 
@@ -22,10 +20,6 @@ import javax.servlet.http.HttpServletRequest
  */
 @Configuration
 class UserArgumentResolver : HandlerMethodArgumentResolver {
-    // 注入用户服务，用于用户相关的业务逻辑处理
-    @Autowired
-    private lateinit var userService: UserService
-
     @Autowired
     private lateinit var redisService: RedisService
 
@@ -52,7 +46,7 @@ class UserArgumentResolver : HandlerMethodArgumentResolver {
 
 
         // 如果用户票据为空，则返回null
-        if (StringUtils.isEmpty(userTicket)) {
+        if (userTicket.isNullOrEmpty()) {
             return null
         }
 

@@ -39,11 +39,6 @@
             <artifactId>wuliang-warframe</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>bot.wuliang</groupId>
-            <artifactId>wuliang-genshin</artifactId>
-        </dependency>
-
         <!--小游戏模块-->
         <dependency>
             <groupId>bot.wuliang</groupId>

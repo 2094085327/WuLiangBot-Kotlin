@@ -21,6 +21,5 @@ CREATE TABLE `directives_category`  (
 INSERT INTO `directives_category` VALUES (1, 'other', '其他指令', 0, '2025-04-04 14:21:02', NULL);
 INSERT INTO `directives_category` VALUES (2, 'warframe', 'Warframe 相关指令', 0, '2025-04-04 14:21:02', NULL);
 INSERT INTO `directives_category` VALUES (3, 'lifeRestart', '人生重开小游戏指令', 0, '2025-04-04 14:21:02', NULL);
-INSERT INTO `directives_category` VALUES (4, 'genshin', '原神相关指令（已停止维护）', 0, '2025-04-04 14:21:02', NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
