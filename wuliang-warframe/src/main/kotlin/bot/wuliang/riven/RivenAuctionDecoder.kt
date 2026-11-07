@@ -62,9 +62,7 @@ class RivenAuctionDecoder(
             WfMarketVo.RivenOrderInfo(
                 user = order["owner"]["ingame_name"].textValue(),
                 userStatus = displayStatus(status),
-                modName = capitalizeName(
-                    order["item"]["weapon_url_name"].textValue() + " " + order["item"]["name"].textValue()
-                ),
+                modName = itemZhName + " " + capitalizeName(order["item"]["name"].textValue()),
                 modRank = order["item"]["mod_rank"].intValue(),
                 reRolls = order["item"]["re_rolls"].intValue(),
                 masteryLevel = order["item"]["mastery_level"].intValue(),
