@@ -31,7 +31,7 @@ class BountyImageService(
                 url = "http://${webImgUtil.frontendAddress}/bounties?type=${group?.id ?: "all"}",
                 data = mapper.writeValueAsString(report),
                 imgName = "bounties-${group?.id ?: "all"}-$fingerprint",
-                element = ".warframeBounties",
+                element = "#app",
                 waitElement = ".warframeBounties[data-ready='true']",
             )
         )

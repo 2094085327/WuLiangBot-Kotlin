@@ -1,6 +1,5 @@
 package bot.wuliang.command
 
-import bot.wuliang.adapter.command.CommandRegistry
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.aipOcr.OcrUnavailableException
@@ -9,8 +8,10 @@ import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
 import bot.wuliang.logAop.SystemLog
+import bot.wuliang.market.MarketScreenshotSessions
 import bot.wuliang.message.BotMessage
 import bot.wuliang.message.MessageContinuation
+import bot.wuliang.message.handlePendingImages
 import bot.wuliang.riven.analysis.*
 import bot.wuliang.riven.samples.RivenMarketReference
 import bot.wuliang.riven.samples.RivenSampleService
@@ -34,6 +35,7 @@ class RivenAnalysisCommands(
     private val analysis: RivenValueAnalysis,
     private val images: RivenAnalysisImageService,
     private val samples: RivenSampleService,
+    private val marketScreenshotSessions: MarketScreenshotSessions,
 ) : MessageContinuation {
     override val commandText = "紫卡分析"
     private val recognizing = Semaphore(2)
@@ -58,6 +60,7 @@ class RivenAnalysisCommands(
             return
         }
         sessions.cancel(context.requestContext)
+        marketScreenshotSessions.cancel(context.requestContext)
         processReport(context, "正在分析紫卡词条…", "请检查后重新发送完整的文字分析指令。") {
             analysis.analyzeText(riven)
         }
@@ -81,6 +84,7 @@ class RivenAnalysisCommands(
             return
         }
         val rank = matcher.group(1)?.toInt()
+        marketScreenshotSessions.cancel(context.requestContext)
         if (pictures.isEmpty()) {
             val pending = sessions.begin(context.requestContext, rank)
             remindIfImageMissing(context, pending)
@@ -113,21 +117,14 @@ class RivenAnalysisCommands(
         waitingScope.cancel()
     }
 
-    override suspend fun handleIfPending(context: ExecutionContext): Boolean {
-        val pictures = context.messages.filterIsInstance<BotMessage.Image>()
-        if (pictures.isEmpty()) return false
-        val text = context.messages.filterIsInstance<BotMessage.Text>().joinToString(" ") { it.content }.trim()
-            .removePrefix("/")
-        // 附带其他有效指令的图片仍进入原有命令链；普通图片说明文字可以保留。
-        if (text.isNotEmpty() && CommandRegistry.getCommandWithMatcher(text) != null) return false
-        val pending = sessions.pending(context.requestContext) ?: return false
-        if (pictures.size != 1) {
-            context.sender.sendText("每次只接受一张紫卡图片，请在本次等待时间内重新发送一张。")
-            return true
-        }
-        if (!sessions.consume(context.requestContext, pending)) return true
+    override suspend fun handleIfPending(context: ExecutionContext): Boolean = handlePendingImages(
+        context = context,
+        maxImages = 1,
+        tooManyImagesMessage = "每次只接受一张紫卡图片，请在本次等待时间内重新发送一张。",
+        pending = sessions::pending,
+        consume = sessions::consume,
+    ) { pictures, pending ->
         process(context, pictures.single(), pending.rank)
-        return true
     }
 
     private suspend fun process(context: ExecutionContext, image: BotMessage.Image, rank: Int?) =
