@@ -32,7 +32,8 @@ class HelpHandle @Autowired constructor(
         val imageData = WebImgUtil.ImgData(
             imgName = imgName,
             element = "#app",
-            url = "http://${webImgUtil.frontendAddress}/system/help"
+            url = "http://${webImgUtil.frontendAddress}/system/help",
+            waitElement = ".commands .command"
         )
         val url = webImgUtil.getImgUrl(imageData)
         context.sender.sendImage(url)
