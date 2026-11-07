@@ -170,6 +170,21 @@ class LocalRotationService(
         return incarnon
     }
 
+    /** 从本地回廊配置读取全部灵化周次 */
+    fun getIncarnonSteelRotation(): List<IncarnonReport.SteelRotationWeek> {
+        val index = translations.index()
+        val incarnonJson = JacksonUtil.readTree(File(WARFRAME_INCARNON))
+        return incarnonJson["steel"].map { week ->
+            IncarnonReport.SteelRotationWeek(
+                week = week["week"].intValue(),
+                items = week["items"].map { item ->
+                    val urlName = item["url_name"].textValue()
+                    translations.name(index.incarnonAdapter(urlName) ?: urlName)
+                },
+            )
+        }
+    }
+
     /**
      * 选择最近生效的本地排期，按完整周数计算循环索引。
      *

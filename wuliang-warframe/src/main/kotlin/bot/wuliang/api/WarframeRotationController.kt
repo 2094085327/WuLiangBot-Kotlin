@@ -5,6 +5,7 @@ import bot.wuliang.config.WfMarketConfig.WF_INCARNON_RIVEN_KEY
 import bot.wuliang.config.WfMarketConfig.WF_SIMARIS_KEY
 import bot.wuliang.exception.RespBean
 import bot.wuliang.moudles.Incarnon
+import bot.wuliang.moudles.IncarnonReport
 import bot.wuliang.moudles.MoodSpirals
 import bot.wuliang.moudles.Simaris
 import bot.wuliang.moudles.SteelPath
@@ -48,10 +49,10 @@ class WarframeRotationController(
         return RespBean.success(steelPathEntity)
     }
 
-    /** 读取本地回廊轮换的本周、下周及紫卡价格数据，并刷新当前轮换倒计时。 */
+    /** 读取本周、下周、完整灵化轮换及紫卡价格，并刷新当前轮换倒计时。 */
     @ApiOperation("回廊信息")
     @GetMapping("/incarnon")
-    fun incarnon(): RespBean<out Incarnon> {
+    fun incarnon(): RespBean<out IncarnonReport> {
         val incarnonEntity =
             if (!redisService.hasKey(translations.cacheKey(WF_INCARNON_KEY))) {
                 localRotationService.getIncarnon()
@@ -62,7 +63,8 @@ class WarframeRotationController(
                 redisIncarnon
             }
 
-        return RespBean.success(incarnonEntity)
+        if (incarnonEntity == null) return RespBean.error()
+        return RespBean.success(IncarnonReport(incarnonEntity, localRotationService.getIncarnonSteelRotation()))
     }
 
     /** 读取回廊武器对应的紫卡信息缓存；缓存不存在时返回 null。 */
