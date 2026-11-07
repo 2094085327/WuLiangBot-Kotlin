@@ -20,6 +20,15 @@
         ORDER BY en_item_name
     </select>
 
+    <select id="findByEnglishNames" resultType="bot.wuliang.entity.WfOtherNameEntity">
+        SELECT id, en_item_name, other_name
+        FROM wf_other_name
+        WHERE en_item_name IN
+        <foreach collection="enNames" item="enName" open="(" separator="," close=")">
+            #{enName}
+        </foreach>
+    </select>
+
     <delete id="delete">
         DELETE FROM wf_other_name WHERE id = #{id}
     </delete>

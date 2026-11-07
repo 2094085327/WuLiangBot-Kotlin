@@ -1,9 +1,11 @@
 package bot.wuliang.market.history
 
+import bot.wuliang.service.WfAliasService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Locale
 
 data class MarketRankingEntry(
     val position: Long,
@@ -54,6 +56,7 @@ class MarketRankingService(
     private val trades: MarketDailyTradeStore,
     private val publications: MarketTradePublicationService,
     private val objectMapper: ObjectMapper,
+    private val aliasService: WfAliasService,
 ) {
     fun query(request: MarketRankingRequest): MarketRankingResult {
         val categories = request.category?.let(::listOf) ?: OVERVIEW_CATEGORIES
@@ -67,8 +70,15 @@ class MarketRankingService(
                 if (request.fullCategory) displayLimit?.plus(1) ?: Int.MAX_VALUE else criteria.pageSize + 1
             )
             val size = if (request.fullCategory) displayLimit ?: records.size else criteria.pageSize
-            val entries = records.take(size).mapIndexed { index, row ->
-                tradeEntry(row, (criteria.page - 1L) * size + index + 1, request.metric)
+            val displayed = records.take(size)
+            val aliases = if (category == MarketItemCategory.WARFRAME) {
+                aliasService.preferredAliases(displayed.map(::warframeAliasName))
+            } else emptyMap()
+            val entries = displayed.mapIndexed { index, row ->
+                tradeEntry(
+                    row, (criteria.page - 1L) * size + index + 1, request.metric,
+                    aliases[warframeAliasName(row)],
+                )
             }
             MarketRankingSection(
                 category, categoryLabel(category), criteria.rankSelection, criteria.exactRank,
@@ -89,12 +99,20 @@ class MarketRankingService(
         )
     }
 
-    private fun tradeEntry(row: MarketDailyTradeAverage, position: Long, metric: MarketRankingMetric) =
+    // 别名表保存战甲本体名，市场目录使用 Prime Set；英文名缺失时从 slug 还原。
+    private fun warframeAliasName(row: MarketDailyTradeAverage): String =
+        (row.enName?.takeIf(String::isNotBlank) ?: row.urlName?.replace('_', ' ') ?: "")
+            .trim().lowercase(Locale.ROOT).removeSuffix(" set").removeSuffix(" prime")
+
+    private fun tradeEntry(
+        row: MarketDailyTradeAverage, position: Long, metric: MarketRankingMetric, alias: String?,
+    ) =
         MarketRankingEntry(
             position = position,
             itemId = row.itemId,
-            name = row.zhName?.takeIf(String::isNotBlank) ?: row.enName?.takeIf(String::isNotBlank) ?: row.urlName
-            ?: row.itemId,
+            name = (alias?.let { "[$it] " } ?: "") +
+                    (row.zhName?.takeIf(String::isNotBlank) ?: row.enName?.takeIf(String::isNotBlank)
+                    ?: row.urlName ?: row.itemId),
             urlName = row.urlName,
             variantKey = row.variantKey,
             variantJson = row.variantJson,
