@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 
-/** 评级独立于排期，未收录节点保留“未评级”。 */
+/** 从本地产量表计算评级，未收录或低于C档的节点显示“未分级”。 */
 @Service
 class ArbitrationService(
     private val source: ArbitrationScheduleSource,
@@ -17,16 +17,31 @@ class ArbitrationService(
     properties: WarframeProperties,
     mapper: ObjectMapper,
 ) {
-    private val tiers: Map<String, String>
-    private val highValue: Set<String>
+    private data class NodeYield(val median: Double, val tier: ArbitrationTier)
+
+    private val yields: Map<String, NodeYield>
 
     init {
-        val ratings = Files.newInputStream(Path.of(properties.arbitration.tiersFile)).use { mapper.readTree(it) }
-        tiers = ratings.path("tiers").fields().asSequence().associate { it.key to it.value.asText() }
-        highValue = ratings.path("highValueTiers").map { it.asText() }.toSet()
-        require(tiers.isNotEmpty() && tiers.values.all { it in FILTERS - "所有" - "高价值" - "未评级" }) { "仲裁评级表格式无效" }
-        require(highValue.isNotEmpty() && highValue.all { it in tiers.values }) { "仲裁高价值评级配置无效" }
+        val data = Files.newInputStream(Path.of(properties.arbitration.yieldsFile)).use { mapper.readTree(it) }
+        val nodes = data.path("preliminaryNodeStats")
+        require(nodes.isArray && !nodes.isEmpty) { "仲裁产量表需包含非空的preliminaryNodeStats列表" }
+        yields = buildMap {
+            for (node in nodes) {
+                val id = node.path("nodeId")
+                require(id.isTextual && id.asText().isNotBlank()) { "仲裁产量表的节点ID无效" }
+                val nodeId = id.asText()
+                val value = node.path("median")
+                require(value.isNumber && value.asDouble().isFinite() && value.asDouble() >= 0) {
+                    "仲裁节点${nodeId}的生息中位数无效"
+                }
+                require(nodeId !in this) { "仲裁产量表包含重复节点：$nodeId" }
+                val median = value.asDouble()
+                put(nodeId, NodeYield(median, ArbitrationTier.fromMedian(median)))
+            }
+        }
     }
+
+    private fun tierFor(nodeId: String): ArbitrationTier = yields[nodeId]?.tier ?: ArbitrationTier.UNRATED
 
     fun query(
         table: Boolean = false,
@@ -43,17 +58,18 @@ class ArbitrationService(
             if (index !in 0 until schedule.size) return null
             val nodeId = schedule.nodeIdAt(index)
             val node = translations.node(nodeId)
+            val yield = yields[nodeId]
             val activation = schedule.activationAt(index)
             val expiry = schedule.expiryAt(index)
             return ArbitrationMission(
                 nodeId, node.name ?: nodeId, node.type ?: "未知任务", node.faction ?: "未知派系",
-                tiers[nodeId] ?: "未评级", activation, expiry,
+                (yield?.tier ?: ArbitrationTier.UNRATED).label, yield?.median, activation, expiry,
                 formatDuration(Duration.ofMillis((if (activation > now) activation else expiry) - now))
             )
         }
 
         var nextHighValue = current + 1
-        while (nextHighValue < schedule.size && tiers[schedule.nodeIdAt(nextHighValue)] !in highValue) nextHighValue++
+        while (nextHighValue < schedule.size && !tierFor(schedule.nodeIdAt(nextHighValue)).highValue) nextHighValue++
 
         val items = ArrayList<ArbitrationMission>(if (table) PAGE_SIZE else 0)
         var total = 0
@@ -66,8 +82,8 @@ class ArbitrationService(
             } else {
                 // 仅计数并保留当前页，不生成全量筛选列表。
                 for (index in current until schedule.size) {
-                    val tier = tiers[schedule.nodeIdAt(index)] ?: "未评级"
-                    if (filter != tier && !(filter == "高价值" && tier in highValue)) continue
+                    val tier = tierFor(schedule.nodeIdAt(index))
+                    if (filter != tier.label && !(filter == "高价值" && tier.highValue)) continue
                     if (total >= offset && total < offset + PAGE_SIZE) items.add(requireNotNull(mission(index)))
                     total++
                 }
@@ -86,6 +102,6 @@ class ArbitrationService(
 
     companion object {
         const val PAGE_SIZE = 15
-        val FILTERS = setOf("所有", "高价值", "S", "A+", "A", "A-", "B", "C", "未评级")
+        val FILTERS = setOf("所有", "高价值") + ArbitrationTier.entries.map { it.label }
     }
 }

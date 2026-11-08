@@ -6,6 +6,7 @@ data class ArbitrationMission(
     val missionType: String,
     val faction: String,
     val tier: String,
+    val vitusPerHour: Double?,
     val activation: Long,
     val expiry: Long,
     val eta: String,

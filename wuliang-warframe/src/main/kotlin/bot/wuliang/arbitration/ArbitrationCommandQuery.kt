@@ -6,7 +6,7 @@ object ArbitrationCommandQuery {
     const val ACTION = "^仲裁(表)?(.*)$"
     const val HELP = "仲裁：查看当前、下一场和下一场高价值仲裁。\n" +
             "仲裁表：查看全部排期，每页15条；添加 -2 翻页。\n" +
-            "筛选：高价值 / S / A+ / A / A- / B / C / 未评级。\n" +
+            "筛选：高价值 / S / A+ / A / A- / B / C / 未分级。\n" +
             "例如：仲裁表 高价值 -2。高价值为 S、A+、A。"
 
     fun parse(table: Boolean, arguments: String): ArbitrationQuery {
