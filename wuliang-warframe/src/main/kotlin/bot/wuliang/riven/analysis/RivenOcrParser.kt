@@ -279,7 +279,7 @@ class RivenOcrParser(
 
     /** 保留参与识别的原始文字块，避免无关的容量或洗练次数影响词条置信度。 */
     private fun mergeRows(lines: List<OcrLine>): List<Row> {
-        if (lines.none { it.height > 0 }) return lines.map { Row(clean(it.text), listOf(it)) }
+        if (lines.none { it.height > 0 }) return removeWrappedAnnotations(lines.map { Row(clean(it.text), listOf(it)) })
         val groups = mutableListOf<MutableList<OcrLine>>()
         lines.sortedWith(compareBy<OcrLine> { it.top }.thenBy { it.left }).forEach { line ->
             val row = groups.lastOrNull()
@@ -291,7 +291,27 @@ class RivenOcrParser(
             ) * .45
             if (same) row.add(line) else groups += mutableListOf(line)
         }
-        return groups.map { row -> Row(clean(row.sortedBy { it.left }.joinToString(" ") { it.text }), row) }
+        return removeWrappedAnnotations(groups.map { row ->
+            Row(clean(row.sortedBy { it.left }.joinToString(" ") { it.text }), row)
+        })
+    }
+
+    /** 跨行清理括号说明，保留原行和坐标 */
+    private fun removeWrappedAnnotations(rows: List<Row>): List<Row> {
+        val text = rows.joinToString("\n") { it.text }
+        val cleaned = text.toCharArray()
+        ANNOTATION.findAll(text).forEach { match ->
+            // 括号缺失时不能跨过另一条带符号的词条，避免误删真实数值。
+            if (!SIGNED_NUMBER.containsMatchIn(match.value)) {
+                match.range.forEach { cleaned[it] = ' ' }
+            }
+        }
+        var offset = 0
+        return rows.map { row ->
+            val label = String(cleaned, offset, row.text.length).trim()
+            offset += row.text.length + 1
+            row.copy(text = label)
+        }
     }
 
     /** 使用有界短词编辑距离处理 OCR 漏字、插字和错字。 */
