@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.5.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.4.1...2.5.0) (2026-11-10)
+
+
+### ✨ Features
+
+* **incarnon:** 新增灵化完整轮换报告数据返回 ([422211e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/422211e1ae8eee0297d638ca1ba8dc045623e605))
+* **market:** 战甲排行榜名称添加别名前缀显示 ([17ab3bc](https://github.com/2094085327/WuLiangBot-Kotlin/commit/17ab3bc5a4f5e6f99a9331499c8e899d85aeba6c))
+* **warframe:** 为部件截图查询添加会话等待 ([ab3baa5](https://github.com/2094085327/WuLiangBot-Kotlin/commit/ab3baa5a63a80404c528dce8e7e81781f4f1897b))
+* **warframe:** 新增紫卡分析、市场估价与样本采集 ([26c3d1e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/26c3d1e240972cd1dac58f7715aa83aeb8e810b1))
+
+
+### 🐛 Bug Fixes
+
+* **riven:** 修复裂罅mod名称显示及帮助截图内容为空问题 ([f725f77](https://github.com/2094085327/WuLiangBot-Kotlin/commit/f725f77721c142c6124b40fc3d20ca37f17dc116))
+* **warframe:** 修复紫卡分析中因词条换行问题导致的OCR识别错误问题 ([740c89f](https://github.com/2094085327/WuLiangBot-Kotlin/commit/740c89f2f5de5426f55bbc173bf140ac6b2f1968))
+* **warframe:** 修复紫卡分析倍率正则误匹配英文卡名中字母的问题 ([977604d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/977604d69d8d4f8cc5ed2ed5d01bce89a7a1f5de))
+
+
+### ♻️ Code Refactoring
+
+* **arbitration:** 将仲裁评级从静态配置改为基于产量动态计算 ([cc15a2f](https://github.com/2094085327/WuLiangBot-Kotlin/commit/cc15a2f3ebd9dac2a7029a9edb2471846b2eba43))
+
 ## [2.4.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.4.0...2.4.1) (2026-10-25)
 
 
