@@ -36,6 +36,8 @@ const val WARFRAME_ENTRATI_BOUNTIES = "$WARFRAME_RESOURCES/data/EntratiLabsJobMa
 const val WARFRAME_HEX_BOUNTIES = "$WARFRAME_RESOURCES/data/WF1999JobManifest.json"
 const val WARFRAME_AMP_PNG = "$WARFRAME_RESOURCES/img/amp.png"
 const val WARFRAME_CETUS_WISP_PNG = "$WARFRAME_RESOURCES/img/cetusWisp.png"
+const val WARFRAME_VALLIS_JPG = "$WARFRAME_RESOURCES/img/vallis.jpg"
+const val WARFRAME_RIVEN_JPEG = "$WARFRAME_RESOURCES/img/riven.jpeg"
 
 
 /** 保留的 WarframeStat 掉率数据源，供后续奖励查询使用。 */
