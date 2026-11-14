@@ -119,7 +119,7 @@ class RivenWeaponCatalog(
                 "${index + 1}. $name"
             }.joinToString("\n")
         val remaining = if (matches.size > 10) "\n另有${matches.size - 10}项，请补充武器名称以缩小范围。" else ""
-        return "重新发送完整的文字分析指令，也许你在找的是：\n$options$remaining"
+        return "武器名称不明确，请使用以下完整名称重新发送指令：\n$options$remaining"
     }
 
     private fun suffixFragment(value: String): String? {
