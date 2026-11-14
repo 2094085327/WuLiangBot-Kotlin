@@ -96,16 +96,11 @@ class RivenValueAnalysis(private val values: RivenValueCatalog) {
         if (riven.attributes.count { RivenFusionAnalysis.isFused(it.definition.tag) } > 1) {
             throw RivenAnalysisException("一张紫卡只能有一条融合词条，请检查输入。")
         }
-        val multipliers = when (positives to negatives) {
-            2 to 0 -> 0.99 to 0.0
-            2 to 1 -> 1.2375 to -0.495
-            3 to 0 -> 0.75 to 0.0
-            3 to 1 -> 0.9375 to -0.75
-            else -> throw RivenAnalysisException("未识别到完整紫卡：应为两条或三条正面词条，至多一条负面词条。请重新截图后重试。")
-        }
+        val combination = RivenCombination.forCounts(positives, negatives)
+            ?: throw RivenAnalysisException("未识别到完整紫卡：应为两条或三条正面词条，至多一条负面词条。请重新截图后重试。")
         val allRanges = riven.attributes.map { attribute ->
             (0..8).map { rank ->
-                val multiplier = if (attribute.positive) multipliers.first else multipliers.second
+                val multiplier = if (attribute.positive) combination.positiveMultiplier else combination.negativeMultiplier
                 val standard = attribute.definition.baseValue * DISPOSITION * multiplier * (rank + 1) / 9
                 val deviation = (attribute.value / standard - 1) * 100
                 RivenAttributeRange(
@@ -140,7 +135,7 @@ class RivenValueAnalysis(private val values: RivenValueCatalog) {
         if (riven.attributes.any { it.definition.unit == RivenValueUnit.NUMBER }) warnings += "初始连击等整数显示词条的浮动位置受卡面取整影响较大。"
         return RivenAnalysisReport(
             riven.weaponName, riven.weaponSlug, riven.rivenType, DISPOSITION, ranks.singleOrNull(), ranks,
-            positives, negatives, multipliers.first, multipliers.second,
+            positives, negatives, combination.positiveMultiplier, combination.negativeMultiplier,
             riven.attributes.mapIndexed { i, attribute ->
                 RivenAnalyzedAttribute(
                     attribute.definition.tag, attribute.definition.name, attribute.value,
