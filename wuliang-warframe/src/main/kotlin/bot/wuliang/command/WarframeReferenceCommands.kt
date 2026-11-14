@@ -3,6 +3,8 @@ package bot.wuliang.command
 import bot.wuliang.adapter.context.ExecutionContext
 import bot.wuliang.config.WARFRAME_AMP_PNG
 import bot.wuliang.config.WARFRAME_CETUS_WISP_PNG
+import bot.wuliang.config.WARFRAME_RIVEN_JPEG
+import bot.wuliang.config.WARFRAME_VALLIS_JPG
 import bot.wuliang.distribute.annotation.AParameter
 import bot.wuliang.distribute.annotation.ActionService
 import bot.wuliang.distribute.annotation.Executor
@@ -54,6 +56,34 @@ class WarframeReferenceCommands(
         val imgData = WebImgUtil.ImgData(
             url = WARFRAME_CETUS_WISP_PNG,
             imgName = "cetus_wisp",
+            local = true,
+        )
+        val url = webImgUtil.getImgUrl(imgData = imgData)
+        context.sender.sendImage(url)
+    }
+
+    /** 读取本地金星地图并发送到当前会话。 */
+    @SystemLog(businessName = "获取金星地图")
+    @AParameter
+    @Executor(action = "^金星地图$")
+    suspend fun getVallisMap(context: ExecutionContext) {
+        val imgData = WebImgUtil.ImgData(
+            url = WARFRAME_VALLIS_JPG,
+            imgName = "vallis",
+            local = true,
+        )
+        val url = webImgUtil.getImgUrl(imgData = imgData)
+        context.sender.sendImage(url)
+    }
+
+    /** 读取本地融合词条参考图片并发送到当前会话。 */
+    @SystemLog(businessName = "获取融合词条")
+    @AParameter
+    @Executor(action = "^融合词条$")
+    suspend fun getRivenFusion(context: ExecutionContext) {
+        val imgData = WebImgUtil.ImgData(
+            url = WARFRAME_RIVEN_JPEG,
+            imgName = "riven_fusion",
             local = true,
         )
         val url = webImgUtil.getImgUrl(imgData = imgData)
