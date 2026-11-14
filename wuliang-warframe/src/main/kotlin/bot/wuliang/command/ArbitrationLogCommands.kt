@@ -105,7 +105,7 @@ class ArbitrationLogCommands(
                     true
                 }
             }
-            context.sender.sendText(if (accepted) "请在${ArbitrationLogLimits.UPLOAD_WAIT_MINUTES}分钟内发送主机的 EE.log，最大${ArbitrationLogLimits.SIZE_LABEL}。" else "当前等待人数较多，请稍后重试。")
+            context.sender.sendText(if (accepted) "请在${ArbitrationLogLimits.UPLOAD_WAIT_MINUTES}分钟内发送主机的 EE.log，最大${ArbitrationLogLimits.SIZE_LABEL}。\nEE.log文件位置：%LOCALAPPDATA%\\Warframe" else "当前等待人数较多，请稍后重试。")
             return
         }
         val pending = synchronized(waiting) { waiting[identity(context.requestContext)] }
