@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bot.wuliang.mapper.ArbitrationLogArchiveMapper">
+    <insert id="insertIfAbsent">
+        INSERT INTO wf_arbitration_run
+        (run_key, facts_hash, node_id, mission_kind, game_build, client_type, started_at, ended_at,
+         duration_seconds, observed_seconds, drones, enemies, waves, rounds, completed, baseline_eligible,
+         quality_flags, drones_per_minute, enemies_per_minute, full_bonus_vitus, full_bonus_vitus_per_hour,
+         detail_rank, structured_gzip, parser_revision, first_saved_at, updated_at)
+        VALUES (#{r.runKey}, #{r.factsHash}, #{r.nodeId}, #{r.missionKind}, #{r.gameBuild}, #{r.clientType},
+                #{r.startedAt}, #{r.endedAt},
+                #{r.durationSeconds}, #{r.observedSeconds}, #{r.drones}, #{r.enemies}, #{r.waves}, #{r.rounds},
+                #{r.completed}, #{r.baselineEligible},
+                #{r.qualityFlags}, #{r.dronesPerMinute}, #{r.enemiesPerMinute}, #{r.fullBonusVitus},
+                #{r.fullBonusVitusPerHour},
+                #{r.detailRank}, #{r.structuredGzip,jdbcType=LONGVARBINARY}, #{r.parserRevision}, #{now}, #{now})
+        ON DUPLICATE KEY UPDATE run_key=run_key
+    </insert>
+    <select id="state" resultType="bot.wuliang.arbitration.log.archive.ArbitrationArchiveState">
+        SELECT facts_hash AS factsHash, completed, observed_seconds AS observedSeconds, detail_rank AS detailRank
+        FROM wf_arbitration_run
+        WHERE run_key = #{key} FOR
+        UPDATE
+    </select>
+    <update id="replaceIncomplete">
+        UPDATE wf_arbitration_run
+        SET facts_hash=#{r.factsHash},
+            node_id=#{r.nodeId},
+            mission_kind=#{r.missionKind},
+            game_build=#{r.gameBuild},
+            client_type=#{r.clientType},
+            started_at=#{r.startedAt},
+            ended_at=#{r.endedAt},
+            duration_seconds=#{r.durationSeconds},
+            observed_seconds=#{r.observedSeconds},
+            drones=#{r.drones},
+            enemies=#{r.enemies},
+            waves=#{r.waves},
+            rounds=#{r.rounds},
+            completed=#{r.completed},
+            baseline_eligible=#{r.baselineEligible},
+            quality_flags=#{r.qualityFlags},
+            drones_per_minute=#{r.dronesPerMinute},
+            enemies_per_minute=#{r.enemiesPerMinute},
+            full_bonus_vitus=#{r.fullBonusVitus},
+            full_bonus_vitus_per_hour=#{r.fullBonusVitusPerHour},
+            detail_rank=#{r.detailRank},
+            structured_gzip=#{r.structuredGzip,jdbcType=LONGVARBINARY},
+            parser_revision=#{r.parserRevision},
+            updated_at=#{now}
+        WHERE run_key = #{r.runKey}
+          AND completed = 0
+    </update>
+    <update id="enrich">
+        UPDATE wf_arbitration_run
+        SET detail_rank=#{r.detailRank},
+            structured_gzip=#{r.structuredGzip,jdbcType=LONGVARBINARY},
+            updated_at=#{now}
+        WHERE run_key = #{r.runKey}
+          AND facts_hash = #{r.factsHash}
+          AND detail_rank &lt; #{r.detailRank}
+    </update>
+    <update id="markConflict">
+        UPDATE wf_arbitration_run
+        SET has_conflict=1,
+            baseline_eligible=0,
+            updated_at=#{now}
+        WHERE run_key = #{key}
+    </update>
+    <insert id="associate">
+        INSERT INTO wf_arbitration_upload
+        (run_key, sender_key, platform, bot_id, message_type, user_id, first_uploaded_at, last_uploaded_at)
+        VALUES (#{key}, #{senderKey}, #{u.platform}, #{u.botId}, #{u.messageType}, #{u.userId}, #{now}, #{now})
+        ON DUPLICATE KEY UPDATE last_uploaded_at=GREATEST(last_uploaded_at, VALUES(last_uploaded_at))
+    </insert>
+    <insert id="remember">
+        INSERT INTO wf_arbitration_last_file (sender_key, file_digest, manifest, uploaded_at)
+        VALUES (#{senderKey}, #{fileDigest}, #{manifest}, #{now})
+        ON DUPLICATE KEY UPDATE file_digest=VALUES(file_digest),
+                                manifest=VALUES(manifest),
+                                uploaded_at=VALUES(uploaded_at)
+    </insert>
+    <select id="lastFile" resultType="bot.wuliang.arbitration.log.archive.ArbitrationLastFileState">
+        SELECT file_digest AS fileDigest, manifest
+        FROM wf_arbitration_last_file
+        WHERE sender_key = #{senderKey}
+          AND OCTET_LENGTH(manifest) &lt;= 32768
+    </select>
+    <select id="payload" resultType="bot.wuliang.arbitration.log.archive.ArbitrationArchivePayload">
+        SELECT r.facts_hash      AS factsHash,
+               r.parser_revision AS parserRevision,
+               r.detail_rank     AS detailRank,
+               r.has_conflict    AS hasConflict,
+               r.structured_gzip AS structuredGzip
+        FROM wf_arbitration_run r
+                 INNER JOIN wf_arbitration_upload u ON u.run_key = r.run_key AND u.sender_key = #{senderKey}
+        WHERE r.run_key = #{key}
+          AND OCTET_LENGTH(r.structured_gzip) &lt;= 1048576
+    </select>
+    <select id="recordPayload" resultType="bot.wuliang.arbitration.log.archive.ArbitrationArchivePayload">
+        SELECT r.record_id       AS recordId,
+               r.run_key         AS runKey,
+               r.facts_hash      AS factsHash,
+               r.parser_revision AS parserRevision,
+               r.detail_rank     AS detailRank,
+               r.has_conflict    AS hasConflict,
+               r.structured_gzip AS structuredGzip
+        FROM wf_arbitration_run r
+                 INNER JOIN wf_arbitration_upload u ON u.run_key = r.run_key AND u.sender_key = #{senderKey}
+        WHERE r.record_id = #{recordId}
+          AND OCTET_LENGTH(r.structured_gzip) &lt;= 1048576
+    </select>
+    <select id="historyCount" resultType="long">
+        SELECT COUNT(*) FROM wf_arbitration_upload u
+        INNER JOIN wf_arbitration_run r ON r.run_key = u.run_key
+        WHERE u.sender_key = #{senderKey}
+    </select>
+    <select id="historyPage" resultType="bot.wuliang.arbitration.log.history.ArbitrationLogHistoryRecord">
+        SELECT r.record_id                 AS recordId,
+               r.node_id                   AS nodeId,
+               r.mission_kind              AS missionKind,
+               r.client_type               AS clientType,
+               r.started_at                AS startedAt,
+               r.duration_seconds          AS durationSeconds,
+               r.drones,
+               r.enemies,
+               r.completed,
+               r.has_conflict              AS hasConflict,
+               r.full_bonus_vitus_per_hour AS fullBonusVitusPerHour
+        FROM wf_arbitration_upload u
+                 INNER JOIN wf_arbitration_run r ON r.run_key = u.run_key
+        WHERE u.sender_key = #{senderKey}
+        ORDER BY r.started_at IS NULL, r.started_at, r.run_key
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

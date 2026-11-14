@@ -3,7 +3,7 @@ package bot.wuliang.arbitration
 data class ArbitrationQuery(val table: Boolean, val filter: String = "所有", val page: Int = 1)
 
 object ArbitrationCommandQuery {
-    const val ACTION = "^仲裁(表)?(.*)$"
+    const val ACTION = "^仲裁(?!分析|日志)(表)?(.*)$"
     const val HELP = "仲裁：查看当前、下一场和下一场高价值仲裁。\n" +
             "仲裁表：查看全部排期，每页15条；添加 -2 翻页。\n" +
             "筛选：高价值 / S / A+ / A / A- / B / C / 未分级。\n" +

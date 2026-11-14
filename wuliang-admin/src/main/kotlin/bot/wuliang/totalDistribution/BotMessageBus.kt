@@ -9,6 +9,7 @@ import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.message.BotMessage
 import bot.wuliang.message.MessageBus
 import bot.wuliang.message.MessageContinuation
+import bot.wuliang.message.MessageFileHandler
 import bot.wuliang.otherUtil.OtherUtil
 import bot.wuliang.redis.RedisService
 import bot.wuliang.service.BotConfigService
@@ -38,6 +39,7 @@ class BotMessageBus(
     private val redisService: RedisService,
     private val logService: LogService,
     private val continuations: List<MessageContinuation> = emptyList(),
+    private val fileHandlers: List<MessageFileHandler> = emptyList(),
 ) : MessageBus {
 
     /**
@@ -67,6 +69,15 @@ class BotMessageBus(
                     it.regex?.toRegex()?.matches(continuation.commandText) == true
                 }
                 if (enabled && continuation.handleIfPending(context)) return
+            }
+        }
+
+        if (context.messages.any { it is BotMessage.File }) {
+            for (handler in fileHandlers) {
+                val enabled = directivesService.selectDirectivesMatch(handler.commandText).any {
+                    it.directiveName == handler.commandText && it.regex?.toRegex()?.matches(handler.commandText) == true
+                }
+                if (enabled && handler.handleFile(context)) return
             }
         }
 

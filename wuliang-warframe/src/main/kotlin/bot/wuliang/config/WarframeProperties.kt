@@ -67,7 +67,7 @@ class WarframeProperties {
     class Arbitration {
         var url = WARFRAME_ARBYS_DATA
         var cacheFile = "resources/fileCache/arbitration-schedule.csv"
-        var yieldsFile = WARFRAME_ARBITRATION_YIELDS
+        var baselinesFile = WARFRAME_ARBITRATION_BASELINES
         var retrySeconds = 60L
         var requestTimeoutSeconds = 20L
     }

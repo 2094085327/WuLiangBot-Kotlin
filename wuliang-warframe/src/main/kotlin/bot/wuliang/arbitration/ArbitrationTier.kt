@@ -1,6 +1,6 @@
 package bot.wuliang.arbitration
 
-/** 满加成生息小时中位数的固定分档 */
+/** 节点生息精华小时效率基准的固定分档 */
 enum class ArbitrationTier(val label: String, private val minimum: Double?) {
     S("S", 850.0),
     A_PLUS("A+", 800.0),
@@ -13,9 +13,9 @@ enum class ArbitrationTier(val label: String, private val minimum: Double?) {
     val highValue: Boolean get() = this == S || this == A_PLUS || this == A
 
     companion object {
-        fun fromMedian(median: Double?): ArbitrationTier {
-            if (median == null || !median.isFinite()) return UNRATED
-            return entries.firstOrNull { it.minimum != null && median >= it.minimum } ?: UNRATED
+        fun fromVitusPerHour(value: Double?): ArbitrationTier {
+            if (value == null || !value.isFinite()) return UNRATED
+            return entries.firstOrNull { it.minimum != null && value >= it.minimum } ?: UNRATED
         }
     }
 }

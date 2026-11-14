@@ -183,7 +183,9 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
                             type = it.type?.takeIf { type -> type.startsWith("image/") } ?: "image/jpeg",
                             fileName = it.name ?: "${UUID.randomUUID()}.jpg"
                         )
-                    } else null
+                    } else {
+                        BotMessage.File(url = it.url ?: "", fileName = it.name ?: "")
+                    }
                 }
 
                 // 剥离所有 @ 前缀：多个 <@...> 和 @botName
