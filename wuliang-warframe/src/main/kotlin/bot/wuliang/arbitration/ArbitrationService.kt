@@ -1,47 +1,24 @@
 package bot.wuliang.arbitration
 
-import bot.wuliang.config.WarframeProperties
 import bot.wuliang.translation.PublicExportService
 import bot.wuliang.utils.TimeUtils.formatDuration
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Duration
 
-/** 从本地产量表计算评级，未收录或低于C档的节点显示“未分级”。 */
+/** 从本地生息效率基准计算评级，未收录或低于C档的节点显示“未分级”。 */
 @Service
 class ArbitrationService(
     private val source: ArbitrationScheduleSource,
     private val translations: PublicExportService,
-    properties: WarframeProperties,
-    mapper: ObjectMapper,
+    baselines: ArbitrationBaselines,
 ) {
-    private data class NodeYield(val median: Double, val tier: ArbitrationTier)
+    private data class NodeBaseline(val vitusPerHour: Double, val tier: ArbitrationTier)
 
-    private val yields: Map<String, NodeYield>
-
-    init {
-        val data = Files.newInputStream(Path.of(properties.arbitration.yieldsFile)).use { mapper.readTree(it) }
-        val nodes = data.path("preliminaryNodeStats")
-        require(nodes.isArray && !nodes.isEmpty) { "仲裁产量表需包含非空的preliminaryNodeStats列表" }
-        yields = buildMap {
-            for (node in nodes) {
-                val id = node.path("nodeId")
-                require(id.isTextual && id.asText().isNotBlank()) { "仲裁产量表的节点ID无效" }
-                val nodeId = id.asText()
-                val value = node.path("median")
-                require(value.isNumber && value.asDouble().isFinite() && value.asDouble() >= 0) {
-                    "仲裁节点${nodeId}的生息中位数无效"
-                }
-                require(nodeId !in this) { "仲裁产量表包含重复节点：$nodeId" }
-                val median = value.asDouble()
-                put(nodeId, NodeYield(median, ArbitrationTier.fromMedian(median)))
-            }
-        }
+    private val nodeBaselines = baselines.vitusPerHour.mapValues { (_, value) ->
+        NodeBaseline(value, ArbitrationTier.fromVitusPerHour(value))
     }
 
-    private fun tierFor(nodeId: String): ArbitrationTier = yields[nodeId]?.tier ?: ArbitrationTier.UNRATED
+    private fun tierFor(nodeId: String): ArbitrationTier = nodeBaselines[nodeId]?.tier ?: ArbitrationTier.UNRATED
 
     fun query(
         table: Boolean = false,
@@ -58,12 +35,12 @@ class ArbitrationService(
             if (index !in 0 until schedule.size) return null
             val nodeId = schedule.nodeIdAt(index)
             val node = translations.node(nodeId)
-            val yield = yields[nodeId]
+            val baseline = nodeBaselines[nodeId]
             val activation = schedule.activationAt(index)
             val expiry = schedule.expiryAt(index)
             return ArbitrationMission(
                 nodeId, node.name ?: nodeId, node.type ?: "未知任务", node.faction ?: "未知派系",
-                (yield?.tier ?: ArbitrationTier.UNRATED).label, yield?.median, activation, expiry,
+                (baseline?.tier ?: ArbitrationTier.UNRATED).label, baseline?.vitusPerHour, activation, expiry,
                 formatDuration(Duration.ofMillis((if (activation > now) activation else expiry) - now))
             )
         }

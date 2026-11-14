@@ -238,4 +238,61 @@ CREATE TABLE IF NOT EXISTS wf_market_daily_trade_average (
     KEY idx_market_trade_expiry (trade_day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE IF NOT EXISTS wf_arbitration_run (
+    record_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '固定对局编号；全局自增，允许跳号',
+    run_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '对局标识SHA256；优先使用主机会话摘要、节点和相对开局时间',
+    facts_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '基础计数和逐波事实摘要，不受展示参数影响',
+    node_id VARCHAR(64) NOT NULL,
+    mission_kind VARCHAR(32) NOT NULL,
+    game_build VARCHAR(32) NULL COMMENT '游戏构建日期标签；未知保留NULL',
+    client_type VARCHAR(32) NULL COMMENT 'Steam、WeGame等日志客户端标记；未知保留NULL',
+    started_at BIGINT NULL COMMENT '从日志UTC锚点换算的开局Unix毫秒',
+    ended_at BIGINT NULL COMMENT '结算时间；不完整时仅表示最后观察时间',
+    duration_seconds DOUBLE NULL COMMENT '完整主机用时；不完整时为NULL',
+    observed_seconds DOUBLE NOT NULL COMMENT '从开局到最后观察事件的跨度',
+    drones INT NOT NULL,
+    enemies INT NULL,
+    waves INT NULL,
+    rounds INT NULL,
+    completed TINYINT(1) NOT NULL,
+    baseline_eligible TINYINT(1) NOT NULL COMMENT '完整计时、敌人数、轮次、版本、UTC锚点、主机会话和无解析警告；统计时还需按版本筛选',
+    has_conflict TINYINT(1) NOT NULL DEFAULT 0 COMMENT '同一标识出现相互冲突的完整统计，排除基线并保留首份事实',
+    quality_flags JSON NOT NULL,
+    drones_per_minute DOUBLE NULL,
+    enemies_per_minute DOUBLE NULL,
+    full_bonus_vitus DOUBLE NULL COMMENT '统一5.9倍加成的期望精华，含轮次奖励；非实得',
+    full_bonus_vitus_per_hour DOUBLE NULL,
+    detail_rank TINYINT NOT NULL COMMENT '1采样受限或异常；2已采集且未受限；空采样不等于零存活',
+    structured_gzip MEDIUMBLOB NOT NULL COMMENT 'GZIP压缩的结构化JSON；含逐波统计、可选存活采样和无人机生成时序，最多1MiB',
+    parser_revision INT NOT NULL COMMENT '解析及收益口径修订，用于后续筛选和重算',
+    first_saved_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    PRIMARY KEY (run_key),
+    UNIQUE KEY uk_arbitration_record_id (record_id),
+    KEY idx_arbitration_baseline (node_id, game_build, baseline_eligible, started_at),
+    KEY idx_arbitration_played (started_at, run_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='去重的仲裁主机对局事实';
+
+CREATE TABLE IF NOT EXISTS wf_arbitration_upload (
+    run_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    sender_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '平台、机器人、消息身份范围及发送者ID的SHA256',
+    platform VARCHAR(32) NOT NULL,
+    bot_id VARCHAR(128) NOT NULL,
+    message_type VARCHAR(32) NOT NULL COMMENT '保留QQ不同消息类型的身份范围',
+    user_id VARCHAR(128) NOT NULL COMMENT '消息发送者平台ID',
+    first_uploaded_at BIGINT NOT NULL,
+    last_uploaded_at BIGINT NOT NULL,
+    PRIMARY KEY (run_key, sender_key),
+    KEY idx_arbitration_user_history (sender_key, last_uploaded_at, run_key),
+    CONSTRAINT fk_arbitration_upload_run FOREIGN KEY (run_key) REFERENCES wf_arbitration_run (run_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='仲裁上传者关联；同局可关联多个发送者';
+
+CREATE TABLE IF NOT EXISTS wf_arbitration_last_file (
+    sender_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '与上传关联表相同的发送者范围摘要',
+    file_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '文件SHA256',
+    manifest JSON NOT NULL COMMENT '最近文件的有序对局引用、事实摘要及解析计数，最多32KiB',
+    uploaded_at BIGINT NOT NULL COMMENT '最近一次成功提交归档的时间；重算不刷新',
+    PRIMARY KEY (sender_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='每位发送者最后成功保存的仲裁文件索引';
+
 SET FOREIGN_KEY_CHECKS = 1;
