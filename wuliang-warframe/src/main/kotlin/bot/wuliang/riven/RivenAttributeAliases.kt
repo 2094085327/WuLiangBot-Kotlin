@@ -70,7 +70,7 @@ object RivenAttributeAliases {
         "damage_to_techrot" to setOf("techrot", "科腐者"),
     )
     private val namesBySlug = mapOf(
-        "critical_chance" to setOf("暴击", "爆击", "暴击率", "爆击率", "暴击几率", "爆击几率", "暴击机率"),
+        "critical_chance" to setOf("暴击", "爆击", "暴击率", "爆击率", "暴击几率", "爆击几率", "暴击机率","爆率"),
         "critical_damage" to setOf("暴伤", "爆伤", "暴击伤害", "爆击伤害"),
         "base_damage_/_melee_damage" to setOf("伤害", "基础伤害", "基伤", "近战伤害"),
         "fire_rate_/_attack_speed" to setOf("射速", "攻速", "攻击速度", "射速/攻击速度"),
