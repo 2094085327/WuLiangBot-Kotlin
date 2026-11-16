@@ -4,16 +4,20 @@ import bot.wuliang.config.PublicExportPolicy
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import java.io.IOException
 import java.nio.channels.FileChannel
 import java.nio.channels.OverlappingFileLockException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.security.MessageDigest
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
 
 data class ExportFile(val path: String, val sha: String, val size: Long, val sourceCommit: String? = null)
 data class ExportRevision(
@@ -69,6 +73,7 @@ class PublicExportStore(
     private val aliases: Map<String, String> = emptyMap(),
 ) {
     private val mapper = jacksonObjectMapper()
+    private val housekeeping = ExportHousekeeping(root, aliases, mapper)
 
     private data class Pointer(val directory: String)
 
@@ -76,11 +81,24 @@ class PublicExportStore(
      * 读取当前指针指向的成功快照，逐文件校验后重建索引。
      * 尚无指针时返回 null；指针、清单或内容损坏时抛出异常。
      */
-    fun load(): AppliedExport? {
+    fun load(): AppliedExport? = locked { loadLocked() }
+
+    private fun loadLocked(): AppliedExport? {
         val directory = currentDirectory() ?: return null
         val manifest = readManifest(directory)
         validateRevision(ExportRevision(manifest.appliedCommit, manifest.files, manifest.sources))
+        housekeeping.pruneIndexes(directory, manifest)
         return AppliedExport(manifest, PublicExportIndex.fromFiles(directory, manifest.files, aliases))
+    }
+
+    /** 自动清理与检查、更新互斥；繁忙时跳过，预览模式不删除文件。 */
+    internal fun cleanup(dryRun: Boolean = false): ExportCleanupResult? = try {
+        locked {
+            val directory = currentDirectory() ?: return@locked ExportCleanupResult()
+            housekeeping.clean(directory, dryRun)
+        }
+    } catch (_: StoreBusyException) {
+        null
     }
 
     /**
@@ -105,7 +123,7 @@ class PublicExportStore(
         val check = compare(revision, current)
         val manifest = ExportManifest(revision.commit, revision.files, revision.sources)
         val reusable = if (check.changed.isEmpty() && check.removed.isEmpty()) {
-            existing ?: requireNotNull(load()) { "已校验的词库快照已丢失" }
+            existing ?: requireNotNull(loadLocked()) { "已校验的词库快照已丢失" }
         } else null
         if (reusable != null && reusable.manifest == manifest) return@locked check to reusable
         // 新目录仅用于构建候选快照；校验和指针发布成功前，查询仍使用旧快照。
@@ -187,18 +205,27 @@ class PublicExportStore(
      */
     private fun <T> locked(action: () -> T): T {
         Files.createDirectories(root)
-        return FileChannel.open(root.resolve("sync.lock"), CREATE, WRITE).use { channel ->
-            val lock = try {
-                channel.tryLock()
-            } catch (_: OverlappingFileLockException) {
-                null
+        val directory = root.toRealPath()
+        val local = localLocks.computeIfAbsent(directory) { ReentrantLock() }
+        if (local.isHeldByCurrentThread || !local.tryLock()) throw StoreBusyException()
+        try {
+            return FileChannel.open(directory.resolve("sync.lock"), CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+                val lock = try {
+                    channel.tryLock()
+                } catch (_: OverlappingFileLockException) {
+                    null
+                } ?: throw StoreBusyException()
+                lock.use { action() }
             }
-                ?: error("Warframe 词库正在检查或更新，请稍后重试")
-            lock.use { action() }
+        } finally {
+            local.unlock()
         }
     }
 
+    private class StoreBusyException : IOException("Warframe 词库正在检查、更新或清理，请稍后重试")
+
     companion object {
+        private val localLocks = ConcurrentHashMap<Path, ReentrantLock>()
         val requiredFiles = PublicExportPolicy.REQUIRED_PLUS_FILES
         val languageFiles = PublicExportPolicy.COMPLETE_LANGUAGE_FILES
 

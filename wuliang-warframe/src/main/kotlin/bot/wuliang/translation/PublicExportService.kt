@@ -9,6 +9,7 @@ import bot.wuliang.entity.WfRivenEntity
 import bot.wuliang.moudles.Info
 import bot.wuliang.moudles.Nodes
 import org.springframework.stereotype.Service
+import org.springframework.scheduling.annotation.Scheduled
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
@@ -64,6 +65,7 @@ class PublicExportService(
         recoverExportData { store.load()?.let(::publish) }
             .onFailure { logError("Warframe 词库本地快照无效，等待手动更新", it) }
         if (!ready) logWarn(UNAVAILABLE_MESSAGE)
+        else cleanupLocal()
     }
 
     /**
@@ -80,7 +82,23 @@ class PublicExportService(
     fun update(): ExportCheck {
         val (check, snapshot) = store.update(applied)
         if (snapshot !== applied) publish(snapshot)
+        cleanupLocal()
         return check
+    }
+
+    /** 启动、成功更新后和每小时维护一次；忙碌、未初始化或清理失败不影响已应用词库。 */
+    @Scheduled(fixedDelay = 3_600_000, initialDelay = 3_600_000)
+    fun cleanupLocal() {
+        if (!ready) return
+        try {
+            val result = store.cleanup() ?: return
+            if (result.snapshots + result.indexes + result.cacheFiles + result.temporaryFiles > 0) logInfo(
+                "词库清理完成：历史快照 {}，旧索引 {}，官方缓存文件 {}，临时文件 {}，文件大小合计 {} KiB",
+                result.snapshots, result.indexes, result.cacheFiles, result.temporaryFiles, result.bytes / 1024,
+            )
+        } catch (error: Exception) {
+            logWarn("词库清理未完成，保留已应用词库，下次重试：{}", error.message, error)
+        }
     }
 
     /**
