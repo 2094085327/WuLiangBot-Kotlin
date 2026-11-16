@@ -15,7 +15,8 @@ class PublicExportIndex private constructor(
     aliases: Map<String, String>,
     previous: PublicExportIndex? = null,
     unchangedFiles: Set<String> = emptySet(),
-    ownsDocuments: Boolean = false,
+    nameIndexDirectory: Path? = null,
+    nameIndexFingerprint: String = "",
 ) {
     constructor(documents: Map<String, JsonNode>, aliases: Map<String, String> = emptyMap()) : this(
         documents.keys,
@@ -113,14 +114,15 @@ class PublicExportIndex private constructor(
                         val identityKey = regionEntry || key.startsWith("/") || REGION_KEY_PATTERN.matches(key)
                         if (objectEntry && identityKey) {
                             val normalized = canonicalId(key)
+                            val projected = ExportObjectProjection.project(value, normalized, file == "ExportRewards.json")
                             val old = objects[normalized]
-                            require(identities[normalized] == null || identities[normalized] == key || old == value) {
+                            require(identities[normalized] == null || identities[normalized] == key || old == projected) {
                                 "导出对象存在大小写冲突：${identities[normalized]} / $key"
                             }
                             identities.putIfAbsent(normalized, key)
-                            // 文件读取产生的树转移给目录，父子对象共享同一子树；外部传入的树仍隔离复制。
-                            if (old == null) objects[normalized] = if (ownsDocuments) value else value.deepCopy()
-                            else if (old is ObjectNode) objects[normalized] = mergeObject(old, value, ownsDocuments) {
+                            // 只留下业务字段；递归发现仍使用原树，不丢失嵌套对象标识。
+                            if (old == null) objects[normalized] = projected
+                            else if (old is ObjectNode) objects[normalized] = mergeObject(old, projected) {
                                 !old.has(it)
                             }
                             if (file == "ExportRecipes.json") recipes.add(normalized)
@@ -145,12 +147,12 @@ class PublicExportIndex private constructor(
                         val key = node["uniqueName"]?.takeIf(JsonNode::isTextual)?.asText()?.takeIf(String::isNotBlank)
                         if (key != null) {
                             val normalized = canonicalId(key)
+                            val projected = ExportObjectProjection.project(node, normalized)
                             officialIds.add(normalized)
                             val old = officialObjects.getValue(locale)[normalized]
-                            if (old == null) officialObjects.getValue(locale)[normalized] =
-                                if (ownsDocuments) node else node.deepCopy()
+                            if (old == null) officialObjects.getValue(locale)[normalized] = projected
                             else if (old is ObjectNode) officialObjects.getValue(locale)[normalized] =
-                                mergeObject(old, node, ownsDocuments) { missingField(old[it]) }
+                                mergeObject(old, projected) { missingField(old[it]) }
                             identities.putIfAbsent(normalized, key)
                             if (category == "ExportRecipes") recipes.add(normalized)
                         }
@@ -191,33 +193,43 @@ class PublicExportIndex private constructor(
         }
         missionTypesByIndex = if (catalogReused) reusable.missionTypesByIndex else catalogIndices("mt_")
         factionsByIndex = if (catalogReused) reusable.factionsByIndex else catalogIndices("fc_")
+        /** 文件快照使用可校验的磁盘索引；外部传入文档的构造方式保留内存实现。 */
+        fun nameIndex(locale: String, build: () -> ExportNameIndex.Builder): ExportNameIndex =
+            if (nameIndexDirectory == null) build().build() else ExportNameIndex.onDisk(
+                nameIndexDirectory.resolve("names-$locale-$nameIndexFingerprint.bin"), nameIndexFingerprint, build,
+            )
         byEnglish = if (catalogReused && dictionaries.getValue("en") === reusable.dictionaries.getValue("en")) {
             reusable.byEnglish
-        } else ExportNameIndex.Builder().also { english ->
-            dictionaries.getValue("en").forEach { (key, value) ->
-                if (value.length in 1..160) english.add(normalize(clean(value)), key)
+        } else nameIndex("en") {
+            ExportNameIndex.Builder().also { english ->
+                dictionaries.getValue("en").forEach { (key, value) ->
+                    if (value.length in 1..160) english.add(normalize(clean(value)), key)
+                }
+                identities.keys.forEach { key ->
+                    resolve(key, "en", "name", mutableSetOf())?.let { english.add(normalize(clean(it)), key) }
+                }
             }
-            identities.keys.forEach { key ->
-                resolve(key, "en", "name", mutableSetOf())?.let { english.add(normalize(clean(it)), key) }
-            }
-        }.build()
+        }
         byChinese = if (catalogReused && byEnglish === reusable.byEnglish &&
             dictionaries.getValue("zh") === reusable.dictionaries.getValue("zh")
         ) {
             reusable.byChinese
-        } else ExportNameIndex.Builder().also { chinese ->
-            val seen = HashSet<String>()
-            byEnglish.forEachId { key ->
-                if (seen.add(key)) {
-                    // 纯语言键直接走同一字典回退规则，不为每条文本分配递归路径集合。
-                    val text =
-                        if (key.startsWith("/lotus/language/") && key !in aliases) dictionary(key, "zh") else null
-                    (text ?: resolve(key, "zh", "name", mutableSetOf()))?.let {
-                        chinese.add(normalize(clean(it)), key)
+        } else nameIndex("zh") {
+            ExportNameIndex.Builder().also { chinese ->
+                val seen = HashSet<String>()
+                byEnglish.forEachId { original ->
+                    val key = canonicalKeys[original] ?: original
+                    if (seen.add(key)) {
+                        // 纯语言键直接走同一字典回退规则，不为每条文本分配递归路径集合。
+                        val text =
+                            if (key.startsWith("/lotus/language/") && key !in aliases) dictionary(key, "zh") else null
+                        (text ?: resolve(key, "zh", "name", mutableSetOf()))?.let {
+                            chinese.add(normalize(clean(it)), key)
+                        }
                     }
                 }
             }
-        }.build()
+        }
         /** 从指定语言的官方对象建立名称反查索引，名称规范化后保留所有候选标识。 */
         fun officialNames(locale: String): ExportNameIndex = ExportNameIndex.Builder().also { names ->
             officialObjects.getValue(locale).keys.forEach { id ->
@@ -230,7 +242,7 @@ class PublicExportIndex private constructor(
 
     /**
      * 按原始标识取得导出对象元数据，同时兼容可转换的 StoreItems 路径。
-     * 返回节点只供读取；索引发布后调用方不得修改节点及其子节点。
+     * 返回翻译、节点、奖励及紫卡实际需要的字段；节点及子节点只供读取。
      */
     fun metadata(key: String): JsonNode? = objects[objectKey(key)]
 
@@ -426,11 +438,18 @@ class PublicExportIndex private constructor(
             unchangedFiles: Set<String> = emptySet(),
         ): PublicExportIndex {
             val reader = ExportDocumentReader(directory, files)
+            val fingerprint = nameIndexFingerprint(files, aliases)
             return PublicExportIndex(
                 files.map { it.path }.toSet(), reader::document, reader::dictionary,
-                aliases, previous, unchangedFiles, ownsDocuments = true,
+                aliases, previous, unchangedFiles, directory, fingerprint,
             )
         }
+
+        internal fun nameIndexFingerprint(files: List<ExportFile>, aliases: Map<String, String>): String =
+            PublicExportStore.gitBlobSha(buildString {
+                files.sortedBy { it.path }.forEach { append(it.path).append(':').append(it.sha).append('\u0000') }
+                aliases.toSortedMap().forEach { (key, value) -> append(key).append(':').append(value).append('\u0000') }
+            }.toByteArray(Charsets.UTF_8))
 
         private val REGION_KEY_PATTERN = Regex("(?:SolNode|SettlementNode|ClanNode|MT_|FC_).*", RegexOption.IGNORE_CASE)
         private val MARKUP_PATTERN = Regex("<[^>]+>")
@@ -438,22 +457,16 @@ class PublicExportIndex private constructor(
         private fun missingField(value: JsonNode?): Boolean = value == null || value.isNull ||
                 (value.isTextual && value.asText().isBlank()) || (value.isContainerNode && value.size() == 0)
 
-        /** 共享的父子节点不能原地修改；首次补字段时只复制顶层，保留各对象原有的子树。 */
+        /** 构建期合并独立的精简对象；已发布的目录不会进入此分支。 */
         private fun mergeObject(
             previous: ObjectNode,
             incoming: JsonNode,
-            shared: Boolean,
             missing: (String) -> Boolean,
         ): ObjectNode {
-            var merged = previous
             incoming.fields().forEach { (field, value) ->
-                if (missing(field)) {
-                    if (shared && merged === previous) merged =
-                        previous.objectNode().also { it.setAll<JsonNode>(previous) }
-                    merged.set<JsonNode>(field, value)
-                }
+                if (missing(field)) previous.set<JsonNode>(field, value)
             }
-            return merged
+            return previous
         }
 
         /** 按 [Locale.ROOT] 统一标识大小写，避免受系统语言环境影响。 */

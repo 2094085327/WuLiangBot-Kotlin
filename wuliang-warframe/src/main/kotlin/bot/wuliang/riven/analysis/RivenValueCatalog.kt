@@ -4,6 +4,7 @@ import bot.wuliang.riven.RivenAttributeAliases
 import bot.wuliang.translation.PublicExportIndex
 import bot.wuliang.translation.PublicExportService
 import org.springframework.stereotype.Component
+import java.lang.ref.WeakReference
 import kotlin.math.sign
 
 enum class RivenValueUnit(val symbol: String, val scale: Double) {
@@ -37,12 +38,13 @@ class RivenValueCatalog(private val translations: PublicExportService) {
     @Volatile
     private var cached: Snapshot? = null
 
-    private data class Snapshot(val index: PublicExportIndex, val types: Map<String, List<RivenValueDefinition>>)
+    // 仅比较索引身份，不让数值缓存延长整份旧词库的生命周期。
+    private data class Snapshot(val index: WeakReference<PublicExportIndex>, val types: Map<String, List<RivenValueDefinition>>)
 
     fun forType(type: String): List<RivenValueDefinition> {
         val index = translations.index()
-        val snapshot = cached?.takeIf { it.index === index } ?: synchronized(this) {
-            cached?.takeIf { it.index === index } ?: Snapshot(index, TYPES.mapValues { (_, mod) ->
+        val snapshot = cached?.takeIf { it.index.get() === index } ?: synchronized(this) {
+            cached?.takeIf { it.index.get() === index } ?: Snapshot(WeakReference(index), TYPES.mapValues { (_, mod) ->
                 val entries = index.metadata("/Lotus/Upgrades/Mods/Randomized/$mod")?.get("upgradeEntries")
                 entries?.mapNotNull { entry ->
                     val tag = entry["tag"]?.asText() ?: return@mapNotNull null
