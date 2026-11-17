@@ -1,6 +1,5 @@
 package bot.wuliang.config
 
-import bot.wuliang.redis.RedisService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
@@ -16,7 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @Configuration
 class WebConfig : WebMvcConfigurer {
     @Autowired
-    private lateinit var redisService: RedisService
+    private lateinit var sessionAuth: ManagementSessionAuth
 
     @Autowired
     private lateinit var userArgumentResolver: UserArgumentResolver
@@ -31,8 +30,15 @@ class WebConfig : WebMvcConfigurer {
      * @param registry
      */
     override fun addInterceptors(registry: InterceptorRegistry) {
-        val interceptorRegistration = registry.addInterceptor(LoginHandlerInterceptor(redisService))
-        interceptorRegistration.excludePathPatterns("/asserts/**", "/error/**", "/index.html", "/", "/login/toLogin","/directives/list")
+        val interceptorRegistration = registry.addInterceptor(LoginHandlerInterceptor(sessionAuth))
+        interceptorRegistration.excludePathPatterns(
+            "/asserts/**",
+            "/error/**",
+            "/index.html",
+            "/",
+            "/login/toLogin",
+            "/directives/list"
+        )
         interceptorRegistration.addPathPatterns(
             "/restartManage",
             "/restartStatus",
@@ -49,6 +55,7 @@ class WebConfig : WebMvcConfigurer {
             "/dailyJson",
             "/botConfig/**",
             "/category/**",
+            "/log/**",
             "/directives/**",
             // 上传接口复用管理后台登录校验，在进入文件操作前拦截未登录请求。
             "/upload/**"
