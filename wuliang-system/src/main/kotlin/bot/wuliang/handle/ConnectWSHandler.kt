@@ -1,69 +1,26 @@
 package bot.wuliang.handle
 
-import bot.wuliang.botLog.logUtil.LoggerUtils.logInfo
-import bot.wuliang.config.WebSocketSessionConfig.sessionsMap
-import bot.wuliang.config.WsMessageEncoder
+import bot.wuliang.config.WebSocketSessionConfig
 import bot.wuliang.exception.RespBean
 import org.springframework.stereotype.Component
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
-import javax.websocket.OnClose
-import javax.websocket.OnOpen
-import javax.websocket.Session
-import javax.websocket.server.ServerEndpoint
+import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.TextMessage
+import org.springframework.web.socket.WebSocketSession
+import org.springframework.web.socket.handler.TextWebSocketHandler
 
 @Component
-@ServerEndpoint("/connect", encoders = [WsMessageEncoder::class])
-class ConnectWSHandler {
-
-    private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-
-    /**
-     * 建立连接成功调用
-     */
-    @OnOpen
-    fun onOpen(session: Session) {
-        sessionsMap[session.id] = session
-
-        // 发送初始连接成功消息
-        sendObject(session, RespBean.success<Nothing>())
-
-        // 启动心跳检测
-        startHeartbeat(session)
+class ConnectWSHandler(private val sessions: WebSocketSessionConfig) : TextWebSocketHandler() {
+    override fun afterConnectionEstablished(session: WebSocketSession) {
+        if (sessions.register(session, RespBean.success("heartbeat"))) {
+            sessions.send(session.id, RespBean.success<Nothing>())
+        }
     }
 
-    /**
-     * 启动心跳检测
-     */
-    private fun startHeartbeat(session: Session) {
-        scheduler.scheduleAtFixedRate({
-            try {
-                if (session.isOpen) {
-                    // 发送心跳消息
-                    sendObject(session, RespBean.success("heartbeat"))
-                } else {
-                    // 连接已关闭，清理资源
-                    sessionsMap.remove(session.id)
-                }
-            } catch (e: Exception) {
-                logInfo("Session:${session.id} - 心跳检测失败: ${e.message}")
-                sessionsMap.remove(session.id)
-            }
-        }, 30, 30, TimeUnit.SECONDS) // 每30秒发送一次心跳
-    }
+    override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) = sessions.close(session.id)
 
+    override fun handleTransportError(session: WebSocketSession, exception: Throwable) =
+        sessions.close(session.id, CloseStatus.SERVER_ERROR)
 
-    /**
-     * 关闭连接调用
-     */
-    @OnClose
-    fun onClose(session: Session) {
-        sessionsMap.remove(session.id)
-        logInfo("Session:${session.id} - 连接已关闭")
-    }
-
-    fun sendObject(session: Session, message: Any) {
-        session.basicRemote.sendObject(message)
-    }
+    override fun handleTextMessage(session: WebSocketSession, message: TextMessage) =
+        sessions.close(session.id, CloseStatus.NOT_ACCEPTABLE)
 }
