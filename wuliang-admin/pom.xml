@@ -16,6 +16,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>bot.wuliang.TencentBotKotlinApplicationKt</mainClass>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
