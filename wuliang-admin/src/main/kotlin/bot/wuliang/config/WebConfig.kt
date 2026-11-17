@@ -35,8 +35,17 @@ class WebConfig : WebMvcConfigurer {
         interceptorRegistration.excludePathPatterns("/asserts/**", "/error/**", "/index.html", "/", "/login/toLogin","/directives/list")
         interceptorRegistration.addPathPatterns(
             "/restartManage",
+            "/restartStatus",
+            "/getNowJar",
+            "/getRestartConfig",
+            "/allJarFile",
+            "/choseJar",
+            "/deleteJar",
+            "/initJarUpload",
+            "/uploadChunk",
+            "/mergeUpload",
+            "/cancelUpload",
             "/warframe/wfManage/**",
-            "/restartManage",
             "/dailyJson",
             "/botConfig/**",
             "/category/**",
