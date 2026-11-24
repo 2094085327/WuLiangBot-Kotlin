@@ -9,12 +9,16 @@ import bot.wuliang.otherUtil.OtherUtil.STConversion.toMd5
 import bot.wuliang.logAop.SystemLog
 import bot.wuliang.riven.RivenRankingQuery
 import bot.wuliang.riven.RivenRankingService
+import bot.wuliang.tencentCos.CosFileServiceImpl
 import bot.wuliang.translation.PublicExportService
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import java.util.regex.Matcher
+
+private const val RANKING_IMAGE_PREFIX = "allRivenPrice-"
 
 /** 紫卡周榜指令，参数解析与榜单同步由专用模块负责。 */
 @Component
@@ -24,7 +28,11 @@ class RivenRankingCommands(
     private val rivenRankingQuery: RivenRankingQuery,
     private val translations: PublicExportService,
     private val webImgUtil: WebImgUtil,
+    private val cos: CosFileServiceImpl,
 ) {
+
+    @Scheduled(fixedDelay = 3_600_000)
+    fun configureImageExpiration() = cos.ensureLifecycleRule(RANKING_IMAGE_PREFIX, 7)
 
     /** 解析周榜筛选条件，缺少数据时同步官方周榜，然后发送筛选后的排行榜图片。 */
     @SystemLog(businessName = "获取DE紫卡数据")
@@ -46,7 +54,7 @@ class RivenRankingCommands(
 
         val imgData = WebImgUtil.ImgData(
             url = "http://${webImgUtil.frontendAddress}/allRivenPrice$urlParams",
-            imgName = "allRivenPrice-${currentMonday}-${rivenRankingService.cacheTag()}-${urlParams.toMd5()}-${translations.cacheTag()}",
+            imgName = "$RANKING_IMAGE_PREFIX$currentMonday-${rivenRankingService.cacheTag()}-${urlParams.toMd5()}-${translations.cacheTag()}",
             element = "#app",
             waitElement = ".warframeRivenAllPrice"
         )

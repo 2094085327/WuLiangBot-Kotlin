@@ -1,12 +1,11 @@
 package bot.wuliang.controller
 
-import bot.wuliang.config.DirectivesConfig.DIRECTIVES_KEY
 import bot.wuliang.entity.DirectivesCategoryEntity
 import bot.wuliang.entity.DirectivesEntity
 import bot.wuliang.exception.RespBean
-import bot.wuliang.redis.RedisService
 import bot.wuliang.service.DirectivesService
 import bot.wuliang.service.impl.DirectivesCategoryServiceImpl
+import bot.wuliang.utils.DirectivesUtils
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.annotations.Api
@@ -26,7 +25,7 @@ import java.util.*
 class DirectivesController @Autowired constructor(
     private val directivesService: DirectivesService,
     private val directivesCategoryService: DirectivesCategoryServiceImpl,
-    private val redisService: RedisService
+    private val directives: DirectivesUtils,
 ) {
 
 
@@ -38,16 +37,12 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("获取指令列表")
     @GetMapping("/list")
     fun getDirectivesList(directivesEntity: DirectivesEntity?): RespBean<List<DirectivesEntity?>> {
-        if (redisService.hasKey(DIRECTIVES_KEY)) {
-            return RespBean.success(redisService.getValueTyped<List<DirectivesEntity?>>(DIRECTIVES_KEY))
+        val list = if (directivesEntity == null || directivesEntity == DirectivesEntity()) {
+            directives.getDirectivesList()
+        } else {
+            directivesService.selectDirectivesList(directivesEntity)
         }
-
-        val selectDirectivesList = directivesService.selectDirectivesList(directivesEntity)
-
-        if (selectDirectivesList.isNotEmpty()) {
-            redisService.setValue(DIRECTIVES_KEY, selectDirectivesList)
-        }
-        return RespBean.success(selectDirectivesList)
+        return RespBean.success(list)
     }
 
     /**
@@ -56,8 +51,7 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("新增指令")
     @PostMapping("/addDirectives")
     fun addDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean<Nothing> {
-        redisService.deleteKey(DIRECTIVES_KEY)
-        return RespBean.toReturn(directivesService.save(directivesEntity))
+        return RespBean.toReturn(directives.changeDirectives { directivesService.save(directivesEntity) })
     }
 
     /**
@@ -66,8 +60,7 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("更新指令")
     @PutMapping("/updateDirectives")
     fun updateDirectives(@RequestBody directivesEntity: DirectivesEntity): RespBean<Nothing> {
-        redisService.deleteKey(DIRECTIVES_KEY)
-        return RespBean.toReturn(directivesService.updateById(directivesEntity))
+        return RespBean.toReturn(directives.changeDirectives { directivesService.updateById(directivesEntity) })
     }
 
     /**
@@ -76,8 +69,7 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("批量更新指令")
     @PutMapping("/updateBatchDirectives")
     fun updateBatchDirectives(@RequestBody directivesEntity: Collection<DirectivesEntity>): RespBean<Nothing> {
-        redisService.deleteKey(DIRECTIVES_KEY)
-        return RespBean.toReturn(directivesService.updateBatchById(directivesEntity))
+        return RespBean.toReturn(directives.changeDirectives { directivesService.updateBatchById(directivesEntity) })
     }
 
     /**
@@ -86,8 +78,7 @@ class DirectivesController @Autowired constructor(
     @ApiOperation("删除单个指令")
     @DeleteMapping("/delete/{id}")
     fun deleteDirectives(@PathVariable id: Long): RespBean<Nothing> {
-        redisService.deleteKey(DIRECTIVES_KEY)
-        return RespBean.toReturn(directivesService.deleteDirective(id))
+        return RespBean.toReturn(directives.changeDirectives { directivesService.deleteDirective(id) })
     }
 
     /**
@@ -95,9 +86,8 @@ class DirectivesController @Autowired constructor(
      */
     @ApiOperation("导入指令列表")
     @PostMapping("/import")
-    fun importDirectives(file: MultipartFile, covered: Boolean? = false): RespBean<out JsonNode> {
-        redisService.deleteKey(DIRECTIVES_KEY)
-        return try {
+    fun importDirectives(file: MultipartFile, covered: Boolean? = false): RespBean<out JsonNode> = directives.changeDirectives {
+        try {
             val objectMapper = ObjectMapper()
             val directivesJson = objectMapper.readTree(file.inputStream)
             val allCmd = directivesJson["allCmd"]

@@ -31,7 +31,7 @@ class CosFileServiceImpl(
 ) : ICosFileService {
     val cosClient = txCosConfig.cosClient()
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val lifecycleRuleConfigured = ConcurrentHashMap<String, Boolean>()
+    private val configuredLifecycleRules = ConcurrentHashMap.newKeySet<String>()
 
     companion object {
         // 视频后缀 校验视频格式
@@ -160,7 +160,13 @@ class CosFileServiceImpl(
      * 为指定文件名前缀的对象配置生命周期规则，到期的对象由 COS 自动删除
      */
     fun ensureLifecycleRule(fileNamePrefix: String, expireDays: Int) {
-        if (lifecycleRuleConfigured[fileNamePrefix] == true) return
+        if (fileNamePrefix !in configuredLifecycleRules) configureLifecycleRule(fileNamePrefix, expireDays)
+    }
+
+    // COS 按整桶写入规则。只在首次配置时加锁，已配置的图片查询可以直接返回。
+    @Synchronized
+    private fun configureLifecycleRule(fileNamePrefix: String, expireDays: Int) {
+        if (fileNamePrefix in configuredLifecycleRules) return
         val prefix = txCosConfig.path + fileNamePrefix
         val ruleId = "expire-${fileNamePrefix.trimEnd('-')}-${expireDays}d"
         try {
@@ -185,7 +191,7 @@ class CosFileServiceImpl(
                     )
                 )
             }
-            lifecycleRuleConfigured[fileNamePrefix] = true
+            configuredLifecycleRules.add(fileNamePrefix)
         } catch (e: Exception) {
             logError("配置COS生命周期规则失败: prefix=$prefix, expireDays=$expireDays", e)
         }
