@@ -37,7 +37,26 @@ import kotlin.coroutines.cancellation.CancellationException
 @Component
 class QQMessageHandler(private val messageBus: MessageBus, private val starter: Starter) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // 只保留近期引用指令的事件 ID，防止平台重投触发两次 OCR。
+    private val recentQuoteEvents = LinkedHashMap<String, Long>()
+
+    @Synchronized
+    private fun firstQuoteDelivery(id: String): Boolean {
+        val now = System.nanoTime()
+        val entries = recentQuoteEvents.entries.iterator()
+        while (entries.hasNext()) {
+            if (now - entries.next().value < java.util.concurrent.TimeUnit.MINUTES.toNanos(5)) break
+            entries.remove()
+        }
+        if (id in recentQuoteEvents) return false
+        if (recentQuoteEvents.size >= 1024) recentQuoteEvents.remove(recentQuoteEvents.keys.first())
+        recentQuoteEvents[id] = now
+        return true
+    }
+
     private val processing = Semaphore(4)
+
     // 4 条正在处理，最多 16 条等待
     private val pending = java.util.concurrent.Semaphore(20)
     private val lastBusyLog = java.util.concurrent.atomic.AtomicLong(0)
@@ -154,10 +173,15 @@ class QQMessageHandler(private val messageBus: MessageBus, private val starter: 
             isAtBot = isAtBot
         )
 
+        val quote = parseQQQuote(event.metadata)
+        val messageId = event.metadata.getString("id")
+        if (quote != null && !messageId.isNullOrBlank() && !firstQuoteDelivery(messageId)) return
+
         val executionContext = object : ExecutionContext {
             override val sender: MessageSender = sender
             override val requestContext: RequestContext = requestContext
             override val messages: List<BotMessage> = botMessage
+            override val quotedMessage = quote
         }
 
         messageBus.dispatch(executionContext)

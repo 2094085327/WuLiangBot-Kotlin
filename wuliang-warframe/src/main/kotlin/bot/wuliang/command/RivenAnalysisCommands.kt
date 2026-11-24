@@ -1,6 +1,7 @@
 package bot.wuliang.command
 
 import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.adapter.context.directOrQuotedImages
 import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.aipOcr.OcrUnavailableException
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
@@ -74,7 +75,7 @@ class RivenAnalysisCommands(
             context.sender.sendText(PublicExportService.UNAVAILABLE_MESSAGE)
             return
         }
-        val pictures = context.messages.filterIsInstance<BotMessage.Image>()
+        val pictures = context.directOrQuotedImages()
         if (pictures.size > 1) {
             context.sender.sendText("每次只接受一张紫卡图片，请截取单张紫卡后重新发送。")
             return
@@ -88,6 +89,10 @@ class RivenAnalysisCommands(
         if (pictures.isEmpty()) {
             val pending = sessions.begin(context.requestContext, rank)
             remindIfImageMissing(context, pending)
+            if (context.quotedMessage != null) {
+                context.sender.sendText("没能从这条引用里读到图片，请在 1 分钟内补发一张紫卡图。")
+                return
+            }
             context.sender.sendText("1分钟内发送一张紫卡图片开始分析。\n也可以使用「紫卡分析 -文字 执法者/+195.9% 暴击几率/+167.6% 近战伤害」来进行文字分析")
         } else {
             sessions.cancel(context.requestContext)

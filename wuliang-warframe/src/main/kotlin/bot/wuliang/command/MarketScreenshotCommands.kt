@@ -1,6 +1,7 @@
 package bot.wuliang.command
 
 import bot.wuliang.adapter.context.ExecutionContext
+import bot.wuliang.adapter.context.directOrQuotedImages
 import bot.wuliang.aipOcr.AipOcrClient
 import bot.wuliang.aipOcr.OcrUnavailableException
 import bot.wuliang.botLog.logUtil.LoggerUtils.logError
@@ -45,7 +46,7 @@ class MarketScreenshotCommands(
     @AParameter
     @Executor(action = "(?i)\\b(部件|WM价格|WM价格查询)\\b")
     suspend fun getWmPrice(context: ExecutionContext) {
-        val imageMessages = context.messages.filterIsInstance<BotMessage.Image>()
+        val imageMessages = context.directOrQuotedImages()
         if (imageMessages.size > 2) {
             context.sender.sendText("单次查询图片上限为2张")
             return
@@ -58,7 +59,12 @@ class MarketScreenshotCommands(
         if (imageMessages.isEmpty()) {
             val pending = sessions.begin(context.requestContext)
             remindIfImageMissing(context, pending)
-            context.sender.sendText("请在1分钟内发送部件售卖截图，单次最多2张。")
+            val prompt = if (context.quotedMessage == null) {
+                "请在1分钟内发送部件售卖截图，单次最多2张。"
+            } else {
+                "没能从这条引用里读到图片，请在 1 分钟内补发部件售卖截图，最多 2 张。"
+            }
+            context.sender.sendText(prompt)
         } else {
             sessions.cancel(context.requestContext)
             process(context, imageMessages)
