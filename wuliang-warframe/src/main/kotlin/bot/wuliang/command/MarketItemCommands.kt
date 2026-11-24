@@ -32,7 +32,7 @@ class MarketItemCommands(
     /** 解析市场物品名称、模组等级和页码；匹配物品后发送对应卖单消息。 */
     @SystemLog(businessName = "获取WM市场物品信息")
     @AParameter
-    @Executor(action = "(?i)\\bwm\\s*(\\S+.*)$")
+    @Executor(action = "(?i)\\bwm(?!价格(?:查询)?$)\\s*(\\S+.*)$")
     suspend fun getMarketItem(context: ExecutionContext, matcher: Matcher) {
         val pagedCommand = PagedCommand.parse(matcher.group(1))
         val page = pagedCommand.requestedPage
