@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.5.0](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.4.1...2.5.0) (2026-11-26)
+
+
+### ✨ Features
+
+* **adapter:** 支持引用图片进行紫卡分析和部件查价 ([e70e42b](https://github.com/2094085327/WuLiangBot-Kotlin/commit/e70e42b56cb6dd6e23636548102a6d7fd324f8b5))
+* **arbitration-log:** 添加EE.log文件位置提示信息 ([9013217](https://github.com/2094085327/WuLiangBot-Kotlin/commit/9013217bdd3b0e001ee86a7bfd6b9af058b4c7a7))
+* **incarnon:** 新增灵化完整轮换报告数据返回 ([422211e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/422211e1ae8eee0297d638ca1ba8dc045623e605))
+* **market:** 战甲排行榜名称添加别名前缀显示 ([17ab3bc](https://github.com/2094085327/WuLiangBot-Kotlin/commit/17ab3bc5a4f5e6f99a9331499c8e899d85aeba6c))
+* **warframe:** 为部件截图查询添加会话等待 ([ab3baa5](https://github.com/2094085327/WuLiangBot-Kotlin/commit/ab3baa5a63a80404c528dce8e7e81781f4f1897b))
+* **warframe:** 新增仲裁日志分析、结构化归档与历史查询 ([f2858f9](https://github.com/2094085327/WuLiangBot-Kotlin/commit/f2858f92452cf4f50aae6f0b97dffff99b5966a9))
+* **warframe:** 新增紫卡分析、市场估价与样本采集 ([26c3d1e](https://github.com/2094085327/WuLiangBot-Kotlin/commit/26c3d1e240972cd1dac58f7715aa83aeb8e810b1))
+* **warframe:** 新增裂罅Mod词条范围查询功能 ([2fd7b68](https://github.com/2094085327/WuLiangBot-Kotlin/commit/2fd7b68756a3bcd68f322cebafb27661f260303f))
+* **warframe:** 新增裂罅Mod词条范围查询功能 ([5d59095](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5d59095b2d53e1284a112b3c894d861ea5bde15d))
+* **warframe:** 添加金星地图和融合词条查询指令 ([9d8a048](https://github.com/2094085327/WuLiangBot-Kotlin/commit/9d8a048d9e17e1bc2c316dac2cd9b65c5ae95894))
+
+
+### 🐛 Bug Fixes
+
+* **build:** 修复配置 spring-boot 插件主类 ([6423fde](https://github.com/2094085327/WuLiangBot-Kotlin/commit/6423fde08858a5665ce59d0f9298c3b9765a238d))
+* **console:** 修复日志读取和连接资源管理问题 ([1e4f1b1](https://github.com/2094085327/WuLiangBot-Kotlin/commit/1e4f1b1c5e169de13da7d46574967847cde8c624))
+* **cos:** 设置紫卡排行和帮助图片的有效期 ([388e90c](https://github.com/2094085327/WuLiangBot-Kotlin/commit/388e90c4ae93fc378eb47e1ef4326f7a3d7dc2a4))
+* **riven:** 修复武器名称匹配中后缀误抢占问题 ([5c23287](https://github.com/2094085327/WuLiangBot-Kotlin/commit/5c23287374a887bff82aba050401e5e85b35ff9d))
+* **riven:** 修复裂罅mod名称显示及帮助截图内容为空问题 ([f725f77](https://github.com/2094085327/WuLiangBot-Kotlin/commit/f725f77721c142c6124b40fc3d20ca37f17dc116))
+* **warframe:** 修复紫卡分析中因词条换行问题导致的OCR识别错误问题 ([740c89f](https://github.com/2094085327/WuLiangBot-Kotlin/commit/740c89f2f5de5426f55bbc173bf140ac6b2f1968))
+* **warframe:** 修复紫卡分析倍率正则误匹配英文卡名中字母的问题 ([977604d](https://github.com/2094085327/WuLiangBot-Kotlin/commit/977604d69d8d4f8cc5ed2ed5d01bce89a7a1f5de))
+
+
+### ⚡ Performance Improvements
+
+* **export:** 优化词库内存占用 ([f5867fe](https://github.com/2094085327/WuLiangBot-Kotlin/commit/f5867fe5610003e74f08bd2114ba5c9177df048d))
+
+
+### ♻️ Code Refactoring
+
+* **arbitration:** 将仲裁评级从静态配置改为基于产量动态计算 ([cc15a2f](https://github.com/2094085327/WuLiangBot-Kotlin/commit/cc15a2f3ebd9dac2a7029a9edb2471846b2eba43))
+* **restart:** 重构重启与上传逻辑 ([7b42f77](https://github.com/2094085327/WuLiangBot-Kotlin/commit/7b42f775299954db36de0c04c1e21d2ae3b27441))
+
 ## [2.4.1](https://github.com/2094085327/WuLiangBot-Kotlin/compare/2.4.0...2.4.1) (2026-10-25)
 
 
