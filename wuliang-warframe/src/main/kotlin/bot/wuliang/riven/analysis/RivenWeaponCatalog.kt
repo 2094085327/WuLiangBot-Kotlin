@@ -42,17 +42,16 @@ class RivenWeaponCatalog(
         throw RivenAnalysisException("未识别到紫卡武器。请检查武器名称。")
     }
 
-    /** 优先完整名称；无匹配时才去掉变体前缀 */
+    /** 按标题行顺序匹配，同一行优先完整名称，再尝试去掉变体前缀。 */
     fun find(titles: List<String>): RivenAnalysisWeapon {
         val names = currentSnapshot().names
-        fun matches(candidates: List<String>): List<WeaponName> = candidates.flatMap { title ->
-            val normalized = normalizeName(title)
-            names.filter { normalized.startsWith(it.name) }
-        }
-
-        val matches = matches(titles).ifEmpty {
-            matches(titles.map { titleVariants(it).last() })
-        }
+        // 后缀可能以其他武器的英文名开头，不能抢占前一行已命中的武器
+        val matches = titles.firstNotNullOfOrNull { title ->
+            titleVariants(title).firstNotNullOfOrNull { candidate ->
+                val normalized = normalizeName(candidate)
+                names.filter { normalized.startsWith(it.name) }.takeIf { it.isNotEmpty() }
+            }
+        }.orEmpty()
         val bestLength = matches.maxOfOrNull { it.name.length }
         val best = matches.filter { it.name.length == bestLength }.map { it.weapon }.distinctBy { it.id }
         if (best.size > 1) throw RivenAnalysisException(weaponChoices(best))
